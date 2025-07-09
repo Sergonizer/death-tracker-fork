@@ -343,15 +343,8 @@ bool DTLayer::setup(GJGameLevel* const& level) {
     if (Save::getLastOpenedVersion() != Mod::get()->getVersion().toNonVString()){
         Save::setLastOpenedVersion(Mod::get()->getVersion().toNonVString());
         FLAlertLayer::create(nullptr, fmt::format("Death Tracker {} Changelog", Mod::get()->getVersion().toVString()).c_str(), fmt::format(
-            "{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}",
-            "- <cg>fixed macos inline crash</c>",
-            "- <cg>fixed a TON of text alignment issues</c>",
-            "- <cg>made stat calculations happen in the background, should result in less lag when navigating the menus</c>",
-            "- <cg>added the \"hide runs by length\" to let you remove some clutter in the menu</c>",
-            "- <cg>now removing a run from zero completely will also erase it from your \"new bests\"</c>",
-            "- <cg>added the option to have the death tracker button on the left menu in the level page</c>",
-            "- <cg>added the option to change the graph points size</c>",
-            "- <cg>some bug fixes</c>"
+            "{}",
+            "- <cg>iOS support</c>"
         ), "OK", nullptr, 415, false, 200, 0.75f)->show();
     }
 
