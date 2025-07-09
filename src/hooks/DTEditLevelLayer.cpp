@@ -34,7 +34,7 @@ bool DTEditLevelLayer::init(GJGameLevel* level){
 
     auto statsRes = StatsManager::getLevelStats(level, false);
     if (statsRes.isOk() || statsRes.unwrapErr()[0] == '0') {
-        auto stats = statsRes.unwrap();
+        auto stats = statsRes.unwrapOrDefault();
         stats.attempts = level->m_attempts;
         stats.levelName = level->m_levelName;
         stats.difficulty = StatsManager::getDifficulty(level);

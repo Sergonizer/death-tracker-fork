@@ -67,6 +67,8 @@ bool DTPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
 
     if (session == nullptr) return true;
 
+    log::info("entered!");
+
     // schedule create a new session
     // based on the session length setting
     // -2 means default session (no previous session)
@@ -232,9 +234,6 @@ void DTPlayLayer::removeAllCheckpoints() {
 }
 
 void DTPlayLayer::onQuit() {
-    PlayLayer::onQuit();
-    // log::info("PlayLayer::onQuit()");
-
     if (m_fields->fzeroToSave.size()){
         StatsManager::logDeaths(m_fields->fzeroToSave);
     }
@@ -243,6 +242,8 @@ void DTPlayLayer::onQuit() {
         StatsManager::logRuns(m_fields->runsToSave);
     }
 
+    // log::info("PlayLayer::onQuit()");
+
     // schedule session gets reset
     // this cancels creating a new session
     // if they back out before dying
@@ -250,4 +251,6 @@ void DTPlayLayer::onQuit() {
     DTPlayLayer::updateSessionLastPlayed();
 
     StatsManager::setCurrentLogLevel(nullptr);
+
+    PlayLayer::onQuit();
 }

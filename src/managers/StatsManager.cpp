@@ -29,7 +29,8 @@ std::set<std::string> StatsManager::m_playedLevels{};
 bool StatsManager::m_scheduleCreateNewSession = false;
 
 GJGameLevel* StatsManager::currentLoggingLevelRef = nullptr;
-Result<LevelStats> StatsManager::currentLoggingLevelStats = Err("No level is currently being logged");
+LevelStats* StatsManager::currentLoggingLevelStatsRef = nullptr;
+LevelStats StatsManager::currentLoggingLevelStats = {};
 
 std::filesystem::path StatsManager::m_savesFolderPath = Settings::getSavePath();
 
@@ -112,29 +113,33 @@ Result<LevelStats> StatsManager::getLevelStats(GJGameLevel* const& level, bool i
 
 void StatsManager::setCurrentLogLevel(GJGameLevel* const& level){
     currentLoggingLevelRef = level;
-    currentLoggingLevelStats = getLevelStats(level, false);
-    if (currentLoggingLevelStats.isErr()) currentLoggingLevelStats = Err("No level is currently being logged");
+    auto loggingStatsRes = getLevelStats(level, false);
+    if (loggingStatsRes.isErr()){
+        currentLoggingLevelStatsRef = nullptr;
+    }
+    else{
+        currentLoggingLevelStats = loggingStatsRes.unwrap();
+        currentLoggingLevelStatsRef = &currentLoggingLevelStats;
+    }
 }
 
 void StatsManager::logDeath(const int& percent) {
-    if (currentLoggingLevelStats.isErr()) {
-        log::error("Failed to log death: {}", currentLoggingLevelStats.unwrapErr());
+    if (!currentLoggingLevelStatsRef) {
+        log::error("Failed to log death");
         return;
     }
-
-    auto loggingLvl = currentLoggingLevelStats.unwrap();
 
     auto session = StatsManager::getSession();
     if (!session) return;
 
     auto percentKey = std::to_string(percent);
 
-    loggingLvl.deaths[percentKey]++;
+    currentLoggingLevelStatsRef->deaths[percentKey]++;
     session->deaths[percentKey]++;
 
-    if (percent > loggingLvl.currentBest) {
-        loggingLvl.currentBest = percent;
-        loggingLvl.newBests.insert(percent);
+    if (percent > currentLoggingLevelStatsRef->currentBest) {
+        currentLoggingLevelStatsRef->currentBest = percent;
+        currentLoggingLevelStatsRef->newBests.insert(percent);
     }
 
     if (percent > session->currentBest) {
@@ -143,16 +148,14 @@ void StatsManager::logDeath(const int& percent) {
     }
 
     StatsManager::updateSessionLastPlayed();
-    StatsManager::setLevelStats(loggingLvl, currentLoggingLevelRef, false);
+    StatsManager::setLevelStats(*currentLoggingLevelStatsRef, currentLoggingLevelRef, false);
 }
 
 void StatsManager::logDeaths(const std::vector<int>& percents) {
-    if (currentLoggingLevelStats.isErr()) {
-        log::error("Failed to log death: {}", currentLoggingLevelStats.unwrapErr());
+    if (!currentLoggingLevelStatsRef) {
+        log::error("Failed to log deaths");
         return;
     }
-
-    auto loggingLvl = currentLoggingLevelStats.unwrap();
     
     auto session = StatsManager::getSession();
     if (!session) return;
@@ -161,12 +164,12 @@ void StatsManager::logDeaths(const std::vector<int>& percents) {
     {
         auto percentKey = std::to_string(percents[i]);
 
-        loggingLvl.deaths[percentKey]++;
+        currentLoggingLevelStatsRef->deaths[percentKey]++;
         session->deaths[percentKey]++;
 
-        if (percents[i] > loggingLvl.currentBest) {
-            loggingLvl.currentBest = percents[i];
-            loggingLvl.newBests.insert(percents[i]);
+        if (percents[i] > currentLoggingLevelStatsRef->currentBest) {
+            currentLoggingLevelStatsRef->currentBest = percents[i];
+            currentLoggingLevelStatsRef->newBests.insert(percents[i]);
         }
 
         if (percents[i] > session->currentBest) {
@@ -176,26 +179,24 @@ void StatsManager::logDeaths(const std::vector<int>& percents) {
     }
 
     StatsManager::updateSessionLastPlayed();
-    StatsManager::setLevelStats(loggingLvl, currentLoggingLevelRef, false);
+    StatsManager::setLevelStats(*currentLoggingLevelStatsRef, currentLoggingLevelRef, false);
 }
 
 void StatsManager::logRun(const Run& run) {
-    if (currentLoggingLevelStats.isErr()) {
-        log::error("Failed to log run: {}", currentLoggingLevelStats.unwrapErr());
+    if (!currentLoggingLevelStatsRef) {
+        log::error("Failed to log deaths");
         return;
     }
 
-    auto loggingLvl = currentLoggingLevelStats.unwrap();
-
     bool TrackRun = false;
-    if (loggingLvl.RunsToSave.size()){
-        if (loggingLvl.RunsToSave[0] == -1){
+    if (currentLoggingLevelStatsRef->RunsToSave.size()){
+        if (currentLoggingLevelStatsRef->RunsToSave[0] == -1){
             TrackRun = true;
         }
         else{
-            for (int i = 0; i < loggingLvl.RunsToSave.size(); i++)
+            for (int i = 0; i < currentLoggingLevelStatsRef->RunsToSave.size(); i++)
             {
-                if (loggingLvl.RunsToSave[i] == run.start){
+                if (currentLoggingLevelStatsRef->RunsToSave[i] == run.start){
                     TrackRun = true;
                     break;
                 }
@@ -213,32 +214,30 @@ void StatsManager::logRun(const Run& run) {
         run.end
     );
 
-    loggingLvl.runs[runKey]++;
+    currentLoggingLevelStatsRef->runs[runKey]++;
     session->runs[runKey]++;
 
     StatsManager::updateSessionLastPlayed();
-    StatsManager::setLevelStats(loggingLvl, currentLoggingLevelRef, false);
+    StatsManager::setLevelStats(*currentLoggingLevelStatsRef, currentLoggingLevelRef, false);
 }
 
 void StatsManager::logRuns(const std::vector<Run>& runs) {
-    if (currentLoggingLevelStats.isErr()) {
-        log::error("Failed to log runs: {}", currentLoggingLevelStats.unwrapErr());
+    if (!currentLoggingLevelStatsRef) {
+        log::error("Failed to log runs");
         return;
     }
-
-    auto loggingLvl = currentLoggingLevelStats.unwrap();
 
     bool TrackRun = false;
     for (int i = 0; i < runs.size(); i++)
     {
-        if (loggingLvl.RunsToSave.size()){
-            if (loggingLvl.RunsToSave[0] == -1){
+        if (currentLoggingLevelStatsRef->RunsToSave.size()){
+            if (currentLoggingLevelStatsRef->RunsToSave[0] == -1){
                 TrackRun = true;
             }
             else{
-                for (int i = 0; i < loggingLvl.RunsToSave.size(); i++)
+                for (int i = 0; i < currentLoggingLevelStatsRef->RunsToSave.size(); i++)
                 {
-                    if (loggingLvl.RunsToSave[i] == runs[i].start){
+                    if (currentLoggingLevelStatsRef->RunsToSave[i] == runs[i].start){
                         TrackRun = true;
                         break;
                     }
@@ -256,12 +255,12 @@ void StatsManager::logRuns(const std::vector<Run>& runs) {
             runs[i].end
         );
 
-        loggingLvl.runs[runKey]++;
+        currentLoggingLevelStatsRef->runs[runKey]++;
         session->runs[runKey]++;
     }
 
     StatsManager::updateSessionLastPlayed();
-    StatsManager::setLevelStats(loggingLvl, currentLoggingLevelRef, false);
+    StatsManager::setLevelStats(*currentLoggingLevelStatsRef, currentLoggingLevelRef, false);
 }
 
 /* utility functions
@@ -316,16 +315,16 @@ Run StatsManager::splitRunKey(const std::string& runKey) {
 }
 
 Session* StatsManager::getSession() {
-    if (currentLoggingLevelStats.isErr()) {
-        log::error("Failed to get session: {}", currentLoggingLevelStats.unwrapErr());
+    if (!currentLoggingLevelStatsRef) {
+        log::error("Failed to get session");
         return nullptr;
     }
 
-    auto loggingLevel = currentLoggingLevelStats.unwrap();
+    if (currentLoggingLevelStatsRef->currentBest == -1) return nullptr;
 
-    if (loggingLevel.currentBest == -1) return nullptr;
+    if (!currentLoggingLevelStatsRef->sessions.size()) m_scheduleCreateNewSession = true;
 
-    auto currentSession = &loggingLevel.sessions[loggingLevel.sessions.size() - 1];
+    auto currentSession = &currentLoggingLevelStatsRef->sessions[currentLoggingLevelStatsRef->sessions.size() - 1];
 
     // new sessions can be scheduled
     // and are created when the player dies
@@ -350,8 +349,8 @@ Session* StatsManager::getSession() {
         .sessionStartDate = StatsManager::getNowSeconds()
     };
 
-    loggingLevel.sessions.push_back(session);
-    return &loggingLevel.sessions[loggingLevel.sessions.size() - 1];
+    currentLoggingLevelStatsRef->sessions.push_back(session);
+    return &currentLoggingLevelStatsRef->sessions[currentLoggingLevelStatsRef->sessions.size() - 1];
 }
 
 void StatsManager::updateSessionLastPlayed(bool save) {
@@ -360,30 +359,26 @@ void StatsManager::updateSessionLastPlayed(bool save) {
 
     session->lastPlayed = now;
 
-    if (save && currentLoggingLevelStats.isOk()) {
-        StatsManager::setLevelStats(currentLoggingLevelStats.unwrap(), currentLoggingLevelRef, false);
+    if (save && currentLoggingLevelStatsRef != nullptr) {
+        StatsManager::setLevelStats(*currentLoggingLevelStatsRef, currentLoggingLevelRef, false);
     }
 }
 
 void StatsManager::scheduleCreateNewSession(const bool& scheduled) {
-    if (currentLoggingLevelStats.isErr()) {
-        log::error("Failed to get session: {}", currentLoggingLevelStats.unwrapErr());
+    if (!currentLoggingLevelStatsRef) {
+        log::error("Failed to get session");
         return;
     }
 
-    auto loggingLevel = currentLoggingLevelStats.unwrap();
-
-    if (loggingLevel.currentBest != -1)
+    if (currentLoggingLevelStatsRef->currentBest != -1)
         m_scheduleCreateNewSession = scheduled;
 }
 
 bool StatsManager::hasPlayedLevel() {
-    if (currentLoggingLevelStats.isErr()) {
-        log::error("Failed to check if level has been played: {}", currentLoggingLevelStats.unwrapErr());
+    if (!currentLoggingLevelRef) {
+        log::error("Failed to check if level has been played");
         return false;
     }
-
-    auto loggingLevel = currentLoggingLevelStats.unwrap();
     
     auto levelKeyRes = StatsManager::getLevelKey(currentLoggingLevelRef);
 
@@ -402,7 +397,7 @@ void StatsManager::setLevelStats(const LevelStats& stats, GJGameLevel* const& le
 }
 
 void StatsManager::setLevelStats(const LevelStats& stats, const std::string& levelKey, bool isBackup) {    
-    auto levelSaveFilePath = m_savesFolderPath / (levelKey + (isBackup ? ".deathsBackup" : ".json"));
+    auto levelSaveFilePath = m_savesFolderPath / (levelKey + (isBackup ? ".deathsBackup" : ".json"));    
 
     // create the json file if it doesnt exist
     if (!std::filesystem::exists(levelSaveFilePath)) {

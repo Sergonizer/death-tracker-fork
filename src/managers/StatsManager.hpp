@@ -198,10 +198,11 @@ private:
     static Result<std::tuple<NewBests, int>> calcNewBests(GJGameLevel* const& level);
     static std::array<std::string, 62> m_AllFontsMap;
 
-    static Result<LevelStats> currentLoggingLevelStats;
+    static LevelStats* currentLoggingLevelStatsRef;
     static GJGameLevel* currentLoggingLevelRef;
 
 public:
+    static LevelStats currentLoggingLevelStats;
     StatsManager() = delete;
 
     static int MainLevelIDs[26];

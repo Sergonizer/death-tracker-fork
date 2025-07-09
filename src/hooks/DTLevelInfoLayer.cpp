@@ -38,7 +38,7 @@ bool DTLevelInfoLayer::init(GJGameLevel* p0, bool p1){
 
     auto statsRes = StatsManager::getLevelStats(p0, false);
     if (statsRes.isOk() || statsRes.unwrapErr()[0] == '0'){
-        auto stats = statsRes.unwrap();
+        auto stats = statsRes.unwrapOrDefault();
         stats.attempts = p0->m_attempts;
         stats.levelName = p0->m_levelName;
         stats.difficulty = StatsManager::getDifficulty(p0);

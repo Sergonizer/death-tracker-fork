@@ -34,6 +34,8 @@ bool DTLayer::setup(GJGameLevel* const& level) {
         StatsManager::setLevelStats(m_MyLevelStats, m_Level, false);
     }
 
+    StatsManager::setCurrentLogLevel(level);
+
     DTLayer::UpdateSharedStats();
     // ================================== //
 
@@ -403,6 +405,7 @@ void DTLayer::textInputClosed(CCTextInputNode* input){
 }
 
 ResultTask DTLayer::updateSessionString(const int& session){
+    log::info("comp1 {} || comp2 {} >= {}", session - 1 < 0, session - 1, m_SharedLevelStats.sessions.size());
     if (session - 1 < 0 || session - 1 >= m_SharedLevelStats.sessions.size()) return ResultTask::immediate(Err("couldent get current session!"));
 
     Session currentSession = m_SharedLevelStats.sessions[session - 1];
@@ -612,6 +615,7 @@ void DTLayer::RefreshText(bool moveToTop){
     if (m_TextCont) m_TextCont->removeMeAndCleanup();
 
     m_TextCont = CCNode::create();
+    m_TextCont->setID("text-content");
     m_ScrollLayer->m_contentLayer->addChild(m_TextCont);
 
     float overallHight = 0;
@@ -854,6 +858,8 @@ std::string DTLayer::modifyString(std::string ToModify){
             ToModify.erase(inctences[i], 5);
             overallOffset -= 5;
 
+            if (!m_SharedLevelStats.sessions.size()) continue;
+
             if (m_SharedLevelStats.sessions[m_SessionSelected - 1].sessionStartDate == -1){
                 std::string toAdd = "(Unknown date)";
                 ToModify.insert(inctences[i], toAdd);
@@ -954,8 +960,8 @@ ResultTask DTLayer::refreshStrings(){
                 RunString = mergedString;
             }
 
-            
-            return DTLayer::updateSessionString(m_SessionSelected);
+            auto _ = DTLayer::updateSessionString(m_SessionSelected);
+            return ResultTask::immediate(Ok());
         });
     });
 
@@ -1612,9 +1618,13 @@ void DTLayer::updateColor(cocos2d::ccColor4B const& color){
 
 void DTLayer::refreshAll(bool moveToTop){
     refreshLoadingCircle->setVisible(true);
+    log::info("Refreshing all stats for level: {}", m_Level->m_levelID.value());
     auto combinedTasks = refreshStrings().chain([&, moveToTop](ResultTask::Value* value) -> ResultTask {
         if (value == nullptr) return ResultTask::immediate(Err("failed to refresh!"));
-        if (value->isErr()) return ResultTask::immediate(Err(value->unwrapErr()));
+        if (value->isErr()){
+            log::info("Failed to refresh stats for level: {} - {}", m_Level->m_levelID.value(), value->unwrapErr());
+            return ResultTask::immediate(Err(value->unwrapErr()));
+        }
 
         DTLayer::RefreshText(moveToTop);
 
