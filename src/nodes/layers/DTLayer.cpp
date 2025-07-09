@@ -27,7 +27,12 @@ bool DTLayer::setup(GJGameLevel* const& level) {
 
     // ================================== //
     // loading data
-    m_MyLevelStats = StatsManager::getLevelStats(m_Level);
+
+    auto lvlStatsRes = StatsManager::getLevelStats(m_Level, false);
+    m_MyLevelStats = lvlStatsRes.unwrapOrDefault();
+    if (lvlStatsRes.isErr()) {
+        StatsManager::setLevelStats(m_MyLevelStats, m_Level, false);
+    }
 
     DTLayer::UpdateSharedStats();
     // ================================== //
@@ -856,10 +861,11 @@ std::string DTLayer::modifyString(std::string ToModify){
             }
             else{
                 time_t time = m_SharedLevelStats.sessions[m_SessionSelected - 1].sessionStartDate;
-                auto tm = std::localtime(&time);
+                tm tmStruct;
+                localtime_s(&tmStruct, &time);
 
-                ToModify.insert(inctences[i], fmt::format("{}/{}/{}", tm->tm_mon + 1, tm->tm_mday, tm->tm_year + 1900));
-                overallOffset += fmt::format("{}/{}/{}", tm->tm_mon + 1, tm->tm_mday, tm->tm_year + 1900).length();
+                ToModify.insert(inctences[i], fmt::format("{}/{}/{}", tmStruct.tm_mon + 1, tmStruct.tm_mday, tmStruct.tm_year + 1900));
+                overallOffset += fmt::format("{}/{}/{}", tmStruct.tm_mon + 1, tmStruct.tm_mday, tmStruct.tm_year + 1900).length();
             }
         }
         if (StatsManager::isKeyInIndex(ToModify, inctences[i] + 1, "sst}")){
@@ -875,17 +881,18 @@ std::string DTLayer::modifyString(std::string ToModify){
             }
             else{
                 time_t time = m_SharedLevelStats.sessions[m_SessionSelected - 1].sessionStartDate;
-                auto tm = std::localtime(&time);
+                tm tmStruct;
+                localtime_s(&tmStruct, &time);
 
                 std::string clock12Time = "AM";
 
-                if (tm->tm_hour > 12){
-                    tm->tm_hour -= 12;
+                if (tmStruct.tm_hour > 12){
+                    tmStruct.tm_hour -= 12;
                     clock12Time = "PM";
                 }
 
-                ToModify.insert(inctences[i], fmt::format("{}:{}{}", tm->tm_hour, tm->tm_min, clock12Time));
-                overallOffset += fmt::format("{}:{}{}", tm->tm_hour, tm->tm_min, clock12Time).length();
+                ToModify.insert(inctences[i], fmt::format("{}:{}{}", tmStruct.tm_hour, tmStruct.tm_min, clock12Time));
+                overallOffset += fmt::format("{}:{}{}", tmStruct.tm_hour, tmStruct.tm_min, clock12Time).length();
             }
         }
 
@@ -1253,7 +1260,7 @@ void DTLayer::addBox(CCObject*){
 
 void DTLayer::updateRunsAllowed(){
     if (m_MyLevelStats.currentBest != -1)
-        StatsManager::saveData(m_MyLevelStats, m_Level);
+        StatsManager::setLevelStats(m_MyLevelStats, m_Level, false);
     DTLayer::refreshAll();
 }
 
@@ -1365,7 +1372,7 @@ void DTLayer::UpdateSharedStats(){
 
     for (int i = 0; i < m_MyLevelStats.LinkedLevels.size(); i++)
     {
-        auto currStats = StatsManager::getLevelStats(m_MyLevelStats.LinkedLevels[i]).unwrapOrDefault();
+        auto currStats = StatsManager::getLevelStats(m_MyLevelStats.LinkedLevels[i], false).unwrapOrDefault();
         if (currStats.levelName == "Unknown name"){
             Notification::create("failed to get data for linked level - " + m_MyLevelStats.LinkedLevels[i])->show();
             continue;
@@ -1410,9 +1417,9 @@ void DTLayer::UpdateSharedStats(){
         });
 
         if (m_MyLevelStats.currentBest != -1)
-            StatsManager::saveData(m_MyLevelStats, m_Level);
+            StatsManager::setLevelStats(m_MyLevelStats, m_Level, false);
         if (currStats.currentBest != -1)
-            StatsManager::saveData(currStats, m_MyLevelStats.LinkedLevels[i]);
+            StatsManager::setLevelStats(currStats, m_MyLevelStats.LinkedLevels[i], false);
         
         for (const auto& [death, count] : currStats.deaths)
         {

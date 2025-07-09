@@ -278,9 +278,9 @@ void DTLinkLayer::ChangeLevelLinked(const std::string levelKey, LevelStats stats
     }
 
     if (m_DTLayer->m_MyLevelStats.currentBest != -1)
-        StatsManager::saveData(m_DTLayer->m_MyLevelStats, m_DTLayer->m_Level);
+        StatsManager::setLevelStats(m_DTLayer->m_MyLevelStats, m_DTLayer->m_Level, false);
     if (stats.currentBest != -1)
-        StatsManager::saveData(stats, levelKey);
+        StatsManager::setLevelStats(stats, levelKey, false);
 }
 
 void DTLinkLayer::update(float delta){

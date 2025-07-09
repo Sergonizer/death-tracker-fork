@@ -306,13 +306,13 @@ void LabelSettingsLayer::playEntryAnimation(const CCPoint& startingPoint){
     textPreviewWindow->setScale(0);
     this->setOpacity(0);
     windowTitleInput->getBGSprite()->setOpacity(0);
-    GLubyte labelOpacityTo = windowTitleInput->getInputNode()->getPlaceholderLabel()->getOpacity();
-    windowTitleInput->getInputNode()->getPlaceholderLabel()->setOpacity(0);
+    GLubyte labelOpacityTo = windowTitleInput->getInputNode()->m_textLabel->getOpacity();
+    windowTitleInput->getInputNode()->m_textLabel->setOpacity(0);
 
     this->runAction(CCSequence::create(CCEaseInOut::create(CCFadeTo::create(transitionDuration * 1.3f, 105), 2), CCCallFuncO::create(this, callfuncO_selector(LabelSettingsLayer::OnTransitionEnded), CCBool::create(true)), nullptr));
     labelWinPreview->runAction(CCEaseInOut::create(CCFadeTo::create(transitionDuration, m_LabelWin->m_MyLayout.color.a), 2));
     windowTitleInput->getBGSprite()->runAction(CCEaseInOut::create(CCFadeTo::create(transitionDuration, 90), 2));
-    windowTitleInput->getInputNode()->getPlaceholderLabel()->runAction(CCEaseInOut::create(CCFadeTo::create(transitionDuration, labelOpacityTo), 2));
+    windowTitleInput->getInputNode()->m_textLabel->runAction(CCEaseInOut::create(CCFadeTo::create(transitionDuration, labelOpacityTo), 2));
 
     m_mainLayer->runAction(CCEaseInOut::create(CCScaleTo::create(transitionDuration, 1), 2));
     textPreviewWindow->runAction(CCEaseInOut::create(CCScaleTo::create(transitionDuration, 1), 2));
@@ -337,7 +337,7 @@ void LabelSettingsLayer::playClosingAnimation(const CCPoint& endPoint){
     this->runAction(CCSequence::create(CCEaseInOut::create(CCFadeTo::create(transitionDuration * 1.3f, 0), 2), CCCallFuncO::create(this, callfuncO_selector(LabelSettingsLayer::OnTransitionEnded), CCBool::create(false)), nullptr));
     labelWinPreview->runAction(CCEaseInOut::create(CCFadeTo::create(transitionDuration, 0), 2));
     windowTitleInput->getBGSprite()->runAction(CCEaseInOut::create(CCFadeTo::create(transitionDuration, 0), 2));
-    windowTitleInput->getInputNode()->getPlaceholderLabel()->runAction(CCEaseInOut::create(CCFadeTo::create(transitionDuration, 0), 2));
+    windowTitleInput->getInputNode()->m_textLabel->runAction(CCEaseInOut::create(CCFadeTo::create(transitionDuration, 0), 2));
 
     m_mainLayer->runAction(CCEaseInOut::create(CCScaleTo::create(transitionDuration, 0), 2));
     textPreviewWindow->runAction(CCEaseInOut::create(CCScaleTo::create(transitionDuration, 0), 2));
@@ -471,7 +471,7 @@ void LabelSettingsLayer::useSTK(const std::string& stk){
     if (!labelTextInput->getString().empty())
         labelText = labelTextInput->getString();
 
-    int index = StatsManager::getCursorPosition(labelTextInput->getInputNode()->getPlaceholderLabel(), labelTextInput->getInputNode()->m_cursor);
+    int index = StatsManager::getCursorPosition(labelTextInput->getInputNode()->m_textLabel, labelTextInput->getInputNode()->m_cursor);
     
     if (index < labelText.length())
         labelText.insert(index, stk);

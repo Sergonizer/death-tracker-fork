@@ -123,7 +123,7 @@ void confirmImportLayer::yesClicked(CCObject*){
     m_DTLayer->m_MyLevelStats.deaths.insert(deaths.begin(), deaths.end());
     m_DTLayer->m_MyLevelStats.runs.insert(runs.begin(), runs.end());
 
-    StatsManager::saveData(m_DTLayer->m_MyLevelStats, m_DTLayer->m_Level);
+    StatsManager::setLevelStats(m_DTLayer->m_MyLevelStats, m_DTLayer->m_Level, false);
     m_DTLayer->UpdateSharedStats();
     m_DTLayer->refreshAll();
 

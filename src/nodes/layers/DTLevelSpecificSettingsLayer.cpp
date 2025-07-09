@@ -452,11 +452,13 @@ void DTLevelSpecificSettingsLayer::addRunAllowed(CCObject*){
 
         for (int i = 0; i < myDTLayer->m_MyLevelStats.LinkedLevels.size(); i++)
         {
-            auto currStats = StatsManager::getLevelStats(myDTLayer->m_MyLevelStats.LinkedLevels[i]).unwrapOrDefault();
-            if (currStats.levelName == "Unknown name"){
+            auto currStatsRes = StatsManager::getLevelStats(myDTLayer->m_MyLevelStats.LinkedLevels[i], false);
+            if (currStatsRes.isErr()){
                 Notification::create("Failed syncing data with linked level - " + myDTLayer->m_MyLevelStats.LinkedLevels[i])->show();
                 continue;
             }
+
+            auto currStats = currStatsRes.unwrap();
 
             bool doesExist2 = false;
             for (int r = 0; r < currStats.RunsToSave.size(); r++)
@@ -472,7 +474,7 @@ void DTLevelSpecificSettingsLayer::addRunAllowed(CCObject*){
                     return a < b; // true --> A before B
                 });
 
-                StatsManager::saveData(currStats, myDTLayer->m_MyLevelStats.LinkedLevels[i]);
+                StatsManager::setLevelStats(currStats, myDTLayer->m_MyLevelStats.LinkedLevels[i], false);
             }
         }
 
@@ -506,11 +508,13 @@ void DTLevelSpecificSettingsLayer::removeRunAllowed(const int& percent, CCNode* 
     });
 
     for (int i = 0; i < myStats.LinkedLevels.size(); i++){
-        auto currStats = StatsManager::getLevelStats(myStats.LinkedLevels[i]).unwrapOrDefault();
-        if (currStats.levelName == "Unknown name"){
+        auto currStatsRes = StatsManager::getLevelStats(myStats.LinkedLevels[i], false);
+        if (currStatsRes.isErr()){
             Notification::create("Failed syncing data with linked level - " + myStats.LinkedLevels[i])->show();
             continue;
         }
+
+        auto currStats = currStatsRes.unwrap();
 
         bool doesExist2 = false;
         for (int r = 0; r < currStats.RunsToSave.size(); r++)
@@ -521,7 +525,7 @@ void DTLevelSpecificSettingsLayer::removeRunAllowed(const int& percent, CCNode* 
             }
         }
         if (currStats.currentBest != -1)
-            StatsManager::saveData(currStats, myStats.LinkedLevels[i]);
+            StatsManager::setLevelStats(currStats, myStats.LinkedLevels[i], false);
     }
 
     myDTLayer->m_MyLevelStats = myStats;
@@ -553,17 +557,19 @@ void DTLevelSpecificSettingsLayer::OnToggleAllRuns(CCObject*){
 
                 for (int i = 0; i < myDTLayer->m_MyLevelStats.LinkedLevels.size(); i++)
                 {
-                    auto currStats = StatsManager::getLevelStats(myDTLayer->m_MyLevelStats.LinkedLevels[i]).unwrapOrDefault();
-                    if (currStats.levelName == "Unknown name"){
+                    auto currStatsRes = StatsManager::getLevelStats(myDTLayer->m_MyLevelStats.LinkedLevels[i], false);
+                    if (currStatsRes.isErr()){
                         Notification::create("Failed syncing data with linked level - " + myDTLayer->m_MyLevelStats.LinkedLevels[i])->show();
                         continue;
                     }
+
+                    auto currStats = currStatsRes.unwrap();
 
                     if (currStats.RunsToSave.size() != 0 && currStats.currentBest != -1){
                         if (currStats.RunsToSave[0] == -1){
                             currStats.RunsToSave.erase(std::next(currStats.RunsToSave.begin(), 0));
                         }
-                        StatsManager::saveData(currStats, myDTLayer->m_MyLevelStats.LinkedLevels[i]);
+                        StatsManager::setLevelStats(currStats, myDTLayer->m_MyLevelStats.LinkedLevels[i], false);
                     }
                 }
 
@@ -670,7 +676,7 @@ void DTLevelSpecificSettingsLayer::onAddedFZRun(CCObject*){
     
     myDTLayer->m_MyLevelStats.deaths[std::to_string(percent)] += amount;
 
-    StatsManager::saveData(myDTLayer->m_MyLevelStats, myDTLayer->m_Level);
+    StatsManager::setLevelStats(myDTLayer->m_MyLevelStats, myDTLayer->m_Level, false);
     myDTLayer->UpdateSharedStats();
     myDTLayer->refreshAll();
 }
@@ -695,16 +701,18 @@ void DTLevelSpecificSettingsLayer::onRemovedFZRun(CCObject*){
                 myDTLayer->m_MyLevelStats.newBests.erase(percent);
         }
 
-        StatsManager::saveData(myDTLayer->m_MyLevelStats, myDTLayer->m_Level);
+        StatsManager::setLevelStats(myDTLayer->m_MyLevelStats, myDTLayer->m_Level, false);
     }
     else{
         for (int i = 0; i < myDTLayer->m_MyLevelStats.LinkedLevels.size(); i++)
         {
-            auto lStats = StatsManager::getLevelStats(myDTLayer->m_MyLevelStats.LinkedLevels[i]).unwrapOrDefault();
-            if (lStats.levelName == "Unknown name"){
+            auto lStatsRes = StatsManager::getLevelStats(myDTLayer->m_MyLevelStats.LinkedLevels[i], false);
+            if (lStatsRes.isErr()){
                 Notification::create("Failed syncing data with linked level - " + myDTLayer->m_MyLevelStats.LinkedLevels[i])->show();
                 continue;
             }
+
+            auto lStats = lStatsRes.unwrap();
 
             if (lStats.deaths.contains(std::to_string(percent))){
                 lStats.deaths[std::to_string(percent)] -= amount;
@@ -716,7 +724,7 @@ void DTLevelSpecificSettingsLayer::onRemovedFZRun(CCObject*){
                         lStats.newBests.erase(percent);
                 }
 
-                StatsManager::saveData(lStats, myDTLayer->m_MyLevelStats.LinkedLevels[i]);
+                StatsManager::setLevelStats(lStats, myDTLayer->m_MyLevelStats.LinkedLevels[i], false);
                 break;
             }
         }
@@ -750,7 +758,7 @@ void DTLevelSpecificSettingsLayer::onAddedRun(CCObject*){
     
     myDTLayer->m_MyLevelStats.runs[runKey] += amount;
 
-    StatsManager::saveData(myDTLayer->m_MyLevelStats, myDTLayer->m_Level);
+    StatsManager::setLevelStats(myDTLayer->m_MyLevelStats, myDTLayer->m_Level, false);
     myDTLayer->UpdateSharedStats();
     myDTLayer->refreshAll();
 }
@@ -782,16 +790,18 @@ void DTLevelSpecificSettingsLayer::onRemovedRun(CCObject*){
             myDTLayer->m_MyLevelStats.runs.erase(runKey);
         }
 
-        StatsManager::saveData(myDTLayer->m_MyLevelStats, myDTLayer->m_Level);
+        StatsManager::setLevelStats(myDTLayer->m_MyLevelStats, myDTLayer->m_Level, false);
     }
     else{
         for (int i = 0; i < myDTLayer->m_MyLevelStats.LinkedLevels.size(); i++)
         {
-            auto lStats = StatsManager::getLevelStats(myDTLayer->m_MyLevelStats.LinkedLevels[i]).unwrapOrDefault();
-            if (lStats.levelName == "Unknown name"){
+            auto lStatsRes = StatsManager::getLevelStats(myDTLayer->m_MyLevelStats.LinkedLevels[i], false);
+            if (lStatsRes.isErr()){
                 Notification::create("Failed syncing data with linked level - " + myDTLayer->m_MyLevelStats.LinkedLevels[i])->show();
                 continue;
             }
+
+            auto lStats = lStatsRes.unwrap();
 
             if (lStats.runs.contains(runKey)){
                 lStats.runs[runKey] -= amount;
@@ -799,7 +809,7 @@ void DTLevelSpecificSettingsLayer::onRemovedRun(CCObject*){
                     lStats.runs.erase(runKey);
                 }
 
-                StatsManager::saveData(lStats, myDTLayer->m_MyLevelStats.LinkedLevels[i]);
+                StatsManager::setLevelStats(lStats, myDTLayer->m_MyLevelStats.LinkedLevels[i], false);
                 break;
             }
         }
@@ -865,18 +875,17 @@ void DTLevelSpecificSettingsLayer::FLAlert_Clicked(FLAlertLayer* layer, bool sel
         }
         
 
-        StatsManager::saveData(myDTLayer->m_MyLevelStats, myDTLayer->m_Level);
+        StatsManager::setLevelStats(myDTLayer->m_MyLevelStats, myDTLayer->m_Level, false);
         myDTLayer->UpdateSharedStats();
         myDTLayer->refreshAll();
     }
 
     if (currDeleteAlert == layer && selected){
-        auto path = StatsManager::getLevelSaveFilePath(myDTLayer->m_Level).unwrapOrDefault();
-        if (path.empty()){
-            Notification::create("Failed to delete level data! (invalid level path!)")->show();
+        auto didDelete = StatsManager::deleteLevelStats(StatsManager::getLevelKey(myDTLayer->m_Level).unwrapOr("-1"));
+        if (didDelete.isErr()){
+            Notification::create("Failed to delete level stats! (" + std::to_string(myDTLayer->m_Level->m_levelID.value()) + ")")->show();
             return;
         }
-        std::filesystem::remove(path);
 
         LevelStats stats;
 
@@ -891,7 +900,7 @@ void DTLevelSpecificSettingsLayer::FLAlert_Clicked(FLAlertLayer* layer, bool sel
 
         stats.sessions.push_back(startingSession);
 
-        StatsManager::saveData(stats, myDTLayer->m_Level);
+        StatsManager::setLevelStats(stats, myDTLayer->m_Level, false);
 
         auto alert = FLAlertLayer::create("Success!", "All progress has been deleted.", "Ok");
         alert->setZOrder(150);
@@ -902,11 +911,13 @@ void DTLevelSpecificSettingsLayer::FLAlert_Clicked(FLAlertLayer* layer, bool sel
     }
 
     if (revertAlert == layer && selected){
-        auto stats = StatsManager::getBackupStats(myDTLayer->m_Level).unwrapOrDefault();
-        if (stats.levelName == "Unknown name"){
+        auto statsRes = StatsManager::getLevelStats(myDTLayer->m_Level, true);
+        if (statsRes.isErr()){
             Notification::create("Failed to get backup stats! (" + std::to_string(myDTLayer->m_Level->m_levelID.value()) + ")")->show();
             return;
         }
+
+        auto stats = statsRes.unwrap();
 
         if (stats.currentBest == -1){
             auto alert = FLAlertLayer::create("Failed", "No valid backup found :(\n\nIf your data doesn't load then it is probably corrupt, and in that case it is best to <cr>delete the current level using the delete button.</c>", "Ok");
@@ -915,7 +926,7 @@ void DTLevelSpecificSettingsLayer::FLAlert_Clicked(FLAlertLayer* layer, bool sel
             return;
         }
         
-        StatsManager::saveData(stats, myDTLayer->m_Level);
+        StatsManager::setLevelStats(stats, myDTLayer->m_Level, false);
 
         auto alert = FLAlertLayer::create("Success!", "Progress reverted to the latest backup.", "Ok");
         alert->setZOrder(150);
@@ -976,19 +987,20 @@ void DTLevelSpecificSettingsLayer::textChanged(CCTextInputNode* input){
 
         for (int i = 0; i < myDTLayer->m_MyLevelStats.LinkedLevels.size(); i++)
         {
-            auto currStats = StatsManager::getLevelStats(myDTLayer->m_MyLevelStats.LinkedLevels[i]).unwrapOrDefault();
-            if (currStats.levelName == "Unknown name"){
+            auto currStatsRes = StatsManager::getLevelStats(myDTLayer->m_MyLevelStats.LinkedLevels[i], false);
+            if (currStatsRes.isErr()){
                 Notification::create("Failed syncing data with linked level - " + myDTLayer->m_MyLevelStats.LinkedLevels[i])->show();
                 return;
             }
 
+            auto currStats = currStatsRes.unwrap();
             currStats.hideUpto = res;
-            StatsManager::saveData(currStats, myDTLayer->m_MyLevelStats.LinkedLevels[i]);
+            StatsManager::setLevelStats(currStats, myDTLayer->m_MyLevelStats.LinkedLevels[i], false);
         }
 
         myDTLayer->m_MyLevelStats.hideUpto = res;
 
-        StatsManager::saveData(myDTLayer->m_MyLevelStats, myDTLayer->m_Level);
+        StatsManager::setLevelStats(myDTLayer->m_MyLevelStats, myDTLayer->m_Level, false);
         myDTLayer->refreshAll();
     }
 
@@ -1004,19 +1016,20 @@ void DTLevelSpecificSettingsLayer::textChanged(CCTextInputNode* input){
 
         for (int i = 0; i < myDTLayer->m_MyLevelStats.LinkedLevels.size(); i++)
         {
-            auto currStats = StatsManager::getLevelStats(myDTLayer->m_MyLevelStats.LinkedLevels[i]).unwrapOrDefault();
-            if (currStats.levelName == "Unknown name"){
+            auto currStatsRes = StatsManager::getLevelStats(myDTLayer->m_MyLevelStats.LinkedLevels[i], false);
+            if (currStatsRes.isErr()){
                 Notification::create("Failed syncing data with linked level - " + myDTLayer->m_MyLevelStats.LinkedLevels[i])->show();
                 return;
             }
 
+            auto currStats = currStatsRes.unwrap();
             currStats.hideRunLength = res;
-            StatsManager::saveData(currStats, myDTLayer->m_MyLevelStats.LinkedLevels[i]);
+            StatsManager::setLevelStats(currStats, myDTLayer->m_MyLevelStats.LinkedLevels[i], false);
         }
 
         myDTLayer->m_MyLevelStats.hideRunLength = res;
 
-        StatsManager::saveData(myDTLayer->m_MyLevelStats, myDTLayer->m_Level);
+        StatsManager::setLevelStats(myDTLayer->m_MyLevelStats, myDTLayer->m_Level, false);
         myDTLayer->refreshAll();
     }
 

@@ -188,22 +188,18 @@ struct matjson::Serialize<prismSetting> {
 
 class StatsManager {
 private:
-    static GJGameLevel* m_level;
     static std::set<std::string> m_playedLevels;
-
-    static LevelStats m_levelStats;
     
     static bool m_scheduleCreateNewSession;
 
     // internal functions
 
-    //saves the data based on the last level loaded
-    static void saveData();
-    //loads the data of the level given
-    static Result<LevelStats> loadData(GJGameLevel* const& level);
     //gets new bests from level
     static Result<std::tuple<NewBests, int>> calcNewBests(GJGameLevel* const& level);
     static std::array<std::string, 62> m_AllFontsMap;
+
+    static Result<LevelStats> currentLoggingLevelStats;
+    static GJGameLevel* currentLoggingLevelRef;
 
 public:
     StatsManager() = delete;
@@ -212,16 +208,30 @@ public:
 
     static std::filesystem::path m_savesFolderPath;
 
-    // main functions
+#pragma region level setters/getters
 
-    //loads the level stats for a specific level
-    static void loadLevelStats(GJGameLevel* const& level);
     //load and retrieve the stats for a level
-    static LevelStats getLevelStats(GJGameLevel* const& level);
-    //get level stats by a path to the levels save file
-    static Result<LevelStats> getLevelStats(const std::filesystem::path& level);
+    static Result<LevelStats> getLevelStats(GJGameLevel* const& level, bool isBackup);
     //get level stats by a levels key
-    static Result<LevelStats> getLevelStats(const std::string& levelKey);
+    static Result<LevelStats> getLevelStats(const std::string& levelKey, bool isBackup);
+
+    //save data to a specific level
+    //@param stats data to save
+    //@param level level to save data for
+    static void setLevelStats(const LevelStats& stats, GJGameLevel* const& level, bool isbackup);
+    //save data to a specific level
+    //@param stats data to save
+    //@param levelKey a level key of the level to save data for
+    static void setLevelStats(const LevelStats& stats, const std::string& levelKey, bool isbackup);
+
+    static Result<> deleteLevelStats(const std::string& levelKey);
+    
+#pragma endregion
+
+#pragma region logging
+
+    static void setCurrentLogLevel(GJGameLevel* const& level);
+
     //save a normal mode death to the loaded levels save file
     static void logDeath(const int& percent);
     //save an array of normal mode deaths to the loaded levels save file
@@ -231,46 +241,34 @@ public:
     //save an array of run to the loaded levels save file
     static void logRuns(const std::vector<Run>& runs);
 
+#pragma endregion
+
     // utility functions
 
     //gets the epoch time
     static long long getNowSeconds();
     //get the a levels level key
-    static Result<std::string> getLevelKey(GJGameLevel* const& level = m_level);
+    static Result<std::string> getLevelKey(GJGameLevel* const& level);
     //convert a run string into a run struct
     static Run splitRunKey(const std::string& runKey);
     //get the current ongoing session
     static Session* getSession();
     //update this sessions last played time
-    static void updateSessionLastPlayed(const bool& save = false);
+    static void updateSessionLastPlayed(bool save = false);
     //schedule the creation of a new session
     static void scheduleCreateNewSession(const bool& scheduled);
     //if youve played the loaded level before, returns true
     static bool hasPlayedLevel();
-    //gets the path to a levels deaths save file
-    static Result<std::filesystem::path> getLevelSaveFilePath(GJGameLevel* const& level = m_level);
     //get a font by a fontID
     static std::string getFont(const int& fontID);
     //get a fonts name by a fontID
     static std::string getFontName(const int& fontID);
     //get an array of all fonts
     static std::array<std::string, 62> getAllFonts();
-    //save data to a specific level
-    //@param stats data to save
-    //@param level level to save data for
-    static void saveData(const LevelStats& stats, GJGameLevel* const& level);
-    //save data to a specific level
-    //@param stats data to save
-    //@param levelKey a level key of the level to save data for
-    static void saveData(const LevelStats& stats, const std::string& levelKey);
     //gets an array of all levels you have progress on
     static Result<std::vector<std::pair<std::string, LevelStats>>> getAllLevels();
     //seperate a level key to [levelID, levelType]
     static std::pair<std::string, std::string> splitLevelKey(const std::string& levelKey);
-    //saves a backup for a specific level
-    static void saveBackup(const LevelStats& stats, GJGameLevel* const& level);
-    //gets data from a backup of a level
-    static Result<LevelStats> getBackupStats(GJGameLevel* const& level);
     //get the difficulty of a level
     //
     // -1 = auto, 0 = NA, 1 = Easy, 2 = Normal

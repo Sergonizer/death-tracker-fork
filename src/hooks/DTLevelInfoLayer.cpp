@@ -3,8 +3,6 @@
 bool DTLevelInfoLayer::init(GJGameLevel* p0, bool p1){
     if (!LevelInfoLayer::init(p0, p1)) return false;
 
-    StatsManager::loadLevelStats(p0);
-
     auto s = CCSprite::createWithSpriteFrameName("GJ_plainBtn_001.png");
     auto s2 = CCSprite::createWithSpriteFrameName("miniSkull_001.png");
     s2->setPosition(s->getContentSize() / 2);
@@ -38,16 +36,15 @@ bool DTLevelInfoLayer::init(GJGameLevel* p0, bool p1){
         otherMenu->updateLayout();
     }
 
-    
-
-    auto stats = StatsManager::getLevelStats(p0);
-    if (stats.currentBest != -1){
+    auto statsRes = StatsManager::getLevelStats(p0, false);
+    if (statsRes.isOk() || statsRes.unwrapErr()[0] == '0'){
+        auto stats = statsRes.unwrap();
         stats.attempts = p0->m_attempts;
         stats.levelName = p0->m_levelName;
         stats.difficulty = StatsManager::getDifficulty(p0);
 
-        StatsManager::saveData(stats, p0);
-        StatsManager::saveBackup(stats, p0);
+        StatsManager::setLevelStats(stats, p0, false);
+        StatsManager::setLevelStats(stats, p0, true);
     }
     else{
         Notification::create("Failed to load Deaths json.", CCSprite::createWithSpriteFrameName("GJ_deleteIcon_001.png"))->show();
@@ -62,11 +59,12 @@ void DTLevelInfoLayer::checkIfPlayVisible(float delta){
     if (this->m_playBtnMenu->isVisible()){
         m_fields->btn->setVisible(true);
 
-        auto stats = StatsManager::getLevelStats(this->m_level);
-        if (stats.currentBest != -1){
+        auto statsRes = StatsManager::getLevelStats(this->m_level, false);
+        if (statsRes.isOk()){
+            auto stats = statsRes.unwrap();
             stats.difficulty = StatsManager::getDifficulty(this->m_level);
 
-            StatsManager::saveData(stats, this->m_level);
+            StatsManager::setLevelStats(stats, this->m_level, false);
         }
         unschedule(schedule_selector(DTLevelInfoLayer::checkIfPlayVisible));
     }

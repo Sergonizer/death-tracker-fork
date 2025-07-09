@@ -2,7 +2,6 @@
 
 bool DTEditLevelLayer::init(GJGameLevel* level){
     if (!EditLevelLayer::init(level)) return false;
-    StatsManager::loadLevelStats(level);
 
     auto s = CCSprite::createWithSpriteFrameName("GJ_plainBtn_001.png");
     auto s2 = CCSprite::createWithSpriteFrameName("miniSkull_001.png");
@@ -33,14 +32,15 @@ bool DTEditLevelLayer::init(GJGameLevel* level){
     }
     
 
-    auto stats = StatsManager::getLevelStats(level);
-    if (stats.currentBest != -1){
+    auto statsRes = StatsManager::getLevelStats(level, false);
+    if (statsRes.isOk() || statsRes.unwrapErr()[0] == '0') {
+        auto stats = statsRes.unwrap();
         stats.attempts = level->m_attempts;
         stats.levelName = level->m_levelName;
         stats.difficulty = StatsManager::getDifficulty(level);
 
-        StatsManager::saveData(stats, level);
-        StatsManager::saveBackup(stats, level);
+        StatsManager::setLevelStats(stats, level, false);
+        StatsManager::setLevelStats(stats, level, true);
     }
     else{
         Notification::create("Failed to load Deaths json.", CCSprite::createWithSpriteFrameName("GJ_deleteIcon_001.png"))->show();

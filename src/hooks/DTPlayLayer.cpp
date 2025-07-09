@@ -30,6 +30,8 @@ static void onModify(auto& self) {
 
 bool DTPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
     if (!PlayLayer::init(level, p1, p2)) return false;
+
+    StatsManager::setCurrentLogLevel(level);
         
     bool isMainLevel = false;
 
@@ -40,14 +42,15 @@ bool DTPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
     }
 
     if (isMainLevel){
-        auto stats = StatsManager::getLevelStats(level);
-        if (stats.currentBest != -1){
+        auto statsRes = StatsManager::getLevelStats(level, false);
+        if (statsRes.isOk()){
+            auto stats = statsRes.unwrap();
             stats.attempts = level->m_attempts;
             stats.levelName = level->m_levelName;
             stats.difficulty = StatsManager::getDifficulty(level);
 
-            StatsManager::saveData(stats, level);
-            StatsManager::saveBackup(stats, level);
+            StatsManager::setLevelStats(stats, level, false);
+            StatsManager::setLevelStats(stats, level, true);
         }
         else{
             Notification::create("Failed to load Deaths json.", CCSprite::createWithSpriteFrameName("GJ_deleteIcon_001.png"))->show();
@@ -57,8 +60,6 @@ bool DTPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
     DTPopupManager::setCurrentLevel(level);
 
     // log::info("PlayLayer::init()");
-
-    StatsManager::loadLevelStats(level);
 
     auto session = StatsManager::getSession();
     auto levelKey = StatsManager::getLevelKey(level);
@@ -247,4 +248,6 @@ void DTPlayLayer::onQuit() {
     // if they back out before dying
     StatsManager::scheduleCreateNewSession(false);
     DTPlayLayer::updateSessionLastPlayed();
+
+    StatsManager::setCurrentLogLevel(nullptr);
 }
