@@ -23,10 +23,9 @@ struct DeathInfo_s{
     Run run;
     bool isNewBest;
     int deaths;
-    float passrate;
 
-    DeathInfo_s(Run _run, bool _isNewBest, int _deaths, float _passrate) : run(_run), isNewBest(_isNewBest), deaths(_deaths), passrate(_passrate){}
-    DeathInfo_s(Run _run, int _deaths, float _passrate) : run(_run), deaths(_deaths), passrate(_passrate){}
+    DeathInfo_s(Run _run, bool _isNewBest, int _deaths, float _passrate) : run(_run), isNewBest(_isNewBest), deaths(_deaths){}
+    DeathInfo_s(Run _run, int _deaths, float _passrate) : run(_run), deaths(_deaths){}
 };
 typedef struct DeathInfo_s DeathInfo;
 

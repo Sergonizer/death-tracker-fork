@@ -43,38 +43,12 @@ class DTLayer : public Popup<GJGameLevel* const&>, public TextInputDelegate, pub
         void onClose(cocos2d::CCObject*) override;
 
         GJGameLevel* m_Level;
-        ScrollLayer* m_ScrollLayer;
 
         LevelStats m_MyLevelStats;
         LevelStats m_SharedLevelStats;
 
-        std::vector<DeathInfo> m_DeathsInfo;
-        std::vector<DeathInfo> selectedSessionInfo;
-        std::vector<DeathInfo> m_RunInfo;
-        std::vector<DeathInfo> m_SelectedSessionRunInfo;
-        std::string deathsString;
-        std::string selectedSessionString;
-
-        long long playtimeFromZero;
-        long long playtimeFromRuns;
-
-        bool m_IsMovingAWindow;
-        std::vector<CCNode*> m_LayoutLines;
-        ColorChannelSprite* colorSpritenb;
-        ColorChannelSprite* colorSpritesb;
-
-        std::string RunString;
-        std::string selectedSessionRunString;
-
         bool m_IsClicking;
         CCTouch* ClickPos = nullptr;
-
-        TextInput* m_SessionSelectionInput = nullptr;
-        int m_SessionsAmount;
-        int m_SessionSelected;
-        bool m_SessionSelectionInputSelected;
-
-        CCNode* LevelSpecificSettingsLayer = nullptr;
 
     private:
         void update(float delta) override;
@@ -85,8 +59,6 @@ class DTLayer : public Popup<GJGameLevel* const&>, public TextInputDelegate, pub
 
         //update the displayed text
         void RefreshText(bool moveToTop = false);
-
-        CCNode* m_TextCont = nullptr;
 
         //gets and processes the saved deaths for the current level, outputs result into 'm_DeathsInfo'
         DeathStringTask CreateDeathsInfo(const Deaths& deaths, const NewBests& newBests);
@@ -115,13 +87,10 @@ class DTLayer : public Popup<GJGameLevel* const&>, public TextInputDelegate, pub
         //switches the session selected one to the left
         void SwitchSessionLeft(CCObject*);
 
-        CCMenu* m_SessionSelectMenu;
-
         //linking
 
         //opens the link menu
         void OnLinkButtonClicked(CCObject*);
-        CCMenuItemSpriteExtra* LinkLevelsButton;
 
         //edit layout mode
         
@@ -147,26 +116,6 @@ class DTLayer : public Popup<GJGameLevel* const&>, public TextInputDelegate, pub
         //opens the color picker layer for editing the session bests color
         void editsbcColor(CCObject*);
 
-        CCMenu* m_EditLayoutMenu;
-        CCSprite* m_BlackSquare;
-
-        CCNode* m_LayoutStuffCont = nullptr;
-
-        CCMenuItemSpriteExtra* editLayoutApplyBtn;
-        CCMenuItemSpriteExtra* addWindowButton;
-        CCMenuItemSpriteExtra* layoutInfoButton;
-
-        FLAlertLayer* ResetLayoutAlert;
-        CCMenuItemSpriteExtra* resetLayoutButton;
-
-        geode::ColorPickPopup* colorSelectnb;
-
-        geode::ColorPickPopup* colorSelectsb;
-
-        CCMenuItemSpriteExtra* m_EditLayoutBtn;
-
-        bool openednbLast;
-
         //general
 
         bool ccTouchBegan(CCTouch *pTouch, CCEvent *pEvent) override;
@@ -189,7 +138,6 @@ class DTLayer : public Popup<GJGameLevel* const&>, public TextInputDelegate, pub
 
         //opens the geode setting menu for the mod
         void onSettings(CCObject*);
-        CCMenuItemSpriteExtra* settingsButton;
 
         //info about the labels and edit layout menu
         void onLayoutInfo(CCObject*);
@@ -200,9 +148,6 @@ class DTLayer : public Popup<GJGameLevel* const&>, public TextInputDelegate, pub
 
         //opens the edit layout menu and modifies it to let you click a label box to copy its text
         void copyText(CCObject*);
-        bool isInCopyMenu;
-        CCMenuItemSpriteExtra* copyInfoButton;
-        CCMenuItemSpriteExtra* copyTextButton;
 
         //specific settings
 
@@ -210,23 +155,12 @@ class DTLayer : public Popup<GJGameLevel* const&>, public TextInputDelegate, pub
         void onSpecificSettings(CCObject*);
         //handle the main and specific settings layer after their enter/exit transition finishes
         void onMoveTransitionEnded(CCObject* LSSL);
-
-        bool runningMoveTransition = false;
-        bool isExitingSSLayer = false;
-        CCSprite* levelSettingsBSArrow;
-
         //disables the refresh circle once a refresh process is finished
         void onRefreshFinished(ResultTask::Event* event);
-
-        EventListener<ResultTask> refreshListener;
-        LoadingCircle* refreshLoadingCircle = nullptr;
 
         //data
 
         bool m_noSavedData;
         
         //main page
-        CCScale9Sprite* m_TextBG;
-        Scrollbar* m_ScrollBar;
-        CCNode* alignmentNode;
 };
