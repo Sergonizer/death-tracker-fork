@@ -27,6 +27,7 @@ $execute {
             }
             
             Save::setLayout(convertedLayout);
+            Save::setOldLayout({});
         }
         else{
             std::vector<DTLabelInfo> defaultLayout{

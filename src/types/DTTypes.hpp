@@ -220,7 +220,7 @@ struct matjson::Serialize<DTLabelInfo> {
         GEODE_UNWRAP_INTO(auto contentWidth, value["contentWidth"].asDouble());
         GEODE_UNWRAP_INTO(auto contentHeight, value["contentHeight"].asDouble());
         info.contentSize = CCSize(contentWidth, contentHeight);
-        GEODE_UNWRAP_INTO(auto infinityResize, value["infinityResize"].asBool());
+        GEODE_UNWRAP_INTO(info.infinityResize, value["infinityResize"].asBool());
 
         return Ok(info);
     }

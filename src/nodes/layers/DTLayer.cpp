@@ -93,7 +93,7 @@ bool DTLayer::setup(GJGameLevel* const& level) {
     m_mainLayer->addChild(shadow);
 
     auto bottomMenu = CCMenu::create();
-    bottomMenu->setContentSize({m_size.width, height / 2});
+    bottomMenu->setContentSize({m_size.width, height / 2.5f});
     bottomMenu->setAnchorPoint({.5f, .5f});
     bottomMenu->setPosition(bottomMenu->getContentSize() / 2 + ccp(0, 5));
     bottomMenu->setLayout(SimpleAxisLayout::create(Axis::Row)

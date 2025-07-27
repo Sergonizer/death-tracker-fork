@@ -67,8 +67,8 @@ void SessionSelector::setMaximumCount(int count){
     maxCount = count;
 }
 void SessionSelector::setCurrentCount(int count, bool ignoreIfUnchanged, bool runCallback){
-    count = std::clamp(count, 0, maxCount);
     if (currentCount == count && ignoreIfUnchanged) return;
+    count = std::clamp(count, 0, maxCount);
     currentCount = count;
 
     std::string newText;

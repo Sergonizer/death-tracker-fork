@@ -40,14 +40,37 @@ void DTLabel::updateState(){
 
     textArea->setText(modifyText(labelInfo.text));
     textArea->setFont(labelInfo.font);
-
+    
     textArea->setWidth(this->getContentWidth());
-    if (!labelInfo.infinityResize){
-        textArea->setContentHeight(this->getContentHeight());
-    }
 
     textArea->setAlignment(labelInfo.horizontalAlignment);
     textArea->setColor(labelInfo.color);
+
+    if (!labelInfo.infinityResize){
+        float overallHeight = 0;
+        int lineAmount = 0;
+        for (const auto& line : textArea->getLines())
+        {
+            overallHeight += line->getContentHeight() + textArea->getLinePadding();
+            if (overallHeight > this->getContentHeight()) break;
+            lineAmount++;
+        }
+        
+        textArea->setMaxLines(lineAmount);
+    }
+    else this->setContentHeight(textArea->getContentHeight());
+
+    textArea->setPositionX(textArea->getWidth() / 2);
+    textArea->setPositionY(this->getContentHeight() / 2);
+
+    if (labelInfo.verticalAlignment != CCTextAlignment::kCCTextAlignmentCenter){
+        if (labelInfo.verticalAlignment == CCTextAlignment::kCCTextAlignmentLeft)
+            textArea->setPositionY(textArea->getPositionY() - (this->getContentHeight() - textArea->getContentHeight()) / 2);
+        else
+            textArea->setPositionY(textArea->getPositionY() + (this->getContentHeight() - textArea->getContentHeight()) / 2);
+    }
+
+    this->setScale(labelInfo.scale);
 }
 
 CCPoint DTLabel::localToGridPosition(CCPoint localPosition){
@@ -56,7 +79,6 @@ CCPoint DTLabel::localToGridPosition(CCPoint localPosition){
     gridPos.y = static_cast<int>(gridPos.y);
 
     return gridPos;
-    
 }
 
 CCPoint DTLabel::gridToLocalPosition(int x, int y){
@@ -70,7 +92,7 @@ CCPoint DTLabel::gridToLocalPosition(int x, int y){
 std::string DTLabel::modifyText(const std::string& str){
     std::map<std::string, std::string> keysPossible{
         {"nl", "\n"},
-        {"f0", DTLayer::get() == nullptr ? "" : "death string"},
+        {"f0", DTLayer::get() == nullptr ? "" : "death string\na\na\na\na\na\na\na\na\na\na\na\na\na\na\na\na\na\na\na\na"},
         {"runs", DTLayer::get() == nullptr ? "" : "runs string"},
         {"lvln", DTLayer::get() == nullptr ? "" : DTLayer::get()->m_Level->m_levelName},
         {"att", DTLayer::get() == nullptr ? "" : std::to_string(DTLayer::get()->m_Level->m_attempts.value())},
@@ -96,11 +118,9 @@ std::string DTLabel::modifyText(const std::string& str){
         size_t matchStart = match.position();
         size_t matchEnd = matchStart + match.length();
 
-        // Add text before match
         result += str.substr(lastPos, matchStart - lastPos);
 
-        // Extract the key without the braces
-        std::string key = match.str(1); // group 1: the part inside {}
+        std::string key = match.str(1);
         
         if (keysPossible.contains(key)){
             if (keysPossible[key] == "")
@@ -114,8 +134,110 @@ std::string DTLabel::modifyText(const std::string& str){
         lastPos = matchEnd;
     }
 
-    // Add any remaining text after last match
     result += str.substr(lastPos);
     
     return result;
 }
+// , {
+//         "X": 50,
+//         "Y": 50,
+//         "text": "Session:{nl}{ssd}{nl}{s0}{nl} ",
+//         "font": "bigFont.fnt",
+//         "horizontalAlignment": 1,
+//         "verticalAlignment": 1,
+//         "color": {
+//             "r": 255,
+//             "g": 217,
+//             "b": 166,
+//             "a": 255
+//         },
+//         "scale": 0.5,
+//         "contentWidth": 100,
+//         "contentHeight": 100,
+//         "infinityResize": false
+//     }, {
+//         "X": 50,
+//         "Y": 50,
+//         "text": "Runs:{nl}{runs}{nl} ",
+//         "font": "bigFont.fnt",
+//         "horizontalAlignment": 1,
+//         "verticalAlignment": 1,
+//         "color": {
+//             "r": 85,
+//             "g": 168,
+//             "b": 112,
+//             "a": 255
+//         },
+//         "scale": 0.5,
+//         "contentWidth": 100,
+//         "contentHeight": 100,
+//         "infinityResize": false
+//     }, {
+//         "X": 50,
+//         "Y": 50,
+//         "text": "Session Runs:{nl}{sruns}{nl} ",
+//         "font": "bigFont.fnt",
+//         "horizontalAlignment": 1,
+//         "verticalAlignment": 1,
+//         "color": {
+//             "r": 251,
+//             "g": 176,
+//             "b": 94,
+//             "a": 255
+//         },
+//         "scale": 0.5,
+//         "contentWidth": 100,
+//         "contentHeight": 100,
+//         "infinityResize": false
+//     }, {
+//         "X": 50,
+//         "Y": 50,
+//         "text": "{lvln}:",
+//         "font": "goldFont.fnt",
+//         "horizontalAlignment": 1,
+//         "verticalAlignment": 1,
+//         "color": {
+//             "r": 255,
+//             "g": 255,
+//             "b": 255,
+//             "a": 255
+//         },
+//         "scale": 1,
+//         "contentWidth": 100,
+//         "contentHeight": 100,
+//         "infinityResize": false
+//     }, {
+//         "X": 50,
+//         "Y": 50,
+//         "text": "{att} attempts",
+//         "font": "chatFont.fnt",
+//         "horizontalAlignment": 1,
+//         "verticalAlignment": 1,
+//         "color": {
+//             "r": 255,
+//             "g": 255,
+//             "b": 255,
+//             "a": 255
+//         },
+//         "scale": 0.75,
+//         "contentWidth": 100,
+//         "contentHeight": 100,
+//         "infinityResize": false
+//     }, {
+//         "X": 50,
+//         "Y": 50,
+//         "text": "playtime - {ptall}",
+//         "font": "gjFont17.fnt",
+//         "horizontalAlignment": 1,
+//         "verticalAlignment": 1,
+//         "color": {
+//             "r": 255,
+//             "g": 255,
+//             "b": 255,
+//             "a": 255
+//         },
+//         "scale": 0.44999998807907104,
+//         "contentWidth": 100,
+//         "contentHeight": 100,
+//         "infinityResize": false
+//     }
