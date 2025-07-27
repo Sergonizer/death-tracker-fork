@@ -1,12 +1,20 @@
 #include "Save.hpp"
 
 
-std::vector<LabelLayout> Save::getLayout(){
-    return Mod::get()->getSavedValue<std::vector<LabelLayout>>("Layout");
+std::vector<V2LabelLayout> Save::getOldLayout(){
+    return Mod::get()->getSavedValue<std::vector<V2LabelLayout>>("Layout");
 }
 
-void Save::setLayout(const std::vector<LabelLayout>& layout){
-    Mod::get()->setSavedValue("Layout",layout );
+void Save::setOldLayout(const std::vector<V2LabelLayout>& layout){
+    Mod::get()->setSavedValue("Layout", layout);
+}
+
+std::vector<DTLabelInfo> Save::getLayout(){
+    return Mod::get()->getSavedValue<std::vector<DTLabelInfo>>("LabelLayout");
+}
+
+void Save::setLayout(const std::vector<DTLabelInfo>& layout){
+    Mod::get()->setSavedValue("LabelLayout", layout);
 }
 
 ccColor3B Save::getNewBestColor(){

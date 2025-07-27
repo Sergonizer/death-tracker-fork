@@ -1,4 +1,4 @@
-#include "../cells/SessionSelector.hpp"
+#include <nodes/SessionSelector.hpp>
 
 SessionSelector* SessionSelector::create(int count) {
     auto ret = new SessionSelector();
@@ -16,8 +16,9 @@ bool SessionSelector::init(int count){
 
     this->setContentSize({ 180, 30 });
 
-    auto inputNode = geode::TextInput::create(120, "Session");
+    inputNode = geode::TextInput::create(120, "Session", "gjFont17.fnt");
     inputNode->setPosition(this->getContentSize() / 2);
+    inputNode->getInputNode()->setDelegate(this);
     this->addChild(inputNode);
 
     auto leftArrowSpr = CCSprite::createWithSpriteFrameName("navArrowBtn_001.png");
@@ -44,14 +45,17 @@ bool SessionSelector::init(int count){
     rightArrowBtn->setPosition(inputNode->getPosition() + ccp(inputNode->getContentWidth() / 2 + rightArrowSpr->getContentSize().width / 2, 0));
     this->addChild(rightArrowBtn);
 
+    setMaximumCount(count);
+    setCurrentCount(0, false);
+
     return true;
 }
 
 void SessionSelector::leftArrowClicked(CCObject*){
-
+    setCurrentCount(currentCount - 1, true, true);
 }
 void SessionSelector::rightArrowClicked(CCObject*){
-
+    setCurrentCount(currentCount + 1, true, true);
 }
 
 void SessionSelector::setCallback(const std::function<void(int)>& callback){
@@ -59,9 +63,44 @@ void SessionSelector::setCallback(const std::function<void(int)>& callback){
 }
 
 void SessionSelector::setMaximumCount(int count){
-    count = std::max(count, 1);
+    count = std::max(count, 0);
     maxCount = count;
 }
-void SessionSelector::setCurrentCount(int count){
-    currentCount = std::clamp(count, 1, maxCount);
+void SessionSelector::setCurrentCount(int count, bool ignoreIfUnchanged, bool runCallback){
+    count = std::clamp(count, 0, maxCount);
+    if (currentCount == count && ignoreIfUnchanged) return;
+    currentCount = count;
+
+    std::string newText;
+
+    if (isInputOpened)
+        newText = fmt::format("{}", currentCount);
+    else
+        newText = fmt::format("{}/{}", currentCount, maxCount);
+
+    inputNode->setString(newText);
+
+    if (callback != NULL && runCallback)
+        callback(currentCount);
+}
+
+int SessionSelector::getCurrentCount(){
+    return currentCount;
+}
+
+void SessionSelector::textInputOpened(CCTextInputNode* input){
+    isInputOpened = true;
+    setCurrentCount(currentCount, false);
+}
+void SessionSelector::textInputClosed(CCTextInputNode* input){
+    isInputOpened = false;
+    setCurrentCount(currentCount, false);
+}
+
+void SessionSelector::textChanged(CCTextInputNode* input) {
+    auto numRes = geode::utils::numFromString<int>(input->getString());
+
+    if (numRes.isErr()) return;
+
+    setCurrentCount(numRes.unwrap(), true, true);
 }

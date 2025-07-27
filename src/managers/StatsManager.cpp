@@ -417,16 +417,11 @@ void StatsManager::setLevelStats(const LevelStats& stats, const std::string& lev
 Result<LevelStats> StatsManager::getLevelStats(const std::string& levelKey, bool isBackup) {
     auto levelSaveFilePath = m_savesFolderPath / (levelKey + (isBackup ? ".deathsBackup" : ".json"));
 
-    log::info("Getting level stats for: {}, path: {}", levelKey, levelSaveFilePath.string());
     if (std::filesystem::exists(levelSaveFilePath)){
-        log::info("Found level stats file: {}", levelSaveFilePath.string());
         GEODE_UNWRAP_INTO(auto json, file::readJson(levelSaveFilePath));
-        log::info("Successfully read level stats file: {}", levelSaveFilePath.string());
         
         return json.as<LevelStats>();
     }
-
-    log::info("No level stats file found for: {}, path: {}", levelKey, levelSaveFilePath.string());
 
     return Err("0 No stats exist for level!");
 }

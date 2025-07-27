@@ -2,7 +2,7 @@
 #include "../managers/StatsManager.hpp"
 #include "../nodes/layers/LabelSettingsLayer.hpp"
 
-LabelLayoutWindow* LabelLayoutWindow::create(const LabelLayout& MyLayout, DTLayer* const& DTLayer) {
+LabelLayoutWindow* LabelLayoutWindow::create(const V2LabelLayout& MyLayout, DTLayer* const& DTLayer) {
     auto ret = new LabelLayoutWindow();
     if (ret && ret->init(MyLayout, DTLayer)) {
         ret->autorelease();
@@ -13,7 +13,7 @@ LabelLayoutWindow* LabelLayoutWindow::create(const LabelLayout& MyLayout, DTLaye
     return ret;
 }
 
-bool LabelLayoutWindow::init(const LabelLayout& MyLayout, DTLayer* const& DTLayer){
+bool LabelLayoutWindow::init(const V2LabelLayout& MyLayout, DTLayer* const& DTLayer){
 
     s = CCScale9Sprite::create("GJ_squareB_01.png");
     s->setScale(0.5f);
@@ -150,7 +150,7 @@ void LabelLayoutWindow::myUpdate(float delta){
     }
 }
 
-void LabelLayoutWindow::setPositionBasedOnLayout(const LabelLayout& layout, int d){
+void LabelLayoutWindow::setPositionBasedOnLayout(const V2LabelLayout& layout, int d){
     s->setPosition({0, 0});
     this->setPosition({0, 0});
     s->setContentSize({323 / s->getScale() / 1.05f, s->getContentSize().height});

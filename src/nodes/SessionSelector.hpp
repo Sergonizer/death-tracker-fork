@@ -5,20 +5,29 @@
 using namespace cocos2d;
 using namespace geode;
 
-class SessionSelector : public CCMenu {
+class SessionSelector : public CCMenu, public TextInputDelegate {
     public:
         static SessionSelector* create(int count);
 
         void setCallback(const std::function<void(int)>& callback);
 
         void setMaximumCount(int count);
-        void setCurrentCount(int count);
+        void setCurrentCount(int count, bool ignoreIfUnchanged = true, bool runCallback = false);
+
+        int getCurrentCount();
         
     private:
         bool init(int count);
 
         void leftArrowClicked(CCObject*);
         void rightArrowClicked(CCObject*);
+
+        void textInputOpened(CCTextInputNode* input);
+        void textInputClosed(CCTextInputNode* input);
+        void textChanged(CCTextInputNode* input);
+
+        geode::TextInput* inputNode;
+        bool isInputOpened;
 
         std::function<void(int)> callback = NULL;
 

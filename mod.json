@@ -13,9 +13,11 @@
 	"description": "Tracks your deaths at every percentage",
 	"repository": "https://github.com/eloh-mrow/death-tracker",
 	"resources": {
-		"sprites": [
-			"resources/*.png"
-		]
+		"spritesheets": {
+			"dt-sheet": [
+				"resources/*.png"
+			]
+		}
 	},
 	"tags": ["utility", "interface", "offline"],
 	"settings": {

@@ -6,12 +6,12 @@
 
 class LabelLayoutWindow : public cocos2d::CCNode {
     protected:
-        bool init(const LabelLayout& MyLayout, DTLayer* const& DTLayer);
+        bool init(const V2LabelLayout& MyLayout, DTLayer* const& DTLayer);
     public:
-        static LabelLayoutWindow* create(const LabelLayout& MyLayout, DTLayer* const& DTLayer);
+        static LabelLayoutWindow* create(const V2LabelLayout& MyLayout, DTLayer* const& DTLayer);
 
         //sets this windows offset and scale based on this layout info
-        void setPositionBasedOnLayout(const LabelLayout& layout, int d = 0);
+        void setPositionBasedOnLayout(const V2LabelLayout& layout, int d = 0);
 
         //if this window is next to another window horizontally, return true 
         bool isNextToAnother();
@@ -21,7 +21,7 @@ class LabelLayoutWindow : public cocos2d::CCNode {
 
         DTLayer* m_DTLayer;
 
-        LabelLayout m_MyLayout;
+        V2LabelLayout m_MyLayout;
         CCScale9Sprite* s;
         SimpleTextArea* m_Label;
 
@@ -51,6 +51,6 @@ class LabelLayoutWindow : public cocos2d::CCNode {
 
         bool m_FollowMouse;
 
-        LabelLayout m_MyLayoutSave;
+        V2LabelLayout m_MyLayoutSave;
         bool m_Lock;
 };
