@@ -1,4 +1,5 @@
 #include "../hooks/DTLevelInfoLayer.hpp"
+#include "../utils/CCShowHide.hpp"
 
 bool DTLevelInfoLayer::init(GJGameLevel* p0, bool p1){
     if (!LevelInfoLayer::init(p0, p1)) return false;
@@ -72,5 +73,5 @@ void DTLevelInfoLayer::checkIfPlayVisible(float delta){
 
 void DTLevelInfoLayer::openDTLayer(CCObject*){
     auto dtLayer = DTLayer::create(this->m_level);
-    this->addChild(dtLayer);
+    dtLayer->show();
 }

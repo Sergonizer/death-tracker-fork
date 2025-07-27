@@ -112,56 +112,56 @@ void DTGraphNode::addGraphForDeaths(const std::string& graphName, const std::vec
 
     myGraph.thickness = thickness;
 
-    fixedDS[fixedDS.size() - 1].passrate = 0;
+    //fixedDS[fixedDS.size() - 1].passrate = 0;
 
     if (type == GraphType::PassRate){
         //add the min and max points if needed
-        if (fixedDS[0].run.end > RunStartPercent){
-            auto info = DeathInfo(Run(RunStartPercent, RunStartPercent), 0, 100);
-            fixedDS.insert(fixedDS.begin(), info);
-        }
+        // if (fixedDS[0].run.end > RunStartPercent){
+        //     auto info = DeathInfo(Run(RunStartPercent, RunStartPercent), 0, 100);
+        //     fixedDS.insert(fixedDS.begin(), info);
+        // }
         
-        if (fixedDS[fixedDS.size() - 1].run.end < 100){
-            auto info = DeathInfo(Run(RunStartPercent, 100), 100, 0);
-            fixedDS.push_back(info);
-        }
-        else{
-            fixedDS[fixedDS.size() - 1].passrate = 100;
-        }
+        // if (fixedDS[fixedDS.size() - 1].run.end < 100){
+        //     auto info = DeathInfo(Run(RunStartPercent, 100), 100, 0);
+        //     fixedDS.push_back(info);
+        // }
+        // else{
+        //     //fixedDS[fixedDS.size() - 1].passrate = 100;
+        // }
 
-        //log::info("added extras");
+        // //log::info("added extras");
 
-        CCPoint previousPoint = ccp(-1, -1);
+        // CCPoint previousPoint = ccp(-1, -1);
 
-        for (const auto& deathI : fixedDS)
-        {
-            //save point
-            CCPoint myPoint = ccp(deathI.run.end, deathI.passrate);
+        // for (const auto& deathI : fixedDS)
+        // {
+        //     //save point
+        //     //CCPoint myPoint = ccp(deathI.run.end, deathI.passrate);
 
             
-            //add extra points
-            if (previousPoint.x != -1){
+        //     //add extra points
+        //     if (previousPoint.x != -1){
 
-                //add a before point if needed
-                if (previousPoint.x != myPoint.x - 1){
+        //         //add a before point if needed
+        //         if (previousPoint.x != myPoint.x - 1){
 
-                    if (previousPoint.x != myPoint.x - 2 && previousPoint.y != 100 && previousPoint.x + 1 <= bestRun){
-                        myGraph.points.push_back(ccp(previousPoint.x + 1, 100) * scaling);
-                    }
+        //             if (previousPoint.x != myPoint.x - 2 && previousPoint.y != 100 && previousPoint.x + 1 <= bestRun){
+        //                 myGraph.points.push_back(ccp(previousPoint.x + 1, 100) * scaling);
+        //             }
 
-                    if (myPoint.x - 1 <= bestRun && myPoint.y != 100)
-                        myGraph.points.push_back(ccp(myPoint.x - 1, 100) * scaling);
-                }
-            }
+        //             if (myPoint.x - 1 <= bestRun && myPoint.y != 100)
+        //                 myGraph.points.push_back(ccp(myPoint.x - 1, 100) * scaling);
+        //         }
+        //     }
 
-            myGraph.points.emplace_back(myPoint * scaling);
-            previousPoint = myPoint;
-        }
+        //     myGraph.points.emplace_back(myPoint * scaling);
+        //     previousPoint = myPoint;
+        // }
 
-        //add wrapping
-        myGraph.points.emplace_back(myGraph.points[myGraph.points.size() - 1].x + 100, myGraph.points[myGraph.points.size() - 1].y);
-        myGraph.points.emplace_back(myGraph.points[myGraph.points.size() - 1].x + 100, -100);
-        myGraph.points.emplace_back(myGraph.points[0].x, -100);
+        // //add wrapping
+        // myGraph.points.emplace_back(myGraph.points[myGraph.points.size() - 1].x + 100, myGraph.points[myGraph.points.size() - 1].y);
+        // myGraph.points.emplace_back(myGraph.points[myGraph.points.size() - 1].x + 100, -100);
+        // myGraph.points.emplace_back(myGraph.points[0].x, -100);
     }
     else if (type == GraphType::ReachRate){
 

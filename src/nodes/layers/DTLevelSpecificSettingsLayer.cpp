@@ -678,7 +678,7 @@ void DTLevelSpecificSettingsLayer::onAddedFZRun(CCObject*){
 
     StatsManager::setLevelStats(myDTLayer->m_MyLevelStats, myDTLayer->m_Level, false);
     myDTLayer->UpdateSharedStats();
-    myDTLayer->refreshAll();
+    //myDTLayer->refreshAll();
 }
 
 void DTLevelSpecificSettingsLayer::onRemovedFZRun(CCObject*){
@@ -732,7 +732,7 @@ void DTLevelSpecificSettingsLayer::onRemovedFZRun(CCObject*){
     }
     
     myDTLayer->UpdateSharedStats();
-    myDTLayer->refreshAll();
+    //myDTLayer->refreshAll();
 }
 
 void DTLevelSpecificSettingsLayer::onAddedRun(CCObject*){
@@ -760,7 +760,7 @@ void DTLevelSpecificSettingsLayer::onAddedRun(CCObject*){
 
     StatsManager::setLevelStats(myDTLayer->m_MyLevelStats, myDTLayer->m_Level, false);
     myDTLayer->UpdateSharedStats();
-    myDTLayer->refreshAll();
+    //myDTLayer->refreshAll();
 }
 
 void DTLevelSpecificSettingsLayer::onRemovedRun(CCObject*){
@@ -817,7 +817,7 @@ void DTLevelSpecificSettingsLayer::onRemovedRun(CCObject*){
     }
     
     myDTLayer->UpdateSharedStats();
-    myDTLayer->refreshAll();
+    //myDTLayer->refreshAll();
 }
 
 void DTLevelSpecificSettingsLayer::onModRunsInfo(CCObject*){
@@ -877,7 +877,7 @@ void DTLevelSpecificSettingsLayer::FLAlert_Clicked(FLAlertLayer* layer, bool sel
 
         StatsManager::setLevelStats(myDTLayer->m_MyLevelStats, myDTLayer->m_Level, false);
         myDTLayer->UpdateSharedStats();
-        myDTLayer->refreshAll();
+        //myDTLayer->refreshAll();
     }
 
     if (currDeleteAlert == layer && selected){
@@ -906,8 +906,8 @@ void DTLevelSpecificSettingsLayer::FLAlert_Clicked(FLAlertLayer* layer, bool sel
         alert->setZOrder(150);
         this->getParent()->addChild(alert);
 
-        myDTLayer->LevelSpecificSettingsLayer = nullptr;
-        myDTLayer->onClose(nullptr);
+        //myDTLayer->LevelSpecificSettingsLayer = nullptr;
+        //myDTLayer->onClose(nullptr);
     }
 
     if (revertAlert == layer && selected){
@@ -932,8 +932,8 @@ void DTLevelSpecificSettingsLayer::FLAlert_Clicked(FLAlertLayer* layer, bool sel
         alert->setZOrder(150);
         this->getParent()->addChild(alert);
 
-        myDTLayer->LevelSpecificSettingsLayer = nullptr;
-        myDTLayer->onClose(nullptr);
+        //myDTLayer->LevelSpecificSettingsLayer = nullptr;
+        //myDTLayer->onClose(nullptr);
     }
 }
 
@@ -1001,7 +1001,7 @@ void DTLevelSpecificSettingsLayer::textChanged(CCTextInputNode* input){
         myDTLayer->m_MyLevelStats.hideUpto = res;
 
         StatsManager::setLevelStats(myDTLayer->m_MyLevelStats, myDTLayer->m_Level, false);
-        myDTLayer->refreshAll();
+        //myDTLayer->refreshAll();
     }
 
     if (input == HideRunLengthInput->getInputNode()){
@@ -1030,7 +1030,7 @@ void DTLevelSpecificSettingsLayer::textChanged(CCTextInputNode* input){
         myDTLayer->m_MyLevelStats.hideRunLength = res;
 
         StatsManager::setLevelStats(myDTLayer->m_MyLevelStats, myDTLayer->m_Level, false);
-        myDTLayer->refreshAll();
+        //myDTLayer->refreshAll();
     }
 
     if (input == addFZRunInput->getInputNode()){

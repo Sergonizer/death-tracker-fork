@@ -65,10 +65,6 @@ bool DTGraphLayer::setup(DTLayer* const& layer) {
     });
 
     m_SessionSelectionInput = TextInput::create(120, "Session");
-    if (m_DTLayer->m_SessionsAmount == 0)
-        m_SessionSelectionInput->setString("No sessions.");
-    else
-        m_SessionSelectionInput->setString(fmt::format("{}/{}", m_DTLayer->m_SessionSelected, m_DTLayer->m_SessionsAmount));
     m_SessionSelectionInput->getInputNode()->setDelegate(this);
     m_SessionSelectionInput->setCommonFilter(CommonFilter::Uint);
     m_SessionSelectionInput->setScale(0.45f);
@@ -172,119 +168,22 @@ void DTGraphLayer::OnPointDeselected(cocos2d::CCNode* point){
 
 void DTGraphLayer::refreshGraph(){
     //if (m_graph) m_graph->removeMeAndCleanup();
-
-    if (ViewModeNormal){
-        if (RunViewModeFromZero){
-            graph->addGraphForDeaths("from 0", m_DTLayer->m_DeathsInfo, DTGraphNode::GraphType::PassRate, 1, { Save::getNewBestColor().r, Save::getNewBestColor().g, Save::getNewBestColor().b, 255});
-            graph->addGraphForDeaths("from 0 reachrate", m_DTLayer->m_DeathsInfo, DTGraphNode::GraphType::ReachRate, 1, { Save::getNewBestColor().r, Save::getNewBestColor().g, Save::getNewBestColor().b, 255});
-            graph->addGraphForDeaths("session from 0", m_DTLayer->selectedSessionInfo, DTGraphNode::GraphType::PassRate, 1, { Save::getSessionBestColor().r, Save::getSessionBestColor().g, Save::getSessionBestColor().b, 255});
-            graph->addGraphForDeaths("session from 0 reachrate", m_DTLayer->selectedSessionInfo, DTGraphNode::GraphType::ReachRate, 1, { Save::getSessionBestColor().r, Save::getSessionBestColor().g, Save::getSessionBestColor().b, 255});
-        }
-        else{
-            std::vector<DeathInfo> selectedPercentRunInfo;
-            for (int i = 0; i < m_DTLayer->m_RunInfo.size(); i++)
-            {
-                if (m_DTLayer->m_RunInfo[i].run.start == m_SelectedRunPercent)
-                    selectedPercentRunInfo.push_back(m_DTLayer->m_RunInfo[i]);
-            }
-
-            //m_graph = DTGraphLayer::CreateGraph(selectedPercentRunInfo, DTGraphLayer::GetBestRun(selectedPercentRunInfo), Save::getNewBestColor(), {4, 2.3f}, { 124, 124, 124, 255}, {0, 0, 0, 120}, 0.2f, {115, 115, 115, 255}, { 202, 202, 202, 255}, 5, { 29, 29, 29, 255 }, 5, currentType);
-        }
-        /*
-        if (m_graph){
-            m_graph->setPosition({-155, -108});
-            m_graph->setZOrder(1);
-            alignmentNode->addChild(m_graph);
-            noGraphLabel->setVisible(false);
-        }
-        else{
-            noGraphLabel->setVisible(true);
-        }*/
-    }
-    else{
-        if (RunViewModeFromZero){
-            //m_graph = DTGraphLayer::CreateGraph(m_DTLayer->selectedSessionInfo, DTGraphLayer::GetBestRun(m_DTLayer->selectedSessionInfo), Save::getSessionBestColor(), {4, 2.3f}, { 124, 124, 124, 255}, {0, 0, 0, 120}, 0.2f, {115, 115, 115, 255}, { 202, 202, 202, 255}, 5, { 29, 29, 29, 255 }, 5, currentType);
-        }
-        else{
-            std::vector<DeathInfo> selectedPercentRunInfo;
-            for (int i = 0; i < m_DTLayer->m_SelectedSessionRunInfo.size(); i++)
-            {
-                if (m_DTLayer->m_SelectedSessionRunInfo[i].run.start == m_SelectedRunPercent)
-                    selectedPercentRunInfo.push_back(m_DTLayer->m_SelectedSessionRunInfo[i]);
-            }
-
-            //m_graph = DTGraphLayer::CreateGraph(selectedPercentRunInfo, DTGraphLayer::GetBestRun(selectedPercentRunInfo), Save::getSessionBestColor(), {4, 2.3f}, { 124, 124, 124, 255}, {0, 0, 0, 120}, 0.2f, {115, 115, 115, 255}, { 202, 202, 202, 255}, 5, { 29, 29, 29, 255 }, 5, currentType);
-        }
-        /*
-        if (m_graph){
-            m_graph->setPosition({-155, -108});
-            m_graph->setZOrder(1);
-            alignmentNode->addChild(m_graph);
-            noGraphLabel->setVisible(false);
-        }
-        else{
-            noGraphLabel->setVisible(true);
-        }*/
-    }
 }
 
 void DTGraphLayer::switchedSessionRight(CCObject*){
-    if (m_DTLayer->m_SessionSelected >= m_DTLayer->m_SessionsAmount) return;
-
-    m_DTLayer->m_SessionSelected += 1;
-    if (m_DTLayer->m_SessionSelectionInputSelected){
-        m_DTLayer->m_SessionSelectionInput->setString(fmt::format("{}", m_DTLayer->m_SessionSelected));
-        m_SessionSelectionInput->setString(fmt::format("{}", m_DTLayer->m_SessionSelected));
-    }
-    else{
-        m_DTLayer->m_SessionSelectionInput->setString(fmt::format("{}/{}",m_DTLayer-> m_SessionSelected, m_DTLayer->m_SessionsAmount));
-        m_SessionSelectionInput->setString(fmt::format("{}/{}",m_DTLayer-> m_SessionSelected, m_DTLayer->m_SessionsAmount));
-    }
-    m_DTLayer->refreshSession();
+    //m_DTLayer->refreshSession();
     if (!ViewModeNormal)
         DTGraphLayer::refreshGraph();
 }
 
 void DTGraphLayer::switchedSessionLeft(CCObject*){
-    if (m_DTLayer->m_SessionSelected - 1 < 1) return;
-
-    m_DTLayer->m_SessionSelected -= 1;
-    if (m_DTLayer->m_SessionSelectionInputSelected){
-        m_DTLayer->m_SessionSelectionInput->setString(fmt::format("{}", m_DTLayer->m_SessionSelected));
-        m_SessionSelectionInput->setString(fmt::format("{}", m_DTLayer->m_SessionSelected));
-    }
-    else{
-        m_DTLayer->m_SessionSelectionInput->setString(fmt::format("{}/{}", m_DTLayer->m_SessionSelected, m_DTLayer->m_SessionsAmount));
-        m_SessionSelectionInput->setString(fmt::format("{}/{}", m_DTLayer->m_SessionSelected, m_DTLayer->m_SessionsAmount));
-    }
         
-    m_DTLayer->refreshSession();
+    //m_DTLayer->refreshSession();
     if (!ViewModeNormal)
         DTGraphLayer::refreshGraph();
 }
 
 void DTGraphLayer::textChanged(CCTextInputNode* input){
-    if (input == m_SessionSelectionInput->getInputNode() && m_DTLayer->m_SessionsAmount > 0){
-        auto res = utils::numFromString<int>(input->getString());
-        int selected = res.unwrapOr(1);
-
-        if (selected > m_DTLayer->m_SessionsAmount){
-            selected = m_DTLayer->m_SessionsAmount;
-            input->setString(fmt::format("{}", m_DTLayer->m_SessionsAmount));
-        }
-
-        if (selected < 1){
-            selected = 1;
-            input->setString("1");
-        }
-
-        m_DTLayer->m_SessionSelectionInput->setString(fmt::format("{}/{}", selected, m_DTLayer->m_SessionsAmount));
-
-        m_DTLayer->m_SessionSelected = selected;
-        m_DTLayer->refreshSession();
-        if (!ViewModeNormal)
-            DTGraphLayer::refreshGraph();
-    }
 
     if (input == m_RunSelectInput->getInputNode()){
         auto res = utils::numFromString<int>(input->getString());
@@ -303,17 +202,11 @@ void DTGraphLayer::textChanged(CCTextInputNode* input){
 }
 
 void DTGraphLayer::textInputOpened(CCTextInputNode* input){
-    if (input == m_SessionSelectionInput->getInputNode() && m_DTLayer->m_SessionsAmount > 0){
-        input->setString(fmt::format("{}", m_DTLayer->m_SessionSelected));
-        m_DTLayer->m_SessionSelectionInputSelected = true;
-    }
+
 }
 
 void DTGraphLayer::textInputClosed(CCTextInputNode* input){
-    if (input == m_SessionSelectionInput->getInputNode() && m_DTLayer->m_SessionsAmount > 0){
-        input->setString(fmt::format("{}/{}", m_DTLayer->m_SessionSelected, m_DTLayer->m_SessionsAmount));
-        m_DTLayer->m_SessionSelectionInputSelected = false;
-    }
+
 }
 
 void DTGraphLayer::onViewModeButton(CCObject*){
@@ -367,8 +260,7 @@ void DTGraphLayer::onOverallInfo(CCObject*){
 }
 
 void DTGraphLayer::onClose(cocos2d::CCObject*) {
-    m_DTLayer->refreshAll();
-    m_DTLayer->m_SessionSelectionInputSelected = false;
+    //m_DTLayer->refreshAll();
     this->setKeypadEnabled(false);
     this->setTouchEnabled(false);
     this->removeFromParentAndCleanup(true);

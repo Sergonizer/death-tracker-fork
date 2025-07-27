@@ -1,17 +1,15 @@
-#include "../layers/DTLayer.hpp"
-#include "../../managers/DTPopupManager.hpp"
-#include "../../utils/Settings.hpp"
-#include "../LabelLayoutWindow.hpp"
-#include "../layers/DTGraphLayer.hpp"
-#include "../layers/DTLinkLayer.hpp"
-#include <cvolton.level-id-api/include/EditorIDs.hpp>
-#include "../../hooks/DTColorSelectPopup.hpp"
-#include "../layers/DTLevelSpecificSettingsLayer.hpp"
+#include <nodes/layers/DTLayer.hpp>
+
+#include <nodes/layers/DTGraphLayer.hpp>
+#include <nodes/layers/DTLinkLayer.hpp>
+#include <nodes/cells/SessionSelector.hpp>
+
 #include <Geode/ui/GeodeUI.hpp>
 
 DTLayer* DTLayer::create(GJGameLevel* const& Level) {
     auto ret = new DTLayer();
-    if (ret && ret->initAnchored(368, 280, Level, "square01_001.png", {0.f, 0.f, 94.f, 94.f})) {
+    auto winSize = CCDirector::sharedDirector()->getWinSize();
+    if (ret && ret->initAnchored(winSize.width - 30, winSize.height - 30, Level, "geode.loader/GE_square01.png")) {
         ret->autorelease();
         return ret;
     }
@@ -54,35 +52,53 @@ bool DTLayer::setup(GJGameLevel* const& level) {
         ), "OK", nullptr, 415, false, 200, 0.75f)->show();
     }
 
+    float height = 60;
+
+    scrollLayer = AdvancedScrollLayer::create({m_size.width - 30, m_size.height - height}, {5000, 5000});
+    scrollLayer->drawGrid(50, .5f, ccColor4B{ 143, 143, 143, 255 });
+    scrollLayer->setPosition(m_size / 2 - scrollLayer->getContentSize() / 2 + ccp(0, height / 4));
+    scrollLayer->setZOrder(2);
+    m_mainLayer->addChild(scrollLayer);
+
+    std::vector<CCPoint> points{
+        scrollLayer->getPosition(),
+        scrollLayer->getPosition() + ccp(scrollLayer->getContentSize().width, 0),
+
+        scrollLayer->getPosition() + ccp(scrollLayer->getContentSize().width, 0),
+        scrollLayer->getPosition() + scrollLayer->getContentSize(),
+
+        scrollLayer->getPosition() + scrollLayer->getContentSize(),
+        scrollLayer->getPosition() + ccp(0, scrollLayer->getContentSize().height),
+
+        scrollLayer->getPosition() + ccp(0, scrollLayer->getContentSize().height),
+        scrollLayer->getPosition(),
+    };
+
+    auto outline = CCDrawNode::create();
+    outline->m_bUseArea = false;
+    outline->drawLines(&points[0], points.size(), .25f, ccc4FFromccc4B({ 143, 143, 143, 255 }));
+    outline->setZOrder(2);
+    m_mainLayer->addChild(outline);
+
+    auto shadow = CCScale9Sprite::create("square.png");
+    shadow->setContentSize(scrollLayer->getContentSize());
+    shadow->setAnchorPoint({0, 0});
+    shadow->setPosition(scrollLayer->getPosition());
+    shadow->setColor({0, 0, 0});
+    shadow->setOpacity(100);
+    m_mainLayer->addChild(shadow);
+
+    auto sessionSelector = SessionSelector::create();
+    sessionSelector->setPosition({ m_size.width / 2 - sessionSelector->getContentWidth() / 2, 0 });
+    m_mainLayer->addChild(sessionSelector);
+
+    this->setKeypadEnabled(true);
+
     return true;
 }
 
-void DTLayer::update(float delta){
-
-}
-
 void DTLayer::onEditLayout(CCObject* sender){
-    DTLayer::EditLayoutEnabled(true);
-}
-
-void DTLayer::textChanged(CCTextInputNode* input){
-
-}
-
-void DTLayer::textInputOpened(CCTextInputNode* input){
-
-}
-
-void DTLayer::textInputClosed(CCTextInputNode* input){
-
-}
-
-ResultTask DTLayer::updateSessionString(const int& session){
-
-}
-
-void DTLayer::onEditLayoutApply(CCObject*){
-
+    //DTLayer::EditLayoutEnabled(true);
 }
 
 bool DTLayer::ccTouchBegan(CCTouch *pTouch, CCEvent *pEvent){
@@ -103,55 +119,6 @@ void DTLayer::ccTouchEnded(CCTouch *pTouch, CCEvent *pEvent){
 
 void DTLayer::ccTouchCancelled(CCTouch *pTouch, CCEvent *pEvent){
     m_IsClicking = false;
-}
-
-void DTLayer::EditLayoutEnabled(const bool& b){
-
-}
-
-void DTLayer::changeScrollSizeByBoxes(const bool& moveToTop){
-
-}
-
-void DTLayer::RefreshText(bool moveToTop){
-
-}
-
-std::string DTLayer::modifyString(std::string ToModify){
-    /*
-    keys to check for
-
-    {f0} - runs from 0
-
-    {runs} - runs
-
-    {lvln} - levels name
-    
-    {att} - level attempts (with linked levels attempts)
-
-    {s0} - selected session runs from 0
-    
-    {sruns} - selected session runs
-
-    {nl} - new line
-
-    {ssd}
-
-    {sst}
-    
-    */
-}
-
-ResultTask DTLayer::refreshStrings(){
-
-}
-
-DeathStringTask DTLayer::CreateDeathsInfo(const Deaths& deaths, const NewBests& newBests){
-
-}
-
-DeathStringTask DTLayer::CreateRunsInfo(const Runs runs){
-    
 }
 
 //better info time calc
@@ -264,26 +231,10 @@ float DTLayer::timeForLevelString(const std::string& levelString) {
     }
 }
 
-void DTLayer::updatePlaytime(std::vector<DeathInfo> deaths, bool runs){
-
-}
-
-void DTLayer::addBox(CCObject*){
-
-}
-
 void DTLayer::updateRunsAllowed(){
     if (m_MyLevelStats.currentBest != -1)
         StatsManager::setLevelStats(m_MyLevelStats, m_Level, false);
-    DTLayer::refreshAll();
-}
-
-void DTLayer::FLAlert_Clicked(FLAlertLayer* layer, bool selected){
-
-}
-
-void DTLayer::onClose(cocos2d::CCObject*) {
-
+    //DTLayer::refreshAll();
 }
 
 void DTLayer::openGraphMenu(CCObject*){
@@ -387,42 +338,20 @@ void DTLayer::onCopyInfo(CCObject*){
     alert->show();
 }
 
-void DTLayer::copyText(CCObject*)
-{
-
+void DTLayer::keyBackClicked(){
+    this->removeMeAndCleanup();
 }
 
-void DTLayer::clickedWindow(CCNode* nwindow){
+void DTLayer::show(){
+    Popup<GJGameLevel* const&>::show();
 
+    m_mainLayer->stopAllActions();
+    m_mainLayer->setScale(1);
 }
 
-void DTLayer::onResetLayout(CCObject*){
-
+void DTLayer::keyDown(enumKeyCodes key){
+    scrollLayer->keyDown(key);
 }
-
-void DTLayer::editnbcColor(CCObject*){
-
-}
-
-void DTLayer::editsbcColor(CCObject*){
-
-}
-
-void DTLayer::onSpecificSettings(CCObject*){
-
-}
-
-void DTLayer::onMoveTransitionEnded(CCObject* LSSL){
-
-}
-
-void DTLayer::updateColor(cocos2d::ccColor4B const& color){
-
-}
-
-void DTLayer::refreshAll(bool moveToTop){
-
-}
-
-void DTLayer::onRefreshFinished(ResultTask::Event* event){
+void DTLayer::keyUp(enumKeyCodes key){
+    scrollLayer->keyUp(key);
 }

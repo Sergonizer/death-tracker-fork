@@ -325,7 +325,7 @@ void DTLinkLayer::textChanged(CCTextInputNode* input){
 void DTLinkLayer::onClose(CCObject*) {
     isClosed = true;
     m_DTLayer->UpdateSharedStats();
-    m_DTLayer->refreshAll(true);
+    //m_DTLayer->refreshAll(true);
     this->setKeypadEnabled(false);
     this->setTouchEnabled(false);
     this->removeFromParentAndCleanup(true);

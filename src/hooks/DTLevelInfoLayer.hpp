@@ -8,6 +8,9 @@ using namespace geode::prelude;
 class $modify(DTLevelInfoLayer, LevelInfoLayer) {
     struct Fields {
         CCMenuItemSpriteExtra* btn = nullptr;
+        CCPoint originalDiffPos;
+        bool prevStatToggle;
+        float prevProgressBarOpacity;
     };
     
     bool init(GJGameLevel* p0, bool p1);

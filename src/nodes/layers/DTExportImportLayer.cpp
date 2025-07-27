@@ -184,30 +184,30 @@ void DTExportImportLayer::onExportClicked(CCObject*){
         std::string ToWrite;
 
         if (Save::getExportWOutLabels()){
-            std::string s = m_DTLayer->deathsString;
-            for (int i = 0; i < s.length(); i++)
-            {
-                if (StatsManager::isKeyInIndex(s, i, "<nbc>") || StatsManager::isKeyInIndex(s, i, "<sbc>")){
-                    s = s.erase(i, 5);
-                }
-            }
-            s += "\n\n" + m_DTLayer->RunString;
-            ToWrite += s;
+            // std::string s = m_DTLayer->deathsString;
+            // for (int i = 0; i < s.length(); i++)
+            // {
+            //     if (StatsManager::isKeyInIndex(s, i, "<nbc>") || StatsManager::isKeyInIndex(s, i, "<sbc>")){
+            //         s = s.erase(i, 5);
+            //     }
+            // }
+            // s += "\n\n" + m_DTLayer->RunString;
+            // ToWrite += s;
         }
         else{
             std::map<int, std::string> text;
             auto currLayout = Save::getLayout();
             for (int i = 0; i < currLayout.size(); i++)
             {
-                std::string s = m_DTLayer->modifyString(currLayout[i].text);
-                for (int i = 0; i < s.length(); i++)
-                {
-                    if (StatsManager::isKeyInIndex(s, i, "<nbc>") || StatsManager::isKeyInIndex(s, i, "<sbc>")){
-                        s = s.erase(i, 5);
-                    }
-                }
+                // std::string s = m_DTLayer->modifyString(currLayout[i].text);
+                // for (int i = 0; i < s.length(); i++)
+                // {
+                //     if (StatsManager::isKeyInIndex(s, i, "<nbc>") || StatsManager::isKeyInIndex(s, i, "<sbc>")){
+                //         s = s.erase(i, 5);
+                //     }
+                // }
 
-                text[currLayout[i].line] += s + "\n";
+                // text[currLayout[i].line] += s + "\n";
             }
 
             for (auto t : text)

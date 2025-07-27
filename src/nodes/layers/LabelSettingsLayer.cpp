@@ -357,8 +357,6 @@ void LabelSettingsLayer::OnTransitionEnded(CCObject* transitionType){
     if (!isEnter->getValue()){
         if (deleteOnExit){
             m_LabelWin->removeMeAndCleanup();
-
-            m_LabelWin->m_DTLayer->changeScrollSizeByBoxes();
         }
 
         Popup<LabelLayoutWindow* const&, DTLayer* const&>::onClose(nullptr);
@@ -487,9 +485,9 @@ void LabelSettingsLayer::useSTK(const std::string& stk){
 
 void LabelSettingsLayer::updatePreviewText(){
     
-    auto modifiedText = m_DTLayer->modifyString(m_LabelWin->m_MyLayout.text);
+    //auto modifiedText = m_DTLayer->modifyString(m_LabelWin->m_MyLayout.text);
     
-    previewText->setText(modifiedText);
+    //previewText->setText(modifiedText);
 
     LabelSettingsLayer::updatePreviewTextPosition();
 }
@@ -520,12 +518,12 @@ void LabelSettingsLayer::removeTextBestColoring(){
             if (StatsManager::isKeyInIndex(s, 1, "nbc>")){
                 s.erase(0, 5);
                 previewText->getLines()[i]->setString(s.c_str());
-                previewText->getLines()[i]->setColor(m_DTLayer->colorSpritenb->getColor());
+                //previewText->getLines()[i]->setColor(m_DTLayer->colorSpritenb->getColor());
             }
             if (StatsManager::isKeyInIndex(s, 1, "sbc>")){
                 s.erase(0, 5);
                 previewText->getLines()[i]->setString(s.c_str());
-                previewText->getLines()[i]->setColor(m_DTLayer->colorSpritesb->getColor()); 
+                //previewText->getLines()[i]->setColor(m_DTLayer->colorSpritesb->getColor()); 
             }
         }
     }
@@ -543,24 +541,24 @@ void LabelSettingsLayer::FLAlert_Clicked(FLAlertLayer* p0, bool p1){
 }
 
 void LabelSettingsLayer::deleteLabel(){
-    for (int i = 0; i < m_LabelWin->m_DTLayer->m_LayoutLines.size(); i++)
-    {
-        if (m_LabelWin->m_DTLayer->m_LayoutLines[i] == m_LabelWin){
-            m_LabelWin->m_DTLayer->m_LayoutLines.erase(std::next(m_LabelWin->m_DTLayer->m_LayoutLines.begin(), i));
-            break;
-        }
-    }
-    for (int i = 0; i < m_LabelWin->m_DTLayer->m_LayoutLines.size(); i++)
-    {
-        LabelLayoutWindow* curWin = dynamic_cast<LabelLayoutWindow*>(m_LabelWin->m_DTLayer->m_LayoutLines[i]);
-        if (curWin){
-            curWin->setPositionBasedOnLayout(curWin->m_MyLayout);
-        }
-    }
+    // for (int i = 0; i < m_LabelWin->m_DTLayer->m_LayoutLines.size(); i++)
+    // {
+    //     if (m_LabelWin->m_DTLayer->m_LayoutLines[i] == m_LabelWin){
+    //         m_LabelWin->m_DTLayer->m_LayoutLines.erase(std::next(m_LabelWin->m_DTLayer->m_LayoutLines.begin(), i));
+    //         break;
+    //     }
+    // }
+    // for (int i = 0; i < m_LabelWin->m_DTLayer->m_LayoutLines.size(); i++)
+    // {
+    //     LabelLayoutWindow* curWin = dynamic_cast<LabelLayoutWindow*>(m_LabelWin->m_DTLayer->m_LayoutLines[i]);
+    //     if (curWin){
+    //         curWin->setPositionBasedOnLayout(curWin->m_MyLayout);
+    //     }
+    // }
 
-    deleteOnExit = true;
+    // deleteOnExit = true;
 
-    LabelSettingsLayer::onClose(nullptr);
+    // LabelSettingsLayer::onClose(nullptr);
 }
 
 void LabelSettingsLayer::OnInfo(CCObject*){
