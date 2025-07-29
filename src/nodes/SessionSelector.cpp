@@ -104,3 +104,8 @@ void SessionSelector::textChanged(CCTextInputNode* input) {
 
     setCurrentCount(numRes.unwrap(), true, true);
 }
+
+void SessionSelector::setEnabled(bool value){
+    inputNode->setEnabled(value);
+    CCMenu::setEnabled(value);
+}

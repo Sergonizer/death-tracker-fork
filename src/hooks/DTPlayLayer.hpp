@@ -40,4 +40,6 @@ class $modify(DTPlayLayer, PlayLayer) {
     #endif
 
     void onQuit();
+
+    float getActualProgress(GJBaseGameLayer* game);
 };

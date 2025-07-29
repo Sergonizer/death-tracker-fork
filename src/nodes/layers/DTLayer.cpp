@@ -2,7 +2,6 @@
 
 #include <nodes/layers/DTGraphLayer.hpp>
 #include <nodes/layers/DTLinkLayer.hpp>
-#include <nodes/SessionSelector.hpp>
 
 #include <Geode/ui/GeodeUI.hpp>
 
@@ -62,6 +61,7 @@ bool DTLayer::setup(GJGameLevel* const& level) {
     scrollLayer->drawGrid(50, .5f, ccColor4B{ 143, 143, 143, 255 });
     scrollLayer->setPosition(m_size / 2 - scrollLayer->getContentSize() / 2 + ccp(0, height / 4));
     scrollLayer->setZOrder(2);
+    scrollLayer->maxZoom = 0.35f;
     m_mainLayer->addChild(scrollLayer);
 
     std::vector<CCPoint> points{
@@ -95,11 +95,12 @@ bool DTLayer::setup(GJGameLevel* const& level) {
     auto bottomMenu = CCMenu::create();
     bottomMenu->setContentSize({m_size.width, height / 2.5f});
     bottomMenu->setAnchorPoint({.5f, .5f});
-    bottomMenu->setPosition(bottomMenu->getContentSize() / 2 + ccp(0, 5));
+    bottomMenu->setPosition(bottomMenu->getContentSize() / 2 + ccp(0, 7.5f));
     bottomMenu->setLayout(SimpleAxisLayout::create(Axis::Row)
         ->setGap(50)
         ->setCrossAxisScaling(AxisScaling::ScaleDown)
     );
+    bottomMenu->setID("bottom-menu");
     m_mainLayer->addChild(bottomMenu);
 
     auto levelSpecificOptionsSpr = CCSprite::createWithSpriteFrameName("GJ_creatorBtn_001.png");
@@ -110,7 +111,7 @@ bool DTLayer::setup(GJGameLevel* const& level) {
     );
     bottomMenu->addChild(levelSpecificOptionsBtn);
 
-    auto sessionSelector = SessionSelector::create(m_SharedLevelStats.sessions.size());
+    sessionSelector = SessionSelector::create(m_SharedLevelStats.sessions.size());
     sessionSelector->setCallback([&](int newSession){
         log::info("chosen new session {}", newSession);
     });
@@ -140,38 +141,131 @@ bool DTLayer::setup(GJGameLevel* const& level) {
 
     for (const auto& labelInfo : layout)
     {
-        auto label = DTLabel::create(labelInfo, 50);
-        scrollLayer->content->addChild(label);
-        labels.push_back(label);
+        createLabel(labelInfo);
     }
 
+    auto editLayoutMenu = CCMenu::create();
+    editLayoutMenu->setPosition({0, 0});
+    editLayoutMenu->setID("edit-layout-menu");
+    editLayoutMenu->setZOrder(3);
+    m_mainLayer->addChild(editLayoutMenu);
+
+    auto editLayoutBtnSprBG = CCSprite::createWithSpriteFrameName("GJ_plainBtn_001.png");
+    auto editLayoutBtnSpr = CCSprite::createWithSpriteFrameName("layout_button.png"_spr);
+    editLayoutBtnSpr->setPosition(editLayoutBtnSprBG->getContentSize() / 2);
+    editLayoutBtnSprBG->addChild(editLayoutBtnSpr);
+    editLayoutBtnSprBG->setScale(.75f);
+    auto editLayoutBtn = CCMenuItemSpriteExtra::create(
+        editLayoutBtnSprBG,
+        this,
+        menu_selector(DTLayer::onEditLayout)
+    );
+    editLayoutBtn->setPosition(scrollLayer->getPosition() + scrollLayer->getContentSize());
+    editLayoutMenu->addChild(editLayoutBtn);
+
+    CCTouchDispatcher::get()->removeDelegate(scrollLayer);
+
     this->setKeypadEnabled(true);
+    this->setTouchEnabled(true);
 
     return true;
 }
 
 void DTLayer::onEditLayout(CCObject*){
+    if (layoutTopbar != nullptr) return;
+
+    for (const auto& label : labels)
+        label->enterEditMode();
+
+    auto winSize = CCDirector::sharedDirector()->getWinSize();
+
+    static_cast<CCMenu*>(m_mainLayer->getChildByID("bottom-menu"))->setEnabled(false);
+    m_buttonMenu->setEnabled(false);
+    sessionSelector->setEnabled(false);
     
+    layoutTopbar = EditLayoutTopbar::create();
+    layoutTopbar->setZOrder(10);
+    layoutTopbar->setPosition({
+        (winSize.width - layoutTopbar->getContentWidth()) / 2,
+        10
+    });
+    layoutTopbar->onExit = [&](bool didApply){
+        if (!didApply)
+            for (const auto& label : labels)
+                label->revert();
+
+        std::vector<DTLabelInfo> newInfo{};
+
+        for (const auto& label : labels){
+            label->exitEditMode();
+            if (didApply && labels.contains(label))
+                newInfo.push_back(label->labelInfo);
+        }
+
+        if (didApply)
+            Save::setLayout(newInfo);
+
+        layoutTopbar = nullptr;
+
+        static_cast<CCMenu*>(m_mainLayer->getChildByID("bottom-menu"))->setEnabled(true);
+        m_buttonMenu->setEnabled(true);
+        sessionSelector->setEnabled(true);
+    };
+    this->addChild(layoutTopbar);
 }
 
 bool DTLayer::ccTouchBegan(CCTouch *pTouch, CCEvent *pEvent){
-    m_IsClicking = true;
-    if (pTouch->getLocation() != ccp(0, CCDirector::sharedDirector()->getWinSize().height))
-        ClickPos = pTouch;
+    bool doMoveScroll = true;
+    if (layoutTopbar != nullptr){
+        for (const auto& label : labels)
+        {
+            if (label->touchMoved(pTouch))
+                doMoveScroll = false;
+        }
+    }
+
+    if (doMoveScroll)
+        scrollLayer->ccTouchBegan(pTouch, pEvent);
+
     return true;
 }
 
 void DTLayer::ccTouchMoved(CCTouch *pTouch, CCEvent *pEvent){
-    if (pTouch->getLocation() != ccp(0, CCDirector::sharedDirector()->getWinSize().height))
-        ClickPos = pTouch;
+    bool doMoveScroll = true;
+    if (layoutTopbar != nullptr){
+        for (const auto& label : labels)
+        {
+            if (label->touchMoved(pTouch))
+                doMoveScroll = false;
+        }
+    }
+
+    if (doMoveScroll)
+        scrollLayer->ccTouchMoved(pTouch, pEvent);
 }
 
 void DTLayer::ccTouchEnded(CCTouch *pTouch, CCEvent *pEvent){
-    m_IsClicking = false;
+    scrollLayer->ccTouchEnded(pTouch, pEvent);
+    if (layoutTopbar != nullptr){
+        for (const auto& label : labels)
+        {
+            label->touchEnded(pTouch);
+        }
+    }
 }
 
 void DTLayer::ccTouchCancelled(CCTouch *pTouch, CCEvent *pEvent){
-    m_IsClicking = false;
+    scrollLayer->ccTouchCancelled(pTouch, pEvent);
+    if (layoutTopbar != nullptr){
+        for (const auto& label : labels)
+        {
+            label->touchEnded(pTouch);
+        }
+    }
+}
+
+void DTLayer::ccTouchesMoved(CCSet* touches, CCEvent* event){
+    scrollLayer->ccTouchesMoved(touches, event);
 }
 
 void DTLayer::updateRunsAllowed(){
@@ -266,6 +360,10 @@ void DTLayer::onSettings(CCObject*){
 }
 
 void DTLayer::keyBackClicked(){
+    if (layoutTopbar != nullptr){
+        layoutTopbar->keyBackClicked();
+        return;
+    }
     this->removeMeAndCleanup();
     instance = nullptr;
 }
@@ -289,6 +387,41 @@ void DTLayer::onLSOClicked(CCObject*){
 }
 
 DTLayer* DTLayer::get() { return instance; }
+
+DTLabel* DTLayer::createLabel(DTLabelInfo info){
+    auto label = DTLabel::create(info, 50);
+    scrollLayer->content->addChild(label);
+    labels.insert(label);
+    label->onClicked = [&](DTLabel* clickedLabel){
+        if (layoutTopbar == nullptr || !labels.contains(clickedLabel)) return;
+
+        layoutTopbar->setTarget(clickedLabel);
+    };
+
+    if (layoutTopbar != nullptr){
+        label->enterEditMode();
+        label->wasCreatedThisEdit = true;
+        label->onSelected(nullptr);
+    }
+
+    return label;
+}
+
+void DTLayer::removeLabel(DTLabel* label, bool forceDelete){
+    if (!labels.contains(label)) return;
+
+    if (forceDelete || layoutTopbar == nullptr){
+        label->removeMeAndCleanup();
+        labels.erase(label);
+    }
+    else if (layoutTopbar != nullptr){
+        label->softDelete();
+    }
+}
+
+AdvancedScrollLayer* DTLayer::getScrollLayer(){
+    return scrollLayer;
+}
 
 //better info time calc
 

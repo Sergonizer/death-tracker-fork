@@ -37,14 +37,14 @@ bool LabelLayoutWindow::init(const V2LabelLayout& MyLayout, DTLayer* const& DTLa
 }
 
 CCPoint LabelLayoutWindow::mousePosToNode(CCNode* const& node){
-    if (!m_DTLayer->ClickPos) return {0, 0};
+    // if (!m_DTLayer->ClickPos) return {0, 0};
 
-    CCPoint mousePos;
+    // CCPoint mousePos;
 
-    if (m_DTLayer->ClickPos->getLocation() != ccp(0, CCDirector::sharedDirector()->getWinSize().height))
-        mousePos = node->getParent()->convertToNodeSpace(m_DTLayer->ClickPos->getLocation());
-    else
-        mousePos = node->getPosition();
+    // if (m_DTLayer->ClickPos->getLocation() != ccp(0, CCDirector::sharedDirector()->getWinSize().height))
+    //     mousePos = node->getParent()->convertToNodeSpace(m_DTLayer->ClickPos->getLocation());
+    // else
+    //     mousePos = node->getPosition();
     
     // bool HasreachedEndOfParentCheck = false;
 
@@ -65,7 +65,7 @@ CCPoint LabelLayoutWindow::mousePosToNode(CCNode* const& node){
     //     }
     // }
 
-    return mousePos;
+    return {0, 0};
 }
 
 void LabelLayoutWindow::myUpdate(float delta){
@@ -198,7 +198,7 @@ void LabelLayoutWindow::setPositionBasedOnLayout(const V2LabelLayout& layout, in
 bool LabelLayoutWindow::isMouseTouching(CCNode* const& node){
     bool toReturn = false;
     CCRect* rect = new CCRect(node->getPositionX(), node->getPositionY(), node->getScaledContentSize().width, node->getScaledContentSize().height);
-    toReturn = rect->containsPoint(mousePosToNode(node)) && m_DTLayer->m_IsClicking;
+    toReturn = rect->containsPoint(mousePosToNode(node));
     delete rect;
 
     return toReturn;

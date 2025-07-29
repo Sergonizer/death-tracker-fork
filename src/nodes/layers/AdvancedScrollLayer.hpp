@@ -27,11 +27,6 @@ class AdvancedScrollLayer : public CCLayer {
 
         bool touchDown = false;
 
-        bool ccTouchBegan(cocos2d::CCTouch* touch, cocos2d::CCEvent* event) override;
-        void ccTouchMoved(CCTouch* touch, CCEvent* event) override;
-        void ccTouchesMoved(CCSet* touches, CCEvent* event) override;
-        void ccTouchEnded(cocos2d::CCTouch* touch, cocos2d::CCEvent* event) override;
-        void ccTouchCancelled(cocos2d::CCTouch* touch, cocos2d::CCEvent* event) override;
         void scrollWheel(float y, float x) override;
         void registerWithTouchDispatcher() override;
 
@@ -43,6 +38,12 @@ class AdvancedScrollLayer : public CCLayer {
         bool holdingShift;
     public:
         static AdvancedScrollLayer* create(CCSize size, CCSize limits);
+
+        bool ccTouchBegan(cocos2d::CCTouch* touch, cocos2d::CCEvent* event) override;
+        void ccTouchMoved(CCTouch* touch, CCEvent* event) override;
+        void ccTouchesMoved(CCSet* touches, CCEvent* event) override;
+        void ccTouchEnded(cocos2d::CCTouch* touch, cocos2d::CCEvent* event) override;
+        void ccTouchCancelled(cocos2d::CCTouch* touch, cocos2d::CCEvent* event) override;
 
         virtual void keyDown(enumKeyCodes key)  override;
         virtual void keyUp(enumKeyCodes key)  override;

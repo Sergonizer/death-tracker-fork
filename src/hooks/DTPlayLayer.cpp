@@ -146,7 +146,7 @@ void DTPlayLayer::destroyPlayer(PlayerObject* player, GameObject* p1) {
     if (DTPlayLayer::disableCompletedLevelTracking()) return;
 
     if (!m_level->isPlatformer())
-        m_fields->currentRun.end = this->getCurrentPercent();
+        m_fields->currentRun.end = getActualProgress(this);
 
     // log::info("PlayLayer::destroyPlayer()\ncurrentRun.start = {}\ncurrentRun.end = {}\nplatformer = {}",
     //     m_fields->currentRun.start,
@@ -253,4 +253,15 @@ void DTPlayLayer::onQuit() {
     StatsManager::setCurrentLogLevel(nullptr);
 
     PlayLayer::onQuit();
+}
+
+//tysm eclips menu ur awesome and mega goated :fire:
+float DTPlayLayer::getActualProgress(GJBaseGameLayer* game) {
+    float percent;
+    if (game->m_level->m_timestamp > 0) {
+        percent = static_cast<float>(game->m_gameState.m_levelTime * 240.f) / game->m_level->m_timestamp * 100.f;
+    } else {
+        percent = game->m_player1->getPositionX() / game->m_levelLength * 100.f;
+    }
+    return std::clamp(percent, 0.f, 100.f);
 }

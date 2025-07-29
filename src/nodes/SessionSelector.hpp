@@ -15,6 +15,8 @@ class SessionSelector : public CCMenu, public TextInputDelegate {
         void setCurrentCount(int count, bool ignoreIfUnchanged = true, bool runCallback = false);
 
         int getCurrentCount();
+
+        void setEnabled(bool value);
         
     private:
         bool init(int count);

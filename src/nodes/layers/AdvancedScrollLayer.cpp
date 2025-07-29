@@ -149,6 +149,8 @@ void AdvancedScrollLayer::ccTouchCancelled(CCTouch*, CCEvent*) {
 void AdvancedScrollLayer::ccTouchMoved(CCTouch* touch, CCEvent*){
     if (!isEnabled || touch == nullptr) return;
 
+    if (!this->boundingBox().containsPoint(this->getParent()->convertToNodeSpace(touch->getLocation()))) return;
+
     CCPoint curr = this->convertToNodeSpace(touch->getLocationInView());
     CCPoint prev = this->convertToNodeSpace(touch->getPreviousLocationInView());
     CCPoint delta = curr - prev;
@@ -167,6 +169,9 @@ void AdvancedScrollLayer::ccTouchesMoved(CCSet* touches, CCEvent* event){
     CCTouch* touch1 = static_cast<CCTouch*>(*it);
     ++it;
     CCTouch* touch2 = static_cast<CCTouch*>(*it);
+
+    if (!this->boundingBox().containsPoint(this->getParent()->convertToNodeSpace(touch1->getLocation()))) return;
+    if (!this->boundingBox().containsPoint(this->getParent()->convertToNodeSpace(touch2->getLocation()))) return;
 
     float distance = touch1->getLocation().getDistance(touch2->getLocation());
 

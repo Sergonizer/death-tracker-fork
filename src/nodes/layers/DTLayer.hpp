@@ -5,6 +5,8 @@
 #include "../../utils/Save.hpp"
 #include "AdvancedScrollLayer.hpp"
 #include <nodes/DTLabel.hpp>
+#include <nodes/EditLayoutTopbar.hpp>
+#include <nodes/SessionSelector.hpp>
 
 using namespace geode::prelude;
 
@@ -27,15 +29,18 @@ class DTLayer : public Popup<GJGameLevel* const&> {
         LevelStats m_MyLevelStats;
         LevelStats m_SharedLevelStats;
 
-        bool m_IsClicking;
-        CCTouch* ClickPos = nullptr;
-
         void show() override;
 
         virtual void keyDown(enumKeyCodes key)  override;
         virtual void keyUp(enumKeyCodes key)  override;
 
         static DTLayer* get();
+
+        DTLabel* createLabel(DTLabelInfo info = DTLabelInfo());
+
+        void removeLabel(DTLabel* label, bool forceDelete = false);
+
+        AdvancedScrollLayer* getScrollLayer();
         
     private:
         virtual void keyBackClicked() override;
@@ -44,12 +49,17 @@ class DTLayer : public Popup<GJGameLevel* const&> {
         void ccTouchMoved(CCTouch *pTouch, CCEvent *pEvent) override;
         void ccTouchEnded(CCTouch *pTouch, CCEvent *pEvent) override;
         void ccTouchCancelled(CCTouch *pTouch, CCEvent *pEvent) override;
+        void ccTouchesMoved(CCSet* touches, CCEvent* event) override;
 
         static DTLayer* instance;
 
         AdvancedScrollLayer* scrollLayer = nullptr;
 
-        std::vector<DTLabel*> labels{};
+        std::set<DTLabel*> labels{};
+
+        EditLayoutTopbar* layoutTopbar = nullptr;
+
+        SessionSelector* sessionSelector;
 
         void onLSOClicked(CCObject*);
 
