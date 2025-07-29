@@ -24,10 +24,12 @@ bool EditLayoutTopbar::init(){
     BG->setAnchorPoint({0, 0});
     this->addChild(BG);
 
+    CCPoint menuOffset = {15, 15};
+
     idleMenu = CCMenu::create();
-    idleMenu->setPosition({0, 0});
+    idleMenu->setPosition(menuOffset / 2);
     idleMenu->setAnchorPoint({0, 0});
-    idleMenu->setContentSize(this->getContentSize());
+    idleMenu->setContentSize(this->getContentSize() - menuOffset);
     this->addChild(idleMenu);
 
     idleMenu->setLayout(SimpleAxisLayout::create(Axis::Row)
@@ -66,9 +68,9 @@ bool EditLayoutTopbar::init(){
     //
 
     targetMenu = CCMenu::create();
-    targetMenu->setPosition({0, 0});
+    targetMenu->setPosition(menuOffset / 2);
     targetMenu->setAnchorPoint({0, 0});
-    targetMenu->setContentSize(this->getContentSize());
+    targetMenu->setContentSize(this->getContentSize() - menuOffset);
     targetMenu->setVisible(false);
     targetMenu->setEnabled(false);
     this->addChild(targetMenu);
@@ -138,7 +140,7 @@ bool EditLayoutTopbar::init(){
         num = std::clamp(num, 0.1f, 2.5f);
 
         targetLabel->labelInfo.scale = num;
-        targetLabel->updateScale();
+        targetLabel->updateTransform();
     });
     targetMenu->addChild(scaleInput);
 
@@ -156,7 +158,7 @@ bool EditLayoutTopbar::init(){
         num = std::max(num, 0.1f);
 
         targetLabel->labelInfo.contentSize.width = num;
-        targetLabel->updateContentSize();
+        targetLabel->updateText();
     });
     targetMenu->addChild(contentWidthInput);
 
@@ -175,7 +177,7 @@ bool EditLayoutTopbar::init(){
         num = std::max(num, 0.1f);
 
         targetLabel->labelInfo.contentSize.height = num;
-        targetLabel->updateContentSize();
+        targetLabel->updateText();
     });
     targetMenu->addChild(contentHeightInput);
 
@@ -191,6 +193,14 @@ bool EditLayoutTopbar::init(){
     );
     targetMenu->addChild(infGrowBtn);
 
+    auto textBtnSpr = ButtonSprite::create("T");
+    auto textBtn = CCMenuItemSpriteExtra::create(
+        textBtnSpr,
+        this,
+        menu_selector(EditLayoutTopbar::onTextClicked)
+    );
+    targetMenu->addChild(textBtn);
+
     targetMenu->addChild(createSpacingNode(15));
 
     auto deselectBtnSpr = CCSprite::createWithSpriteFrameName("GJ_deSelBtn2_001.png");
@@ -202,6 +212,43 @@ bool EditLayoutTopbar::init(){
     targetMenu->addChild(deselectBtn);
 
     targetMenu->updateLayout();
+
+    textMenu = CCMenu::create();
+    textMenu->setPosition(menuOffset / 2);
+    textMenu->setAnchorPoint({0, 0});
+    textMenu->setContentSize(this->getContentSize() - menuOffset);
+    textMenu->setVisible(false);
+    this->addChild(textMenu);
+
+    auto textConfirmBtnSpr = CCSprite::createWithSpriteFrameName("GJ_checkOn_001.png");
+    auto textConfirmBtn = CCMenuItemSpriteExtra::create(
+        textConfirmBtnSpr,
+        this,
+        menu_selector(EditLayoutTopbar::onConfirmTextClicked)
+    );
+    textMenu->addChild(textConfirmBtn);
+
+    auto textInput = TextInput::create(winSize.width, "Text", "gjFont17.fnt");
+    textInput->setCommonFilter(CommonFilter::Float);
+    textInput->setCallback([&](const std::string& newText){
+
+    });
+    textMenu->addChild(textInput);
+
+    auto spcialKeysBtnSpr = CCSprite::createWithSpriteFrameName("GJ_bigGoldKey_001.png");
+    auto spcialKeysBtn = CCMenuItemSpriteExtra::create(
+        spcialKeysBtnSpr,
+        this,
+        menu_selector(EditLayoutTopbar::onSpecialKeysClicked)
+    );
+    textMenu->addChild(spcialKeysBtn);
+
+    textMenu->setLayout(SimpleAxisLayout::create(Axis::Row)
+        ->setGap(6)
+        ->setCrossAxisScaling(AxisScaling::ScaleDown)
+    );
+
+    textMenu->updateLayout();
 
     return true;
 }
@@ -281,7 +328,7 @@ void EditLayoutTopbar::onHAlignmentClicked(CCObject*){
 
     targetLabel->labelInfo.horizontalAlignment = alignment;
 
-    targetLabel->updateAlignment();
+    targetLabel->updateText();
 }
 
 void EditLayoutTopbar::onVAlignmentClicked(CCObject*){
@@ -305,7 +352,7 @@ void EditLayoutTopbar::onVAlignmentClicked(CCObject*){
 
     targetLabel->labelInfo.verticalAlignment = alignment;
 
-    targetLabel->updateAlignment();
+    targetLabel->updateText();
 }
 
 void EditLayoutTopbar::onColorClicked(CCObject*){
@@ -326,7 +373,7 @@ void EditLayoutTopbar::onInfGrowClicked(CCObject* sender){
     auto toggler = static_cast<CCMenuItemToggler*>(sender);
 
     targetLabel->labelInfo.infinityResize = !toggler->isToggled();
-    targetLabel->updateContentSize();
+    targetLabel->updateText();
 }
 
 void EditLayoutTopbar::onDeselectClicked(CCObject*){
@@ -350,6 +397,11 @@ void EditLayoutTopbar::onDeleteClicked(CCObject*){
     dtlayer->removeLabel(toDelete);
 }
 
+void EditLayoutTopbar::onTextClicked(CCObject*){
+    textMenu->setVisible(true);
+    targetMenu->setVisible(false);
+}
+
 CCNode* EditLayoutTopbar::createSpacingNode(float spacing){
     auto spacingNode = CCNode::create();
     spacingNode->setContentSize({spacing, spacing});
@@ -357,8 +409,19 @@ CCNode* EditLayoutTopbar::createSpacingNode(float spacing){
 }
 
 void EditLayoutTopbar::keyBackClicked(){
-    if (targetLabel != nullptr)
+    if (textMenu->isVisible()){
+        textMenu->setVisible(false);
+        targetMenu->setVisible(true);
+    }
+    else if (targetLabel != nullptr)
         onDeselectClicked(nullptr);
     else
         onExitClicked(nullptr);
+}
+
+void EditLayoutTopbar::onConfirmTextClicked(CCObject*){
+    keyBackClicked();
+}
+void EditLayoutTopbar::onSpecialKeysClicked(CCObject*){
+    
 }

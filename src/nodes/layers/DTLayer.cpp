@@ -181,6 +181,7 @@ void DTLayer::onEditLayout(CCObject*){
 
     static_cast<CCMenu*>(m_mainLayer->getChildByID("bottom-menu"))->setEnabled(false);
     m_buttonMenu->setEnabled(false);
+    m_buttonMenu->setOpacity(100);
     sessionSelector->setEnabled(false);
     
     layoutTopbar = EditLayoutTopbar::create();
@@ -209,6 +210,7 @@ void DTLayer::onEditLayout(CCObject*){
 
         static_cast<CCMenu*>(m_mainLayer->getChildByID("bottom-menu"))->setEnabled(true);
         m_buttonMenu->setEnabled(true);
+        m_buttonMenu->setOpacity(255);
         sessionSelector->setEnabled(true);
     };
     this->addChild(layoutTopbar);
@@ -389,7 +391,7 @@ void DTLayer::onLSOClicked(CCObject*){
 DTLayer* DTLayer::get() { return instance; }
 
 DTLabel* DTLayer::createLabel(DTLabelInfo info){
-    auto label = DTLabel::create(info, 50);
+    auto label = DTLabel::create(info, 50 / 10);
     scrollLayer->content->addChild(label);
     labels.insert(label);
     label->onClicked = [&](DTLabel* clickedLabel){

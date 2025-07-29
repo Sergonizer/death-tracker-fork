@@ -33,6 +33,10 @@ class EditLayoutTopbar : public CCNode, public geode::ColorPickPopupDelegate {
         void onInfGrowClicked(CCObject*);
         void onDeselectClicked(CCObject*);
         void onDeleteClicked(CCObject*);
+        void onTextClicked(CCObject*);
+
+        void onConfirmTextClicked(CCObject*);
+        void onSpecialKeysClicked(CCObject*);
 
         void updateColor(cocos2d::ccColor4B const& color);
 
@@ -48,4 +52,5 @@ class EditLayoutTopbar : public CCNode, public geode::ColorPickPopupDelegate {
 
         CCMenu* idleMenu;
         CCMenu* targetMenu;
+        CCMenu* textMenu;
 };

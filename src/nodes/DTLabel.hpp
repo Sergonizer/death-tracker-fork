@@ -18,11 +18,8 @@ class DTLabel : public CCNode {
         void exitEditMode();
         
         void updateState();
-        void updatePosition();
-        void updateAlignment();
-        void updateContentSize();
+        void updateTransform();
         void updateText();
-        void updateScale();
         
         std::function<void(DTLabel*)> onClicked = NULL;
         

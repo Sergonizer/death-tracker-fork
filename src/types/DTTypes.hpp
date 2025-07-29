@@ -186,8 +186,8 @@ struct matjson::Serialize<prismSetting> {
 };
 
 struct DTLabelInfo_s {
-    int X = 5000 / 50 / 2;
-    int Y = 5000 / 50 / 2;
+    int X = -1;
+    int Y = -1;
 
     std::string text = "new label";
     std::string font = "bigFont.fnt";

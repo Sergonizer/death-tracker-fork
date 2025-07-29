@@ -19,6 +19,9 @@ bool DTLabel::init(const DTLabelInfo& info, float gridSize){
     this->labelInfo = info;
     this->gridSize = gridSize;
 
+    if (labelInfo.X == -1) labelInfo.X = 5000 / gridSize / 2;
+    if (labelInfo.Y == -1) labelInfo.Y = 5000 / gridSize / 2;
+
     textArea = SimpleTextArea::create(labelInfo.text, labelInfo.font, labelInfo.scale);
     textArea->setZOrder(3);
     this->addChild(textArea);
@@ -55,23 +58,24 @@ bool DTLabel::init(const DTLabelInfo& info, float gridSize){
 }
 
 void DTLabel::updateState(){
-    updatePosition();
-
+    updateTransform();
+    
     updateText();
-
-    updateAlignment();
-
-    updateScale();
 }
 
-void DTLabel::updatePosition(){
+void DTLabel::updateTransform(){
     auto localPos = gridToLocalPosition(labelInfo.X, labelInfo.Y);
 
     this->setPosition({localPos.x + gridSize / 2, localPos.y + gridSize / 2});
+
+    this->setScale(labelInfo.scale);
 }
 
-void DTLabel::updateAlignment(){
-    this->updateContentSize();
+void DTLabel::updateText(){
+    this->setContentSize(labelInfo.contentSize);
+
+    textArea->setWidth(this->getContentWidth());
+
     this->setAnchorPoint({
         static_cast<int>(labelInfo.horizontalAlignment) / 2.f,
         static_cast<int>(labelInfo.verticalAlignment) / 2.f
@@ -79,21 +83,12 @@ void DTLabel::updateAlignment(){
 
     textArea->setAlignment(labelInfo.horizontalAlignment);
 
-    textArea->setPositionX(textArea->getWidth() / 2);
-    textArea->setPositionY(this->getContentHeight() / 2);
+    ///encase in a task for efficiancy
+    textArea->setText(modifyText(labelInfo.text));
 
-    if (labelInfo.verticalAlignment != CCTextAlignment::kCCTextAlignmentCenter){
-        if (labelInfo.verticalAlignment == CCTextAlignment::kCCTextAlignmentLeft)
-            textArea->setPositionY(textArea->getPositionY() - (this->getContentHeight() - textArea->getContentHeight()) / 2);
-        else
-            textArea->setPositionY(textArea->getPositionY() + (this->getContentHeight() - textArea->getContentHeight()) / 2);
-    }
-}
+    textArea->setFont(labelInfo.font);
 
-void DTLabel::updateContentSize(){
-    this->setContentSize(labelInfo.contentSize);
-
-    textArea->setWidth(this->getContentWidth());
+    textArea->setColor(labelInfo.color);
 
     if (!labelInfo.infinityResize){
         float overallHeight = 0;
@@ -115,22 +110,16 @@ void DTLabel::updateContentSize(){
     textArea->setPositionX(textArea->getWidth() / 2);
     textArea->setPositionY(this->getContentHeight() / 2);
 
+    if (labelInfo.verticalAlignment != CCTextAlignment::kCCTextAlignmentCenter){
+        if (labelInfo.verticalAlignment == CCTextAlignment::kCCTextAlignmentLeft)
+            textArea->setPositionY(textArea->getPositionY() - (this->getContentHeight() - textArea->getContentHeight()) / 2);
+        else
+            textArea->setPositionY(textArea->getPositionY() + (this->getContentHeight() - textArea->getContentHeight()) / 2);
+    }
+
     contentOutline->setContentSize(this->getContentSize());
     selectedShadow->setContentSize(this->getContentSize());
     clickHitbox->setContentSize(this->getContentSize());
-}
-
-void DTLabel::updateText(){
-    ///encase in a task for efficiancy
-    textArea->setText(modifyText(labelInfo.text));
-
-    textArea->setFont(labelInfo.font);
-
-    textArea->setColor(labelInfo.color);
-}
-
-void DTLabel::updateScale(){
-    this->setScale(labelInfo.scale);
 }
 
 CCPoint DTLabel::localToGridPosition(CCPoint localPosition){
@@ -255,7 +244,7 @@ bool DTLabel::touchMoved(CCTouch* touch){
     labelInfo.X = gridPos.x;
     labelInfo.Y = gridPos.y;
 
-    updatePosition();
+    updateTransform();
 
     touchStartGridPoint = ccp(std::numeric_limits<int>::max(), std::numeric_limits<int>::max());
 
