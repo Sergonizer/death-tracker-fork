@@ -3,9 +3,9 @@
 #include <Geode/Geode.hpp>
 #include <types/DTTypes.hpp>
 #include <nodes/DTLabel.hpp>
+#include <nodes/FloatingScrollSelect.hpp>
 
-using namespace cocos2d;
-using namespace geode;
+using namespace geode::prelude;
 
 class EditLayoutTopbar : public CCNode, public geode::ColorPickPopupDelegate {
     public:

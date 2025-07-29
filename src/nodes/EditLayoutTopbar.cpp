@@ -307,8 +307,11 @@ void EditLayoutTopbar::onNewLabelClicked(CCObject*){
 }
 
 
-void EditLayoutTopbar::onFontSelClicked(CCObject*){
-    
+void EditLayoutTopbar::onFontSelClicked(CCObject* sender){
+    auto fontScroll = FloatingScrollSelect::create({75, 200}, {"f", "f", "f", "f", "f", "f", "f", "f", "f", "f", "f"});
+    fontScroll->setPosition(static_cast<CCNode*>(sender)->getPosition());
+    this->addChild(fontScroll);
+    // + ccp(-size.width / 2, this->getContentHeight() / 2)
 }
 
 void EditLayoutTopbar::onHAlignmentClicked(CCObject*){

@@ -171,7 +171,6 @@ void AdvancedScrollLayer::ccTouchesMoved(CCSet* touches, CCEvent* event){
     CCTouch* touch2 = static_cast<CCTouch*>(*it);
 
     if (!this->boundingBox().containsPoint(this->getParent()->convertToNodeSpace(touch1->getLocation()))) return;
-    if (!this->boundingBox().containsPoint(this->getParent()->convertToNodeSpace(touch2->getLocation()))) return;
 
     float distance = touch1->getLocation().getDistance(touch2->getLocation());
 
