@@ -52,6 +52,14 @@ bool DTLabel::init(const DTLabelInfo& info, float gridSize){
     clickHitbox->setAnchorPoint({0, 0});
     menu->addChild(clickHitbox);
 
+    auto circleParent = CCLayer::create();
+    this->addChild(circleParent);
+
+    loadingCircle = LoadingCircle::create();
+    loadingCircle->setParentLayer(circleParent);
+    loadingCircle->show();
+    loadingCircle->setVisible(false);
+
     updateState();
 
     return true;
@@ -72,54 +80,80 @@ void DTLabel::updateTransform(){
 }
 
 void DTLabel::updateText(){
-    this->setContentSize(labelInfo.contentSize);
+    if (!runningTask.isNull())
+        runningTask.cancel();
 
-    textArea->setWidth(this->getContentWidth());
+    runningTask = textUpdateTask::run([&](auto progress, auto hasBeenCancelled) -> textUpdateTask::Result{
+        loadingCircle->setVisible(true);
 
-    this->setAnchorPoint({
-        static_cast<int>(labelInfo.horizontalAlignment) / 2.f,
-        static_cast<int>(labelInfo.verticalAlignment) / 2.f
+        usedKeys.clear();
+
+        Loader::get()->queueInMainThread([=] {
+            this->setContentSize(labelInfo.contentSize);
+
+            textArea->setWidth(this->getContentWidth());
+
+            this->setAnchorPoint({
+                static_cast<int>(labelInfo.horizontalAlignment) / 2.f,
+                static_cast<int>(labelInfo.verticalAlignment) / 2.f
+            });
+
+            textArea->setAlignment(labelInfo.horizontalAlignment);
+
+            textArea->setText(modifyText(labelInfo.text));
+
+            textArea->setFont(labelInfo.font);
+
+            textArea->setColor(labelInfo.color);
+
+            if (!labelInfo.infinityResize){
+                float overallHeight = 0;
+                int lineAmount = 0;
+                for (const auto& line : textArea->getLines())
+                {
+                    overallHeight += line->getContentHeight() + textArea->getLinePadding();
+                    if (overallHeight > this->getContentHeight()) break;
+                    lineAmount++;
+                }
+                
+                textArea->setMaxLines(lineAmount);
+            }
+            else{
+                textArea->setMaxLines(0);
+                this->setContentHeight(textArea->getContentHeight());
+            }
+
+            textArea->setPositionX(textArea->getWidth() / 2);
+            textArea->setPositionY(this->getContentHeight() / 2);
+
+            if (labelInfo.verticalAlignment != CCTextAlignment::kCCTextAlignmentCenter){
+                if (labelInfo.verticalAlignment == CCTextAlignment::kCCTextAlignmentLeft)
+                    textArea->setPositionY(textArea->getPositionY() - (this->getContentHeight() - textArea->getContentHeight()) / 2);
+                else
+                    textArea->setPositionY(textArea->getPositionY() + (this->getContentHeight() - textArea->getContentHeight()) / 2);
+            }
+
+            contentOutline->setContentSize(this->getContentSize());
+            selectedShadow->setContentSize(this->getContentSize());
+            clickHitbox->setContentSize(this->getContentSize());
+            
+            loadingCircle->setPosition(-loadingCircle->getContentSize() / 2 + this->getContentSize() / 2);
+            loadingCircle->setVisible(false);
+        });
+
+        return true;
     });
 
-    textArea->setAlignment(labelInfo.horizontalAlignment);
-
-    ///encase in a task for efficiancy
-    textArea->setText(modifyText(labelInfo.text));
-
-    textArea->setFont(labelInfo.font);
-
-    textArea->setColor(labelInfo.color);
-
-    if (!labelInfo.infinityResize){
-        float overallHeight = 0;
-        int lineAmount = 0;
-        for (const auto& line : textArea->getLines())
-        {
-            overallHeight += line->getContentHeight() + textArea->getLinePadding();
-            if (overallHeight > this->getContentHeight()) break;
-            lineAmount++;
+    textUpdateListener.bind([&](textUpdateTask::Event* e){
+        if (auto value = e->getValue()){
+            loadingCircle->setVisible(false);
+            log::info("completed");
         }
-        
-        textArea->setMaxLines(lineAmount);
-    }
-    else{
-        textArea->setMaxLines(0);
-        this->setContentHeight(textArea->getContentHeight());
-    }
-
-    textArea->setPositionX(textArea->getWidth() / 2);
-    textArea->setPositionY(this->getContentHeight() / 2);
-
-    if (labelInfo.verticalAlignment != CCTextAlignment::kCCTextAlignmentCenter){
-        if (labelInfo.verticalAlignment == CCTextAlignment::kCCTextAlignmentLeft)
-            textArea->setPositionY(textArea->getPositionY() - (this->getContentHeight() - textArea->getContentHeight()) / 2);
-        else
-            textArea->setPositionY(textArea->getPositionY() + (this->getContentHeight() - textArea->getContentHeight()) / 2);
-    }
-
-    contentOutline->setContentSize(this->getContentSize());
-    selectedShadow->setContentSize(this->getContentSize());
-    clickHitbox->setContentSize(this->getContentSize());
+        else if (e->isCancelled()){ //on cancled
+            loadingCircle->setVisible(false);
+        }
+    });
+    textUpdateListener.setFilter(runningTask);
 }
 
 CCPoint DTLabel::localToGridPosition(CCPoint localPosition){
@@ -244,7 +278,7 @@ bool DTLabel::touchMoved(CCTouch* touch){
     labelInfo.X = gridPos.x;
     labelInfo.Y = gridPos.y;
 
-    updateTransform();
+    updateState();
 
     touchStartGridPoint = ccp(std::numeric_limits<int>::max(), std::numeric_limits<int>::max());
 

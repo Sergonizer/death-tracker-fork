@@ -47,6 +47,7 @@ class EditLayoutTopbar : public CCNode, public geode::ColorPickPopupDelegate {
         TextInput* contentWidthInput;
         TextInput* contentHeightInput;
         CCMenuItemToggler* infGrowBtn;
+        TextInput* textInput;
 
         CCNode* createSpacingNode(float spacing);
 

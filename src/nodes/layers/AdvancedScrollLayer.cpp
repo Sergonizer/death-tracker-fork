@@ -180,19 +180,21 @@ void AdvancedScrollLayer::ccTouchesMoved(CCSet* touches, CCEvent* event){
     prevTouchDelta = distance;
 }
 
-void AdvancedScrollLayer::scrollWheel(float x, float y) {
+void AdvancedScrollLayer::scrollWheel(float y, float x) {
     if (!isEnabled) return;
 
     if (!scrollMovement)
-        zoomBy(-x * 0.01f);
+        zoomBy(-y * 0.01f);
     else{
-        if (holdingShift)
-            zoomBy(-x * 0.01f);
-        else if (!CCKeyboardDispatcher::get()->getControlKeyPressed())
-            moveBy(ccp(0, x) * scrollSense);
+        if (CCKeyboardDispatcher::get()->getControlKeyPressed())
+            zoomBy(-y * 0.01f);
+        else if (!holdingShift)
+            moveBy(ccp(x, y) * scrollSense);
         else
-            moveBy(ccp(x, 0) * scrollSense);
+            moveBy(ccp(y, x) * scrollSense);
     }
+
+    //log::info("{}", ccp(y, x));
 }
 
 void AdvancedScrollLayer::keyDown(enumKeyCodes key){

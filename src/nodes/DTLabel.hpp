@@ -6,6 +6,8 @@
 using namespace cocos2d;
 using namespace geode;
 
+using textUpdateTask = Task<bool, int>;
+
 class DTLabel : public CCNode {
     public:
         static DTLabel* create(const DTLabelInfo& info, float gridSize);
@@ -58,6 +60,12 @@ class DTLabel : public CCNode {
 
         bool markedForDeletion = false;
         CCMenu* menu;
+
+        EventListener<textUpdateTask> textUpdateListener;
+        textUpdateTask runningTask;
+        LoadingCircle* loadingCircle;
+
+        std::set<std::string> usedKeys{};
 };
 
 /*

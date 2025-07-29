@@ -228,10 +228,12 @@ bool EditLayoutTopbar::init(){
     );
     textMenu->addChild(textConfirmBtn);
 
-    auto textInput = TextInput::create(winSize.width, "Text", "gjFont17.fnt");
-    textInput->setCommonFilter(CommonFilter::Float);
+    textInput = TextInput::create(winSize.width, "Text", "gjFont17.fnt");
+    textInput->setCommonFilter(CommonFilter::Any);
     textInput->setCallback([&](const std::string& newText){
+        targetLabel->labelInfo.text = newText;
 
+        targetLabel->updateText();
     });
     textMenu->addChild(textInput);
 
@@ -270,6 +272,8 @@ void EditLayoutTopbar::setTarget(DTLabel* target){
     scaleInput->setString(fmt::format("{:.2f}", targetLabel->labelInfo.scale));
     contentWidthInput->setString(fmt::format("{:.2f}", targetLabel->labelInfo.contentSize.width));
     contentHeightInput->setString(fmt::format("{:.2f}", targetLabel->labelInfo.contentSize.height));
+
+    textInput->setString(targetLabel->labelInfo.text);
 
     infGrowBtn->toggle(targetLabel->labelInfo.infinityResize);
 }
@@ -385,6 +389,8 @@ void EditLayoutTopbar::onDeselectClicked(CCObject*){
 
     targetMenu->setVisible(false);
     targetMenu->setEnabled(false);
+
+    textMenu->setVisible(false);
 }
 
 void EditLayoutTopbar::onDeleteClicked(CCObject*){
