@@ -7,6 +7,7 @@ using namespace geode::prelude;
 class SimpleToggler : public CCMenuItemToggler {
     public:
         static SimpleToggler* create(CCNode* offSprite, CCNode* onSprite, float scale = 1, bool startState = false);
+        static SimpleToggler* createWithDefaults(float scale = 1, bool startState = false);
 
         void setCallback(const std::function<void(bool)>& callback);
     private:

@@ -11,6 +11,9 @@ class RunOptions : public OptionsNode {
         static RunOptions* create(const CCSize& size);
     private:
         virtual bool setup();
+
+        void addNewRun(CCObject*);
+
     public:
         virtual void onOpened();
         virtual void onClosed();

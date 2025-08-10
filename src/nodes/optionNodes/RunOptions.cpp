@@ -18,15 +18,15 @@ bool RunOptions::setup(){
 
     auto TARLabel = CCLabelBMFont::create("Track any run", "gjFont17.fnt");
     TARLabel->setAlignment(CCTextAlignment::kCCTextAlignmentLeft);
-    TARLabel->setAnchorPoint({0, .5f});
+    TARLabel->setAnchorPoint({.5f, .5f});
+    TARLabel->setScale(.75f);
+    TARLabel->setPosition({size.width / 4, size.height - TARLabel->getScaledContentHeight() / 2});
     this->addChild(TARLabel);
 
     auto dtlayer = DTLayer::get();
     bool startState = dtlayer == nullptr ? false : (dtlayer->m_MyLevelStats.isOk() ? dtlayer->m_MyLevelStats.unwrap().trackAnyRun : false);
 
-    auto toggler = SimpleToggler::create(
-        CCSprite::createWithSpriteFrameName("GJ_checkOff_001.png"),
-        CCSprite::createWithSpriteFrameName("GJ_checkOn_001.png"),
+    auto toggler = SimpleToggler::createWithDefaults(
         .75f,
         startState
     );
@@ -35,7 +35,37 @@ bool RunOptions::setup(){
         auto& stats = dtlayer->m_MyLevelStats.unwrap();
         stats.trackAnyRun = isToggled;
     });
+    float offset = toggler->getContentWidth() / 4 + 5;
+    toggler->setPosition(TARLabel->getPosition() - ccp(TARLabel->getScaledContentWidth() / 2 + offset, 0));
+    TARLabel->setPositionX(TARLabel->getPositionX() + offset);
     this->addChild(toggler);
+
+    auto runAdditionInput = TextInput::create(size.width / 4.f, "Start %");
+    runAdditionInput->setPosition({size.width / 4, TARLabel->getPositionY() - runAdditionInput->getContentHeight()});
+    this->addChild(runAdditionInput);
+
+    auto plusBtnSpr = CCSprite::createWithSpriteFrameName("GJ_plus3Btn_001.png");
+    auto plusBtn = CCMenuItemSpriteExtra::create(
+        plusBtnSpr,
+        this,
+        menu_selector(RunOptions::addNewRun)
+    );
+    plusBtn->setPosition(runAdditionInput->getPosition() + ccp(runAdditionInput->getScaledContentWidth() / 2 + plusBtn->getContentWidth() / 2 + 5, 0));
+    this->addChild(plusBtn);
+
+    auto runsScroll = ScrollLayer::create({size.width / 2 / 1.1f, runAdditionInput->getPositionY() - runAdditionInput->getContentHeight() / 2});
+    runsScroll->setPosition({abs(runsScroll->getContentWidth() / 2 - runAdditionInput->getPositionX()), 0});
+    this->addChild(runsScroll);
+
+    auto seperator = CCScale9Sprite::create("square.png");
+    seperator->setScale(.5f);
+    seperator->setPosition(size / 2);
+    seperator->setContentSize(ccp(1, size.height / 1.15f) / seperator->getScale());
+    this->addChild(seperator);
+
+    auto runAdditionInput = TextInput::create(30, "Len");
+    runAdditionInput->setPosition({size.width, 0});
+    this->addChild(runAdditionInput);
 
     this->setOpacity(0);
 
@@ -47,4 +77,8 @@ void RunOptions::onOpened(){
 }
 void RunOptions::onClosed(){
     this->runAction(CCFadeOut::create(.5f));
+}
+
+void RunOptions::addNewRun(CCObject*){
+
 }

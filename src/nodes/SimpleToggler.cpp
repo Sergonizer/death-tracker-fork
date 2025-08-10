@@ -10,6 +10,15 @@ SimpleToggler* SimpleToggler::create(CCNode* offSprite, CCNode* onSprite, float 
     return nullptr;
 }
 
+SimpleToggler* SimpleToggler::createWithDefaults(float scale, bool startState){
+    return create(
+        CCSprite::createWithSpriteFrameName("GJ_checkOff_001.png"),
+        CCSprite::createWithSpriteFrameName("GJ_checkOn_001.png"),
+        scale,
+        startState
+    );
+}
+
 bool SimpleToggler::init(CCNode* offSprite, CCNode* onSprite, float scale, bool startState){
     offSprite->setScale(scale);
     onSprite->setScale(scale);

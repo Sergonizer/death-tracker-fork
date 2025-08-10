@@ -62,8 +62,9 @@ bool DTLevelSpecificSettingsLayer::setup() {
     pages->addChild(DTLevelSpecificSettingsLayer::createPageBtn("Session", SessionOptions::create(ccp(m_size.width - 10, seperator->getPositionY() - 10))));
 
     pages->updateLayout();
-
+    
     sendUnderlineTo(firstOption, true);
+    switchPage(firstOption);
 
     return true;
 }
