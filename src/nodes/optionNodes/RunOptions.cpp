@@ -35,12 +35,14 @@ bool RunOptions::setup(){
     });
     this->addChild(toggler);
 
+    this->setOpacity(0);
+
     return true;
 }
 
 void RunOptions::onOpened(){
-    
+    this->runAction(CCFadeIn::create(.5f));
 }
 void RunOptions::onClosed(){
-    
+    this->runAction(CCFadeOut::create(.5f));
 }

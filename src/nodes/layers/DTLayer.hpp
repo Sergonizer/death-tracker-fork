@@ -27,7 +27,7 @@ class DTLayer : public Popup<GJGameLevel* const&> {
         GJGameLevel* m_Level;
 
         Result<LevelStats> m_MyLevelStats = Err("");
-        LevelStats m_SharedLevelStats;
+        Result<LevelStats> m_SharedLevelStats = Err("");
 
         void show() override;
 

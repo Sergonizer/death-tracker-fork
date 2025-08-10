@@ -57,7 +57,7 @@ public:
     //save an array of normal mode deaths to the loaded levels save file
     static void logDeaths(const std::vector<int>& percents);
     //save run to the loaded levels save file
-    static void logRun(const Run& run);
+    static void logRun(const Run& run, bool instantSave = true);
     //save an array of run to the loaded levels save file
     static void logRuns(const std::vector<Run>& runs);
 

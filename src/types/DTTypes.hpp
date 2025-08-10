@@ -39,19 +39,44 @@ typedef struct {
 } Session;
 
 struct LevelStats_s {
-    Deaths deaths;
-    Runs runs;
-    NewBests newBests;
-    int currentBest;
-    std::vector<Session> sessions;
-    std::vector<int> RunsToSave;
-    bool trackAnyRun;
-    std::vector<std::string> LinkedLevels;
+    Deaths deaths{};
+    Runs runs{};
+    NewBests newBests{};
+    int currentBest = 0;
+    std::vector<Session> sessions{};
+    std::set<int> RunsToSave{};
+    bool trackAnyRun = true;
+    std::set<std::string> LinkedLevels{};
     std::string levelName = "Unknown name";
-    int attempts;
-    int difficulty;
-    int hideUpto;
-    int hideRunLength;
+    int attempts = 0;
+    int difficulty = 0;
+    int hideUpto = 0;
+    int hideRunLength = 0;
+
+    public:
+        void CombineStats(const LevelStats_s& other){
+            mergeMaps(deaths, other.deaths);
+            mergeMaps(runs, other.runs);
+            newBests.insert(other.newBests.begin(), other.newBests.end());
+            
+            sessions.reserve(sessions.size() + other.sessions.size());
+            sessions.insert(sessions.end(), other.sessions.begin(), other.sessions.end());
+            std::ranges::sort(sessions, [](const Session a, const Session b) { return a.lastPlayed > b.lastPlayed; });
+
+            if (other.currentBest > currentBest)
+                currentBest = other.currentBest;
+            
+            RunsToSave.insert(other.RunsToSave.begin(), other.RunsToSave.end());
+            LinkedLevels.insert(other.LinkedLevels.begin(), other.LinkedLevels.end());
+
+            attempts += other.attempts;
+        }
+
+        void mergeMaps(std::map<std::string, int> &original, const std::map<std::string, int> &addition){
+            for (const auto &[key, value] : addition) {
+                original[key] += value;
+            }
+        }
 };
 typedef struct LevelStats_s LevelStats;
 
@@ -92,8 +117,8 @@ struct matjson::Serialize<LevelStats> {
         GEODE_UNWRAP_INTO(stats.newBests, value["newBests"].as<NewBests>());
         GEODE_UNWRAP_INTO(stats.currentBest, value["currentBest"].asInt());
         GEODE_UNWRAP_INTO(stats.sessions, value["sessions"].as<std::vector<Session>>());
-        GEODE_UNWRAP_INTO(stats.RunsToSave, value["RunsToSave"].as<std::vector<int>>());
-        GEODE_UNWRAP_INTO(stats.LinkedLevels, value["LinkedLevels"].as<std::vector<std::string>>());
+        GEODE_UNWRAP_INTO(stats.RunsToSave, value["RunsToSave"].as<std::set<int>>());
+        GEODE_UNWRAP_INTO(stats.LinkedLevels, value["LinkedLevels"].as<std::set<std::string>>());
         GEODE_UNWRAP_INTO(stats.levelName, value["levelName"].asString());
         GEODE_UNWRAP_INTO(stats.attempts, value["attempts"].asInt());
         GEODE_UNWRAP_INTO(stats.difficulty, value["difficulty"].asInt());

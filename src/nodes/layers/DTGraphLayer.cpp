@@ -60,10 +60,6 @@ bool DTGraphLayer::setup(DTLayer* const& layer) {
     m_SessionSelectMenu->setPosition({0, 0});
     SessionSelectCont->addChild(m_SessionSelectMenu);
 
-    std::ranges::sort(m_DTLayer->m_SharedLevelStats.sessions, [](const Session a, const Session b) {
-        return a.lastPlayed > b.lastPlayed;
-    });
-
     m_SessionSelectionInput = TextInput::create(120, "Session");
     m_SessionSelectionInput->getInputNode()->setDelegate(this);
     m_SessionSelectionInput->setCommonFilter(CommonFilter::Uint);

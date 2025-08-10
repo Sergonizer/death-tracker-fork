@@ -182,26 +182,18 @@ void StatsManager::logDeaths(const std::vector<int>& percents) {
     StatsManager::setLevelStats(*currentLoggingLevelStatsRef, currentLoggingLevelRef, false);
 }
 
-void StatsManager::logRun(const Run& run) {
+void StatsManager::logRun(const Run& run, bool instantSave) {
     if (!currentLoggingLevelStatsRef) {
         log::error("Failed to log deaths");
         return;
     }
 
     bool TrackRun = false;
-    if (currentLoggingLevelStatsRef->RunsToSave.size()){
-        if (currentLoggingLevelStatsRef->RunsToSave[0] == -1){
-            TrackRun = true;
-        }
-        else{
-            for (int i = 0; i < currentLoggingLevelStatsRef->RunsToSave.size(); i++)
-            {
-                if (currentLoggingLevelStatsRef->RunsToSave[i] == run.start){
-                    TrackRun = true;
-                    break;
-                }
-            }
-        }
+    if (currentLoggingLevelStatsRef->trackAnyRun){
+        TrackRun = true;
+    }
+    else if (currentLoggingLevelStatsRef->RunsToSave.contains(run.start)){
+        TrackRun = true;
     }
 
     if (!TrackRun) return;
@@ -216,9 +208,11 @@ void StatsManager::logRun(const Run& run) {
 
     currentLoggingLevelStatsRef->runs[runKey]++;
     session->runs[runKey]++;
-
-    StatsManager::updateSessionLastPlayed();
-    StatsManager::setLevelStats(*currentLoggingLevelStatsRef, currentLoggingLevelRef, false);
+    
+    if (instantSave){
+        StatsManager::updateSessionLastPlayed();
+        StatsManager::setLevelStats(*currentLoggingLevelStatsRef, currentLoggingLevelRef, false);
+    }
 }
 
 void StatsManager::logRuns(const std::vector<Run>& runs) {
@@ -230,33 +224,7 @@ void StatsManager::logRuns(const std::vector<Run>& runs) {
     bool TrackRun = false;
     for (int i = 0; i < runs.size(); i++)
     {
-        if (currentLoggingLevelStatsRef->RunsToSave.size()){
-            if (currentLoggingLevelStatsRef->RunsToSave[0] == -1){
-                TrackRun = true;
-            }
-            else{
-                for (int i = 0; i < currentLoggingLevelStatsRef->RunsToSave.size(); i++)
-                {
-                    if (currentLoggingLevelStatsRef->RunsToSave[i] == runs[i].start){
-                        TrackRun = true;
-                        break;
-                    }
-                }
-            }
-        }
-            
-        if (!TrackRun) return;
-
-        auto session = StatsManager::getSession();
-        if (!session) return;
-
-        auto runKey = fmt::format("{}-{}",
-            runs[i].start,
-            runs[i].end
-        );
-
-        currentLoggingLevelStatsRef->runs[runKey]++;
-        session->runs[runKey]++;
+        logRun(runs[i], false);
     }
 
     StatsManager::updateSessionLastPlayed();
@@ -322,7 +290,7 @@ Session* StatsManager::getSession() {
 
     if (currentLoggingLevelStatsRef->currentBest == -1) return nullptr;
 
-    if (!currentLoggingLevelStatsRef->sessions.size()) m_scheduleCreateNewSession = true;
+    if (!currentLoggingLevelStatsRef->sessions.size() && !m_scheduleCreateNewSession) return nullptr;
 
     auto currentSession = &currentLoggingLevelStatsRef->sessions[currentLoggingLevelStatsRef->sessions.size() - 1];
 
@@ -391,13 +359,16 @@ bool StatsManager::hasPlayedLevel() {
 ======================= */
 
 void StatsManager::setLevelStats(const LevelStats& stats, GJGameLevel* const& level, bool isBackup) {
+    log::info("attempting to save file2");
     auto levelKeyRes = StatsManager::getLevelKey(level);
     if (levelKeyRes.isOk())
         setLevelStats(stats, levelKeyRes.unwrap(), isBackup);
 }
 
 void StatsManager::setLevelStats(const LevelStats& stats, const std::string& levelKey, bool isBackup) {    
-    auto levelSaveFilePath = m_savesFolderPath / (levelKey + (isBackup ? ".deathsBackup" : ".json"));    
+    auto levelSaveFilePath = m_savesFolderPath / (levelKey + (isBackup ? ".deathsBackup" : ".json"));
+
+    log::info("attempting to save file");
 
     // create the json file if it doesnt exist
     if (!std::filesystem::exists(levelSaveFilePath)) {

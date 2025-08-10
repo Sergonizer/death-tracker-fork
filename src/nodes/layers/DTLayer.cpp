@@ -128,7 +128,13 @@ bool DTLayer::setup(GJGameLevel* const& level) {
     );
     bottomMenu->addChild(levelSpecificOptionsBtn);
 
-    sessionSelector = SessionSelector::create(m_SharedLevelStats.sessions.size());
+    int sessionAmount = 0;
+    if (m_SharedLevelStats.isOk()){
+        sessionAmount = m_SharedLevelStats.unwrap().sessions.size();
+        log::info("{}", sessionAmount);
+    }
+
+    sessionSelector = SessionSelector::create(sessionAmount);
     sessionSelector->setCallback([&](int newSession){
         log::info("chosen new session {}", newSession);
     });
@@ -300,80 +306,30 @@ void DTLayer::graphBtnClicked(CCObject*){
 }
 
 void DTLayer::UpdateSharedStats(){
-    if (m_MyLevelStats.isErr()) return;
-    auto myStats = m_MyLevelStats.unwrap();
-    m_SharedLevelStats = myStats;
+    if (m_MyLevelStats.isErr()){
+        m_SharedLevelStats = Err("Failed to create shared stats!");
+        return;
+    }
+    auto sharedStats = m_MyLevelStats.unwrap();
 
-    for (int i = 0; i < myStats.LinkedLevels.size(); i++)
+    std::vector<std::string> linkedLevels{};
+    linkedLevels.insert(linkedLevels.end(), sharedStats.LinkedLevels.begin(), sharedStats.LinkedLevels.end());
+
+    for (int i = 0; i < linkedLevels.size(); i++)
     {
-        auto currStats = StatsManager::getLevelStats(myStats.LinkedLevels[i], false).unwrapOrDefault();
-        if (currStats.levelName == "Unknown name"){
-            Notification::create("failed to get data for linked level - " + myStats.LinkedLevels[i])->show();
+        auto currStatsRes = StatsManager::getLevelStats(linkedLevels[i], false);
+        if (currStatsRes.isErr()){
+            Notification::create(fmt::format("failed to get data for linked level - {} | {}", linkedLevels[i], currStatsRes.unwrapErr()))->show();
             continue;
         }
+        auto currStats = currStatsRes.unwrap();
 
-        m_SharedLevelStats.attempts += currStats.attempts;
+        linkedLevels.insert(linkedLevels.end(), currStats.LinkedLevels.begin(), currStats.LinkedLevels.end());
 
-        m_SharedLevelStats.sessions.reserve(m_SharedLevelStats.sessions.size() + std::distance(currStats.sessions.begin(),currStats.sessions.end()));
-        m_SharedLevelStats.sessions.insert(m_SharedLevelStats.sessions.end(),currStats.sessions.begin(),currStats.sessions.end());
-
-        for (int r = 0; r < myStats.RunsToSave.size(); r++)
-        {
-            bool addMeRun = true;
-            for (int r2 = 0; r2 < currStats.RunsToSave.size(); r2++)
-            {
-                if (currStats.RunsToSave[r2] == myStats.RunsToSave[r])
-                    addMeRun = false;
-            }
-            
-            if (addMeRun)
-                currStats.RunsToSave.push_back(myStats.RunsToSave[r]);
-        }
-        for (int r = 0; r < currStats.RunsToSave.size(); r++)
-        {
-            bool addMeRun = true;
-            for (int r2 = 0; r2 < myStats.RunsToSave.size(); r2++)
-            {
-                if (myStats.RunsToSave[r2] == currStats.RunsToSave[r])
-                    addMeRun = false;
-            }
-            
-            if (addMeRun)
-                myStats.RunsToSave.push_back(currStats.RunsToSave[r]);
-        }
-
-        std::ranges::sort(myStats.RunsToSave, [](const int a, const int b) {
-            return a < b;
-        });
-
-        std::ranges::sort(currStats.RunsToSave, [](const int a, const int b) {
-            return a < b;
-        });
-
-        if (myStats.currentBest != -1)
-            StatsManager::setLevelStats(myStats, m_Level, false);
-        if (currStats.currentBest != -1)
-            StatsManager::setLevelStats(currStats, myStats.LinkedLevels[i], false);
-        
-        for (const auto& [death, count] : currStats.deaths)
-        {
-            m_SharedLevelStats.deaths[death] += count;
-        }
-        
-        for (const auto& [run, count] : currStats.runs)
-        {
-            m_SharedLevelStats.runs[run] += count;
-        }
-
-        if (m_SharedLevelStats.currentBest < currStats.currentBest)
-            m_SharedLevelStats.currentBest = currStats.currentBest;
-
-        m_SharedLevelStats.newBests.insert(currStats.newBests.begin(), currStats.newBests.end());
+        sharedStats.CombineStats(currStats);
     }
 
-    std::ranges::sort(m_SharedLevelStats.sessions, [](const Session a, const Session b) {
-        return a.lastPlayed > b.lastPlayed;
-    });
+    m_SharedLevelStats = Ok(sharedStats);
 }
 
 void DTLayer::onSettings(CCObject*){

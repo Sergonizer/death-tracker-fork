@@ -31,31 +31,24 @@ static void onModify(auto& self) {
 bool DTPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
     if (!PlayLayer::init(level, p1, p2)) return false;
 
+    auto statsRes = StatsManager::getLevelStats(level, false);
+    if (statsRes.isErr() && statsRes.unwrapErr() == "No stats exist for level!"){
+        LevelStats newStats;
+        statsRes = Ok(newStats);
+    }
+    else if (statsRes.isErr())
+        geode::Notification::create(fmt::format("Failed to load DT level data! {}", statsRes.unwrapErr()), NotificationIcon::Error)->show();
+    
+    if (statsRes.isOk()){
+        auto stats = statsRes.unwrap();
+        stats.levelName = level->m_levelName;
+        stats.attempts = level->m_attempts;
+        stats.difficulty = StatsManager::getDifficulty(level);
+        StatsManager::setLevelStats(stats, level, false);
+        statsRes = Ok(stats);
+    }
+
     StatsManager::setCurrentLogLevel(level);
-        
-    bool isMainLevel = false;
-
-    for (int i = 0; i < 26; i++)
-    {
-        if (StatsManager::MainLevelIDs[i] == level->m_levelID.value())
-            isMainLevel = true;
-    }
-
-    if (isMainLevel){
-        auto statsRes = StatsManager::getLevelStats(level, false);
-        if (statsRes.isOk()){
-            auto stats = statsRes.unwrap();
-            stats.attempts = level->m_attempts;
-            stats.levelName = level->m_levelName;
-            stats.difficulty = StatsManager::getDifficulty(level);
-
-            StatsManager::setLevelStats(stats, level, false);
-            StatsManager::setLevelStats(stats, level, true);
-        }
-        else{
-            Notification::create("Failed to load Deaths json.", CCSprite::createWithSpriteFrameName("GJ_deleteIcon_001.png"))->show();
-        }
-    }
 
     DTPopupManager::setCurrentLevel(level);
 
@@ -65,9 +58,11 @@ bool DTPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
     auto levelKey = StatsManager::getLevelKey(level);
     auto sessionLength = Settings::getMaxSessionLength();
 
-    if (session == nullptr) return true;
-
-    log::info("entered!");
+    if (session == nullptr){
+        StatsManager::scheduleCreateNewSession(true);
+        DTPlayLayer::updateSessionLastPlayed();
+        return true;
+    }
 
     // schedule create a new session
     // based on the session length setting
