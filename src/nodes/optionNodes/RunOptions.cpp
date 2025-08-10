@@ -31,7 +31,9 @@ bool RunOptions::setup(){
         startState
     );
     toggler->setCallback([&](bool isToggled){
-        
+        auto dtlayer = DTLayer::get();
+        auto& stats = dtlayer->m_MyLevelStats.unwrap();
+        stats.trackAnyRun = isToggled;
     });
     this->addChild(toggler);
 

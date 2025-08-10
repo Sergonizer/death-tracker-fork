@@ -46,7 +46,7 @@ bool SessionSelector::init(int count){
     this->addChild(rightArrowBtn);
 
     setMaximumCount(count);
-    setCurrentCount(0, false);
+    setCurrentCount(1, false);
 
     return true;
 }
@@ -63,12 +63,12 @@ void SessionSelector::setCallback(const std::function<void(int)>& callback){
 }
 
 void SessionSelector::setMaximumCount(int count){
-    count = std::max(count, 0);
+    count = std::max(count, 1);
     maxCount = count;
 }
 void SessionSelector::setCurrentCount(int count, bool ignoreIfUnchanged, bool runCallback){
     if (currentCount == count && ignoreIfUnchanged) return;
-    count = std::clamp(count, 0, maxCount);
+    count = std::clamp(count, 1, maxCount);
     currentCount = count;
 
     std::string newText;

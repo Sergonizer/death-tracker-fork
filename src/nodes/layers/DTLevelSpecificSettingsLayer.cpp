@@ -1,6 +1,7 @@
 #include <nodes/layers/DTLevelSpecificSettingsLayer.hpp>
 
 #include <utils/CCResizeTo.hpp>
+#include <nodes/layers/DTLayer.hpp>
 
 #include <nodes/optionNodes/RunOptions.hpp>
 #include <nodes/optionNodes/LinkOptions.hpp>
@@ -173,4 +174,11 @@ void DTLevelSpecificSettingsLayer::switchPage(CCObject* sender){
 
     if (currentPage != nullptr)
         currentPage->onOpened();
+}
+
+void DTLevelSpecificSettingsLayer::onClose(CCObject*){
+    auto dtlayer = DTLayer::get();
+    if (dtlayer)
+        dtlayer->saveAndUpdateStats(true);
+    Popup<>::onClose(nullptr);
 }

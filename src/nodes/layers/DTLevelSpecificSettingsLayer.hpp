@@ -9,7 +9,9 @@ class DTLevelSpecificSettingsLayer : public geode::Popup<>, public TextInputDele
     public:
         static DTLevelSpecificSettingsLayer* create();
     private:
-        bool setup();
+        bool setup() override;
+
+        void onClose(CCObject*) override;
 
         CCNode* createPageBtn(const std::string& text, OptionsNode* page);
         CCNode* createSeperator();

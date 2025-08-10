@@ -129,10 +129,8 @@ bool DTLayer::setup(GJGameLevel* const& level) {
     bottomMenu->addChild(levelSpecificOptionsBtn);
 
     int sessionAmount = 0;
-    if (m_SharedLevelStats.isOk()){
+    if (m_SharedLevelStats.isOk())
         sessionAmount = m_SharedLevelStats.unwrap().sessions.size();
-        log::info("{}", sessionAmount);
-    }
 
     sessionSelector = SessionSelector::create(sessionAmount);
     sessionSelector->setCallback([&](int newSession){
@@ -410,6 +408,13 @@ AdvancedScrollLayer* DTLayer::getScrollLayer(){
     return scrollLayer;
 }
 
+void DTLayer::saveAndUpdateStats(bool updateShared){
+    auto& levelStats = m_MyLevelStats.unwrap();
+    StatsManager::setLevelStats(levelStats, m_Level, false);
+    if (updateShared)
+        UpdateSharedStats();
+}
+
 //better info time calc
 
 uint64_t DTLayer::timeInMs() {
@@ -519,3 +524,4 @@ float DTLayer::timeForLevelString(const std::string& levelString) {
         return 0;
     }
 }
+
