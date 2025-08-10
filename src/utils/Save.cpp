@@ -49,3 +49,9 @@ void Save::setLastOpenedVersion(const std::string& verion){
     Mod::get()->setSavedValue("LastOpenedVersion", verion);
 }
 
+ViewState Save::getLastViewState(){
+    return Mod::get()->getSavedValue<ViewState>("LastViewState");
+}
+void Save::setLastViewState(const ViewState& verion){
+    Mod::get()->setSavedValue("LastViewState", verion);
+}

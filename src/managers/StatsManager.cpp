@@ -107,7 +107,7 @@ std::array<std::string, 62> StatsManager::m_AllFontsMap{
 ================== */
 
 Result<LevelStats> StatsManager::getLevelStats(GJGameLevel* const& level, bool isBackup){
-    std::string levelKey = StatsManager::getLevelKey(level).unwrapOr("-1");
+    GEODE_UNWRAP_INTO(auto levelKey, StatsManager::getLevelKey(level));
     return getLevelStats(levelKey, isBackup);
 }
 
@@ -423,7 +423,7 @@ Result<LevelStats> StatsManager::getLevelStats(const std::string& levelKey, bool
         return json.as<LevelStats>();
     }
 
-    return Err("0 No stats exist for level!");
+    return Err("No stats exist for level!");
 }
 
 Result<> StatsManager::deleteLevelStats(const std::string& levelKey){

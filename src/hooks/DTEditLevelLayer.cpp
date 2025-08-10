@@ -1,4 +1,7 @@
-#include "../hooks/DTEditLevelLayer.hpp"
+#include <hooks/DTEditLevelLayer.hpp>
+
+#include <nodes/layers/DTLayer.hpp>
+#include <utils/Settings.hpp>
 
 bool DTEditLevelLayer::init(GJGameLevel* level){
     if (!EditLevelLayer::init(level)) return false;
@@ -29,21 +32,6 @@ bool DTEditLevelLayer::init(GJGameLevel* level){
         IBMenu->addChild(btn);
         btn->setPosition({IBMenu->getChildByID("info-button")->getPosition() + ccp(btn->getScaledContentSize().width, 0)});
         IBMenu->updateLayout();
-    }
-    
-
-    auto statsRes = StatsManager::getLevelStats(level, false);
-    if (statsRes.isOk() || statsRes.unwrapErr()[0] == '0') {
-        auto stats = statsRes.unwrapOrDefault();
-        stats.attempts = level->m_attempts;
-        stats.levelName = level->m_levelName;
-        stats.difficulty = StatsManager::getDifficulty(level);
-
-        StatsManager::setLevelStats(stats, level, false);
-        StatsManager::setLevelStats(stats, level, true);
-    }
-    else{
-        Notification::create("Failed to load Deaths json.", CCSprite::createWithSpriteFrameName("GJ_deleteIcon_001.png"))->show();
     }
 
     return true;

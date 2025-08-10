@@ -24,4 +24,7 @@ class Save {
 
         static std::string getLastOpenedVersion();
         static void setLastOpenedVersion(const std::string& verion);
+
+        static ViewState getLastViewState();
+        static void setLastViewState(const ViewState& verion);
 };

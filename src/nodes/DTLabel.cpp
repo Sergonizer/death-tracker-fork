@@ -88,7 +88,7 @@ void DTLabel::updateText(){
 
         usedKeys.clear();
 
-        Loader::get()->queueInMainThread([=] {
+        Loader::get()->queueInMainThread([&] {
             this->setContentSize(labelInfo.contentSize);
 
             textArea->setWidth(this->getContentWidth());
@@ -147,7 +147,6 @@ void DTLabel::updateText(){
     textUpdateListener.bind([&](textUpdateTask::Event* e){
         if (auto value = e->getValue()){
             loadingCircle->setVisible(false);
-            log::info("completed");
         }
         else if (e->isCancelled()){ //on cancled
             loadingCircle->setVisible(false);

@@ -348,6 +348,10 @@ void AdvancedScrollLayer::zoomToMaximum(){
     zoomTo(minZoom);
 }
 
+float AdvancedScrollLayer::getCurrentZoom(){
+    return zoomParent->getScale();
+}
+
 void AdvancedScrollLayer::setEnabled(bool b){
     isEnabled = b;
 }

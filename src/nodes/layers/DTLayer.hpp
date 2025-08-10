@@ -26,7 +26,7 @@ class DTLayer : public Popup<GJGameLevel* const&> {
 
         GJGameLevel* m_Level;
 
-        LevelStats m_MyLevelStats;
+        Result<LevelStats> m_MyLevelStats = Err("");
         LevelStats m_SharedLevelStats;
 
         void show() override;
@@ -42,8 +42,9 @@ class DTLayer : public Popup<GJGameLevel* const&> {
 
         AdvancedScrollLayer* getScrollLayer();
         
-    private:
+        virtual void onClose(CCObject*) override;
         virtual void keyBackClicked() override;
+    private:
 
         bool ccTouchBegan(CCTouch *pTouch, CCEvent *pEvent) override;
         void ccTouchMoved(CCTouch *pTouch, CCEvent *pEvent) override;

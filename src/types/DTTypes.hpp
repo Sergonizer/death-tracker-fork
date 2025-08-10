@@ -44,7 +44,8 @@ struct LevelStats_s {
     NewBests newBests;
     int currentBest;
     std::vector<Session> sessions;
-    std::vector<int> RunsToSave{-1};
+    std::vector<int> RunsToSave;
+    bool trackAnyRun;
     std::vector<std::string> LinkedLevels;
     std::string levelName = "Unknown name";
     int attempts;
@@ -63,12 +64,7 @@ struct matjson::Serialize<Session> {
         GEODE_UNWRAP_INTO(session.runs, value["runs"].as<Runs>());
         GEODE_UNWRAP_INTO(session.newBests, value["newBests"].as<NewBests>());
         GEODE_UNWRAP_INTO(session.currentBest, value["currentBest"].asInt());
-
-        if (value.contains("sessionStartDate")){
-            GEODE_UNWRAP_INTO(session.sessionStartDate, value["sessionStartDate"].as<long long>());
-        }
-        else
-            session.sessionStartDate = -1;
+        GEODE_UNWRAP_INTO(session.sessionStartDate, value["sessionStartDate"].as<long long>());
 
         return Ok(session);
     }
@@ -96,46 +92,17 @@ struct matjson::Serialize<LevelStats> {
         GEODE_UNWRAP_INTO(stats.newBests, value["newBests"].as<NewBests>());
         GEODE_UNWRAP_INTO(stats.currentBest, value["currentBest"].asInt());
         GEODE_UNWRAP_INTO(stats.sessions, value["sessions"].as<std::vector<Session>>());
+        GEODE_UNWRAP_INTO(stats.RunsToSave, value["RunsToSave"].as<std::vector<int>>());
+        GEODE_UNWRAP_INTO(stats.LinkedLevels, value["LinkedLevels"].as<std::vector<std::string>>());
+        GEODE_UNWRAP_INTO(stats.levelName, value["levelName"].asString());
+        GEODE_UNWRAP_INTO(stats.attempts, value["attempts"].asInt());
+        GEODE_UNWRAP_INTO(stats.difficulty, value["difficulty"].asInt());
+        GEODE_UNWRAP_INTO(stats.hideRunLength, value["hideRunLength"].asInt());
+        GEODE_UNWRAP_INTO(stats.hideUpto, value["hideUpto"].asInt());
 
-        if (value.contains("RunsToSave")){
-            GEODE_UNWRAP_INTO(stats.RunsToSave, value["RunsToSave"].as<std::vector<int>>());
+        if (value.contains("trackAnyRun")){
+            GEODE_UNWRAP_INTO(stats.trackAnyRun, value["trackAnyRun"].asBool());
         }
-
-        if (value.contains("LinkedLevels")){
-            GEODE_UNWRAP_INTO(stats.LinkedLevels, value["LinkedLevels"].as<std::vector<std::string>>());
-        }
-        else
-            stats.LinkedLevels = value["LinkedLevels"].as<std::vector<std::string>>().unwrapOr(std::vector<std::string>{});
-        
-        if (value.contains("levelName")){
-            GEODE_UNWRAP_INTO(stats.levelName, value["levelName"].asString());
-        }
-        else
-            stats.levelName = "-1";
-
-        if (value.contains("attempts")){
-            GEODE_UNWRAP_INTO(stats.attempts, value["attempts"].asInt());
-        }
-        else
-            stats.attempts = -1;
-
-        if (value.contains("difficulty")){
-            GEODE_UNWRAP_INTO(stats.difficulty, value["difficulty"].asInt());
-        }
-        else
-            stats.difficulty = 0;
-
-        if (value.contains("hideRunLength")){
-            GEODE_UNWRAP_INTO(stats.hideRunLength, value["hideRunLength"].asInt());
-        }
-        else
-            stats.hideRunLength = 0;
-
-        if (value.contains("hideUpto")){
-            GEODE_UNWRAP_INTO(stats.hideUpto, value["hideUpto"].asInt());
-        }
-        else
-            stats.hideUpto = 0;
 
         return Ok(stats);
     }
@@ -148,6 +115,7 @@ struct matjson::Serialize<LevelStats> {
             { "currentBest", value.currentBest },
             { "sessions", value.sessions },
             { "RunsToSave", value.RunsToSave },
+            { "trackAnyRun", value.trackAnyRun },
             { "LinkedLevels", value.LinkedLevels },
             { "levelName", value.levelName },
             { "attempts", value.attempts },
@@ -287,3 +255,30 @@ struct matjson::Serialize<V2LabelLayout> {
         return obj;
     }
 };
+
+struct ViewState{
+    CCPoint pos = ccp(-100000, -100000);
+    float zoom = -100000;
+};
+
+template <>
+struct matjson::Serialize<ViewState> {
+    static Result<ViewState> fromJson(const matjson::Value& value) {
+        ViewState layout;
+        GEODE_UNWRAP_INTO(layout.pos.x, value["posX"].asDouble());
+        GEODE_UNWRAP_INTO(layout.pos.y, value["posY"].asDouble());
+        GEODE_UNWRAP_INTO(layout.zoom, value["zoom"].asDouble());
+
+        return Ok(layout);
+    }
+
+    static matjson::Value toJson(const ViewState& value) {
+        matjson::Value obj = matjson::makeObject({
+            { "posX", value.pos.x },
+            { "posY", value.pos.y },
+            { "zoom", value.zoom },
+        });
+        return obj;
+    }
+};
+

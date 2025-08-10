@@ -76,6 +76,8 @@ class AdvancedScrollLayer : public CCLayer {
         void zoomToMinimum();
         void zoomToMaximum();
 
+        float getCurrentZoom();
+
         void setEnabled(bool b);
 
         Scrollbar* horizontalBar;

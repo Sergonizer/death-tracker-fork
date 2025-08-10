@@ -1,7 +1,7 @@
 #include <nodes/layers/DTLayer.hpp>
 
 #include <nodes/layers/DTGraphLayer.hpp>
-#include <nodes/layers/DTLinkLayer.hpp>
+#include <nodes/layers/DTLevelSpecificSettingsLayer.hpp>
 
 #include <Geode/ui/GeodeUI.hpp>
 
@@ -27,10 +27,21 @@ bool DTLayer::setup(GJGameLevel* const& level) {
     // ================================== //
     // loading data
 
-    auto lvlStatsRes = StatsManager::getLevelStats(m_Level, false);
-    m_MyLevelStats = lvlStatsRes.unwrapOrDefault();
-    if (lvlStatsRes.isErr()) {
-        StatsManager::setLevelStats(m_MyLevelStats, m_Level, false);
+    m_MyLevelStats = StatsManager::getLevelStats(m_Level, false);
+    if (m_MyLevelStats.isErr() && m_MyLevelStats.unwrapErr() == "No stats exist for level!"){
+        LevelStats newStats;
+        m_MyLevelStats = Ok(newStats);
+    }
+    else if (m_MyLevelStats.isErr())
+        geode::Notification::create(fmt::format("Failed to load DT level data! {}", m_MyLevelStats.unwrapErr()), NotificationIcon::Error)->show();
+    
+    if (m_MyLevelStats.isOk()){
+        auto stats = m_MyLevelStats.unwrap();
+        stats.levelName = level->m_levelName;
+        stats.attempts = level->m_attempts;
+        stats.difficulty = StatsManager::getDifficulty(level);
+        StatsManager::setLevelStats(stats, level, false);
+        m_MyLevelStats = Ok(stats);
     }
 
     StatsManager::setCurrentLogLevel(level);
@@ -63,6 +74,12 @@ bool DTLayer::setup(GJGameLevel* const& level) {
     scrollLayer->setZOrder(2);
     scrollLayer->maxZoom = 0.35f;
     m_mainLayer->addChild(scrollLayer);
+
+    auto viewState = Save::getLastViewState();
+    if (viewState.pos.x != -100000){
+        scrollLayer->moveTo(viewState.pos);
+        scrollLayer->zoomTo(viewState.zoom);
+    }
 
     std::vector<CCPoint> points{
         scrollLayer->getPosition(),
@@ -271,8 +288,8 @@ void DTLayer::ccTouchesMoved(CCSet* touches, CCEvent* event){
 }
 
 void DTLayer::updateRunsAllowed(){
-    if (m_MyLevelStats.currentBest != -1)
-        StatsManager::setLevelStats(m_MyLevelStats, m_Level, false);
+    // if (m_MyLevelStats.currentBest != -1)
+    //     StatsManager::setLevelStats(m_MyLevelStats, m_Level, false);
     //DTLayer::refreshAll();
 }
 
@@ -283,13 +300,15 @@ void DTLayer::graphBtnClicked(CCObject*){
 }
 
 void DTLayer::UpdateSharedStats(){
-    m_SharedLevelStats = m_MyLevelStats;
+    if (m_MyLevelStats.isErr()) return;
+    auto myStats = m_MyLevelStats.unwrap();
+    m_SharedLevelStats = myStats;
 
-    for (int i = 0; i < m_MyLevelStats.LinkedLevels.size(); i++)
+    for (int i = 0; i < myStats.LinkedLevels.size(); i++)
     {
-        auto currStats = StatsManager::getLevelStats(m_MyLevelStats.LinkedLevels[i], false).unwrapOrDefault();
+        auto currStats = StatsManager::getLevelStats(myStats.LinkedLevels[i], false).unwrapOrDefault();
         if (currStats.levelName == "Unknown name"){
-            Notification::create("failed to get data for linked level - " + m_MyLevelStats.LinkedLevels[i])->show();
+            Notification::create("failed to get data for linked level - " + myStats.LinkedLevels[i])->show();
             continue;
         }
 
@@ -298,32 +317,32 @@ void DTLayer::UpdateSharedStats(){
         m_SharedLevelStats.sessions.reserve(m_SharedLevelStats.sessions.size() + std::distance(currStats.sessions.begin(),currStats.sessions.end()));
         m_SharedLevelStats.sessions.insert(m_SharedLevelStats.sessions.end(),currStats.sessions.begin(),currStats.sessions.end());
 
-        for (int r = 0; r < m_MyLevelStats.RunsToSave.size(); r++)
+        for (int r = 0; r < myStats.RunsToSave.size(); r++)
         {
             bool addMeRun = true;
             for (int r2 = 0; r2 < currStats.RunsToSave.size(); r2++)
             {
-                if (currStats.RunsToSave[r2] == m_MyLevelStats.RunsToSave[r])
+                if (currStats.RunsToSave[r2] == myStats.RunsToSave[r])
                     addMeRun = false;
             }
             
             if (addMeRun)
-                currStats.RunsToSave.push_back(m_MyLevelStats.RunsToSave[r]);
+                currStats.RunsToSave.push_back(myStats.RunsToSave[r]);
         }
         for (int r = 0; r < currStats.RunsToSave.size(); r++)
         {
             bool addMeRun = true;
-            for (int r2 = 0; r2 < m_MyLevelStats.RunsToSave.size(); r2++)
+            for (int r2 = 0; r2 < myStats.RunsToSave.size(); r2++)
             {
-                if (m_MyLevelStats.RunsToSave[r2] == currStats.RunsToSave[r])
+                if (myStats.RunsToSave[r2] == currStats.RunsToSave[r])
                     addMeRun = false;
             }
             
             if (addMeRun)
-                m_MyLevelStats.RunsToSave.push_back(currStats.RunsToSave[r]);
+                myStats.RunsToSave.push_back(currStats.RunsToSave[r]);
         }
 
-        std::ranges::sort(m_MyLevelStats.RunsToSave, [](const int a, const int b) {
+        std::ranges::sort(myStats.RunsToSave, [](const int a, const int b) {
             return a < b;
         });
 
@@ -331,10 +350,10 @@ void DTLayer::UpdateSharedStats(){
             return a < b;
         });
 
-        if (m_MyLevelStats.currentBest != -1)
-            StatsManager::setLevelStats(m_MyLevelStats, m_Level, false);
+        if (myStats.currentBest != -1)
+            StatsManager::setLevelStats(myStats, m_Level, false);
         if (currStats.currentBest != -1)
-            StatsManager::setLevelStats(currStats, m_MyLevelStats.LinkedLevels[i], false);
+            StatsManager::setLevelStats(currStats, myStats.LinkedLevels[i], false);
         
         for (const auto& [death, count] : currStats.deaths)
         {
@@ -362,11 +381,21 @@ void DTLayer::onSettings(CCObject*){
 }
 
 void DTLayer::keyBackClicked(){
+    DTLayer::onClose(nullptr);
+}
+
+void DTLayer::onClose(CCObject* sender){
+    ViewState state;
+    state.pos = scrollLayer->content->getPosition();
+    state.zoom = scrollLayer->getCurrentZoom();
+
+    Save::setLastViewState(state);
+
     if (layoutTopbar != nullptr){
         layoutTopbar->keyBackClicked();
         return;
     }
-    this->removeMeAndCleanup();
+    Popup<GJGameLevel* const&>::onClose(sender);
     instance = nullptr;
 }
 
@@ -385,7 +414,7 @@ void DTLayer::keyUp(enumKeyCodes key){
 }
 
 void DTLayer::onLSOClicked(CCObject*){
-
+    DTLevelSpecificSettingsLayer::create()->show();
 }
 
 DTLayer* DTLayer::get() { return instance; }

@@ -109,11 +109,11 @@ bool DTGraphLayer::setup(DTLayer* const& layer) {
 
     CCArray* runsAllowed = CCArray::create();
 
-    for (int i = 0; i < m_DTLayer->m_MyLevelStats.RunsToSave.size(); i++)
-    {
-        if (m_DTLayer->m_MyLevelStats.RunsToSave[i] != -1)
-            runsAllowed->addObject(ChooseRunCell::create(m_DTLayer->m_MyLevelStats.RunsToSave[i], std::bind(&DTGraphLayer::RunChosen, this, std::placeholders::_1)));
-    }
+    // for (int i = 0; i < m_DTLayer->m_MyLevelStats.RunsToSave.size(); i++)
+    // {
+    //     if (m_DTLayer->m_MyLevelStats.RunsToSave[i] != -1)
+    //         runsAllowed->addObject(ChooseRunCell::create(m_DTLayer->m_MyLevelStats.RunsToSave[i], std::bind(&DTGraphLayer::RunChosen, this, std::placeholders::_1)));
+    // }
     
     auto runsAllowedView = ListView::create(runsAllowed, 20, 65, 55);
 

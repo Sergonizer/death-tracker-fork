@@ -1,5 +1,7 @@
-#include "../hooks/DTLevelInfoLayer.hpp"
-#include "../utils/CCShowHide.hpp"
+#include <hooks/DTLevelInfoLayer.hpp>
+
+#include <nodes/layers/DTLayer.hpp>
+#include <utils/Settings.hpp>
 
 bool DTLevelInfoLayer::init(GJGameLevel* p0, bool p1){
     if (!LevelInfoLayer::init(p0, p1)) return false;
@@ -37,20 +39,6 @@ bool DTLevelInfoLayer::init(GJGameLevel* p0, bool p1){
         otherMenu->updateLayout();
     }
 
-    auto statsRes = StatsManager::getLevelStats(p0, false);
-    if (statsRes.isOk() || statsRes.unwrapErr()[0] == '0'){
-        auto stats = statsRes.unwrapOrDefault();
-        stats.attempts = p0->m_attempts;
-        stats.levelName = p0->m_levelName;
-        stats.difficulty = StatsManager::getDifficulty(p0);
-
-        StatsManager::setLevelStats(stats, p0, false);
-        StatsManager::setLevelStats(stats, p0, true);
-    }
-    else{
-        Notification::create("Failed to load Deaths json.", CCSprite::createWithSpriteFrameName("GJ_deleteIcon_001.png"))->show();
-    }
-
     schedule(schedule_selector(DTLevelInfoLayer::checkIfPlayVisible));
 
     return true;
@@ -59,14 +47,7 @@ bool DTLevelInfoLayer::init(GJGameLevel* p0, bool p1){
 void DTLevelInfoLayer::checkIfPlayVisible(float delta){
     if (this->m_playBtnMenu->isVisible()){
         m_fields->btn->setVisible(true);
-
-        auto statsRes = StatsManager::getLevelStats(this->m_level, false);
-        if (statsRes.isOk()){
-            auto stats = statsRes.unwrap();
-            stats.difficulty = StatsManager::getDifficulty(this->m_level);
-
-            StatsManager::setLevelStats(stats, this->m_level, false);
-        }
+        
         unschedule(schedule_selector(DTLevelInfoLayer::checkIfPlayVisible));
     }
 }
