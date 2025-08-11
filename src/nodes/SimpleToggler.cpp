@@ -20,6 +20,9 @@ SimpleToggler* SimpleToggler::createWithDefaults(float scale, bool startState){
 }
 
 bool SimpleToggler::init(CCNode* offSprite, CCNode* onSprite, float scale, bool startState){
+    this->offSprite = offSprite;
+    this->onSprite = onSprite;
+
     offSprite->setScale(scale);
     onSprite->setScale(scale);
 
@@ -37,4 +40,12 @@ void SimpleToggler::setCallback(const std::function<void(bool)>& callback){
 void SimpleToggler::onToggled(CCObject* sender){
     if (this->callback != NULL)
         this->callback(!static_cast<CCMenuItemToggler*>(sender)->isToggled());
+}
+
+void SimpleToggler::setOpacity(GLubyte opacity){
+    if (auto rgba = typeinfo_cast<CCRGBAProtocol*>(offSprite))
+        rgba->setOpacity(opacity);
+    
+    if (auto rgba = typeinfo_cast<CCRGBAProtocol*>(onSprite))
+        rgba->setOpacity(opacity);
 }

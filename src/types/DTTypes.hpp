@@ -52,6 +52,8 @@ struct LevelStats_s {
     int difficulty = 0;
     int hideUpto = 0;
     int hideRunLength = 0;
+    int realEndPercent = 100;
+    bool resetAsDeath = false;
 
     public:
         void CombineStats(const LevelStats_s& other){
@@ -129,6 +131,14 @@ struct matjson::Serialize<LevelStats> {
             GEODE_UNWRAP_INTO(stats.trackAnyRun, value["trackAnyRun"].asBool());
         }
 
+        if (value.contains("realEndPercent")){
+            GEODE_UNWRAP_INTO(stats.realEndPercent, value["realEndPercent"].asInt());
+        }
+
+        if (value.contains("resetAsDeath")){
+            GEODE_UNWRAP_INTO(stats.resetAsDeath, value["resetAsDeath"].asBool());
+        }
+
         return Ok(stats);
     }
 
@@ -147,6 +157,8 @@ struct matjson::Serialize<LevelStats> {
             { "difficulty", value.difficulty },
             { "hideRunLength", value.hideRunLength },
             { "hideUpto", value.hideUpto },
+            { "realEndPercent", value.realEndPercent },
+            { "resetAsDeath", value.resetAsDeath },
         });
         return obj;
     }

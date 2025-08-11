@@ -1,7 +1,7 @@
 #include <nodes/optionNodes/RunOptions.hpp>
 
-#include <nodes/SimpleToggler.hpp>
 #include <nodes/layers/DTLayer.hpp>
+#include <utils/Dev.hpp>
 
 RunOptions* RunOptions::create(const CCSize& size) {
     auto ret = new RunOptions();
@@ -19,29 +19,40 @@ bool RunOptions::setup(){
     auto TARLabel = CCLabelBMFont::create("Track any run", "gjFont17.fnt");
     TARLabel->setAlignment(CCTextAlignment::kCCTextAlignmentLeft);
     TARLabel->setAnchorPoint({.5f, .5f});
-    TARLabel->setScale(.75f);
+    TARLabel->setScale(.65f);
     TARLabel->setPosition({size.width / 4, size.height - TARLabel->getScaledContentHeight() / 2});
     this->addChild(TARLabel);
 
     auto dtlayer = DTLayer::get();
-    bool startState = dtlayer == nullptr ? false : (dtlayer->m_MyLevelStats.isOk() ? dtlayer->m_MyLevelStats.unwrap().trackAnyRun : false);
 
-    auto toggler = SimpleToggler::createWithDefaults(
+    TARToggler = SimpleToggler::createWithDefaults(
         .75f,
-        startState
+        dtlayer == nullptr ? false : (dtlayer->m_MyLevelStats.isOk() ? dtlayer->m_MyLevelStats.unwrap().trackAnyRun : false)
     );
-    toggler->setCallback([&](bool isToggled){
+    TARToggler->setCallback([&](bool isToggled){
         auto dtlayer = DTLayer::get();
+        if (dtlayer == nullptr || dtlayer->m_MyLevelStats.isErr()) return;
+
         auto& stats = dtlayer->m_MyLevelStats.unwrap();
         stats.trackAnyRun = isToggled;
     });
-    float offset = toggler->getContentWidth() / 4 + 5;
-    toggler->setPosition(TARLabel->getPosition() - ccp(TARLabel->getScaledContentWidth() / 2 + offset, 0));
+    float offset = TARToggler->getContentWidth() / 4 + 5;
+    TARToggler->setPosition(TARLabel->getPosition() - ccp(TARLabel->getScaledContentWidth() / 2 + offset, 0));
     TARLabel->setPositionX(TARLabel->getPositionX() + offset);
-    this->addChild(toggler);
+    this->addChild(TARToggler);
 
-    auto runAdditionInput = TextInput::create(size.width / 4.f, "Start %");
+    runAdditionInput = TextInput::create(size.width / 4.f, "Start %");
     runAdditionInput->setPosition({size.width / 4, TARLabel->getPositionY() - runAdditionInput->getContentHeight()});
+    runAdditionInput->setCommonFilter(CommonFilter::Uint);
+    runAdditionInput->setCallback([&](const std::string& newText){
+        auto numRes = geode::utils::numFromString<int>(newText);
+
+        if (numRes.isErr()) return;
+
+        int num = numRes.unwrap();
+        num = std::min(num, 100);
+        runAdditionInput->setString(std::to_string(num));
+    });
     this->addChild(runAdditionInput);
 
     auto plusBtnSpr = CCSprite::createWithSpriteFrameName("GJ_plus3Btn_001.png");
@@ -63,9 +74,106 @@ bool RunOptions::setup(){
     seperator->setContentSize(ccp(1, size.height / 1.15f) / seperator->getScale());
     this->addChild(seperator);
 
-    auto runAdditionInput = TextInput::create(30, "Len");
-    runAdditionInput->setPosition({size.width, 0});
-    this->addChild(runAdditionInput);
+    float rightOffset = 5;
+
+    HideByLenInput = TextInput::create(45, "Len");
+    HideByLenInput->setPosition({size.width - HideByLenInput->getContentWidth() / 2 - rightOffset, size.height / 8 * 7});
+    HideByLenInput->setString(dtlayer == nullptr ? "" : (dtlayer->m_MyLevelStats.isOk() ? std::to_string(dtlayer->m_MyLevelStats.unwrap().hideRunLength) : ""));
+    HideByLenInput->setCommonFilter(CommonFilter::Uint);
+    HideByLenInput->setCallback([&](const std::string& newText){
+        auto dtlayer = DTLayer::get();
+        auto numRes = geode::utils::numFromString<int>(newText);
+
+        if (dtlayer == nullptr || dtlayer->m_MyLevelStats.isErr() || numRes.isErr()) return;
+
+        int num = numRes.unwrap();
+        num = std::min(num, 100);
+        HideByLenInput->setString(std::to_string(num));
+
+        auto& stats = dtlayer->m_MyLevelStats.unwrap();
+        stats.hideRunLength = num;
+    });
+    this->addChild(HideByLenInput);
+
+    auto HideByLenLabel = CCLabelBMFont::create("Hide by Length", "gjFont17.fnt");
+    HideByLenLabel->setScale(.65f);
+    HideByLenLabel->setWidth(size.width / 2 - HideByLenInput->getContentWidth() - rightOffset);
+    HideByLenLabel->setPosition(HideByLenInput->getPosition() - ccp(HideByLenInput->getContentWidth() / 2 + rightOffset, 0));
+    HideByLenLabel->setAnchorPoint({1, .5f});
+    this->addChild(HideByLenLabel);
+
+    HidUpToInput = TextInput::create(45, "%");
+    HidUpToInput->setPosition({size.width - HidUpToInput->getContentWidth() / 2 - rightOffset, size.height / 8 * 5});
+    HidUpToInput->setString(dtlayer == nullptr ? "" : (dtlayer->m_MyLevelStats.isOk() ? std::to_string(dtlayer->m_MyLevelStats.unwrap().hideUpto) : ""));
+    HidUpToInput->setCommonFilter(CommonFilter::Uint);
+    HidUpToInput->setCallback([&](const std::string& newText){
+        auto dtlayer = DTLayer::get();
+        auto numRes = geode::utils::numFromString<int>(newText);
+
+        if (dtlayer == nullptr || dtlayer->m_MyLevelStats.isErr() || numRes.isErr()) return;
+
+        int num = numRes.unwrap();
+        num = std::min(num, 100);
+        HidUpToInput->setString(std::to_string(num));
+
+        auto& stats = dtlayer->m_MyLevelStats.unwrap();
+        stats.hideUpto = num;
+    });
+    this->addChild(HidUpToInput);
+
+    auto HideUpToLabel = CCLabelBMFont::create("Hide Up To", "gjFont17.fnt");
+    HideUpToLabel->setScale(.65f);
+    HideUpToLabel->setWidth(size.width / 2 - HidUpToInput->getContentWidth() - rightOffset);
+    HideUpToLabel->setPosition(HidUpToInput->getPosition() - ccp(HidUpToInput->getContentWidth() / 2 + rightOffset, 0));
+    HideUpToLabel->setAnchorPoint({1, .5f});
+    this->addChild(HideUpToLabel);
+
+    RealEndPerInput = TextInput::create(45, "E %");
+    RealEndPerInput->setPosition({size.width - RealEndPerInput->getContentWidth() / 2 - rightOffset, size.height / 8 * 3});
+    RealEndPerInput->setString(dtlayer == nullptr ? "" : (dtlayer->m_MyLevelStats.isOk() ? std::to_string(dtlayer->m_MyLevelStats.unwrap().realEndPercent) : ""));
+    RealEndPerInput->setCommonFilter(CommonFilter::Uint);
+    RealEndPerInput->setCallback([&](const std::string& newText){
+        auto dtlayer = DTLayer::get();
+        auto numRes = geode::utils::numFromString<int>(newText);
+
+        if (dtlayer == nullptr || dtlayer->m_MyLevelStats.isErr() || numRes.isErr()) return;
+
+        int num = numRes.unwrap();
+        num = std::min(num, 100);
+        RealEndPerInput->setString(std::to_string(num));
+
+        auto& stats = dtlayer->m_MyLevelStats.unwrap();
+        stats.realEndPercent = num;
+    });
+    this->addChild(RealEndPerInput);
+
+    auto RealEndPerLabel = CCLabelBMFont::create("Real End %", "gjFont17.fnt");
+    RealEndPerLabel->setScale(.65f);
+    RealEndPerLabel->setWidth(size.width / 2 - RealEndPerInput->getContentWidth() - rightOffset);
+    RealEndPerLabel->setPosition(RealEndPerInput->getPosition() - ccp(RealEndPerInput->getContentWidth() / 2 + rightOffset, 0));
+    RealEndPerLabel->setAnchorPoint({1, .5f});
+    this->addChild(RealEndPerLabel);
+
+    ResetAsDeathToggler = SimpleToggler::createWithDefaults(
+        .75f,
+        dtlayer == nullptr ? false : (dtlayer->m_MyLevelStats.isOk() ? dtlayer->m_MyLevelStats.unwrap().resetAsDeath : false)
+    );
+    ResetAsDeathToggler->setCallback([&](bool isToggled){
+        auto dtlayer = DTLayer::get();
+        if (dtlayer == nullptr || dtlayer->m_MyLevelStats.isErr()) return;
+
+        auto& stats = dtlayer->m_MyLevelStats.unwrap();
+        stats.resetAsDeath = isToggled;
+    });
+    ResetAsDeathToggler->setPosition({size.width - ResetAsDeathToggler->getContentWidth() / 2 - rightOffset, size.height / 8 * 1});
+    this->addChild(ResetAsDeathToggler);
+
+    auto ResetAsDeathLabel = CCLabelBMFont::create("Reset as Death", "gjFont17.fnt");
+    ResetAsDeathLabel->setScale(.65f);
+    ResetAsDeathLabel->setWidth(size.width / 2 - ResetAsDeathToggler->getContentWidth() - rightOffset);
+    ResetAsDeathLabel->setPosition(ResetAsDeathToggler->getPosition() - ccp(ResetAsDeathToggler->getContentWidth() / 2 + rightOffset, 0));
+    ResetAsDeathLabel->setAnchorPoint({1, .5f});
+    this->addChild(ResetAsDeathLabel);
 
     this->setOpacity(0);
 
@@ -73,10 +181,42 @@ bool RunOptions::setup(){
 }
 
 void RunOptions::onOpened(){
-    this->runAction(CCFadeIn::create(.5f));
+    float fadeTime = .2f;
+    this->runAction(CCFadeIn::create(fadeTime));
+    TARToggler->runAction(CCFadeIn::create(fadeTime));
+    ResetAsDeathToggler->runAction(CCFadeIn::create(fadeTime));
+
+    runAdditionInput->setEnabled(true);
+    runAdditionInput->getInputNode()->m_textLabel->setOpacity(0);
+    Dev::fadeTextInput(runAdditionInput, true, fadeTime);
+    HideByLenInput->setEnabled(true);
+    HideByLenInput->getInputNode()->m_textLabel->setOpacity(0);
+    Dev::fadeTextInput(HideByLenInput, true, fadeTime);
+    RealEndPerInput->setEnabled(true);
+    RealEndPerInput->getInputNode()->m_textLabel->setOpacity(0);
+    Dev::fadeTextInput(RealEndPerInput, true, fadeTime);
+    HidUpToInput->setEnabled(true);
+    HidUpToInput->getInputNode()->m_textLabel->setOpacity(0);
+    Dev::fadeTextInput(HidUpToInput, true, fadeTime);
+
+    this->setEnabled(true);
 }
 void RunOptions::onClosed(){
-    this->runAction(CCFadeOut::create(.5f));
+    float fadeTime = .2f;
+    this->runAction(CCFadeOut::create(fadeTime));
+    TARToggler->runAction(CCFadeOut::create(fadeTime));
+    ResetAsDeathToggler->runAction(CCFadeOut::create(fadeTime));
+
+    runAdditionInput->setEnabled(false);
+    Dev::fadeTextInput(runAdditionInput, false, fadeTime);
+    HideByLenInput->setEnabled(false);
+    Dev::fadeTextInput(HideByLenInput, false, fadeTime);
+    RealEndPerInput->setEnabled(false);
+    Dev::fadeTextInput(RealEndPerInput, false, fadeTime);
+    HidUpToInput->setEnabled(false);
+    Dev::fadeTextInput(HidUpToInput, false, fadeTime);
+
+    this->setEnabled(false);
 }
 
 void RunOptions::addNewRun(CCObject*){

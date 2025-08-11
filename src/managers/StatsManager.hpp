@@ -53,7 +53,7 @@ public:
     static void setCurrentLogLevel(GJGameLevel* const& level);
 
     //save a normal mode death to the loaded levels save file
-    static void logDeath(const int& percent);
+    static void logDeath(const int& percent, bool instantSave = true);
     //save an array of normal mode deaths to the loaded levels save file
     static void logDeaths(const std::vector<int>& percents);
     //save run to the loaded levels save file

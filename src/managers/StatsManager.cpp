@@ -123,7 +123,7 @@ void StatsManager::setCurrentLogLevel(GJGameLevel* const& level){
     }
 }
 
-void StatsManager::logDeath(const int& percent) {
+void StatsManager::logDeath(const int& percent, bool instantSave) {
     if (!currentLoggingLevelStatsRef) {
         log::error("Failed to log death");
         return;
@@ -147,8 +147,10 @@ void StatsManager::logDeath(const int& percent) {
         session->newBests.insert(percent);
     }
 
-    StatsManager::updateSessionLastPlayed();
-    StatsManager::setLevelStats(*currentLoggingLevelStatsRef, currentLoggingLevelRef, false);
+    if (instantSave){
+        StatsManager::updateSessionLastPlayed();
+        StatsManager::setLevelStats(*currentLoggingLevelStatsRef, currentLoggingLevelRef, false);
+    }
 }
 
 void StatsManager::logDeaths(const std::vector<int>& percents) {
@@ -162,20 +164,7 @@ void StatsManager::logDeaths(const std::vector<int>& percents) {
 
     for (int i = 0; i < percents.size(); i++)
     {
-        auto percentKey = std::to_string(percents[i]);
-
-        currentLoggingLevelStatsRef->deaths[percentKey]++;
-        session->deaths[percentKey]++;
-
-        if (percents[i] > currentLoggingLevelStatsRef->currentBest) {
-            currentLoggingLevelStatsRef->currentBest = percents[i];
-            currentLoggingLevelStatsRef->newBests.insert(percents[i]);
-        }
-
-        if (percents[i] > session->currentBest) {
-            session->currentBest = percents[i];
-            session->newBests.insert(percents[i]);
-        }
+        logDeath(percents[i], false);
     }
 
     StatsManager::updateSessionLastPlayed();

@@ -10,10 +10,14 @@ class SimpleToggler : public CCMenuItemToggler {
         static SimpleToggler* createWithDefaults(float scale = 1, bool startState = false);
 
         void setCallback(const std::function<void(bool)>& callback);
+
+        void setOpacity(GLubyte opacity) override;
     private:
         bool init(CCNode* offSprite, CCNode* onSprite, float scale, bool startState);
 
         void onToggled(CCObject* sender);
 
         std::function<void(bool)> callback = NULL;
+        CCNode* offSprite;
+        CCNode* onSprite;
 };

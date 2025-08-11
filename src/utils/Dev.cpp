@@ -8,3 +8,18 @@ const bool Dev::ENABLED = false;
 const bool Dev::MINIFY_SAVE_FILE = Dev::ENABLED
     ? false
     : true;
+
+void Dev::fadeTextInput(TextInput* const input, bool fadeIn, float time){
+    input->getBGSprite()->runAction(fadeIn ? static_cast<CCAction*>(CCFadeTo::create(time, 90)) : static_cast<CCAction*>(CCFadeTo::create(time, 0)));
+
+    if (fadeIn){
+        input->getInputNode()->m_textLabel->runAction(input->getInputNode()->isTouchEnabled() ? 
+            static_cast<CCAction*>(CCFadeTo::create(time, 255)) :
+            static_cast<CCAction*>(CCFadeTo::create(time, 150))
+        );
+    }
+    else{
+        input->getInputNode()->m_textLabel->runAction(CCFadeTo::create(time, 0));
+    }
+    
+}
