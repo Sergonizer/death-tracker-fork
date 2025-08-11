@@ -1,4 +1,4 @@
-#include "AdvancedScrollLayer.hpp"
+#include <nodes/layers/AdvancedScrollLayer.hpp>
 
 AdvancedScrollLayer* AdvancedScrollLayer::create(CCSize size, CCSize limits) {
     auto ret = new AdvancedScrollLayer();

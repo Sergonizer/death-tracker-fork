@@ -3,8 +3,8 @@
 #include <Geode/Geode.hpp>
 #include "../../managers/StatsManager.hpp"
 
-using namespace cocos2d;
-using namespace geode;
+using namespace geode::prelude;
+
 
 class LinkLevelCell : public CCNode {
     protected:

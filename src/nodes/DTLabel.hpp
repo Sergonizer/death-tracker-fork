@@ -2,9 +2,10 @@
 
 #include <Geode/Geode.hpp>
 #include <types/DTTypes.hpp>
+#include <hooks/DTCCLabelBMFont.hpp>
 
-using namespace cocos2d;
-using namespace geode;
+using namespace geode::prelude;
+
 
 using textUpdateTask = Task<bool, int>;
 

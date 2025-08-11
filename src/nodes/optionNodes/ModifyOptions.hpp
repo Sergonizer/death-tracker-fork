@@ -3,8 +3,8 @@
 #include <Geode/Geode.hpp>
 #include <nodes/OptionsNode.hpp>
 
-using namespace cocos2d;
-using namespace geode;
+using namespace geode::prelude;
+
 
 class ModifyOptions : public OptionsNode {
     public:

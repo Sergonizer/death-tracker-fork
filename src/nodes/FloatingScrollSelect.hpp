@@ -2,8 +2,8 @@
 
 #include <Geode/Geode.hpp>
 
-using namespace cocos2d;
-using namespace geode;
+using namespace geode::prelude;
+
 
 class FloatingScrollSelect : public CCNode {
     public:

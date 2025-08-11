@@ -409,10 +409,33 @@ AdvancedScrollLayer* DTLayer::getScrollLayer(){
 }
 
 void DTLayer::saveAndUpdateStats(bool updateShared){
+    if (m_MyLevelStats.isErr()) return;
+    
     auto& levelStats = m_MyLevelStats.unwrap();
     StatsManager::setLevelStats(levelStats, m_Level, false);
     if (updateShared)
         UpdateSharedStats();
+}
+
+void DTLayer::UpdateOnAllShared(const std::function<void(LevelStats& stats)>& lambda){
+    if (m_MyLevelStats.isErr() || m_SharedLevelStats.isErr() || lambda == NULL) return;
+
+    auto& sharedStats = m_SharedLevelStats.unwrap();
+
+    for (const auto& linkedLevel : sharedStats.LinkedLevels)
+    {
+        auto statsRes = StatsManager::getLevelStats(linkedLevel, false);
+        if (statsRes.isErr()) continue;
+        auto currentStats = statsRes.unwrap();
+
+        lambda(currentStats);
+
+        StatsManager::setLevelStats(currentStats, linkedLevel, false);
+    }
+    
+    auto& myStats = m_MyLevelStats.unwrap();
+    lambda(myStats);
+    lambda(sharedStats);
 }
 
 //better info time calc
@@ -524,4 +547,3 @@ float DTLayer::timeForLevelString(const std::string& levelString) {
         return 0;
     }
 }
-

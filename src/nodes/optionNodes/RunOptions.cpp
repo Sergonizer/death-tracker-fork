@@ -41,7 +41,7 @@ bool RunOptions::setup(){
     TARLabel->setPositionX(TARLabel->getPositionX() + offset);
     this->addChild(TARToggler);
 
-    runAdditionInput = TextInput::create(size.width / 4.f, "Start %");
+    runAdditionInput = TextInput::create(size.width / 4.f, "<c-FFFF00>St</c>art %");
     runAdditionInput->setPosition({size.width / 4, TARLabel->getPositionY() - runAdditionInput->getContentHeight()});
     runAdditionInput->setCommonFilter(CommonFilter::Uint);
     runAdditionInput->setCallback([&](const std::string& newText){
@@ -64,9 +64,42 @@ bool RunOptions::setup(){
     plusBtn->setPosition(runAdditionInput->getPosition() + ccp(runAdditionInput->getScaledContentWidth() / 2 + plusBtn->getContentWidth() / 2 + 5, 0));
     this->addChild(plusBtn);
 
-    auto runsScroll = ScrollLayer::create({size.width / 2 / 1.1f, runAdditionInput->getPositionY() - runAdditionInput->getContentHeight() / 2});
-    runsScroll->setPosition({abs(runsScroll->getContentWidth() / 2 - runAdditionInput->getPositionX()), 0});
-    this->addChild(runsScroll);
+    auto runsMenuBG = CCScale9Sprite::create("GJ_square06.png");
+    runsMenuBG->setContentSize({size.width / 2 / 1.1f, runAdditionInput->getPositionY() - runAdditionInput->getContentHeight() / 2});
+    runsMenuBG->setPosition({abs(runsMenuBG->getContentWidth() / 2 - runAdditionInput->getPositionX()), 0});
+    runsMenuBG->setAnchorPoint({0, 0});
+    runsMenuBG->setColor({75, 75, 75});
+    runsMenuBG->setOpacity(100);
+    this->addChild(runsMenuBG);
+
+    runsMenu = CCMenu::create();
+    auto runsMenuOffset = ccp(15, 15);
+    runsMenu->setPosition(runsMenuBG->getPosition() + runsMenuOffset / 2);
+    runsMenu->setContentSize(runsMenuBG->getContentSize() - runsMenuOffset);
+    runsMenu->setAnchorPoint(runsMenuBG->getAnchorPoint());
+    this->addChild(runsMenu);
+    runsMenu->setLayout(RowLayout::create()
+        ->setCrossAxisOverflow(false)
+        ->setGrowCrossAxis(true)
+        ->setAxisAlignment(AxisAlignment::Start)
+        ->setCrossAxisAlignment(AxisAlignment::End)
+    );
+
+    if (dtlayer != nullptr && dtlayer->m_SharedLevelStats.isOk()){
+        auto& stats = dtlayer->m_SharedLevelStats.unwrap();
+        for (const auto& startPercent : stats.RunsToSave)
+        {
+            auto percentCell = PercentCell::create(
+                runsMenu->getContentWidth() / 2,
+                startPercent,
+                CCSprite::createWithSpriteFrameName("minus_button.png"_spr),
+                [&](PercentCell* cell){ RunOptions::PercentCellClicked(cell); }
+            );
+            runsMenu->addChild(percentCell);
+        }
+    }
+
+    runsMenu->updateLayout();
 
     auto seperator = CCScale9Sprite::create("square.png");
     seperator->setScale(.5f);
@@ -199,6 +232,10 @@ void RunOptions::onOpened(){
     HidUpToInput->getInputNode()->m_textLabel->setOpacity(0);
     Dev::fadeTextInput(HidUpToInput, true, fadeTime);
 
+    for (const auto& child : CCArrayExt<CCMenu*>(runsMenu->getChildren())){
+        child->setEnabled(true);
+    }
+
     this->setEnabled(true);
 }
 void RunOptions::onClosed(){
@@ -216,9 +253,49 @@ void RunOptions::onClosed(){
     HidUpToInput->setEnabled(false);
     Dev::fadeTextInput(HidUpToInput, false, fadeTime);
 
+    for (const auto& child : CCArrayExt<CCMenu*>(runsMenu->getChildren())){
+        child->setEnabled(false);
+    }
+
     this->setEnabled(false);
 }
 
 void RunOptions::addNewRun(CCObject*){
+    auto dtlayer = DTLayer::get();
+    auto numRes = geode::utils::numFromString<int>(runAdditionInput->getString());
 
+    if (dtlayer == nullptr || dtlayer->m_MyLevelStats.isErr() || numRes.isErr()) return;
+
+    int num = numRes.unwrap();
+
+    auto& stats = dtlayer->m_MyLevelStats.unwrap();
+    if (stats.RunsToSave.contains(num)) return;
+    
+    stats.RunsToSave.insert(num);
+
+    auto percentCell = PercentCell::create(
+        runsMenu->getContentWidth() / 2,
+        num,
+        CCSprite::createWithSpriteFrameName("minus_button.png"_spr),
+        [&](PercentCell* cell){ RunOptions::PercentCellClicked(cell); }
+    );
+    runsMenu->addChild(percentCell);
+
+    runsMenu->updateLayout();
+}
+
+void RunOptions::PercentCellClicked(PercentCell* cell){
+    auto dtlayer = DTLayer::get();
+
+    if (dtlayer != nullptr){
+        int percent = cell->getPercent();
+
+        dtlayer->UpdateOnAllShared([&, percent](LevelStats& stats){
+            if (stats.RunsToSave.contains(percent))
+                stats.RunsToSave.erase(percent);
+        });
+    }
+
+    cell->removeMeAndCleanup();
+    runsMenu->updateLayout();
 }

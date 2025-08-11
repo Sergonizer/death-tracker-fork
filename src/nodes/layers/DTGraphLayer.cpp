@@ -1,6 +1,5 @@
-#include "../layers/DTGraphLayer.hpp"
-#include "../cells/ChooseRunCell.hpp"
-#include "../../utils/Settings.hpp"
+#include <nodes/layers/DTGraphLayer.hpp>
+#include <utils/Settings.hpp>
 
 DTGraphLayer* DTGraphLayer::create(DTLayer* const& layer) {
     auto ret = new DTGraphLayer();

@@ -1,4 +1,4 @@
-#include "Settings.hpp"
+#include <utils/Settings.hpp>
 
 int64_t Settings::getMaxSessionLength() {
     auto sessionMethod = Mod::get()->getSettingValue<std::string>("session-method");

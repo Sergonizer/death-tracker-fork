@@ -36,8 +36,10 @@ bool DTPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
         LevelStats newStats;
         statsRes = Ok(newStats);
     }
-    else if (statsRes.isErr())
+    else if (statsRes.isErr()){
         geode::Notification::create(fmt::format("Failed to load DT level data! {}", statsRes.unwrapErr()), NotificationIcon::Error)->show();
+        log::info("{}", statsRes.unwrapErr());
+    }
     
     if (statsRes.isOk()){
         auto stats = statsRes.unwrap();

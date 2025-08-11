@@ -1,4 +1,4 @@
-#include "../nodes/DTGraphNode.hpp"
+#include <nodes/DTGraphNode.hpp>
 
 DTGraphNode* DTGraphNode::create(const CCSize& scaling) {
     auto ret = new DTGraphNode();

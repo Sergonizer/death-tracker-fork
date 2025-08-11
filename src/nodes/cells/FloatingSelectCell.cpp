@@ -1,4 +1,4 @@
-#include "../cells/FloatingSelectCell.hpp"
+#include <nodes/cells/FloatingSelectCell.hpp>
 
 FloatingSelectCell* FloatingSelectCell::create(float width, const std::string& optionText, const std::function<void(FloatingSelectCell*)>& callback) {
     auto ret = new FloatingSelectCell();

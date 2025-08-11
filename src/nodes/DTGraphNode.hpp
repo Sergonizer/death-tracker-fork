@@ -4,8 +4,8 @@
 #include "../managers/StatsManager.hpp"
 #include "../nodes/GraphPoint.hpp"
 
-using namespace cocos2d;
-using namespace geode;
+using namespace geode::prelude;
+
 
 class DTGraphNode : public CCNode {
     protected:

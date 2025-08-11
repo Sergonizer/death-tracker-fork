@@ -3,9 +3,10 @@
 #include <Geode/Geode.hpp>
 #include <nodes/OptionsNode.hpp>
 #include <nodes/SimpleToggler.hpp>
+#include <nodes/cells/PercentCell.hpp>
 
-using namespace cocos2d;
-using namespace geode;
+using namespace geode::prelude;
+
 
 class RunOptions : public OptionsNode {
     public:
@@ -21,6 +22,10 @@ class RunOptions : public OptionsNode {
         TextInput* HideByLenInput;
         TextInput* RealEndPerInput;
         TextInput* HidUpToInput;
+
+        CCMenu* runsMenu;
+
+        void PercentCellClicked(PercentCell* cell);
 
     public:
         virtual void onOpened();

@@ -46,6 +46,8 @@ class DTLayer : public Popup<GJGameLevel* const&> {
         virtual void keyBackClicked() override;
 
         void saveAndUpdateStats(bool updateShared);
+
+        void UpdateOnAllShared(const std::function<void(LevelStats& stats)>& lambda);
     private:
 
         bool ccTouchBegan(CCTouch *pTouch, CCEvent *pEvent) override;
