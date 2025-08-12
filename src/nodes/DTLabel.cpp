@@ -210,81 +210,91 @@ CCPoint DTLabel::gridToLocalPosition(int x, int y){
 }
 
 std::string DTLabel::modifyText(const std::string& str){
-    using KeyFunc = std::function<std::optional<std::string>(
-        DTLayer* const,
-        const std::string& value,
-        int insertIndex,
-        bool isCancellation
-    )>;
+
+    struct KeyParams{
+        public:
+            DTLayer* const dtLayer;
+            const std::string& value;
+            int insertIndex;
+            bool isCancellation;
+
+            KeyParams(DTLayer* dt, const std::string& val, int idx, bool cancel)
+            : dtLayer(dt), value(val), insertIndex(idx), isCancellation(cancel) {}
+    };
+
+    using KeyResult = std::optional<std::string>;
+    using KeyFunc = std::function<KeyResult(const KeyParams&)>;
+
+    #define LAMBDA [](KeyParams) -> KeyResult
 
     std::map<std::string, KeyFunc> keysPossible{
-        {"nl", [&](DTLayer* const dtLayer, const std::string& value, int insertIndex, bool isCancellation) -> std::optional<std::string> {
-            if (isCancellation) return std::nullopt;
+        {"nl", [&](const KeyParams& params) -> KeyResult {
+            if (params.isCancellation) return std::nullopt;
             return "\n";
         }},
-        {"f0", [&](DTLayer* const dtLayer, const std::string& value, int insertIndex, bool isCancellation) -> std::optional<std::string> {
-            if (isCancellation) return std::nullopt;
+        {"f0", [&](const KeyParams& params) -> KeyResult {
+            if (params.isCancellation) return std::nullopt;
             return "deaths string aaa";
         }},
-        {"runs", [&](DTLayer* const dtLayer, const std::string& value, int insertIndex, bool isCancellation) -> std::optional<std::string> {
-            if (isCancellation) return std::nullopt;
+        {"runs", [&](const KeyParams& params) -> KeyResult {
+            if (params.isCancellation) return std::nullopt;
             return "runs string";
         }},
-        {"lvln", [&](DTLayer* const dtLayer, const std::string& value, int insertIndex, bool isCancellation) -> std::optional<std::string> {
-            if (!dtLayer || isCancellation) return std::nullopt;
-            return dtLayer->m_Level->m_levelName;
+        {"lvln", [&](const KeyParams& params) -> KeyResult {
+            if (!params.dtLayer || params.isCancellation) return std::nullopt;
+            return params.dtLayer->m_Level->m_levelName;
         }},
-        {"att", [&](DTLayer* const dtLayer, const std::string& value, int insertIndex, bool isCancellation) -> std::optional<std::string> {
-            if (!dtLayer || isCancellation) return std::nullopt;
-            return std::to_string(dtLayer->m_Level->m_attempts.value());
+        {"att", [&](const KeyParams& params) -> KeyResult {
+            if (!params.dtLayer || params.isCancellation) return std::nullopt;
+            return std::to_string(params.dtLayer->m_Level->m_attempts.value());
         }},
-        {"s0", [&](DTLayer* const dtLayer, const std::string& value, int insertIndex, bool isCancellation) -> std::optional<std::string> {
-            if (isCancellation) return std::nullopt;
+        {"s0", [&](const KeyParams& params) -> KeyResult {
+            if (params.isCancellation) return std::nullopt;
             return "selected session f0 string";
         }},
-        {"sruns", [&](DTLayer* const dtLayer, const std::string& value, int insertIndex, bool isCancellation) -> std::optional<std::string> {
-            if (isCancellation) return std::nullopt;
+        {"sruns", [&](const KeyParams& params) -> KeyResult {
+            if (params.isCancellation) return std::nullopt;
             return "selected session run string";
         }},
-        {"ptf0", [&](DTLayer* const dtLayer, const std::string& value, int insertIndex, bool isCancellation) -> std::optional<std::string> {
-            if (isCancellation) return std::nullopt;
+        {"ptf0", [&](const KeyParams& params) -> KeyResult {
+            if (params.isCancellation) return std::nullopt;
             return "playtime from 0";
         }},
-        {"ptrun", [&](DTLayer* const dtLayer, const std::string& value, int insertIndex, bool isCancellation) -> std::optional<std::string> {
-            if (isCancellation) return std::nullopt;
+        {"ptrun", [&](const KeyParams& params) -> KeyResult {
+            if (params.isCancellation) return std::nullopt;
             return "playtime in runs";
         }},
-        {"ptall", [&](DTLayer* const dtLayer, const std::string& value, int insertIndex, bool isCancellation) -> std::optional<std::string> {
-            if (isCancellation) return std::nullopt;
+        {"ptall", [&](const KeyParams& params) -> KeyResult {
+            if (params.isCancellation) return std::nullopt;
             return "playtime overall";
         }},
-        {"ssd", [&](DTLayer* const dtLayer, const std::string& value, int insertIndex, bool isCancellation) -> std::optional<std::string> {
-            if (isCancellation) return std::nullopt;
+        {"ssd", [&](const KeyParams& params) -> KeyResult {
+            if (params.isCancellation) return std::nullopt;
             return "selected session date";
         }},
-        {"sst", [&](DTLayer* const dtLayer, const std::string& value, int insertIndex, bool isCancellation) -> std::optional<std::string> {
-            if (isCancellation) return std::nullopt;
+        {"sst", [&](const KeyParams& params) -> KeyResult {
+            if (params.isCancellation) return std::nullopt;
             return "selected session time";
         }},
-        {"color", [&](DTLayer* const dtLayer, const std::string& value, int insertIndex, bool isCancellation) -> std::optional<std::string> {
-            if (isCancellation){
-                colorData.insert({insertIndex, std::nullopt});
+        {"color", [&](const KeyParams& params) -> KeyResult {
+            if (params.isCancellation){
+                colorData.insert({params.insertIndex, std::nullopt});
                 return "";
             }
 
-            auto hexRes = cocos::cc3bFromHexString(value);
+            auto hexRes = cocos::cc3bFromHexString(params.value);
             if (hexRes.isErr()) return std::nullopt;
-            colorData.insert({insertIndex, hexRes.unwrap()});
+            colorData.insert({params.insertIndex, hexRes.unwrap()});
             return "";
         }},
-        {"nbc", [&](DTLayer* const dtLayer, const std::string& value, int insertIndex, bool isCancellation) -> std::optional<std::string> {
-            if (isCancellation) return std::nullopt;
-            colorData.insert({insertIndex, Save::getNewBestColor()});
+        {"nbc", [&](const KeyParams& params) -> KeyResult {
+            if (params.isCancellation) return std::nullopt;
+            colorData.insert({params.insertIndex, Save::getNewBestColor()});
             return "";
         }},
-        {"sbc", [&](DTLayer* const dtLayer, const std::string& value, int insertIndex, bool isCancellation) -> std::optional<std::string> {
-            if (isCancellation) return std::nullopt;
-            colorData.insert({insertIndex, Save::getSessionBestColor()});
+        {"sbc", [&](const KeyParams& params) -> KeyResult {
+            if (params.isCancellation) return std::nullopt;
+            colorData.insert({params.insertIndex, Save::getSessionBestColor()});
             return "";
         }},
     };
@@ -322,7 +332,7 @@ std::string DTLabel::modifyText(const std::string& str){
         if (keysPossible.contains(key)) {
             int insertIndex = result.size();
 
-            auto currentRes = keysPossible[key](dtLayer, value, insertIndex, isCancellation);
+            auto currentRes = keysPossible[key](KeyParams(dtLayer, value, insertIndex, isCancellation));
             
             result += !currentRes.has_value() ? match.str() : currentRes.value();
         }
