@@ -218,42 +218,52 @@ std::string DTLabel::modifyText(const std::string& str){
     )>;
 
     std::map<std::string, KeyFunc> keysPossible{
-        {"nl", [&](DTLayer* const dtLayer, const std::string& value, int insertIndex, bool isCancellation) {
+        {"nl", [&](DTLayer* const dtLayer, const std::string& value, int insertIndex, bool isCancellation) -> std::optional<std::string> {
+            if (isCancellation) return std::nullopt;
             return "\n";
         }},
-        {"f0", [&](DTLayer* const dtLayer, const std::string& value, int insertIndex, bool isCancellation) {
+        {"f0", [&](DTLayer* const dtLayer, const std::string& value, int insertIndex, bool isCancellation) -> std::optional<std::string> {
+            if (isCancellation) return std::nullopt;
             return "deaths string aaa";
         }},
-        {"runs", [&](DTLayer* const dtLayer, const std::string& value, int insertIndex, bool isCancellation) {
+        {"runs", [&](DTLayer* const dtLayer, const std::string& value, int insertIndex, bool isCancellation) -> std::optional<std::string> {
+            if (isCancellation) return std::nullopt;
             return "runs string";
         }},
         {"lvln", [&](DTLayer* const dtLayer, const std::string& value, int insertIndex, bool isCancellation) -> std::optional<std::string> {
-            if (!dtLayer) return std::nullopt;
+            if (!dtLayer || isCancellation) return std::nullopt;
             return dtLayer->m_Level->m_levelName;
         }},
         {"att", [&](DTLayer* const dtLayer, const std::string& value, int insertIndex, bool isCancellation) -> std::optional<std::string> {
-            if (!dtLayer) return std::nullopt;
+            if (!dtLayer || isCancellation) return std::nullopt;
             return std::to_string(dtLayer->m_Level->m_attempts.value());
         }},
-        {"s0", [&](DTLayer* const dtLayer, const std::string& value, int insertIndex, bool isCancellation) {
+        {"s0", [&](DTLayer* const dtLayer, const std::string& value, int insertIndex, bool isCancellation) -> std::optional<std::string> {
+            if (isCancellation) return std::nullopt;
             return "selected session f0 string";
         }},
-        {"sruns", [&](DTLayer* const dtLayer, const std::string& value, int insertIndex, bool isCancellation) {
+        {"sruns", [&](DTLayer* const dtLayer, const std::string& value, int insertIndex, bool isCancellation) -> std::optional<std::string> {
+            if (isCancellation) return std::nullopt;
             return "selected session run string";
         }},
-        {"ptf0", [&](DTLayer* const dtLayer, const std::string& value, int insertIndex, bool isCancellation) {
+        {"ptf0", [&](DTLayer* const dtLayer, const std::string& value, int insertIndex, bool isCancellation) -> std::optional<std::string> {
+            if (isCancellation) return std::nullopt;
             return "playtime from 0";
         }},
-        {"ptrun", [&](DTLayer* const dtLayer, const std::string& value, int insertIndex, bool isCancellation) {
+        {"ptrun", [&](DTLayer* const dtLayer, const std::string& value, int insertIndex, bool isCancellation) -> std::optional<std::string> {
+            if (isCancellation) return std::nullopt;
             return "playtime in runs";
         }},
-        {"ptall", [&](DTLayer* const dtLayer, const std::string& value, int insertIndex, bool isCancellation) {
+        {"ptall", [&](DTLayer* const dtLayer, const std::string& value, int insertIndex, bool isCancellation) -> std::optional<std::string> {
+            if (isCancellation) return std::nullopt;
             return "playtime overall";
         }},
-        {"ssd", [&](DTLayer* const dtLayer, const std::string& value, int insertIndex, bool isCancellation) {
+        {"ssd", [&](DTLayer* const dtLayer, const std::string& value, int insertIndex, bool isCancellation) -> std::optional<std::string> {
+            if (isCancellation) return std::nullopt;
             return "selected session date";
         }},
-        {"sst", [&](DTLayer* const dtLayer, const std::string& value, int insertIndex, bool isCancellation) {
+        {"sst", [&](DTLayer* const dtLayer, const std::string& value, int insertIndex, bool isCancellation) -> std::optional<std::string> {
+            if (isCancellation) return std::nullopt;
             return "selected session time";
         }},
         {"color", [&](DTLayer* const dtLayer, const std::string& value, int insertIndex, bool isCancellation) -> std::optional<std::string> {
@@ -266,7 +276,17 @@ std::string DTLabel::modifyText(const std::string& str){
             if (hexRes.isErr()) return std::nullopt;
             colorData.insert({insertIndex, hexRes.unwrap()});
             return "";
-        }}
+        }},
+        {"nbc", [&](DTLayer* const dtLayer, const std::string& value, int insertIndex, bool isCancellation) -> std::optional<std::string> {
+            if (isCancellation) return std::nullopt;
+            colorData.insert({insertIndex, Save::getNewBestColor()});
+            return "";
+        }},
+        {"sbc", [&](DTLayer* const dtLayer, const std::string& value, int insertIndex, bool isCancellation) -> std::optional<std::string> {
+            if (isCancellation) return std::nullopt;
+            colorData.insert({insertIndex, Save::getSessionBestColor()});
+            return "";
+        }},
     };
 
     colorData.clear();
@@ -278,14 +298,13 @@ std::string DTLabel::modifyText(const std::string& str){
     std::sregex_iterator begin(str.begin(), str.end(), specialKeyRegex);
     std::sregex_iterator end;
 
-    size_t lastPos = 0;
+    int lastPos = 0;
     for (auto it = begin; it != end; ++it) {
         const auto& match = *it;
 
-        size_t matchStart = match.position();
-        size_t matchEnd = matchStart + match.length();
+        int matchStart = match.position();
+        int matchEnd = matchStart + match.length();
 
-        // Append text before match
         result += str.substr(lastPos, matchStart - lastPos);
 
         std::string key = match.str(1);
@@ -301,24 +320,19 @@ std::string DTLabel::modifyText(const std::string& str){
         auto dtLayer = DTLayer::get();
 
         if (keysPossible.contains(key)) {
-            size_t insertIndex = result.size();
+            int insertIndex = result.size();
 
             auto currentRes = keysPossible[key](dtLayer, value, insertIndex, isCancellation);
-
-            if (!currentRes.has_value())
-                result += match.str(); // leave original if no value
-            else
-                result += currentRes.value();
+            
+            result += !currentRes.has_value() ? match.str() : currentRes.value();
         }
         else {
-            // key not found, leave as is
             result += match.str();
         }
 
         lastPos = matchEnd;
     }
 
-    // Append rest of string after last match
     result += str.substr(lastPos);
 
     return result;
