@@ -100,7 +100,8 @@ void DTLabel::updateText(){
 
             textArea->setAlignment(labelInfo.horizontalAlignment);
 
-            textArea->setText(modifyText(labelInfo.text));
+            auto modifiedStr = modifyText(labelInfo.text);
+            textArea->setText(modifiedStr);
 
             textArea->setFont(labelInfo.font);
 
@@ -131,6 +132,43 @@ void DTLabel::updateText(){
                     textArea->setPositionY(textArea->getPositionY() - (this->getContentHeight() - textArea->getContentHeight()) / 2);
                 else
                     textArea->setPositionY(textArea->getPositionY() + (this->getContentHeight() - textArea->getContentHeight()) / 2);
+            }
+            
+            if (colorData.size()){
+                auto lines = textArea->getLines();
+
+                int overallIndex = 0;
+
+                for (const auto& label : lines)
+                {
+                    int localIndex = 0;
+                    std::string text = label->getString();
+
+                    for (const auto& character : CCArrayExt<CCFontSprite*>(label->getChildren()))
+                    {
+                        if (localIndex == text.size()){
+                            continue;
+                        }
+
+                        if (colorData.contains(overallIndex))
+                            currentColor = colorData[overallIndex];
+
+                        if (currentColor != std::nullopt)
+                            character->setColor(currentColor.value());
+                        
+                        overallIndex++;
+                        localIndex++;
+                    }
+
+                    if (label->getChildrenCount() == 0)
+                        overallIndex++;
+
+                    if (modifiedStr.size() && modifiedStr.size() > overallIndex && modifiedStr[overallIndex] == '\n')
+                        overallIndex++;
+
+                    if (colorData.contains(overallIndex))
+                        currentColor = colorData[overallIndex];
+                }
             }
 
             contentOutline->setContentSize(this->getContentSize());
@@ -172,22 +210,69 @@ CCPoint DTLabel::gridToLocalPosition(int x, int y){
 }
 
 std::string DTLabel::modifyText(const std::string& str){
-    std::map<std::string, std::string> keysPossible{
-        {"nl", "\n"},
-        {"f0", DTLayer::get() == nullptr ? "" : "death string\na\na\na\na\na\na\na\na\na\na\na\na\na\na\na\na\na\na\na\na"},
-        {"runs", DTLayer::get() == nullptr ? "" : "runs string"},
-        {"lvln", DTLayer::get() == nullptr ? "" : DTLayer::get()->m_Level->m_levelName},
-        {"att", DTLayer::get() == nullptr ? "" : std::to_string(DTLayer::get()->m_Level->m_attempts.value())},
-        {"s0", DTLayer::get() == nullptr ? "" : "selected session f0 string"},
-        {"sruns", DTLayer::get() == nullptr ? "" : "selected session run string"},
-        {"ptf0", DTLayer::get() == nullptr ? "" : /*StatsManager::workingTime(playtime from 0)*/ "playtime from 0"},
-        {"ptrun", DTLayer::get() == nullptr ? "" : /*StatsManager::workingTime(playtime in runs)*/ "playtime in runs"},
-        {"ptall", DTLayer::get() == nullptr ? "" : /*StatsManager::workingTime(playtime overall)*/ "playtime overall"},
-        {"ssd", DTLayer::get() == nullptr ? "" : "selected session date"},
-        {"sst", DTLayer::get() == nullptr ? "" : "selected session time"},
+    using KeyFunc = std::function<std::optional<std::string>(
+        DTLayer* const,
+        const std::string& value,
+        int insertIndex,
+        bool isCancellation
+    )>;
+
+    std::map<std::string, KeyFunc> keysPossible{
+        {"nl", [&](DTLayer* const dtLayer, const std::string& value, int insertIndex, bool isCancellation) {
+            return "\n";
+        }},
+        {"f0", [&](DTLayer* const dtLayer, const std::string& value, int insertIndex, bool isCancellation) {
+            return "deaths string aaa";
+        }},
+        {"runs", [&](DTLayer* const dtLayer, const std::string& value, int insertIndex, bool isCancellation) {
+            return "runs string";
+        }},
+        {"lvln", [&](DTLayer* const dtLayer, const std::string& value, int insertIndex, bool isCancellation) -> std::optional<std::string> {
+            if (!dtLayer) return std::nullopt;
+            return dtLayer->m_Level->m_levelName;
+        }},
+        {"att", [&](DTLayer* const dtLayer, const std::string& value, int insertIndex, bool isCancellation) -> std::optional<std::string> {
+            if (!dtLayer) return std::nullopt;
+            return std::to_string(dtLayer->m_Level->m_attempts.value());
+        }},
+        {"s0", [&](DTLayer* const dtLayer, const std::string& value, int insertIndex, bool isCancellation) {
+            return "selected session f0 string";
+        }},
+        {"sruns", [&](DTLayer* const dtLayer, const std::string& value, int insertIndex, bool isCancellation) {
+            return "selected session run string";
+        }},
+        {"ptf0", [&](DTLayer* const dtLayer, const std::string& value, int insertIndex, bool isCancellation) {
+            return "playtime from 0";
+        }},
+        {"ptrun", [&](DTLayer* const dtLayer, const std::string& value, int insertIndex, bool isCancellation) {
+            return "playtime in runs";
+        }},
+        {"ptall", [&](DTLayer* const dtLayer, const std::string& value, int insertIndex, bool isCancellation) {
+            return "playtime overall";
+        }},
+        {"ssd", [&](DTLayer* const dtLayer, const std::string& value, int insertIndex, bool isCancellation) {
+            return "selected session date";
+        }},
+        {"sst", [&](DTLayer* const dtLayer, const std::string& value, int insertIndex, bool isCancellation) {
+            return "selected session time";
+        }},
+        {"color", [&](DTLayer* const dtLayer, const std::string& value, int insertIndex, bool isCancellation) -> std::optional<std::string> {
+            if (isCancellation){
+                colorData.insert({insertIndex, std::nullopt});
+                return "";
+            }
+
+            auto hexRes = cocos::cc3bFromHexString(value);
+            if (hexRes.isErr()) return std::nullopt;
+            colorData.insert({insertIndex, hexRes.unwrap()});
+            return "";
+        }}
     };
 
-    std::regex specialKeyRegex(R"(\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\})");
+    colorData.clear();
+    currentColor = std::nullopt;
+
+    std::regex specialKeyRegex(R"(\{([A-Za-z0-9_\\]+)(?:-([^{}]*))?\})");
 
     std::string result;
     std::sregex_iterator begin(str.begin(), str.end(), specialKeyRegex);
@@ -200,24 +285,42 @@ std::string DTLabel::modifyText(const std::string& str){
         size_t matchStart = match.position();
         size_t matchEnd = matchStart + match.length();
 
+        // Append text before match
         result += str.substr(lastPos, matchStart - lastPos);
 
         std::string key = match.str(1);
         
-        if (keysPossible.contains(key)){
-            if (keysPossible[key] == "")
-                result += match.str();
-            else
-                result += keysPossible[key];
+        bool isCancellation = false;
+        if (key.size() && key[0] == '\\'){
+            isCancellation = true;
+            key = key.erase(0, 1);
         }
-        else
+
+        std::string value = match.size() > 2 ? match.str(2) : "";
+
+        auto dtLayer = DTLayer::get();
+
+        if (keysPossible.contains(key)) {
+            size_t insertIndex = result.size();
+
+            auto currentRes = keysPossible[key](dtLayer, value, insertIndex, isCancellation);
+
+            if (!currentRes.has_value())
+                result += match.str(); // leave original if no value
+            else
+                result += currentRes.value();
+        }
+        else {
+            // key not found, leave as is
             result += match.str();
+        }
 
         lastPos = matchEnd;
     }
 
+    // Append rest of string after last match
     result += str.substr(lastPos);
-    
+
     return result;
 }
 

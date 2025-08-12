@@ -41,7 +41,7 @@ bool RunOptions::setup(){
     TARLabel->setPositionX(TARLabel->getPositionX() + offset);
     this->addChild(TARToggler);
 
-    runAdditionInput = TextInput::create(size.width / 4.f, "<c-FFFF00>St</c>art %");
+    runAdditionInput = TextInput::create(size.width / 4.f, "Start %");
     runAdditionInput->setPosition({size.width / 4, TARLabel->getPositionY() - runAdditionInput->getContentHeight()});
     runAdditionInput->setCommonFilter(CommonFilter::Uint);
     runAdditionInput->setCallback([&](const std::string& newText){

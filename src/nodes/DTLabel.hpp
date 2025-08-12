@@ -2,7 +2,6 @@
 
 #include <Geode/Geode.hpp>
 #include <types/DTTypes.hpp>
-#include <hooks/DTCCLabelBMFont.hpp>
 
 using namespace geode::prelude;
 
@@ -67,6 +66,8 @@ class DTLabel : public CCNode {
         LoadingCircle* loadingCircle;
 
         std::set<std::string> usedKeys{};
+        std::map<int, std::optional<ccColor3B>> colorData{};
+        std::optional<ccColor3B> currentColor = std::nullopt;
 };
 
 /*
