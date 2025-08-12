@@ -13,6 +13,7 @@
 DTLevelSpecificSettingsLayer* DTLevelSpecificSettingsLayer::create() {
     auto ret = new DTLevelSpecificSettingsLayer();
     auto winSize = CCDirector::sharedDirector()->getWinSize();
+    // @geode-ignore(unknown-resource)
     if (ret && ret->initAnchored(winSize.width - 30, winSize.height - 30, "geode.loader/GE_square01.png")) {
         ret->autorelease();
         return ret;

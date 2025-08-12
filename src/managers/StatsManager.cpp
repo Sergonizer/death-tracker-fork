@@ -1,6 +1,6 @@
-#include "StatsManager.hpp"
-#include "../utils/Settings.hpp"
-#include "../utils/Dev.hpp"
+#include <managers/StatsManager.hpp>
+#include <utils/Settings.hpp>
+#include <utils/Dev.hpp>
 #include <cvolton.level-id-api/include/EditorIDs.hpp>
 
 using namespace geode::prelude;

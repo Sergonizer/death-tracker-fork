@@ -10,6 +10,7 @@ DTLayer* DTLayer::instance = nullptr;
 DTLayer* DTLayer::create(GJGameLevel* const& Level) {
     auto ret = new DTLayer();
     auto winSize = CCDirector::sharedDirector()->getWinSize();
+    // @geode-ignore(unknown-resource)
     if (ret && ret->initAnchored(winSize.width - 30, winSize.height - 30, Level, "geode.loader/GE_square01.png")) {
         ret->autorelease();
         return ret;
