@@ -1,7 +1,6 @@
 #include <Geode/modify/PlayLayer.hpp>
 #include "../managers/StatsManager.hpp"
 #include "../utils/Settings.hpp"
-#include "../managers/DTPopupManager.hpp"
 
 using namespace geode::prelude;
 

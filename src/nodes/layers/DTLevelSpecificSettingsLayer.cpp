@@ -180,7 +180,7 @@ void DTLevelSpecificSettingsLayer::switchPage(CCObject* sender){
 
 void DTLevelSpecificSettingsLayer::onClose(CCObject*){
     auto dtlayer = DTLayer::get();
-    if (dtlayer)
-        dtlayer->saveAndUpdateStats(true);
+    // if (dtlayer)
+    //     dtlayer->saveAndUpdateStats(true);
     Popup<>::onClose(nullptr);
 }

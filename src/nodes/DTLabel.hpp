@@ -42,8 +42,6 @@ class DTLabel : public CCNode {
         DTLabelInfo labelInfoBackup;
         bool init(const DTLabelInfo& info, float gridSize);
 
-        std::string modifyText(const std::string& str);
-
         SimpleTextArea* textArea;
 
         CCNode* editVisualsContainer;

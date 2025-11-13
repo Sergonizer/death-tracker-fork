@@ -1,5 +1,5 @@
 {
-	"geode": "4.7.0",
+	"geode": "4.9.0",
 	"gd": {
         "android": "2.2074",
         "win": "2.2074",
@@ -26,7 +26,7 @@
 			"description": "Determines when a session should end.\n<cy>Exit level</c> - Ends when exiting the level.\n<cy>Exit Game</c> - Ends when exiting the game.\n<cy>Exit Game</c> - End after a set amount of seconds pass (Session Length).",
 			"type": "string",
 			"default": "Exit level",
-			"one-of": ["Exit level", "Exit game", "Seconds"]
+			"one-of": ["Exit level", "Exit game"]
 		},
 		"session-length": {
 			"name": "Session Length",

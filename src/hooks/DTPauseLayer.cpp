@@ -1,4 +1,4 @@
-#include "../hooks/DTPauseLayer.hpp"
+#include "DTPauseLayer.hpp"
 
 void DTPauseLayer::customSetup(){
     PauseLayer::customSetup();
@@ -25,7 +25,7 @@ void DTPauseLayer::customSetup(){
 }
 
 void DTPauseLayer::onDTMiniMenuOpened(CCObject*){
-    auto dtLayer = DTLayer::create(DTPopupManager::getCurrentLevel());
+    auto dtLayer = DTLayer::create(StatsManager::getCurrentLevel());
     this->addChild(dtLayer);
 }
 

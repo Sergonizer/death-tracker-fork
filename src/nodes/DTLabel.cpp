@@ -1,7 +1,6 @@
 #include <nodes/DTLabel.hpp>
 
 #include <nodes/layers/DTLayer.hpp>
-#include <regex>
 
 DTLabel* DTLabel::create(const DTLabelInfo& info, float gridSize) {
     auto ret = new DTLabel();
@@ -22,7 +21,7 @@ bool DTLabel::init(const DTLabelInfo& info, float gridSize){
     if (labelInfo.X == -1) labelInfo.X = 5000 / gridSize / 2;
     if (labelInfo.Y == -1) labelInfo.Y = 5000 / gridSize / 2;
 
-    textArea = SimpleTextArea::create(labelInfo.text, labelInfo.font, labelInfo.scale);
+    textArea = SimpleTextArea::create(labelInfo.text, labelInfo.font, 1);
     textArea->setZOrder(3);
     this->addChild(textArea);
 
@@ -100,7 +99,11 @@ void DTLabel::updateText(){
 
             textArea->setAlignment(labelInfo.horizontalAlignment);
 
-            auto modifiedStr = modifyText(labelInfo.text);
+            auto modifyRes = StatsManager::modifyText(labelInfo.text);
+
+            auto modifiedStr = modifyRes.first;
+            colorData = modifyRes.second;
+            currentColor = std::nullopt;
             textArea->setText(modifiedStr);
 
             textArea->setFont(labelInfo.font);
@@ -163,8 +166,9 @@ void DTLabel::updateText(){
                     if (label->getChildrenCount() == 0)
                         overallIndex++;
 
-                    if (modifiedStr.size() && modifiedStr.size() > overallIndex && modifiedStr[overallIndex] == '\n')
+                    if ('\n' == modifiedStr[overallIndex] || ' ' == modifiedStr[overallIndex]){
                         overallIndex++;
+                    }
 
                     if (colorData.contains(overallIndex))
                         currentColor = colorData[overallIndex];
@@ -207,145 +211,6 @@ CCPoint DTLabel::gridToLocalPosition(int x, int y){
     localPos.y = y * gridSize;
 
     return localPos;
-}
-
-std::string DTLabel::modifyText(const std::string& str){
-
-    struct KeyParams{
-        public:
-            DTLayer* const dtLayer;
-            const std::string& value;
-            int insertIndex;
-            bool isCancellation;
-
-            KeyParams(DTLayer* dt, const std::string& val, int idx, bool cancel)
-            : dtLayer(dt), value(val), insertIndex(idx), isCancellation(cancel) {}
-    };
-
-    using KeyResult = std::optional<std::string>;
-    using KeyFunc = std::function<KeyResult(const KeyParams&)>;
-
-    #define LAMBDA [](KeyParams) -> KeyResult
-
-    std::map<std::string, KeyFunc> keysPossible{
-        {"nl", [&](const KeyParams& params) -> KeyResult {
-            if (params.isCancellation) return std::nullopt;
-            return "\n";
-        }},
-        {"f0", [&](const KeyParams& params) -> KeyResult {
-            if (params.isCancellation) return std::nullopt;
-            return "deaths string aaa";
-        }},
-        {"runs", [&](const KeyParams& params) -> KeyResult {
-            if (params.isCancellation) return std::nullopt;
-            return "runs string";
-        }},
-        {"lvln", [&](const KeyParams& params) -> KeyResult {
-            if (!params.dtLayer || params.isCancellation) return std::nullopt;
-            return params.dtLayer->m_Level->m_levelName;
-        }},
-        {"att", [&](const KeyParams& params) -> KeyResult {
-            if (!params.dtLayer || params.isCancellation) return std::nullopt;
-            return std::to_string(params.dtLayer->m_Level->m_attempts.value());
-        }},
-        {"s0", [&](const KeyParams& params) -> KeyResult {
-            if (params.isCancellation) return std::nullopt;
-            return "selected session f0 string";
-        }},
-        {"sruns", [&](const KeyParams& params) -> KeyResult {
-            if (params.isCancellation) return std::nullopt;
-            return "selected session run string";
-        }},
-        {"ptf0", [&](const KeyParams& params) -> KeyResult {
-            if (params.isCancellation) return std::nullopt;
-            return "playtime from 0";
-        }},
-        {"ptrun", [&](const KeyParams& params) -> KeyResult {
-            if (params.isCancellation) return std::nullopt;
-            return "playtime in runs";
-        }},
-        {"ptall", [&](const KeyParams& params) -> KeyResult {
-            if (params.isCancellation) return std::nullopt;
-            return "playtime overall";
-        }},
-        {"ssd", [&](const KeyParams& params) -> KeyResult {
-            if (params.isCancellation) return std::nullopt;
-            return "selected session date";
-        }},
-        {"sst", [&](const KeyParams& params) -> KeyResult {
-            if (params.isCancellation) return std::nullopt;
-            return "selected session time";
-        }},
-        {"color", [&](const KeyParams& params) -> KeyResult {
-            if (params.isCancellation){
-                colorData.insert({params.insertIndex, std::nullopt});
-                return "";
-            }
-
-            auto hexRes = cocos::cc3bFromHexString(params.value);
-            if (hexRes.isErr()) return std::nullopt;
-            colorData.insert({params.insertIndex, hexRes.unwrap()});
-            return "";
-        }},
-        {"nbc", [&](const KeyParams& params) -> KeyResult {
-            if (params.isCancellation) return std::nullopt;
-            colorData.insert({params.insertIndex, Save::getNewBestColor()});
-            return "";
-        }},
-        {"sbc", [&](const KeyParams& params) -> KeyResult {
-            if (params.isCancellation) return std::nullopt;
-            colorData.insert({params.insertIndex, Save::getSessionBestColor()});
-            return "";
-        }},
-    };
-
-    colorData.clear();
-    currentColor = std::nullopt;
-
-    std::regex specialKeyRegex(R"(\{([A-Za-z0-9_\\]+)(?:-([^{}]*))?\})");
-
-    std::string result;
-    std::sregex_iterator begin(str.begin(), str.end(), specialKeyRegex);
-    std::sregex_iterator end;
-
-    int lastPos = 0;
-    for (auto it = begin; it != end; ++it) {
-        const auto& match = *it;
-
-        int matchStart = match.position();
-        int matchEnd = matchStart + match.length();
-
-        result += str.substr(lastPos, matchStart - lastPos);
-
-        std::string key = match.str(1);
-        
-        bool isCancellation = false;
-        if (key.size() && key[0] == '\\'){
-            isCancellation = true;
-            key = key.erase(0, 1);
-        }
-
-        std::string value = match.size() > 2 ? match.str(2) : "";
-
-        auto dtLayer = DTLayer::get();
-
-        if (keysPossible.contains(key)) {
-            int insertIndex = result.size();
-
-            auto currentRes = keysPossible[key](KeyParams(dtLayer, value, insertIndex, isCancellation));
-            
-            result += !currentRes.has_value() ? match.str() : currentRes.value();
-        }
-        else {
-            result += match.str();
-        }
-
-        lastPos = matchEnd;
-    }
-
-    result += str.substr(lastPos);
-
-    return result;
 }
 
 void DTLabel::enterEditMode(){

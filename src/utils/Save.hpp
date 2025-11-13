@@ -25,6 +25,18 @@ class Save {
         static std::string getLastOpenedVersion();
         static void setLastOpenedVersion(const std::string& verion);
 
+        static stringCustomazations getFrom0Customazations();
+        static void setFrom0Customazations(const stringCustomazations& from0Custom);
+
+        static stringCustomazations getRunsCustomazations();
+        static void setRunCustomazations(const stringCustomazations& runCustom);
+
+        static stringCustomazations getSessionF0Customazations();
+        static void setSessionF0Customazations(const stringCustomazations& sessionF0Custom);
+
+        static stringCustomazations getSessionRunCustomazations();
+        static void setSessionRunCustomazations(const stringCustomazations& sessionRunCustom);
+
         static ViewState getLastViewState();
         static void setLastViewState(const ViewState& verion);
 };

@@ -5,6 +5,13 @@
 
 using namespace geode::prelude;
 
+// TODO NEXT TIME:
+//  
+//
+//
+//
+//
+
 class StatsManager {
 private:
     static std::set<std::string> m_playedLevels;
@@ -17,32 +24,45 @@ private:
     static Result<std::tuple<NewBests, int>> calcNewBests(GJGameLevel* const& level);
     static std::array<std::string, 62> m_AllFontsMap;
 
-    static LevelStats* currentLoggingLevelStatsRef;
-    static GJGameLevel* currentLoggingLevelRef;
+    static void createFilesIfNeeded(const std::string& levelKey);
+    static void createFile(const std::filesystem::path& path);
+
+    static const std::string METADATA_FILE_NAME;
+    static const std::string FROM0_FILE_NAME;
+    static const std::string SESSIONS_DIR_NAME;
 
 public:
-    static LevelStats currentLoggingLevelStats;
     StatsManager() = delete;
 
     static int MainLevelIDs[26];
 
     static std::filesystem::path m_savesFolderPath;
 
+    static GJGameLevel* currentLevel;
+    static From0Data currentFrom0;
+    static LevelMetadeta currentMetadata;
+    static Session currentSession;
+
 #pragma region level setters/getters
 
-    //load and retrieve the stats for a level
-    static Result<LevelStats> getLevelStats(GJGameLevel* const& level, bool isBackup);
-    //get level stats by a levels key
-    static Result<LevelStats> getLevelStats(const std::string& levelKey, bool isBackup);
+    static Result<LevelMetadeta> getMetadata(GJGameLevel* const level);
+    static Result<LevelMetadeta> getMetadata(const std::string& levelKey);
+    static Result<Session> getSession(GJGameLevel* const level, long long sessionTime);
+    static Result<Session> getSession(const std::string& levelKey, long long sessionTime);
+    static Result<From0Data> getFrom0(GJGameLevel* const level);
+    static Result<From0Data> getFrom0(const std::string& levelKey);
+    static Result<LevelData> getLevelData(GJGameLevel* const level);
+    static Result<LevelData> getLevelData(const std::string& levelKey);
 
-    //save data to a specific level
-    //@param stats data to save
-    //@param level level to save data for
-    static void setLevelStats(const LevelStats& stats, GJGameLevel* const& level, bool isbackup);
-    //save data to a specific level
-    //@param stats data to save
-    //@param levelKey a level key of the level to save data for
-    static void setLevelStats(const LevelStats& stats, const std::string& levelKey, bool isbackup);
+    static Result<> setMetadata(const LevelMetadeta& stats, GJGameLevel* const level);
+    static Result<> setMetadata(const LevelMetadeta& stats, const std::string& levelKey);
+    static Result<> setSession(Session& stats, GJGameLevel* const level, long long sessionTime, bool updateLastPlayed);
+    static Result<> setSession(Session& stats, const std::string& levelKey, long long sessionTime, bool updateLastPlayed);
+    static Result<> setFrom0(const From0Data& stats, GJGameLevel* const level);
+    static Result<> setFrom0(const From0Data& stats, const std::string& levelKey);
+
+    static Result<std::set<long long>> getAllSessionTimesForLevel(GJGameLevel* const level);
+    static std::set<long long> getAllSessionTimesForLevel(const std::string& levelKey);
 
     static Result<> deleteLevelStats(const std::string& levelKey);
     
@@ -50,7 +70,7 @@ public:
 
 #pragma region logging
 
-    static void setCurrentLogLevel(GJGameLevel* const& level);
+    static void setCurrentLevel(GJGameLevel* const& level);
 
     //save a normal mode death to the loaded levels save file
     static void logDeath(const int& percent, bool instantSave = true);
@@ -63,18 +83,21 @@ public:
 
 #pragma endregion
 
+    static std::pair<std::string, std::map<int, std::optional<ccColor3B>>> modifyText(const std::string& str, int keyLevel = 2);
+
     // utility functions
+
+    static void updateCurrentSessionLastPlayed();
+    static GJGameLevel* getCurrentLevel();
 
     //gets the epoch time
     static long long getNowSeconds();
     //get the a levels level key
     static Result<std::string> getLevelKey(GJGameLevel* const& level);
     //convert a run string into a run struct
-    static Run splitRunKey(const std::string& runKey);
+    static Result<Run> splitRunKey(const std::string& runKey);
     //get the current ongoing session
-    static Session* getSession();
-    //update this sessions last played time
-    static void updateSessionLastPlayed(bool save = false);
+    static Session* getCurrentSession();
     //schedule the creation of a new session
     static void scheduleCreateNewSession(const bool& scheduled);
     //if youve played the loaded level before, returns true
@@ -86,7 +109,7 @@ public:
     //get an array of all fonts
     static std::array<std::string, 62> getAllFonts();
     //gets an array of all levels you have progress on
-    static Result<std::vector<std::pair<std::string, LevelStats>>> getAllLevels();
+    static Result<std::vector<std::pair<std::string, LevelMetadeta>>> getAllLevels();
     //seperate a level key to [levelID, levelType]
     static std::pair<std::string, std::string> splitLevelKey(const std::string& levelKey);
     //get the difficulty of a level
@@ -101,11 +124,6 @@ public:
 
     // return a splitted version of the string provided, devided by the delim
     static std::vector<std::string> splitStr(const std::string& str, const std::string& delim);
-
-    //KMP search
-
-    static void computeLPSArray(const std::string& pat, int M, std::vector<int>& lps);
-    static std::vector<int> KMPSearch(const std::string& pat, const std::string& txt);
     
     //gets the index in which the CCLabelBMFonts cursor is located on the string
     static int getCursorPosition(CCLabelBMFont* const& text, CCLabelBMFont* const& cursor);

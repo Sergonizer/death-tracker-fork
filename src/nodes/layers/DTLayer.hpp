@@ -26,8 +26,11 @@ class DTLayer : public Popup<GJGameLevel* const&> {
 
         GJGameLevel* m_Level;
 
-        Result<LevelStats> m_MyLevelStats = Err("");
-        Result<LevelStats> m_SharedLevelStats = Err("");
+        Result<LevelData> m_MyLevelStats = Err("");
+        std::vector<LevelData> linkedLevelsData{};
+        std::multimap<long long, std::string, std::greater<long long>> sessionsOrder{};
+        std::optional<Session> currentSessionInfo = std::nullopt;
+        
 
         void show() override;
 
@@ -45,10 +48,20 @@ class DTLayer : public Popup<GJGameLevel* const&> {
         virtual void onClose(CCObject*) override;
         virtual void keyBackClicked() override;
 
-        void saveAndUpdateStats(bool updateShared);
+        // void saveAndUpdateStats(bool updateShared);
 
-        void UpdateOnAllShared(const std::function<void(LevelStats& stats)>& lambda);
+        // void UpdateOnAllShared(const std::function<void(LevelStats& stats)>& lambda);
+
+        void UpdateDeathRelatedStrings();
+
+        std::map<std::string, std::string> specialStrings{};
     private:
+
+        bool createDeathsString(const Deaths& deaths, const stringCustomazations& custom, std::string& out, NewBests* const newBests = nullptr, const std::string& newBestColoring = "");
+
+        int currentSession;
+
+        void onSessionSelected(int sessionNum);
 
         bool ccTouchBegan(CCTouch *pTouch, CCEvent *pEvent) override;
         void ccTouchMoved(CCTouch *pTouch, CCEvent *pEvent) override;
@@ -59,9 +72,7 @@ class DTLayer : public Popup<GJGameLevel* const&> {
         static DTLayer* instance;
 
         AdvancedScrollLayer* scrollLayer = nullptr;
-
         std::set<DTLabel*> labels{};
-
         EditLayoutTopbar* layoutTopbar = nullptr;
 
         SessionSelector* sessionSelector;

@@ -27,14 +27,14 @@ bool RunOptions::setup(){
 
     TARToggler = SimpleToggler::createWithDefaults(
         .75f,
-        dtlayer == nullptr ? false : (dtlayer->m_MyLevelStats.isOk() ? dtlayer->m_MyLevelStats.unwrap().trackAnyRun : false)
+        dtlayer == nullptr ? false : (dtlayer->m_MyLevelStats.isOk() ? dtlayer->m_MyLevelStats.unwrap().metadata.trackAnyRun : false)
     );
     TARToggler->setCallback([&](bool isToggled){
         auto dtlayer = DTLayer::get();
         if (dtlayer == nullptr || dtlayer->m_MyLevelStats.isErr()) return;
 
         auto& stats = dtlayer->m_MyLevelStats.unwrap();
-        stats.trackAnyRun = isToggled;
+        stats.metadata.trackAnyRun = isToggled;
     });
     float offset = TARToggler->getContentWidth() / 4 + 5;
     TARToggler->setPosition(TARLabel->getPosition() - ccp(TARLabel->getScaledContentWidth() / 2 + offset, 0));
@@ -85,9 +85,9 @@ bool RunOptions::setup(){
         ->setCrossAxisAlignment(AxisAlignment::End)
     );
 
-    if (dtlayer != nullptr && dtlayer->m_SharedLevelStats.isOk()){
-        auto& stats = dtlayer->m_SharedLevelStats.unwrap();
-        for (const auto& startPercent : stats.RunsToSave)
+    if (dtlayer != nullptr && dtlayer->m_MyLevelStats.isOk()){
+        auto& stats = dtlayer->m_MyLevelStats.unwrap();
+        for (const auto& startPercent : stats.metadata.RunsToSave)
         {
             auto percentCell = PercentCell::create(
                 runsMenu->getContentWidth() / 2,
@@ -111,7 +111,7 @@ bool RunOptions::setup(){
 
     HideByLenInput = TextInput::create(45, "Len");
     HideByLenInput->setPosition({size.width - HideByLenInput->getContentWidth() / 2 - rightOffset, size.height / 8 * 7});
-    HideByLenInput->setString(dtlayer == nullptr ? "" : (dtlayer->m_MyLevelStats.isOk() ? std::to_string(dtlayer->m_MyLevelStats.unwrap().hideRunLength) : ""));
+    HideByLenInput->setString(dtlayer == nullptr ? "" : (dtlayer->m_MyLevelStats.isOk() ? std::to_string(dtlayer->m_MyLevelStats.unwrap().metadata.hideRunLength) : ""));
     HideByLenInput->setCommonFilter(CommonFilter::Uint);
     HideByLenInput->setCallback([&](const std::string& newText){
         auto dtlayer = DTLayer::get();
@@ -124,7 +124,7 @@ bool RunOptions::setup(){
         HideByLenInput->setString(std::to_string(num));
 
         auto& stats = dtlayer->m_MyLevelStats.unwrap();
-        stats.hideRunLength = num;
+        stats.metadata.hideRunLength = num;
     });
     this->addChild(HideByLenInput);
 
@@ -137,7 +137,7 @@ bool RunOptions::setup(){
 
     HidUpToInput = TextInput::create(45, "%");
     HidUpToInput->setPosition({size.width - HidUpToInput->getContentWidth() / 2 - rightOffset, size.height / 8 * 5});
-    HidUpToInput->setString(dtlayer == nullptr ? "" : (dtlayer->m_MyLevelStats.isOk() ? std::to_string(dtlayer->m_MyLevelStats.unwrap().hideUpto) : ""));
+    HidUpToInput->setString(dtlayer == nullptr ? "" : (dtlayer->m_MyLevelStats.isOk() ? std::to_string(dtlayer->m_MyLevelStats.unwrap().metadata.hideUpto) : ""));
     HidUpToInput->setCommonFilter(CommonFilter::Uint);
     HidUpToInput->setCallback([&](const std::string& newText){
         auto dtlayer = DTLayer::get();
@@ -150,7 +150,7 @@ bool RunOptions::setup(){
         HidUpToInput->setString(std::to_string(num));
 
         auto& stats = dtlayer->m_MyLevelStats.unwrap();
-        stats.hideUpto = num;
+        stats.metadata.hideUpto = num;
     });
     this->addChild(HidUpToInput);
 
@@ -163,7 +163,7 @@ bool RunOptions::setup(){
 
     RealEndPerInput = TextInput::create(45, "E %");
     RealEndPerInput->setPosition({size.width - RealEndPerInput->getContentWidth() / 2 - rightOffset, size.height / 8 * 3});
-    RealEndPerInput->setString(dtlayer == nullptr ? "" : (dtlayer->m_MyLevelStats.isOk() ? std::to_string(dtlayer->m_MyLevelStats.unwrap().realEndPercent) : ""));
+    RealEndPerInput->setString(dtlayer == nullptr ? "" : (dtlayer->m_MyLevelStats.isOk() ? std::to_string(dtlayer->m_MyLevelStats.unwrap().metadata.realEndPercent) : ""));
     RealEndPerInput->setCommonFilter(CommonFilter::Uint);
     RealEndPerInput->setCallback([&](const std::string& newText){
         auto dtlayer = DTLayer::get();
@@ -176,7 +176,7 @@ bool RunOptions::setup(){
         RealEndPerInput->setString(std::to_string(num));
 
         auto& stats = dtlayer->m_MyLevelStats.unwrap();
-        stats.realEndPercent = num;
+        stats.metadata.realEndPercent = num;
     });
     this->addChild(RealEndPerInput);
 
@@ -189,14 +189,14 @@ bool RunOptions::setup(){
 
     ResetAsDeathToggler = SimpleToggler::createWithDefaults(
         .75f,
-        dtlayer == nullptr ? false : (dtlayer->m_MyLevelStats.isOk() ? dtlayer->m_MyLevelStats.unwrap().resetAsDeath : false)
+        dtlayer == nullptr ? false : (dtlayer->m_MyLevelStats.isOk() ? dtlayer->m_MyLevelStats.unwrap().metadata.resetAsDeath : false)
     );
     ResetAsDeathToggler->setCallback([&](bool isToggled){
         auto dtlayer = DTLayer::get();
         if (dtlayer == nullptr || dtlayer->m_MyLevelStats.isErr()) return;
 
         auto& stats = dtlayer->m_MyLevelStats.unwrap();
-        stats.resetAsDeath = isToggled;
+        stats.metadata.resetAsDeath = isToggled;
     });
     ResetAsDeathToggler->setPosition({size.width - ResetAsDeathToggler->getContentWidth() / 2 - rightOffset, size.height / 8 * 1});
     this->addChild(ResetAsDeathToggler);
@@ -262,6 +262,7 @@ void RunOptions::onClosed(){
 
 void RunOptions::addNewRun(CCObject*){
     auto dtlayer = DTLayer::get();
+    log::info("{}", dtlayer->specialStrings["totalLocalDeaths"]);
     auto numRes = geode::utils::numFromString<int>(runAdditionInput->getString());
 
     if (dtlayer == nullptr || dtlayer->m_MyLevelStats.isErr() || numRes.isErr()) return;
@@ -269,9 +270,9 @@ void RunOptions::addNewRun(CCObject*){
     int num = numRes.unwrap();
 
     auto& stats = dtlayer->m_MyLevelStats.unwrap();
-    if (stats.RunsToSave.contains(num)) return;
+    if (stats.metadata.RunsToSave.contains(num)) return;
     
-    stats.RunsToSave.insert(num);
+    stats.metadata.RunsToSave.insert(num);
 
     auto percentCell = PercentCell::create(
         runsMenu->getContentWidth() / 2,
@@ -290,10 +291,10 @@ void RunOptions::PercentCellClicked(PercentCell* cell){
     if (dtlayer != nullptr){
         int percent = cell->getPercent();
 
-        dtlayer->UpdateOnAllShared([&, percent](LevelStats& stats){
-            if (stats.RunsToSave.contains(percent))
-                stats.RunsToSave.erase(percent);
-        });
+        // dtlayer->UpdateOnAllShared([&, percent](LevelStats& stats){
+        //     if (stats.RunsToSave.contains(percent))
+        //         stats.RunsToSave.erase(percent);
+        // });
     }
 
     cell->removeMeAndCleanup();

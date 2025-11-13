@@ -8,16 +8,16 @@ using namespace geode::prelude;
 
 class LinkLevelCell : public CCNode {
     protected:
-        bool init(const float& cellW, const std::string& levelKey, const LevelStats& stats, const bool& linked, const std::function<void(const std::string, LevelStats, const bool&)>& callback);
+        bool init(const float& cellW, const std::string& levelKey, const LevelMetadeta& data, const bool& linked, const std::function<void(const std::string, LevelMetadeta, const bool&)>& callback);
     public:
-        static LinkLevelCell* create(const float& cellW, const std::string& levelKey, const LevelStats& stats, const bool& linked, const std::function<void(const std::string, LevelStats, const bool&)>& callback = NULL);
+        static LinkLevelCell* create(const float& cellW, const std::string& levelKey, const LevelMetadeta& data, const bool& linked, const std::function<void(const std::string, LevelMetadeta, const bool&)>& callback = NULL);
 
     private:
         //runs the given callback to this LinkLevelCell
         void MoveMe(CCObject*);
 
         std::string m_LevelKey;
-        LevelStats m_Stats;
+        LevelMetadeta m_data;
         bool m_Linked;
-        std::function<void(const std::string, LevelStats, const bool&)> m_Callback;
+        std::function<void(const std::string, LevelMetadeta, const bool&)> m_Callback;
 };

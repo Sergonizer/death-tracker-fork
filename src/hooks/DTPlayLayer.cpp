@@ -9,17 +9,12 @@ bool DTPlayLayer::disableCompletedLevelTracking() {
 }
 
 void DTPlayLayer::updateSessionLastPlayed() {
-    auto session = StatsManager::getSession();
-
-    // log::info("DTPlayLayer::updateSessionLastPlayed()\nisPrevSession = {}\nisSessionExpired = {}",
-    //     session == m_fields->prevSession,
-    //     m_fields->isSessionExpired
-    // );
+    auto session = StatsManager::getCurrentSession();
 
     if (!session) return;
 
     if (session == m_fields->prevSession && m_fields->isSessionExpired) return;
-    StatsManager::updateSessionLastPlayed(true);
+    StatsManager::updateCurrentSessionLastPlayed();
 }
 
 /* hooks
@@ -31,38 +26,37 @@ static void onModify(auto& self) {
 bool DTPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
     if (!PlayLayer::init(level, p1, p2)) return false;
 
-    auto statsRes = StatsManager::getLevelStats(level, false);
-    if (statsRes.isErr() && statsRes.unwrapErr() == "No stats exist for level!"){
-        LevelStats newStats;
-        statsRes = Ok(newStats);
+    auto metaRes = StatsManager::getMetadata(level);
+    if (metaRes.isErr() && metaRes.unwrapErr().size() && metaRes.unwrapErr()[0] == '1'){
+        LevelMetadeta newMeta{};
+        metaRes = Ok(newMeta);
     }
-    else if (statsRes.isErr()){
-        geode::Notification::create(fmt::format("Failed to load DT level data! {}", statsRes.unwrapErr()), NotificationIcon::Error)->show();
-        log::info("{}", statsRes.unwrapErr());
-    }
-    
-    if (statsRes.isOk()){
-        auto stats = statsRes.unwrap();
-        stats.levelName = level->m_levelName;
-        stats.attempts = level->m_attempts;
-        stats.difficulty = StatsManager::getDifficulty(level);
-        StatsManager::setLevelStats(stats, level, false);
-        statsRes = Ok(stats);
+    else if (metaRes.isErr()){
+        geode::Notification::create(fmt::format("Failed to load DT level data! {}", metaRes.unwrapErr()), NotificationIcon::Error)->show();
+        log::info("{}", metaRes.unwrapErr());
     }
 
-    StatsManager::setCurrentLogLevel(level);
+    if (metaRes.isOk()){
+        auto metadata = metaRes.unwrap();
+        metadata.levelName = level->m_levelName;
+        metadata.attempts = level->m_attempts;
+        metadata.difficulty = StatsManager::getDifficulty(level);
+        auto _ = StatsManager::setMetadata(metadata, level);
+        metaRes = Ok(metadata);
+    }
 
-    DTPopupManager::setCurrentLevel(level);
+    StatsManager::setCurrentLevel(level);
 
     // log::info("PlayLayer::init()");
 
-    auto session = StatsManager::getSession();
+    auto session = StatsManager::getCurrentSession();
     auto levelKey = StatsManager::getLevelKey(level);
     auto sessionLength = Settings::getMaxSessionLength();
 
     if (session == nullptr){
         StatsManager::scheduleCreateNewSession(true);
         DTPlayLayer::updateSessionLastPlayed();
+        log::info("first session created");
         return true;
     }
 
@@ -89,19 +83,19 @@ bool DTPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
                     break;
                 }
 
-                // reset session based on session.lastPlayed
-                default: {
-                    auto now = StatsManager::getNowSeconds();
+            // // reset session based on session.lastPlayed
+            // default: {
+            //         auto now = StatsManager::getNowSeconds();
 
-                // reset if the time since lastPlayed
-                // is longer than the session length
-                if (now - session->lastPlayed > sessionLength) {
-                    m_fields->isSessionExpired = true;
-                    StatsManager::scheduleCreateNewSession(true);
-                }
+            //     // reset if the time since lastPlayed
+            //     // is longer than the session length
+            //     if (now - session->lastPlayed > sessionLength) {
+            //         m_fields->isSessionExpired = true;
+            //         StatsManager::scheduleCreateNewSession(true);
+            //     }
 
-                break;
-            }
+            //     break;
+            // }
         }
     }
 
@@ -247,7 +241,7 @@ void DTPlayLayer::onQuit() {
     StatsManager::scheduleCreateNewSession(false);
     DTPlayLayer::updateSessionLastPlayed();
 
-    StatsManager::setCurrentLogLevel(nullptr);
+    StatsManager::setCurrentLevel(nullptr);
 
     PlayLayer::onQuit();
 }

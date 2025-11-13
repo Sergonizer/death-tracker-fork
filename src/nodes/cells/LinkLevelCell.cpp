@@ -1,9 +1,9 @@
 #include <nodes/cells/LinkLevelCell.hpp>
 #include <utils/Settings.hpp>
 
-LinkLevelCell* LinkLevelCell::create(const float& cellW, const std::string& levelKey, const LevelStats& stats, const bool& linked, const std::function<void(const std::string, LevelStats , const bool &)>& callback) {
+LinkLevelCell* LinkLevelCell::create(const float& cellW, const std::string& levelKey, const LevelMetadeta& data, const bool& linked, const std::function<void(const std::string, LevelMetadeta , const bool &)>& callback) {
     auto ret = new LinkLevelCell();
-    if (ret && ret->init(cellW, levelKey, stats, linked, callback)) {
+    if (ret && ret->init(cellW, levelKey, data, linked, callback)) {
         ret->autorelease();
     } else {
         delete ret;
@@ -12,28 +12,28 @@ LinkLevelCell* LinkLevelCell::create(const float& cellW, const std::string& leve
     return ret;
 }
 
-bool LinkLevelCell::init(const float& cellW, const std::string& levelKey, const LevelStats& stats, const bool& linked, const std::function<void(const std::string, LevelStats, const bool &)>& callback){
+bool LinkLevelCell::init(const float& cellW, const std::string& levelKey, const LevelMetadeta& data, const bool& linked, const std::function<void(const std::string, LevelMetadeta, const bool &)>& callback){
 
     m_LevelKey = levelKey;
-    m_Stats = stats;
+    m_data = data;
     m_Linked = linked;
 
     m_Callback = callback;
     
     auto splittedKey = StatsManager::splitLevelKey(levelKey);
 
-    std::string nameToDisplay = stats.levelName;
+    std::string nameToDisplay = data.levelName;
     if (nameToDisplay == "-1"){
         nameToDisplay = "Unknown Name";
     }
 
     CCSprite* difficultySprite;
-    if (stats.difficulty == -1){
+    if (data.difficulty == -1){
         difficultySprite = CCSprite::createWithSpriteFrameName("diffIcon_auto_btn_001.png");
     }
     else{
-        if (stats.difficulty < 10){
-            difficultySprite = CCSprite::createWithSpriteFrameName(fmt::format("diffIcon_0{}_btn_001.png", stats.difficulty).c_str());
+        if (data.difficulty < 10){
+            difficultySprite = CCSprite::createWithSpriteFrameName(fmt::format("diffIcon_0{}_btn_001.png", data.difficulty).c_str());
         }
         else{
             difficultySprite = CCSprite::createWithSpriteFrameName("diffIcon_10_btn_001.png");
@@ -46,7 +46,7 @@ bool LinkLevelCell::init(const float& cellW, const std::string& levelKey, const 
     difficultySprite->setScale(0.7f);
     this->addChild(difficultySprite);
 
-    std::string attemptsToDisplay = std::to_string(stats.attempts);
+    std::string attemptsToDisplay = std::to_string(data.attempts);
     if (attemptsToDisplay == "-1"){
         attemptsToDisplay = "Unknown Attempts";
     }
@@ -112,5 +112,5 @@ bool LinkLevelCell::init(const float& cellW, const std::string& levelKey, const 
 
 void LinkLevelCell::MoveMe(CCObject*){
     if (m_Callback != NULL)
-        m_Callback(m_LevelKey, m_Stats, m_Linked);
+        m_Callback(m_LevelKey, m_data, m_Linked);
 }

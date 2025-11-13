@@ -55,3 +55,31 @@ ViewState Save::getLastViewState(){
 void Save::setLastViewState(const ViewState& verion){
     Mod::get()->setSavedValue("LastViewState", verion);
 }
+
+stringCustomazations Save::getFrom0Customazations(){
+    return Mod::get()->getSavedValue<stringCustomazations>("F0Zustom");
+}
+void Save::setFrom0Customazations(const stringCustomazations& from0Custom){
+    Mod::get()->setSavedValue("F0Zustom", from0Custom);
+}
+
+stringCustomazations Save::getRunsCustomazations(){
+    return Mod::get()->getSavedValue<stringCustomazations>("RunCustom");
+}
+void Save::setRunCustomazations(const stringCustomazations& runCustom){
+    Mod::get()->setSavedValue("RunCustom", runCustom);
+}
+
+stringCustomazations Save::getSessionF0Customazations(){
+    return Mod::get()->getSavedValue<stringCustomazations>("SessionF0Custom");
+}
+void Save::setSessionF0Customazations(const stringCustomazations& sessionF0Custom){
+    Mod::get()->setSavedValue("SessionF0Custom", sessionF0Custom);
+}
+
+stringCustomazations Save::getSessionRunCustomazations(){
+    return Mod::get()->getSavedValue<stringCustomazations>("SessionRunCustom");
+}
+void Save::setSessionRunCustomazations(const stringCustomazations& sessionRunCustom){
+    Mod::get()->setSavedValue("SessionRunCustom", sessionRunCustom);
+}

@@ -4,6 +4,7 @@
 #include <nodes/layers/DTLevelSpecificSettingsLayer.hpp>
 
 #include <Geode/ui/GeodeUI.hpp>
+#include <regex>
 
 DTLayer* DTLayer::instance = nullptr;
 
@@ -28,24 +29,24 @@ bool DTLayer::setup(GJGameLevel* const& level) {
     // ================================== //
     // loading data
 
-    m_MyLevelStats = StatsManager::getLevelStats(m_Level, false);
-    if (m_MyLevelStats.isErr() && m_MyLevelStats.unwrapErr() == "No stats exist for level!"){
-        LevelStats newStats;
-        m_MyLevelStats = Ok(newStats);
+    m_MyLevelStats = StatsManager::getLevelData(m_Level);
+    if (m_MyLevelStats.isErr() && m_MyLevelStats.unwrapErr().size() && m_MyLevelStats.unwrapErr()[0] == '1'){
+        LevelData newData;
+        m_MyLevelStats = Ok(newData);
     }
     else if (m_MyLevelStats.isErr())
         geode::Notification::create(fmt::format("Failed to load DT level data! {}", m_MyLevelStats.unwrapErr()), NotificationIcon::Error)->show();
     
     if (m_MyLevelStats.isOk()){
         auto stats = m_MyLevelStats.unwrap();
-        stats.levelName = level->m_levelName;
-        stats.attempts = level->m_attempts;
-        stats.difficulty = StatsManager::getDifficulty(level);
-        StatsManager::setLevelStats(stats, level, false);
+        stats.metadata.levelName = level->m_levelName;
+        stats.metadata.attempts = level->m_attempts;
+        stats.metadata.difficulty = StatsManager::getDifficulty(level);
+        auto _ = StatsManager::setMetadata(stats.metadata, stats.levelKey);
         m_MyLevelStats = Ok(stats);
     }
 
-    StatsManager::setCurrentLogLevel(level);
+    StatsManager::setCurrentLevel(level);
 
     DTLayer::UpdateSharedStats();
     // ================================== //
@@ -129,15 +130,11 @@ bool DTLayer::setup(GJGameLevel* const& level) {
     );
     bottomMenu->addChild(levelSpecificOptionsBtn);
 
-    int sessionAmount = 0;
-    if (m_SharedLevelStats.isOk())
-        sessionAmount = m_SharedLevelStats.unwrap().sessions.size();
-
-    sessionSelector = SessionSelector::create(sessionAmount);
-    sessionSelector->setCallback([&](int newSession){
-        log::info("chosen new session {}", newSession);
-    });
+    sessionSelector = SessionSelector::create(sessionsOrder.size());
+    sessionSelector->setCallback([&](int newSession){ onSessionSelected(newSession); });
     bottomMenu->addChild(sessionSelector);
+
+    onSessionSelected(1);
 
     auto graphBtnSpr = CCSprite::createWithSpriteFrameName("graph_button.png"_spr);
     auto graphBtn = CCMenuItemSpriteExtra::create(
@@ -306,29 +303,47 @@ void DTLayer::graphBtnClicked(CCObject*){
 
 void DTLayer::UpdateSharedStats(){
     if (m_MyLevelStats.isErr()){
-        m_SharedLevelStats = Err("Failed to create shared stats!");
+        linkedLevelsData.clear();
         return;
     }
     auto sharedStats = m_MyLevelStats.unwrap();
 
-    std::vector<std::string> linkedLevels{};
-    linkedLevels.insert(linkedLevels.end(), sharedStats.LinkedLevels.begin(), sharedStats.LinkedLevels.end());
+    linkedLevelsData.clear();
+    sessionsOrder.clear();
 
-    for (int i = 0; i < linkedLevels.size(); i++)
-    {
-        auto currStatsRes = StatsManager::getLevelStats(linkedLevels[i], false);
-        if (currStatsRes.isErr()){
-            Notification::create(fmt::format("failed to get data for linked level - {} | {}", linkedLevels[i], currStatsRes.unwrapErr()))->show();
-            continue;
+    std::set<std::string> linkedLevels{};
+    std::map<std::string, LevelData> visitedLevels{};
+    linkedLevels.insert(sharedStats.metadata.LinkedLevels.begin(), sharedStats.metadata.LinkedLevels.end());
+
+    while (true){
+        auto startSize = linkedLevels.size();
+        for (const auto& linkedLevel : linkedLevels)
+        {
+            if (visitedLevels.contains(linkedLevel)) continue;
+            
+            auto currStatsRes = StatsManager::getLevelData(linkedLevel);
+            if (currStatsRes.isErr()){
+                Notification::create(fmt::format("failed to get data for linked level - {} | {}", linkedLevel, currStatsRes.unwrapErr()))->show();
+                continue;
+            }
+            auto currStats = currStatsRes.unwrap();
+
+            linkedLevels.insert(currStats.metadata.LinkedLevels.begin(), currStats.metadata.LinkedLevels.end());
+            visitedLevels.insert({currStats.levelKey, currStats});
         }
-        auto currStats = currStatsRes.unwrap();
 
-        linkedLevels.insert(linkedLevels.end(), currStats.LinkedLevels.begin(), currStats.LinkedLevels.end());
-
-        sharedStats.CombineStats(currStats);
+        if (startSize == linkedLevels.size()) break;
     }
 
-    m_SharedLevelStats = Ok(sharedStats);
+    for (const auto& [_, level] : visitedLevels){
+        std::for_each(level.sessionNames.begin(), level.sessionNames.end(), [&](long long key) {
+            this->sessionsOrder.emplace(key, level.levelKey);
+        });
+
+        linkedLevelsData.push_back(level);
+    }
+
+    UpdateDeathRelatedStrings();
 }
 
 void DTLayer::onSettings(CCObject*){
@@ -409,34 +424,162 @@ AdvancedScrollLayer* DTLayer::getScrollLayer(){
     return scrollLayer;
 }
 
-void DTLayer::saveAndUpdateStats(bool updateShared){
-    if (m_MyLevelStats.isErr()) return;
+// void DTLayer::saveAndUpdateStats(bool updateShared){
+//     if (m_MyLevelStats.isErr()) return;
     
-    auto& levelStats = m_MyLevelStats.unwrap();
-    StatsManager::setLevelStats(levelStats, m_Level, false);
-    if (updateShared)
-        UpdateSharedStats();
-}
+//     auto& levelStats = m_MyLevelStats.unwrap();
+//     StatsManager::setLevelStats(levelStats, m_Level, false);
+//     if (updateShared)
+//         UpdateSharedStats();
+// }
 
-void DTLayer::UpdateOnAllShared(const std::function<void(LevelStats& stats)>& lambda){
-    if (m_MyLevelStats.isErr() || m_SharedLevelStats.isErr() || lambda == NULL) return;
+// void DTLayer::UpdateOnAllShared(const std::function<void(LevelStats& stats)>& lambda){
+//     if (m_MyLevelStats.isErr() || m_SharedLevelStats.isErr() || lambda == NULL) return;
 
-    auto& sharedStats = m_SharedLevelStats.unwrap();
+//     auto& sharedStats = m_SharedLevelStats.unwrap();
 
-    for (const auto& linkedLevel : sharedStats.LinkedLevels)
+//     for (const auto& linkedLevel : sharedStats.LinkedLevels)
+//     {
+//         auto statsRes = StatsManager::getLevelStats(linkedLevel, false);
+//         if (statsRes.isErr()) continue;
+//         auto currentStats = statsRes.unwrap();
+
+//         lambda(currentStats);
+
+//         StatsManager::setLevelStats(currentStats, linkedLevel, false);
+//     }
+    
+//     auto& myStats = m_MyLevelStats.unwrap();
+//     lambda(myStats);
+//     lambda(sharedStats);
+
+//     UpdateDeathRelatedStrings();
+// }
+
+void DTLayer::UpdateDeathRelatedStrings(){
+    if (m_MyLevelStats.isErr()) return;
+
+    auto& myStats = m_MyLevelStats.unwrap();
+
+    Deaths sharedDeaths = myStats.from0.deaths;
+    NewBests sharedNBs = myStats.from0.newBests;
+    Deaths sharedRuns = myStats.from0.runs;
+
+    for (const auto& levelData : linkedLevelsData)
     {
-        auto statsRes = StatsManager::getLevelStats(linkedLevel, false);
-        if (statsRes.isErr()) continue;
-        auto currentStats = statsRes.unwrap();
-
-        lambda(currentStats);
-
-        StatsManager::setLevelStats(currentStats, linkedLevel, false);
+        sharedDeaths.insert(levelData.from0.deaths.begin(), levelData.from0.deaths.end());
+        sharedNBs.insert(levelData.from0.newBests.begin(), levelData.from0.newBests.end());
+        sharedRuns.insert(levelData.from0.runs.begin(), levelData.from0.runs.end());
     }
     
+
+    createDeathsString(myStats.from0.deaths, Save::getFrom0Customazations(), specialStrings["totalLocalDeaths"], &myStats.from0.newBests, "{nbc}");
+    createDeathsString(sharedDeaths, Save::getFrom0Customazations(), specialStrings["totalSharedDeaths"], &sharedNBs, "{nbc}");
+
+    createDeathsString(myStats.from0.runs, Save::getRunsCustomazations(), specialStrings["totalLocalRuns"]);
+    createDeathsString(sharedRuns, Save::getRunsCustomazations(), specialStrings["totalSharedRuns"]);
+
+    if (currentSessionInfo != std::nullopt){
+        auto& sessionObj = currentSessionInfo.value();
+
+        createDeathsString(sessionObj.deaths, Save::getSessionF0Customazations(), specialStrings["totalSessionDeaths"], &sessionObj.newBests, "{sbc}");
+        createDeathsString(sessionObj.runs, Save::getSessionRunCustomazations(), specialStrings["totalSessionRuns"]);
+    }
+    else{
+        specialStrings["totalSessionDeaths"] = "No Deaths Found!";
+        specialStrings["totalSessionRuns"] = "No Deaths Found!";
+    }
+}
+
+bool DTLayer::createDeathsString(const Deaths& deaths, const stringCustomazations& custom, std::string& out, NewBests* const newBests, const std::string& newBestColoring){
+    out = "";
+    if (m_MyLevelStats.isErr()) return false;
     auto& myStats = m_MyLevelStats.unwrap();
-    lambda(myStats);
-    lambda(sharedStats);
+
+    std::vector<std::pair<std::string, int>> deathVec(deaths.begin(), deaths.end());
+    std::sort(deathVec.begin(), deathVec.end(), [](const auto& a, const auto& b){
+        auto runARes = StatsManager::splitRunKey(a.first);
+        auto runBRes = StatsManager::splitRunKey(b.first);
+        if (runARes.isErr() || runBRes.isErr()){
+            log::error("Failed to split run key! {} | {}", runARes.isErr() ? runARes.unwrapErr() : "", runBRes.isErr() ? runBRes.unwrapErr() : "");
+            return a.first < b.first;
+        }
+
+        auto& runA = runARes.unwrap();
+        auto& runB = runBRes.unwrap();
+
+        if (runA.start == runB.start)
+            return runA.end < runB.end;
+
+        return runA.start < runB.start;
+    });
+
+    for (const auto& [run, amount] : deathVec)
+    {
+        auto runSplitRes = StatsManager::splitRunKey(run);
+        if (runSplitRes.isErr()){
+            log::error("Failed to split run key! {}", runSplitRes.unwrapErr());
+            continue;
+        }
+
+        auto& runSplit = runSplitRes.unwrap();
+
+        bool includeRunStart = runSplit.start != -1;
+
+        std::string nbDeColor = "";
+        std::string nbColor = "";
+
+        if (includeRunStart){
+            if (myStats.metadata.hideRunLength > runSplit.end - runSplit.start)
+                continue;
+        }
+        else{
+            if (myStats.metadata.hideUpto > runSplit.end)
+                continue;
+
+            if (newBests != nullptr && newBests->contains(runSplit.end)){
+                nbDeColor = "{\\color}";
+                nbColor = newBestColoring;
+            }
+        }
+
+        auto format = custom.format;
+
+        format = std::regex_replace(
+            format,
+            std::regex("\\{per\\}"),
+            includeRunStart ? fmt::format("{}-{}", runSplit.start, runSplit.end) : fmt::format("{}", runSplit.end)
+        );
+
+        format = std::regex_replace(
+            format,
+            std::regex("\\{d\\}"),
+            std::to_string(amount)
+        );
+
+        out += fmt::format("{}{}{}{}", nbColor, format, nbDeColor, custom.seperator);
+    }
+
+    if (out == "")
+        out = "No Deaths Found!";
+
+    return true;
+}
+
+void DTLayer::onSessionSelected(int sessionNum){
+    currentSession = sessionNum - 1;
+
+    if (!sessionsOrder.contains(currentSession)) return;
+
+    auto it = sessionsOrder.begin();
+    std::advance(it, currentSession);
+    
+    if (it == sessionsOrder.end()) return;
+
+    auto sessionRes = StatsManager::getSession(it->second, it->first);
+    if (sessionRes.isErr()) return;
+
+    currentSessionInfo = sessionRes.unwrap();
 }
 
 //better info time calc

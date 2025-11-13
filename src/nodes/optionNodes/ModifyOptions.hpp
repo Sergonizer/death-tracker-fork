@@ -14,6 +14,11 @@ class ModifyOptions : public OptionsNode {
         virtual bool setup();
 
         SimpleToggler* TypeToggler;
+
+        void onLocalView(CCObject*);
+        void onSharedView(CCObject*);
+        CCMenuItemSpriteExtra* localViewBtn;
+        CCMenuItemSpriteExtra* sharedViewBtn;
     public:
         virtual void onOpened();
         virtual void onClosed();

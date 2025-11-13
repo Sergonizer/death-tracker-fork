@@ -6,7 +6,6 @@
 using namespace geode::prelude;
 
 typedef std::map<std::string, int> Deaths;
-typedef std::map<std::string, int> Runs;
 typedef std::set<int> NewBests;
 
 struct Run_s{
@@ -30,57 +29,14 @@ struct DeathInfo_s{
 typedef struct DeathInfo_s DeathInfo;
 
 typedef struct {
+    std::string ownerLevelKey;
     long long lastPlayed;
     Deaths deaths;
-    Runs runs;
+    Deaths runs;
     NewBests newBests;
     int currentBest;
     long long sessionStartDate;
 } Session;
-
-struct LevelStats_s {
-    Deaths deaths{};
-    Runs runs{};
-    NewBests newBests{};
-    int currentBest = 0;
-    std::vector<Session> sessions{};
-    std::set<int> RunsToSave{};
-    bool trackAnyRun = true;
-    std::set<std::string> LinkedLevels{};
-    std::string levelName = "Unknown name";
-    int attempts = 0;
-    int difficulty = 0;
-    int hideUpto = 0;
-    int hideRunLength = 0;
-    int realEndPercent = 100;
-    bool resetAsDeath = false;
-
-    public:
-        void CombineStats(const LevelStats_s& other){
-            mergeMaps(deaths, other.deaths);
-            mergeMaps(runs, other.runs);
-            newBests.insert(other.newBests.begin(), other.newBests.end());
-            
-            sessions.reserve(sessions.size() + other.sessions.size());
-            sessions.insert(sessions.end(), other.sessions.begin(), other.sessions.end());
-            std::ranges::sort(sessions, [](const Session a, const Session b) { return a.lastPlayed > b.lastPlayed; });
-
-            if (other.currentBest > currentBest)
-                currentBest = other.currentBest;
-            
-            RunsToSave.insert(other.RunsToSave.begin(), other.RunsToSave.end());
-            LinkedLevels.insert(other.LinkedLevels.begin(), other.LinkedLevels.end());
-
-            attempts += other.attempts;
-        }
-
-        void mergeMaps(std::map<std::string, int> &original, const std::map<std::string, int> &addition){
-            for (const auto &[key, value] : addition) {
-                original[key] += value;
-            }
-        }
-};
-typedef struct LevelStats_s LevelStats;
 
 template <>
 struct matjson::Serialize<Session> {
@@ -88,7 +44,7 @@ struct matjson::Serialize<Session> {
         Session session;
         GEODE_UNWRAP_INTO(session.lastPlayed, value["lastPlayed"].as<long long>());
         GEODE_UNWRAP_INTO(session.deaths, value["deaths"].as<Deaths>());
-        GEODE_UNWRAP_INTO(session.runs, value["runs"].as<Runs>());
+        GEODE_UNWRAP_INTO(session.runs, value["runs"].as<Deaths>());
         GEODE_UNWRAP_INTO(session.newBests, value["newBests"].as<NewBests>());
         GEODE_UNWRAP_INTO(session.currentBest, value["currentBest"].asInt());
         GEODE_UNWRAP_INTO(session.sessionStartDate, value["sessionStartDate"].as<long long>());
@@ -109,16 +65,55 @@ struct matjson::Serialize<Session> {
     }
 };
 
-template <>
-struct matjson::Serialize<LevelStats> {
-    static Result<LevelStats> fromJson(const matjson::Value& value) {
+typedef struct {
+    Deaths deaths;
+    Deaths runs;
+    NewBests newBests;
+    int currentBest;
+} From0Data;
 
-        LevelStats stats;
+template <>
+struct matjson::Serialize<From0Data> {
+    static Result<From0Data> fromJson(const matjson::Value& value) {
+
+        From0Data stats;
         GEODE_UNWRAP_INTO(stats.deaths, value["deaths"].as<Deaths>());
-        GEODE_UNWRAP_INTO(stats.runs, value["runs"].as<Runs>());
+        GEODE_UNWRAP_INTO(stats.runs, value["runs"].as<Deaths>());
         GEODE_UNWRAP_INTO(stats.newBests, value["newBests"].as<NewBests>());
         GEODE_UNWRAP_INTO(stats.currentBest, value["currentBest"].asInt());
-        GEODE_UNWRAP_INTO(stats.sessions, value["sessions"].as<std::vector<Session>>());
+
+        return Ok(stats);
+    }
+
+    static matjson::Value toJson(const From0Data& value) {
+        matjson::Value obj = matjson::makeObject({
+            { "deaths", value.deaths },
+            { "runs", value.runs },
+            { "newBests", value.newBests },
+            { "currentBest", value.currentBest }
+        });
+        return obj;
+    }
+};
+
+typedef struct LevelMetadeta {
+    std::set<int> RunsToSave{};
+    bool trackAnyRun = true;
+    std::set<std::string> LinkedLevels{};
+    std::string levelName = "Unknown name";
+    int attempts = 0;
+    int difficulty = 0;
+    int hideUpto = 0;
+    int hideRunLength = 0;
+    int realEndPercent = 100;
+    bool resetAsDeath = false;
+} LevelMetadeta;
+
+template <>
+struct matjson::Serialize<LevelMetadeta> {
+    static Result<LevelMetadeta> fromJson(const matjson::Value& value) {
+
+        LevelMetadeta stats;
         GEODE_UNWRAP_INTO(stats.RunsToSave, value["RunsToSave"].as<std::set<int>>());
         GEODE_UNWRAP_INTO(stats.LinkedLevels, value["LinkedLevels"].as<std::set<std::string>>());
         GEODE_UNWRAP_INTO(stats.levelName, value["levelName"].asString());
@@ -126,29 +121,15 @@ struct matjson::Serialize<LevelStats> {
         GEODE_UNWRAP_INTO(stats.difficulty, value["difficulty"].asInt());
         GEODE_UNWRAP_INTO(stats.hideRunLength, value["hideRunLength"].asInt());
         GEODE_UNWRAP_INTO(stats.hideUpto, value["hideUpto"].asInt());
-
-        if (value.contains("trackAnyRun")){
-            GEODE_UNWRAP_INTO(stats.trackAnyRun, value["trackAnyRun"].asBool());
-        }
-
-        if (value.contains("realEndPercent")){
-            GEODE_UNWRAP_INTO(stats.realEndPercent, value["realEndPercent"].asInt());
-        }
-
-        if (value.contains("resetAsDeath")){
-            GEODE_UNWRAP_INTO(stats.resetAsDeath, value["resetAsDeath"].asBool());
-        }
+        GEODE_UNWRAP_INTO(stats.trackAnyRun, value["trackAnyRun"].asBool());
+        GEODE_UNWRAP_INTO(stats.realEndPercent, value["realEndPercent"].asInt());
+        GEODE_UNWRAP_INTO(stats.resetAsDeath, value["resetAsDeath"].asBool());
 
         return Ok(stats);
     }
 
-    static matjson::Value toJson(const LevelStats& value) {
+    static matjson::Value toJson(const LevelMetadeta& value) {
         matjson::Value obj = matjson::makeObject({
-            { "deaths", value.deaths },
-            { "runs", value.runs },
-            { "newBests", value.newBests },
-            { "currentBest", value.currentBest },
-            { "sessions", value.sessions },
             { "RunsToSave", value.RunsToSave },
             { "trackAnyRun", value.trackAnyRun },
             { "LinkedLevels", value.LinkedLevels },
@@ -165,30 +146,11 @@ struct matjson::Serialize<LevelStats> {
 };
 
 typedef struct {
-    std::string name;
-    float value;
-    std::string type;
-} prismSetting;
-
-template <>
-struct matjson::Serialize<prismSetting> {
-    static Result<prismSetting> fromJson(const matjson::Value& value) {
-        prismSetting setting;
-        GEODE_UNWRAP_INTO(setting.name, value["name"].asString());
-        setting.value = 0;
-        GEODE_UNWRAP_INTO(setting.type, value["type"].asString());
-
-        if (value["value"].isBool()){
-            GEODE_UNWRAP_INTO(auto valRes, value["value"].asBool());
-            setting.value = valRes ? 1 : 0;
-        }
-        else{
-            GEODE_UNWRAP_INTO(setting.value, value["value"].asDouble());
-        }
-
-        return Ok(setting);
-    }
-};
+    std::string levelKey;
+    LevelMetadeta metadata;
+    From0Data from0;
+    std::set<long long> sessionNames;
+} LevelData;
 
 struct DTLabelInfo_s {
     int X = -1;
@@ -319,3 +281,26 @@ struct matjson::Serialize<ViewState> {
     }
 };
 
+struct stringCustomazations{
+    std::string seperator = "{nl}";
+    std::string format = "{per}% X{d}";
+};
+
+template <>
+struct matjson::Serialize<stringCustomazations> {
+    static Result<stringCustomazations> fromJson(const matjson::Value& value) {
+        stringCustomazations sc;
+        GEODE_UNWRAP_INTO(sc.seperator, value["seperator"].asString());
+        GEODE_UNWRAP_INTO(sc.format, value["format"].asString());
+
+        return Ok(sc);
+    }
+
+    static matjson::Value toJson(const stringCustomazations& value) {
+        matjson::Value obj = matjson::makeObject({
+            { "seperator", value.seperator },
+            { "format", value.format }
+        });
+        return obj;
+    }
+};

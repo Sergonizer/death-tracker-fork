@@ -16,6 +16,7 @@ bool SessionSelector::init(int count){
     if (!CCMenu::init()) return false;
 
     this->setContentSize({ 180, 30 });
+    this->setPosition({0, 0});
 
     inputNode = geode::TextInput::create(120, "Session", "gjFont17.fnt");
     inputNode->setPosition(this->getContentSize() / 2);
