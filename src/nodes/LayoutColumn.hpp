@@ -24,6 +24,8 @@ class LayoutColumn : public CCMenu {
         static float borderWidth;
 
         void setContentHeight(float height);
+
+        float tempHeight;
         
     private:
         bool init(float topHeight, float minHeight, float minWidth);

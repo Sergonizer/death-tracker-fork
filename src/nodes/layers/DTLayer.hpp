@@ -9,9 +9,14 @@
 
 using namespace geode::prelude;
 
+struct organizationResult{
+    std::vector<std::tuple<DTLabel*, CCPoint, float>> labelData{};
+    float highestColumn;
+};
+
 using DeathStringTask = Task<Result<std::vector<DeathInfo>>>;
 using ResultTask = Task<Result<>>;
-using organizationTask = Task<std::vector<std::tuple<DTLabel*, CCPoint, float>>>;
+using organizationTask = Task<organizationResult>;
 
 class DTLayer : public Popup<GJGameLevel* const&> {
     protected:
@@ -89,6 +94,8 @@ class DTLayer : public Popup<GJGameLevel* const&> {
         // EditLayoutTopbar* layoutTopbar = nullptr;
         CCMenu* columnHolder;
         CCSize ogLimits;
+
+        CCNode* labelsHolder;
 
         SessionSelector* sessionSelector;
 

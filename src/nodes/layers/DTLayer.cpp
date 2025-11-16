@@ -170,6 +170,9 @@ bool DTLayer::setup(GJGameLevel* const& level) {
     columnHolder->setPosition({0, scrollLayer->content->getContentHeight()});
     scrollLayer->content->addChild(columnHolder);
 
+    labelsHolder = CCNode::create();
+    scrollLayer->content->addChild(labelsHolder);
+
     LayoutColumn* column1;
     LayoutColumn* column2;
     LayoutColumn* column3;
@@ -193,25 +196,27 @@ bool DTLayer::setup(GJGameLevel* const& level) {
 
     auto label4 = DTLabel::create();
     label4->name = "bb";
-    scrollLayer->content->addChild(label4);
+    labelsHolder->addChild(label4);
     column2->addLabel(label4);
 
     auto label3 = DTLabel::create();
     label3->name = "aa";
-    scrollLayer->content->addChild(label3);
+    labelsHolder->addChild(label3);
     column2->addLabel(label3);
     column3->addLabel(label3);
 
     auto label2 = DTLabel::create();
     label2->name = "fred";
-    scrollLayer->content->addChild(label2);
+    labelsHolder->addChild(label2);
     column1->addLabel(label2);
     column2->addLabel(label2);
 
     auto label = DTLabel::create();
     label->name = "meow";
-    scrollLayer->content->addChild(label);
+    labelsHolder->addChild(label);
     column1->addLabel(label);
+
+    labelsHolder->setPosition(columnHolder->getPosition());
 
     this->organizeLayout();
 
@@ -749,13 +754,37 @@ float DTLayer::timeForLevelString(const std::string& levelString) {
 void DTLayer::update(float dt){
     columnHolder->updateLayout();
 
+    float oldWidth = scrollLayer->content->getContentWidth();
+
     scrollLayer->setLimitsWidth(std::max(ogLimits.width, columnHolder->getContentWidth()));
+
+    if (oldWidth != scrollLayer->content->getContentWidth()){
+        float delta = scrollLayer->content->getContentWidth() - oldWidth;
+
+        scrollLayer->moveBy(ccp(delta / 2, 0));
+    }
 }
 
 void DTLayer::organizeLayout(){
     organizationListener.bind([this](organizationTask::Event* event){
         if (auto result = event->getValue()){
-            for (const auto& [label, newPos, newWidth] : *result)
+            float heightstColumn = 0;
+            for (const auto& column : columns){
+                column->setContentHeight(result->highestColumn);
+                if (heightstColumn < column->getContentHeight()) heightstColumn = column->getContentHeight();
+            }
+
+            float oldHeightLimits = scrollLayer->content->getContentHeight();
+
+            scrollLayer->setLimitsHeight(heightstColumn);
+            columnHolder->setPositionY(heightstColumn);
+            labelsHolder->setPosition(columnHolder->getPosition());
+
+            float delta = oldHeightLimits - scrollLayer->content->getContentHeight();
+
+            scrollLayer->moveBy(ccp(0, delta / 2));
+            
+            for (const auto& [label, newPos, newWidth] : result->labelData)
             {
                 label->stopAllActions();
 
@@ -781,19 +810,24 @@ organizationTask DTLayer::organizeLayoutTask(){
                 label->tempWidth = 0;
             }
         }
+
+        float heighestHeight = 0;
         
         for (const auto& column : columns){
             column->updateLabelPositions();
+
+            if (heighestHeight < column->tempHeight) heighestHeight = column->tempHeight;
         }
 
-        std::vector<std::tuple<DTLabel*, CCPoint, float>> data{};
+        organizationResult data{};
+        data.highestColumn = heighestHeight;
 
         for (const auto& label : allLabels)
         {
             auto targetPosition = label->tempPos;
             auto targetWidth = label->tempWidth - LayoutColumn::borderWidth;
 
-            data.push_back({label, targetPosition, targetWidth});
+            data.labelData.push_back({label, targetPosition, targetWidth});
         }
         return data;
     }, "DT layout organization");

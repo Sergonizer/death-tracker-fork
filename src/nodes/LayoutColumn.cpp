@@ -68,6 +68,8 @@ bool LayoutColumn::init(float topHeight, float minHeight, float minWidth){
 }
 
 void LayoutColumn::updateSizesByContent(){
+    if (this->getContentHeight() < minHeight) this->setContentHeight(minHeight);
+    
     topSpr->setContentSize({this->getContentWidth(), topHeight});
     topSpr->setPosition({0, this->getContentHeight()});
 
@@ -198,7 +200,11 @@ void LayoutColumn::updateLabelPositions(){
     }
 
     log::info("----");
+
+    if (prevLabel != nullptr)
+        diff += prevLabel->getContentHeight();
     
+    tempHeight = diff + topHeight;
 }
 
 void LayoutColumn::updateLabelPosition(DTLabel* label){
