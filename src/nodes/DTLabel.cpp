@@ -1,5 +1,6 @@
 #include "DTLabel.hpp"
 #include <nodes/LayoutColumn.hpp>
+#include <nodes/layers/DTLayer.hpp>
 
 DTLabel* DTLabel::create() {
     auto ret = new DTLabel();
@@ -20,10 +21,24 @@ bool DTLabel::init(){
     this->setContentHeight(20);
     this->setContentWidth(0);
     this->setPosition({0, 0});
+    this->ignoreAnchorPointForPosition(false);
 
     bg = CCScale9Sprite::create("GJ_button_05.png");
     bg->setScale(.3f);
     this->addChild(bg);
+
+    auto menu = CCMenu::create();
+    menu->setPosition({0,0});
+    this->addChild(menu);
+
+    auto expandBtnSpr = CCSprite::create("dialogIcon_018.png");
+    expandBtnSpr->setScale(.25f);
+    auto expandBtn = CCMenuItemSpriteExtra::create(
+        expandBtnSpr,
+        this,
+        menu_selector(DTLabel::toggleExpand)
+    );
+    menu->addChild(expandBtn);
 
     this->scheduleUpdate();
 
@@ -44,4 +59,10 @@ void DTLabel::moveUpLayer(){
     {
         column->updateLabelPosition(this);
     }
+}
+
+void DTLabel::toggleExpand(CCObject*){
+    this->setContentHeight(120);
+
+    DTLayer::get()->organizeLayout();
 }

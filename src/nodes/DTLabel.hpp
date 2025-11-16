@@ -27,4 +27,6 @@ class DTLabel : public CCMenu {
         void update(float dt);
 
         CCScale9Sprite* bg;
+
+        void toggleExpand(CCObject*);
 };

@@ -796,5 +796,5 @@ organizationTask DTLayer::organizeLayoutTask(){
             data.push_back({label, targetPosition, targetWidth});
         }
         return data;
-    }, "DT layout organization task");
+    }, "DT layout organization");
 }
