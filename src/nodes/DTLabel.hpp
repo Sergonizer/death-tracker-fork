@@ -1,6 +1,8 @@
 #pragma once
 
 #include <Geode/Geode.hpp>
+#include <unordered_map>
+#include <functional>
 
 class LayoutColumn;
 
@@ -20,6 +22,8 @@ class DTLabel : public CCMenu {
 
         CCPoint tempPos;
         float tempWidth;
+
+        static float labelTitleHeight;
         
     private:
         bool init();
@@ -29,4 +33,11 @@ class DTLabel : public CCMenu {
         CCScale9Sprite* bg;
 
         void toggleExpand(CCObject*);
+
+        bool isExpanded;
+
+        std::unordered_map<CCNode*, std::function<float()>> followContentWidth{};
+        std::unordered_map<CCNode*, std::function<float()>> followContentHeight{};
+
+        std::unordered_map<CCNode*, std::function<CCPoint()>> alwaysSetPosition{};
 };

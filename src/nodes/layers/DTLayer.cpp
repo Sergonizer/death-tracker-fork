@@ -5,7 +5,7 @@
 
 #include <Geode/ui/GeodeUI.hpp>
 #include <regex>
-#include <utils/CCResizeTo.hpp>
+#include <utils/CCResizeWidthTo.hpp>
 
 DTLayer* DTLayer::instance = nullptr;
 
@@ -70,7 +70,7 @@ bool DTLayer::setup(GJGameLevel* const& level) {
     }
 
     float height = 60;
-    ogLimits = CCSize{m_size.width - 30 + 0.1f, m_size.height - height  + 0.1f};
+    ogLimits = CCSize{m_size.width - 30 + 1, m_size.height - height  + 1};
     scrollLayer = AdvancedScrollLayer::create({m_size.width - 30, m_size.height - height}, ogLimits);
     //scrollLayer->drawGrid(50, .5f, ccColor4B{ 143, 143, 143, 255 });
     scrollLayer->setPosition(m_size / 2 - scrollLayer->getContentSize() / 2 + ccp(0, height / 4));
@@ -768,16 +768,16 @@ void DTLayer::update(float dt){
 void DTLayer::organizeLayout(){
     organizationListener.bind([this](organizationTask::Event* event){
         if (auto result = event->getValue()){
-            float heightstColumn = 0;
             for (const auto& column : columns){
                 column->setContentHeight(result->highestColumn);
-                if (heightstColumn < column->getContentHeight()) heightstColumn = column->getContentHeight();
             }
+
+            float cappedHeight = std::max(result->highestColumn, ogLimits.height);
 
             float oldHeightLimits = scrollLayer->content->getContentHeight();
 
-            scrollLayer->setLimitsHeight(heightstColumn);
-            columnHolder->setPositionY(heightstColumn);
+            scrollLayer->setLimitsHeight(cappedHeight);
+            columnHolder->setPositionY(cappedHeight);
             labelsHolder->setPosition(columnHolder->getPosition());
 
             float delta = oldHeightLimits - scrollLayer->content->getContentHeight();
@@ -789,7 +789,7 @@ void DTLayer::organizeLayout(){
                 label->stopAllActions();
 
                 label->runAction(CCEaseInOut::create(CCMoveTo::create(.5f, newPos), 2));
-                label->runAction(CCEaseInOut::create(CCResizeTo::create(.5f, {newWidth, label->getContentHeight()}), 2));
+                label->runAction(CCEaseInOut::create(CCResizeWidthTo::create(.5f, newWidth), 2));
             }
         }
     });
