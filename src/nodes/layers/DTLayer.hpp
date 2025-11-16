@@ -4,9 +4,8 @@
 #include "../../managers/StatsManager.hpp"
 #include "../../utils/Save.hpp"
 #include "AdvancedScrollLayer.hpp"
-#include <nodes/DTLabel.hpp>
-#include <nodes/EditLayoutTopbar.hpp>
 #include <nodes/SessionSelector.hpp>
+#include <nodes/LayoutColumn.hpp>
 
 using namespace geode::prelude;
 
@@ -39,9 +38,9 @@ class DTLayer : public Popup<GJGameLevel* const&> {
 
         static DTLayer* get();
 
-        DTLabel* createLabel(DTLabelInfo info = DTLabelInfo());
+        // DTLabel* createLabel(DTLabelInfo info = DTLabelInfo());
 
-        void removeLabel(DTLabel* label, bool forceDelete = false);
+        // void removeLabel(DTLabel* label, bool forceDelete = false);
 
         AdvancedScrollLayer* getScrollLayer();
         
@@ -55,11 +54,22 @@ class DTLayer : public Popup<GJGameLevel* const&> {
         void UpdateDeathRelatedStrings();
 
         std::map<std::string, std::string> specialStrings{};
+
+        void organizeLayout();
     private:
+
+        struct ColumnComperator {
+            bool operator() (LayoutColumn* a, LayoutColumn* b) const {
+                return a->orderPos < b->orderPos;
+            }
+        };
+        std::set<LayoutColumn*, ColumnComperator> columns;
 
         bool createDeathsString(const Deaths& deaths, const stringCustomazations& custom, std::string& out, NewBests* const newBests = nullptr, const std::string& newBestColoring = "");
 
         int currentSession;
+
+        void update(float dt) override;
 
         void onSessionSelected(int sessionNum);
 
@@ -72,8 +82,10 @@ class DTLayer : public Popup<GJGameLevel* const&> {
         static DTLayer* instance;
 
         AdvancedScrollLayer* scrollLayer = nullptr;
-        std::set<DTLabel*> labels{};
-        EditLayoutTopbar* layoutTopbar = nullptr;
+        // std::set<DTLabel*> labels{};
+        // EditLayoutTopbar* layoutTopbar = nullptr;
+        CCMenu* columnHolder;
+        CCSize ogLimits;
 
         SessionSelector* sessionSelector;
 

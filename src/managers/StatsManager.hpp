@@ -39,7 +39,7 @@ public:
     static std::filesystem::path m_savesFolderPath;
 
     static GJGameLevel* currentLevel;
-    static From0Data currentFrom0;
+    static GeneralData currentFrom0;
     static LevelMetadeta currentMetadata;
     static Session currentSession;
 
@@ -49,8 +49,8 @@ public:
     static Result<LevelMetadeta> getMetadata(const std::string& levelKey);
     static Result<Session> getSession(GJGameLevel* const level, long long sessionTime);
     static Result<Session> getSession(const std::string& levelKey, long long sessionTime);
-    static Result<From0Data> getFrom0(GJGameLevel* const level);
-    static Result<From0Data> getFrom0(const std::string& levelKey);
+    static Result<GeneralData> getGeneral(GJGameLevel* const level);
+    static Result<GeneralData> getGeneral(const std::string& levelKey);
     static Result<LevelData> getLevelData(GJGameLevel* const level);
     static Result<LevelData> getLevelData(const std::string& levelKey);
 
@@ -58,13 +58,16 @@ public:
     static Result<> setMetadata(const LevelMetadeta& stats, const std::string& levelKey);
     static Result<> setSession(Session& stats, GJGameLevel* const level, long long sessionTime, bool updateLastPlayed);
     static Result<> setSession(Session& stats, const std::string& levelKey, long long sessionTime, bool updateLastPlayed);
-    static Result<> setFrom0(const From0Data& stats, GJGameLevel* const level);
-    static Result<> setFrom0(const From0Data& stats, const std::string& levelKey);
+    static Result<> setGeneral(const GeneralData& stats, GJGameLevel* const level);
+    static Result<> setGeneral(const GeneralData& stats, const std::string& levelKey);
 
     static Result<std::set<long long>> getAllSessionTimesForLevel(GJGameLevel* const level);
     static std::set<long long> getAllSessionTimesForLevel(const std::string& levelKey);
 
     static Result<> deleteLevelStats(const std::string& levelKey);
+
+    static Result<> convertV2SaveToV3(const std::string& levelKey);
+    static std::vector<std::string> allV2FileLevelKeys();
     
 #pragma endregion
 

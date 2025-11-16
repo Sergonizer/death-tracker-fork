@@ -5,6 +5,7 @@
 
 #include <Geode/ui/GeodeUI.hpp>
 #include <regex>
+#include <utils/CCResizeTo.hpp>
 
 DTLayer* DTLayer::instance = nullptr;
 
@@ -69,9 +70,9 @@ bool DTLayer::setup(GJGameLevel* const& level) {
     }
 
     float height = 60;
-
-    scrollLayer = AdvancedScrollLayer::create({m_size.width - 30, m_size.height - height}, {5000, 5000});
-    scrollLayer->drawGrid(50, .5f, ccColor4B{ 143, 143, 143, 255 });
+    ogLimits = CCSize{m_size.width - 30 + 0.1f, m_size.height - height  + 0.1f};
+    scrollLayer = AdvancedScrollLayer::create({m_size.width - 30, m_size.height - height}, ogLimits);
+    //scrollLayer->drawGrid(50, .5f, ccColor4B{ 143, 143, 143, 255 });
     scrollLayer->setPosition(m_size / 2 - scrollLayer->getContentSize() / 2 + ccp(0, height / 4));
     scrollLayer->setZOrder(2);
     scrollLayer->maxZoom = 0.35f;
@@ -158,10 +159,61 @@ bool DTLayer::setup(GJGameLevel* const& level) {
 
     auto layout = Save::getLayout();
 
-    for (const auto& labelInfo : layout)
+    columnHolder = CCMenu::create();
+    columnHolder->setAnchorPoint({0, 1});
+    columnHolder->setLayout(SimpleAxisLayout::create(Axis::Row)
+        ->setMainAxisScaling(AxisScaling::Fit)
+        ->setCrossAxisScaling(AxisScaling::None)
+        ->setMainAxisAlignment(MainAxisAlignment::Start)
+        ->setCrossAxisAlignment(CrossAxisAlignment::Start)
+    );
+    columnHolder->setPosition({0, scrollLayer->content->getContentHeight()});
+    scrollLayer->content->addChild(columnHolder);
+
+    LayoutColumn* column1;
+    LayoutColumn* column2;
+    LayoutColumn* column3;
+
+    for (int i = 0; i < 4; i++)
     {
-        createLabel(labelInfo);
+        auto column = LayoutColumn::create(20, scrollLayer->getContentHeight(), 40);
+        columnHolder->addChild(column);
+        column->orderPos = i;
+        column->setZOrder(column->orderPos);
+        columns.insert(column);
+        if (i == 1)
+            column1 = column;
+        if (i == 2)
+            column2 = column;
+        if (i == 3)
+            column3 = column;
     }
+
+    columnHolder->updateLayout();
+
+    auto label4 = DTLabel::create();
+    label4->name = "bb";
+    scrollLayer->content->addChild(label4);
+    column2->addLabel(label4);
+
+    auto label3 = DTLabel::create();
+    label3->name = "aa";
+    scrollLayer->content->addChild(label3);
+    column2->addLabel(label3);
+    column3->addLabel(label3);
+
+    auto label2 = DTLabel::create();
+    label2->name = "fred";
+    scrollLayer->content->addChild(label2);
+    column1->addLabel(label2);
+    column2->addLabel(label2);
+
+    auto label = DTLabel::create();
+    label->name = "meow";
+    scrollLayer->content->addChild(label);
+    column1->addLabel(label);
+
+    this->organizeLayout();
 
     auto editLayoutMenu = CCMenu::create();
     editLayoutMenu->setPosition({0, 0});
@@ -187,63 +239,65 @@ bool DTLayer::setup(GJGameLevel* const& level) {
     this->setKeypadEnabled(true);
     this->setTouchEnabled(true);
 
+    this->scheduleUpdate();
+
     return true;
 }
 
 void DTLayer::onEditLayout(CCObject*){
-    if (layoutTopbar != nullptr) return;
+    // if (layoutTopbar != nullptr) return;
 
-    for (const auto& label : labels)
-        label->enterEditMode();
+    // for (const auto& label : labels)
+    //     label->enterEditMode();
 
-    auto winSize = CCDirector::sharedDirector()->getWinSize();
+    // auto winSize = CCDirector::sharedDirector()->getWinSize();
 
-    static_cast<CCMenu*>(m_mainLayer->getChildByID("bottom-menu"))->setEnabled(false);
-    m_buttonMenu->setEnabled(false);
-    m_buttonMenu->setOpacity(100);
-    sessionSelector->setEnabled(false);
+    // static_cast<CCMenu*>(m_mainLayer->getChildByID("bottom-menu"))->setEnabled(false);
+    // m_buttonMenu->setEnabled(false);
+    // m_buttonMenu->setOpacity(100);
+    // sessionSelector->setEnabled(false);
     
-    layoutTopbar = EditLayoutTopbar::create();
-    layoutTopbar->setZOrder(10);
-    layoutTopbar->setPosition({
-        (winSize.width - layoutTopbar->getContentWidth()) / 2,
-        10
-    });
-    layoutTopbar->onExit = [&](bool didApply){
-        if (!didApply)
-            for (const auto& label : labels)
-                label->revert();
+    // layoutTopbar = EditLayoutTopbar::create();
+    // layoutTopbar->setZOrder(10);
+    // layoutTopbar->setPosition({
+    //     (winSize.width - layoutTopbar->getContentWidth()) / 2,
+    //     10
+    // });
+    // layoutTopbar->onExit = [&](bool didApply){
+    //     if (!didApply)
+    //         for (const auto& label : labels)
+    //             label->revert();
 
-        std::vector<DTLabelInfo> newInfo{};
+    //     std::vector<DTLabelInfo> newInfo{};
 
-        for (const auto& label : labels){
-            label->exitEditMode();
-            if (didApply && labels.contains(label))
-                newInfo.push_back(label->labelInfo);
-        }
+    //     for (const auto& label : labels){
+    //         label->exitEditMode();
+    //         if (didApply && labels.contains(label))
+    //             newInfo.push_back(label->labelInfo);
+    //     }
 
-        if (didApply)
-            Save::setLayout(newInfo);
+    //     if (didApply)
+    //         Save::setLayout(newInfo);
 
-        layoutTopbar = nullptr;
+    //     layoutTopbar = nullptr;
 
-        static_cast<CCMenu*>(m_mainLayer->getChildByID("bottom-menu"))->setEnabled(true);
-        m_buttonMenu->setEnabled(true);
-        m_buttonMenu->setOpacity(255);
-        sessionSelector->setEnabled(true);
-    };
-    this->addChild(layoutTopbar);
+    //     static_cast<CCMenu*>(m_mainLayer->getChildByID("bottom-menu"))->setEnabled(true);
+    //     m_buttonMenu->setEnabled(true);
+    //     m_buttonMenu->setOpacity(255);
+    //     sessionSelector->setEnabled(true);
+    // };
+    // this->addChild(layoutTopbar);
 }
 
 bool DTLayer::ccTouchBegan(CCTouch *pTouch, CCEvent *pEvent){
     bool doMoveScroll = true;
-    if (layoutTopbar != nullptr){
-        for (const auto& label : labels)
-        {
-            if (label->touchMoved(pTouch))
-                doMoveScroll = false;
-        }
-    }
+    // if (layoutTopbar != nullptr){
+    //     for (const auto& label : labels)
+    //     {
+    //         if (label->touchMoved(pTouch))
+    //             doMoveScroll = false;
+    //     }
+    // }
 
     if (doMoveScroll)
         scrollLayer->ccTouchBegan(pTouch, pEvent);
@@ -253,13 +307,13 @@ bool DTLayer::ccTouchBegan(CCTouch *pTouch, CCEvent *pEvent){
 
 void DTLayer::ccTouchMoved(CCTouch *pTouch, CCEvent *pEvent){
     bool doMoveScroll = true;
-    if (layoutTopbar != nullptr){
-        for (const auto& label : labels)
-        {
-            if (label->touchMoved(pTouch))
-                doMoveScroll = false;
-        }
-    }
+    // if (layoutTopbar != nullptr){
+    //     for (const auto& label : labels)
+    //     {
+    //         if (label->touchMoved(pTouch))
+    //             doMoveScroll = false;
+    //     }
+    // }
 
     if (doMoveScroll)
         scrollLayer->ccTouchMoved(pTouch, pEvent);
@@ -267,22 +321,22 @@ void DTLayer::ccTouchMoved(CCTouch *pTouch, CCEvent *pEvent){
 
 void DTLayer::ccTouchEnded(CCTouch *pTouch, CCEvent *pEvent){
     scrollLayer->ccTouchEnded(pTouch, pEvent);
-    if (layoutTopbar != nullptr){
-        for (const auto& label : labels)
-        {
-            label->touchEnded(pTouch);
-        }
-    }
+    // if (layoutTopbar != nullptr){
+    //     for (const auto& label : labels)
+    //     {
+    //         label->touchEnded(pTouch);
+    //     }
+    // }
 }
 
 void DTLayer::ccTouchCancelled(CCTouch *pTouch, CCEvent *pEvent){
     scrollLayer->ccTouchCancelled(pTouch, pEvent);
-    if (layoutTopbar != nullptr){
-        for (const auto& label : labels)
-        {
-            label->touchEnded(pTouch);
-        }
-    }
+    // if (layoutTopbar != nullptr){
+    //     for (const auto& label : labels)
+    //     {
+    //         label->touchEnded(pTouch);
+    //     }
+    // }
 }
 
 void DTLayer::ccTouchesMoved(CCSet* touches, CCEvent* event){
@@ -361,10 +415,10 @@ void DTLayer::onClose(CCObject* sender){
 
     Save::setLastViewState(state);
 
-    if (layoutTopbar != nullptr){
-        layoutTopbar->keyBackClicked();
-        return;
-    }
+    // if (layoutTopbar != nullptr){
+    //     layoutTopbar->keyBackClicked();
+    //     return;
+    // }
     Popup<GJGameLevel* const&>::onClose(sender);
     instance = nullptr;
 }
@@ -389,36 +443,36 @@ void DTLayer::onLSOClicked(CCObject*){
 
 DTLayer* DTLayer::get() { return instance; }
 
-DTLabel* DTLayer::createLabel(DTLabelInfo info){
-    auto label = DTLabel::create(info, 50 / 10);
-    scrollLayer->content->addChild(label);
-    labels.insert(label);
-    label->onClicked = [&](DTLabel* clickedLabel){
-        if (layoutTopbar == nullptr || !labels.contains(clickedLabel)) return;
+// DTLabel* DTLayer::createLabel(DTLabelInfo info){
+//     auto label = DTLabel::create(info, 50 / 10);
+//     scrollLayer->content->addChild(label);
+//     labels.insert(label);
+//     label->onClicked = [&](DTLabel* clickedLabel){
+//         if (layoutTopbar == nullptr || !labels.contains(clickedLabel)) return;
 
-        layoutTopbar->setTarget(clickedLabel);
-    };
+//         layoutTopbar->setTarget(clickedLabel);
+//     };
 
-    if (layoutTopbar != nullptr){
-        label->enterEditMode();
-        label->wasCreatedThisEdit = true;
-        label->onSelected(nullptr);
-    }
+//     if (layoutTopbar != nullptr){
+//         label->enterEditMode();
+//         label->wasCreatedThisEdit = true;
+//         label->onSelected(nullptr);
+//     }
 
-    return label;
-}
+//     return label;
+// }
 
-void DTLayer::removeLabel(DTLabel* label, bool forceDelete){
-    if (!labels.contains(label)) return;
+// void DTLayer::removeLabel(DTLabel* label, bool forceDelete){
+//     if (!labels.contains(label)) return;
 
-    if (forceDelete || layoutTopbar == nullptr){
-        label->removeMeAndCleanup();
-        labels.erase(label);
-    }
-    else if (layoutTopbar != nullptr){
-        label->softDelete();
-    }
-}
+//     if (forceDelete || layoutTopbar == nullptr){
+//         label->removeMeAndCleanup();
+//         labels.erase(label);
+//     }
+//     else if (layoutTopbar != nullptr){
+//         label->softDelete();
+//     }
+// }
 
 AdvancedScrollLayer* DTLayer::getScrollLayer(){
     return scrollLayer;
@@ -690,4 +744,51 @@ float DTLayer::timeForLevelString(const std::string& levelString) {
         log::error("An exception has occured while calculating time for levelString: {}", e.what());
         return 0;
     }
+}
+
+void DTLayer::update(float dt){
+    columnHolder->updateLayout();
+
+    scrollLayer->setLimitsWidth(std::max(ogLimits.width, columnHolder->getContentWidth()));
+}
+
+void DTLayer::organizeLayout(){
+    std::map<DTLabel*, std::tuple<CCPoint, float>> allLabels{};
+    for (const auto& column : columns)
+    {
+        for (const auto& [layer, label] : column->labels)
+        {
+            if (allLabels.contains(label)) continue;
+
+            allLabels.insert({label, {label->getPosition(), label->getContentWidth()}});
+            label->setPositionY(std::numeric_limits<float>::max());
+            label->setPositionX(std::numeric_limits<float>::max());
+            label->setContentWidth(0);
+        }
+    }
+
+    float borderWidth = 0;
+    
+    for (const auto& column : columns){
+        column->updateLabelPositions();
+        borderWidth = column->borderWidth;
+    }
+
+    for (const auto& [label, data] : allLabels)
+    {
+        auto [originPosition, originWidth] = data;
+
+        auto targetPosition = label->getPosition();
+        auto targetWidth = label->getContentWidth() - borderWidth;
+
+        label->setPosition(originPosition);
+        label->setContentWidth(originWidth);
+
+        label->stopAllActions();
+
+        label->runAction(CCEaseInOut::create(CCMoveTo::create(.5f, targetPosition), 2));
+        label->runAction(CCEaseInOut::create(CCResizeTo::create(.5f, {targetWidth, label->getContentHeight()}), 2));
+    }
+    
+
 }

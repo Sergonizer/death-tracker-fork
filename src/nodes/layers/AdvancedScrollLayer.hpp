@@ -53,6 +53,8 @@ class AdvancedScrollLayer : public CCLayer {
         bool scrollMovement = true;
 
         void setLimits(CCSize newLimits);
+        void setLimitsWidth(float width);
+        void setLimitsHeight(float height);
 
         void drawGrid(float squaresAmount, float lineWidth, ccColor4B color);
 

@@ -228,6 +228,13 @@ void AdvancedScrollLayer::setLimits(CCSize newLimits){
     moveTo(content->getPosition());
 }
 
+void AdvancedScrollLayer::setLimitsWidth(float width){
+    setLimits({width, content->getContentHeight()});
+}
+void AdvancedScrollLayer::setLimitsHeight(float height){
+    setLimits({content->getContentWidth(), height});
+}
+
 void AdvancedScrollLayer::drawGrid(float squareSize, float lineWidth, ccColor4B color){
     if (gridNode != nullptr) gridNode->clear();
     else{

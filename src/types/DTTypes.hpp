@@ -70,13 +70,13 @@ typedef struct {
     Deaths runs;
     NewBests newBests;
     int currentBest;
-} From0Data;
+} GeneralData;
 
 template <>
-struct matjson::Serialize<From0Data> {
-    static Result<From0Data> fromJson(const matjson::Value& value) {
+struct matjson::Serialize<GeneralData> {
+    static Result<GeneralData> fromJson(const matjson::Value& value) {
 
-        From0Data stats;
+        GeneralData stats;
         GEODE_UNWRAP_INTO(stats.deaths, value["deaths"].as<Deaths>());
         GEODE_UNWRAP_INTO(stats.runs, value["runs"].as<Deaths>());
         GEODE_UNWRAP_INTO(stats.newBests, value["newBests"].as<NewBests>());
@@ -85,7 +85,7 @@ struct matjson::Serialize<From0Data> {
         return Ok(stats);
     }
 
-    static matjson::Value toJson(const From0Data& value) {
+    static matjson::Value toJson(const GeneralData& value) {
         matjson::Value obj = matjson::makeObject({
             { "deaths", value.deaths },
             { "runs", value.runs },
@@ -148,7 +148,7 @@ struct matjson::Serialize<LevelMetadeta> {
 typedef struct {
     std::string levelKey;
     LevelMetadeta metadata;
-    From0Data from0;
+    GeneralData from0;
     std::set<long long> sessionNames;
 } LevelData;
 
@@ -300,6 +300,136 @@ struct matjson::Serialize<stringCustomazations> {
         matjson::Value obj = matjson::makeObject({
             { "seperator", value.seperator },
             { "format", value.format }
+        });
+        return obj;
+    }
+};
+
+typedef struct {
+    long long lastPlayed;
+    Deaths deaths;
+    Deaths runs;
+    NewBests newBests;
+    int currentBest;
+    long long sessionStartDate;
+} V2Session;
+
+template <>
+struct matjson::Serialize<V2Session> {
+    static Result<V2Session> fromJson(const matjson::Value& value) {
+        V2Session session;
+        GEODE_UNWRAP_INTO(session.lastPlayed, value["lastPlayed"].as<long long>());
+        GEODE_UNWRAP_INTO(session.deaths, value["deaths"].as<Deaths>());
+        GEODE_UNWRAP_INTO(session.runs, value["runs"].as<Deaths>());
+        GEODE_UNWRAP_INTO(session.newBests, value["newBests"].as<NewBests>());
+        GEODE_UNWRAP_INTO(session.currentBest, value["currentBest"].asInt());
+
+        if (value.contains("sessionStartDate")){
+            GEODE_UNWRAP_INTO(session.sessionStartDate, value["sessionStartDate"].as<long long>());
+        }
+        else
+            session.sessionStartDate = -1;
+
+        return Ok(session);
+    }
+
+    static matjson::Value toJson(const V2Session& value) {
+        matjson::Value obj = matjson::makeObject({
+            { "lastPlayed", value.lastPlayed },
+            { "deaths", value.deaths },
+            { "runs", value.runs },
+            { "newBests", value.newBests },
+            { "currentBest", value.currentBest },
+            { "sessionStartDate", value.sessionStartDate },
+        });
+        return obj;
+    }
+};
+
+struct V2LevelStats_s {
+    Deaths deaths;
+    Deaths runs;
+    NewBests newBests;
+    int currentBest;
+    std::vector<V2Session> sessions;
+    std::vector<int> RunsToSave{-1};
+    std::vector<std::string> LinkedLevels;
+    std::string levelName = "Unknown name";
+    int attempts;
+    int difficulty;
+    int hideUpto;
+    int hideRunLength;
+};
+typedef struct V2LevelStats_s V2LevelStats;
+
+template <>
+struct matjson::Serialize<V2LevelStats> {
+    static Result<V2LevelStats> fromJson(const matjson::Value& value) {
+
+        V2LevelStats stats;
+        GEODE_UNWRAP_INTO(stats.deaths, value["deaths"].as<Deaths>());
+        GEODE_UNWRAP_INTO(stats.runs, value["runs"].as<Deaths>());
+        GEODE_UNWRAP_INTO(stats.newBests, value["newBests"].as<NewBests>());
+        GEODE_UNWRAP_INTO(stats.currentBest, value["currentBest"].asInt());
+        GEODE_UNWRAP_INTO(stats.sessions, value["sessions"].as<std::vector<V2Session>>());
+
+        if (value.contains("RunsToSave")){
+            GEODE_UNWRAP_INTO(stats.RunsToSave, value["RunsToSave"].as<std::vector<int>>());
+        }
+
+        if (value.contains("LinkedLevels")){
+            GEODE_UNWRAP_INTO(stats.LinkedLevels, value["LinkedLevels"].as<std::vector<std::string>>());
+        }
+        else
+            stats.LinkedLevels = value["LinkedLevels"].as<std::vector<std::string>>().unwrapOr(std::vector<std::string>{});
+        
+        if (value.contains("levelName")){
+            GEODE_UNWRAP_INTO(stats.levelName, value["levelName"].asString());
+        }
+        else
+            stats.levelName = "-1";
+
+        if (value.contains("attempts")){
+            GEODE_UNWRAP_INTO(stats.attempts, value["attempts"].asInt());
+        }
+        else
+            stats.attempts = -1;
+
+        if (value.contains("difficulty")){
+            GEODE_UNWRAP_INTO(stats.difficulty, value["difficulty"].asInt());
+        }
+        else
+            stats.difficulty = 0;
+
+        if (value.contains("hideRunLength")){
+            GEODE_UNWRAP_INTO(stats.hideRunLength, value["hideRunLength"].asInt());
+        }
+        else
+            stats.hideRunLength = 0;
+
+        if (value.contains("hideUpto")){
+            GEODE_UNWRAP_INTO(stats.hideUpto, value["hideUpto"].asInt());
+        }
+        else
+            stats.hideUpto = 0;
+
+        return Ok(stats);
+    }
+
+    static matjson::Value toJson(const V2LevelStats& value) {
+        matjson::Value obj = matjson::makeObject({
+            { "deaths", value.deaths },
+            { "runs", value.runs },
+            { "newBests", value.newBests },
+            { "currentBest", value.currentBest },
+            { "sessions", value.sessions },
+            { "RunsToSave", value.RunsToSave },
+            { "LinkedLevels", value.LinkedLevels },
+            { "levelName", value.levelName },
+            { "attempts", value.attempts },
+            { "difficulty", value.difficulty },
+            { "hideRunLength", value.hideRunLength },
+            { "hideUpto", value.hideUpto },
         });
         return obj;
     }

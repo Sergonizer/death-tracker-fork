@@ -31,7 +31,7 @@ std::set<std::string> StatsManager::m_playedLevels{};
 bool StatsManager::m_scheduleCreateNewSession = false;
 
 GJGameLevel* StatsManager::currentLevel = nullptr;
-From0Data StatsManager::currentFrom0{};
+GeneralData StatsManager::currentFrom0{};
 LevelMetadeta StatsManager::currentMetadata{};
 Session StatsManager::currentSession{};
 
@@ -143,11 +143,11 @@ Result<Session> StatsManager::getSession(const std::string& levelKey, long long 
     return json.as<Session>();
 }
 
-Result<From0Data> StatsManager::getFrom0(GJGameLevel* const level){
+Result<GeneralData> StatsManager::getGeneral(GJGameLevel* const level){
     GEODE_UNWRAP_INTO(auto levelKey, StatsManager::getLevelKey(level));
-    return getFrom0(levelKey);
+    return getGeneral(levelKey);
 }
-Result<From0Data> StatsManager::getFrom0(const std::string& levelKey){
+Result<GeneralData> StatsManager::getGeneral(const std::string& levelKey){
     auto levelSaveFilePath = m_savesFolderPath / levelKey / StatsManager::FROM0_FILE_NAME;
 
     if (!std::filesystem::exists(levelSaveFilePath))
@@ -155,7 +155,7 @@ Result<From0Data> StatsManager::getFrom0(const std::string& levelKey){
 
     GEODE_UNWRAP_INTO(auto json, file::readJson(levelSaveFilePath));
         
-    return json.as<From0Data>();
+    return json.as<GeneralData>();
 }
 
 Result<LevelData> StatsManager::getLevelData(GJGameLevel* const level){
@@ -165,7 +165,7 @@ Result<LevelData> StatsManager::getLevelData(GJGameLevel* const level){
 Result<LevelData> StatsManager::getLevelData(const std::string& levelKey){
     LevelData data;
     GEODE_UNWRAP_INTO(data.metadata, StatsManager::getMetadata(levelKey));
-    GEODE_UNWRAP_INTO(data.from0, StatsManager::getFrom0(levelKey));
+    GEODE_UNWRAP_INTO(data.from0, StatsManager::getGeneral(levelKey));
     data.sessionNames = StatsManager::getAllSessionTimesForLevel(levelKey);
     data.levelKey = levelKey;
 
@@ -223,13 +223,13 @@ Result<> StatsManager::setSession(Session& stats, const std::string& levelKey, l
     return Ok();
 }
 
-Result<> StatsManager::setFrom0(const From0Data& stats, GJGameLevel* const level){
+Result<> StatsManager::setGeneral(const GeneralData& stats, GJGameLevel* const level){
     GEODE_UNWRAP_INTO(auto levelKey, StatsManager::getLevelKey(level));
-    GEODE_UNWRAP(setFrom0(stats, levelKey));
+    GEODE_UNWRAP(setGeneral(stats, levelKey));
 
     return Ok();
 }
-Result<> StatsManager::setFrom0(const From0Data& stats, const std::string& levelKey){
+Result<> StatsManager::setGeneral(const GeneralData& stats, const std::string& levelKey){
     createFilesIfNeeded(levelKey);
 
     auto levelSaveFilePath = m_savesFolderPath / levelKey / StatsManager::FROM0_FILE_NAME;
@@ -264,20 +264,20 @@ void StatsManager::setCurrentLevel(GJGameLevel* const& level){
     currentLevel = level;
 
     if (level == nullptr) {
-        currentFrom0 = From0Data{};
+        currentFrom0 = GeneralData{};
         currentSession = Session{};
         currentMetadata = LevelMetadeta{};
         return;
     }
 
-    auto from0Res = getFrom0(level);
+    auto from0Res = getGeneral(level);
     auto sessionCount = getAllSessionTimesForLevel(level);
     //auto sessionRes = sessionCount.isErr() ? Err(sessionCount.unwrapErr()) : getSession(level, sessionCount.unwrap());
     auto metadataRes = getMetadata(level);
 
     if (metadataRes.isErr()){
         currentLevel = nullptr;
-        currentFrom0 = From0Data{};
+        currentFrom0 = GeneralData{};
         currentSession = Session{};
         currentMetadata = LevelMetadeta{};
         log::error("Failed to apply current level stats as main stats");
@@ -285,7 +285,7 @@ void StatsManager::setCurrentLevel(GJGameLevel* const& level){
     }
 
     if (from0Res.isErr()){
-        auto newF0 = From0Data{.currentBest = -1};
+        auto newF0 = GeneralData{.currentBest = -1};
 
         from0Res = Ok(newF0);
     }
@@ -321,7 +321,7 @@ void StatsManager::logDeath(const int& percent, bool instantSave) {
     
 
     if (instantSave){
-        auto _ = StatsManager::setFrom0(currentFrom0, currentLevel);
+        auto _ = StatsManager::setGeneral(currentFrom0, currentLevel);
         if (session) _ = StatsManager::setSession(*session, currentLevel, session->sessionStartDate, true);
     }
 }
@@ -337,7 +337,7 @@ void StatsManager::logDeaths(const std::vector<int>& percents) {
         logDeath(percents[i], false);
     }
 
-    auto _ = StatsManager::setFrom0(currentFrom0, currentLevel);
+    auto _ = StatsManager::setGeneral(currentFrom0, currentLevel);
     _ = StatsManager::setSession(currentSession, currentLevel, currentSession.sessionStartDate, true);
 }
 
@@ -369,7 +369,7 @@ void StatsManager::logRun(const Run& run, bool instantSave) {
     session->runs[runKey]++;
     
     if (instantSave){
-        auto _ = StatsManager::setFrom0(currentFrom0, currentLevel);
+        auto _ = StatsManager::setGeneral(currentFrom0, currentLevel);
         _ = StatsManager::setSession(currentSession, currentLevel, currentSession.sessionStartDate, true);
     }
 }
@@ -386,7 +386,7 @@ void StatsManager::logRuns(const std::vector<Run>& runs) {
         logRun(runs[i], false);
     }
 
-    auto _ = StatsManager::setFrom0(currentFrom0, currentLevel);
+    auto _ = StatsManager::setGeneral(currentFrom0, currentLevel);
     _ = StatsManager::setSession(currentSession, currentLevel, currentSession.sessionStartDate, true);
 }
 
@@ -919,6 +919,87 @@ std::set<long long> StatsManager::getAllSessionTimesForLevel(const std::string& 
         if (numRes.isErr()) continue;
 
         toReturn.insert(numRes.unwrap());
+    }
+
+    return toReturn;
+}
+
+Result<> StatsManager::convertV2SaveToV3(const std::string& levelKey){
+    log::info("converting V2 save to V3...");
+
+    if (!std::filesystem::exists(m_savesFolderPath)) return Err("No levels directory found");
+
+    auto v2Path = m_savesFolderPath / (levelKey + ".json");
+
+    if (!std::filesystem::exists(v2Path)) return Err("V2 level file doesnt exist!");
+
+    auto res = file::readJson(v2Path);
+    GEODE_UNWRAP_INTO(auto json, res);
+    
+    auto statsRes = json.as<V2LevelStats>();
+
+    if (statsRes.isErr()) return Err("Error parsing V2 json!");
+
+    auto stats = statsRes.unwrap();
+
+    auto v3Meta = LevelMetadeta{};
+    std::set<int> runsSet(stats.RunsToSave.begin(), stats.RunsToSave.end());
+    bool trackAnyRun = false;
+    if (runsSet.contains(-1)){
+        trackAnyRun = true;
+        runsSet.erase(-1);
+    }
+    v3Meta.RunsToSave = runsSet;
+    v3Meta.trackAnyRun = trackAnyRun;
+    std::set<gd::string> linkedLevelsSet(stats.LinkedLevels.begin(), stats.LinkedLevels.end());
+    v3Meta.LinkedLevels = linkedLevelsSet;
+    v3Meta.levelName = stats.levelName;
+    v3Meta.attempts = stats.attempts;
+    v3Meta.difficulty = stats.difficulty;
+    v3Meta.hideUpto = stats.hideUpto;
+    v3Meta.hideRunLength = stats.hideRunLength;
+
+    if (setMetadata(v3Meta, levelKey).isErr()) return Err("Failed to write V3 meta!");
+
+    auto v3General = GeneralData{};
+    v3General.deaths = stats.deaths;
+    v3General.runs = stats.runs;
+    v3General.currentBest = stats.currentBest;
+    v3General.newBests = stats.newBests;
+
+    if (setGeneral(v3General, levelKey).isErr()) return Err("Failed to write V3 general!");
+
+    for (const auto& v2session : stats.sessions){
+        auto v3Session = Session{};
+
+        v3Session.ownerLevelKey = levelKey;
+        v3Session.lastPlayed = v2session.lastPlayed;
+        v3Session.deaths = v2session.deaths;
+        v3Session.runs = v2session.runs;
+        v3Session.newBests = v2session.newBests;
+        v3Session.currentBest = v2session.currentBest;
+        v3Session.sessionStartDate = v2session.sessionStartDate;
+
+        if (setSession(v3Session, levelKey, v3Session.sessionStartDate, false).isErr()) return Err("Failed to write V3 session! session sd: {}", v3Session.sessionStartDate);
+    }
+
+    if (!std::filesystem::remove(v2Path)) return Err("Failed to erase old data!");
+    auto backupPath = m_savesFolderPath / (levelKey + ".deathsBackup");
+
+    if (std::filesystem::exists(backupPath)){
+        if (!std::filesystem::remove(backupPath)) return Err("Failed to delete backup old data!");
+    }
+
+    return Ok();
+}
+
+std::vector<std::string> StatsManager::allV2FileLevelKeys(){
+    std::vector<std::string> toReturn{};
+
+    for (const auto& entry : std::filesystem::directory_iterator(m_savesFolderPath)){
+        if (!entry.is_regular_file() || entry.path().extension() != ".json") continue;
+
+        toReturn.push_back(entry.path().stem().string());
     }
 
     return toReturn;

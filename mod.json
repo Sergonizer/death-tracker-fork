@@ -28,13 +28,10 @@
 			"default": "Exit level",
 			"one-of": ["Exit level", "Exit game"]
 		},
-		"session-length": {
-			"name": "Session Length",
-			"description": "How long a session last in seconds, only if the session method is \"Seconds\"",
-			"type": "int",
-			"default": 1,
-			"min": 1,
-			"max": 86400
+		"check-for-old":{
+			"name": "Convert old saves",
+			"description": "This is used to convert old saves from death tracker V2 to V3",
+			"type": "custom:button-type-dt"
 		},
 		"pause-menu": {
 			"name": "Pause Menu Button",
