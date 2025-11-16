@@ -21,7 +21,7 @@ class LayoutColumn : public CCMenu {
 
         void updateLabelPosition(DTLabel* label);
 
-        float borderWidth = 2;
+        static float borderWidth;
         
     private:
         bool init(float topHeight, float minHeight, float minWidth);

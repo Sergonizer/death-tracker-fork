@@ -11,6 +11,7 @@ using namespace geode::prelude;
 
 using DeathStringTask = Task<Result<std::vector<DeathInfo>>>;
 using ResultTask = Task<Result<>>;
+using organizationTask = Task<std::vector<std::tuple<DTLabel*, CCPoint, float>>>;
 
 class DTLayer : public Popup<GJGameLevel* const&> {
     protected:
@@ -57,7 +58,9 @@ class DTLayer : public Popup<GJGameLevel* const&> {
 
         void organizeLayout();
     private:
-
+        organizationTask organizeLayoutTask();
+        EventListener<organizationTask> organizationListener;
+        
         struct ColumnComperator {
             bool operator() (LayoutColumn* a, LayoutColumn* b) const {
                 return a->orderPos < b->orderPos;

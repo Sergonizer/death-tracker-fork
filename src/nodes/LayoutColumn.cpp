@@ -2,6 +2,8 @@
 
 #include <nodes/layers/DTLayer.hpp>
 
+float LayoutColumn::borderWidth = 2;
+
 LayoutColumn* LayoutColumn::create(float topHeight, float minHeight, float minWidth) {
     auto ret = new LayoutColumn();
     if (ret && ret->init(topHeight, minHeight, minWidth)) {
@@ -126,6 +128,8 @@ void LayoutColumn::ccTouchMoved(CCTouch* touch, CCEvent*){
     this->setContentWidth(std::max(minWidth, currentWidth));
 
     updateSizesByContent();
+
+    DTLayer::get()->organizeLayout();
 }
 
 void LayoutColumn::setColor(ccColor3B color){
@@ -148,7 +152,7 @@ void LayoutColumn::updateLabelPositions(){
     float diff = 0;
     DTLabel* prevLabel = nullptr;
 
-    log::info("column {}, running sorting", orderPos);
+    // log::info("column {}, running sorting", orderPos);
 
     for (const auto& [layer, label] : labels)
     {
@@ -157,38 +161,38 @@ void LayoutColumn::updateLabelPositions(){
         if (prevLabel != nullptr){
             float normalOffset = startPosInLabelSpace.y - label->getContentHeight();
 
-            float emptySpaceDifference = prevLabel->getPositionY() + diff;
+            float emptySpaceDifference = prevLabel->tempPos.y + diff;
 
-            log::info("start diff: {}", diff);
-            log::info("normalOffset: {}", normalOffset);
-            log::info("emptySpaceDifference: {}", emptySpaceDifference);
-            log::info("res: {}", normalOffset - emptySpaceDifference);
+            // log::info("start diff: {}", diff);
+            // log::info("normalOffset: {}", normalOffset);
+            // log::info("emptySpaceDifference: {}", emptySpaceDifference);
+            // log::info("res: {}", normalOffset - emptySpaceDifference);
 
             diff += normalOffset - emptySpaceDifference;
             
             diff += prevLabel->getContentHeight();
         }
 
-        log::info("iterating label {}, ({}) - {}", label->name, label->getPosition(), label->getContentWidth());
-        log::info("dif is {}", diff);
+        // log::info("iterating label {}, ({}) - {}", label->name, label->tempPos, label->tempWidth);
+        // log::info("dif is {}", diff);
 
         float newY = startPosInLabelSpace.y - label->getContentHeight() - diff;
 
-        if (newY < label->getPositionY()) label->setPositionY(newY);
+        if (newY < label->tempPos.y) label->tempPos.y = newY;
 
         float newX = startPosInLabelSpace.x;
 
-        if (newX < label->getPositionX()) label->setPositionX(newX);
+        if (newX < label->tempPos.x) label->tempPos.x = newX;
         
         //border might cause offset
-        label->setContentWidth(label->getContentWidth() + (this->getContentWidth() - borderWidth));
+        label->tempWidth = label->tempWidth + this->getContentWidth();
 
-        log::info("finished iterating label {}, ({}) - {}", label->name, label->getPosition(), label->getContentWidth());
+        // log::info("finished iterating label {}, ({}) - {}", label->name, label->tempPos, label->tempWidth);
         
         prevLabel = label;
     }
 
-    log::info("----");
+    // log::info("----");
     
 }
 
@@ -197,7 +201,7 @@ void LayoutColumn::updateLabelPosition(DTLabel* label){
         labels[label->layer]->moveUpLayer();
     }
 
-    log::info("inserting revamp {}, {}", label->layer, label->name);
+    // log::info("inserting revamp {}, {}", label->layer, label->name);
 
     labels.insert({label->layer, label});
 }

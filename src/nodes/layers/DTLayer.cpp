@@ -753,42 +753,48 @@ void DTLayer::update(float dt){
 }
 
 void DTLayer::organizeLayout(){
-    std::map<DTLabel*, std::tuple<CCPoint, float>> allLabels{};
-    for (const auto& column : columns)
-    {
-        for (const auto& [layer, label] : column->labels)
-        {
-            if (allLabels.contains(label)) continue;
+    organizationListener.bind([this](organizationTask::Event* event){
+        if (auto result = event->getValue()){
+            for (const auto& [label, newPos, newWidth] : *result)
+            {
+                label->stopAllActions();
 
-            allLabels.insert({label, {label->getPosition(), label->getContentWidth()}});
-            label->setPositionY(std::numeric_limits<float>::max());
-            label->setPositionX(std::numeric_limits<float>::max());
-            label->setContentWidth(0);
+                label->runAction(CCEaseInOut::create(CCMoveTo::create(.5f, newPos), 2));
+                label->runAction(CCEaseInOut::create(CCResizeTo::create(.5f, {newWidth, label->getContentHeight()}), 2));
+            }
         }
-    }
+    });
+    organizationListener.setFilter(organizeLayoutTask());
+}
 
-    float borderWidth = 0;
-    
-    for (const auto& column : columns){
-        column->updateLabelPositions();
-        borderWidth = column->borderWidth;
-    }
+organizationTask DTLayer::organizeLayoutTask(){
+    return organizationTask::run([this](auto progress, auto hasBeenCancelled) -> organizationTask::Result {
+        std::set<DTLabel*> allLabels{};
+        for (const auto& column : columns)
+        {
+            for (const auto& [layer, label] : column->labels)
+            {
+                if (allLabels.contains(label)) continue;
 
-    for (const auto& [label, data] : allLabels)
-    {
-        auto [originPosition, originWidth] = data;
+                allLabels.insert(label);
+                label->tempPos = ccp(std::numeric_limits<float>::max(), std::numeric_limits<float>::max());
+                label->tempWidth = 0;
+            }
+        }
+        
+        for (const auto& column : columns){
+            column->updateLabelPositions();
+        }
 
-        auto targetPosition = label->getPosition();
-        auto targetWidth = label->getContentWidth() - borderWidth;
+        std::vector<std::tuple<DTLabel*, CCPoint, float>> data{};
 
-        label->setPosition(originPosition);
-        label->setContentWidth(originWidth);
+        for (const auto& label : allLabels)
+        {
+            auto targetPosition = label->tempPos;
+            auto targetWidth = label->tempWidth - LayoutColumn::borderWidth;
 
-        label->stopAllActions();
-
-        label->runAction(CCEaseInOut::create(CCMoveTo::create(.5f, targetPosition), 2));
-        label->runAction(CCEaseInOut::create(CCResizeTo::create(.5f, {targetWidth, label->getContentHeight()}), 2));
-    }
-    
-
+            data.push_back({label, targetPosition, targetWidth});
+        }
+        return data;
+    }, "DT layout organization task");
 }
