@@ -24,20 +24,34 @@ class DTLabel : public CCMenu {
         float tempWidth;
 
         static float labelTitleHeight;
+        static float moveThreshold;
         
     private:
-        bool init();
+        bool init() override;
 
-        void update(float dt);
+        void update(float dt) override;
 
         CCScale9Sprite* bg;
+        CCScale9Sprite* labelTitleBG;
+        CCMenu* menu;
+        CCMenuItemSpriteExtra* expandBtn;
+        SimpleTextArea* labelTitleArea;
 
         void toggleExpand(CCObject*);
 
         bool isExpanded;
 
-        std::unordered_map<CCNode*, std::function<float()>> followContentWidth{};
-        std::unordered_map<CCNode*, std::function<float()>> followContentHeight{};
+        void registerWithTouchDispatcher() override;
+        bool ccTouchBegan(cocos2d::CCTouch* touch, cocos2d::CCEvent* event) override;
+        void ccTouchMoved(CCTouch* touch, CCEvent* event) override;
+        void ccTouchEnded(cocos2d::CCTouch* touch, cocos2d::CCEvent* event) override;
+        void ccTouchCancelled(cocos2d::CCTouch* touch, cocos2d::CCEvent* event) override;
 
-        std::unordered_map<CCNode*, std::function<CCPoint()>> alwaysSetPosition{};
+        bool isBeingTouched;
+        CCPoint touchStartPoint;
+        bool isMovingLabel;
+
+        void onSettings();
+        void onMoveBegan();
+        void onMoveEnded();
 };

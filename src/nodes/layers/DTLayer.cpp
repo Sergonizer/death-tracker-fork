@@ -295,15 +295,6 @@ void DTLayer::onEditLayout(CCObject*){
 }
 
 bool DTLayer::ccTouchBegan(CCTouch *pTouch, CCEvent *pEvent){
-    bool doMoveScroll = true;
-    // if (layoutTopbar != nullptr){
-    //     for (const auto& label : labels)
-    //     {
-    //         if (label->touchMoved(pTouch))
-    //             doMoveScroll = false;
-    //     }
-    // }
-
     if (doMoveScroll)
         scrollLayer->ccTouchBegan(pTouch, pEvent);
 
@@ -311,41 +302,21 @@ bool DTLayer::ccTouchBegan(CCTouch *pTouch, CCEvent *pEvent){
 }
 
 void DTLayer::ccTouchMoved(CCTouch *pTouch, CCEvent *pEvent){
-    bool doMoveScroll = true;
-    // if (layoutTopbar != nullptr){
-    //     for (const auto& label : labels)
-    //     {
-    //         if (label->touchMoved(pTouch))
-    //             doMoveScroll = false;
-    //     }
-    // }
-
     if (doMoveScroll)
         scrollLayer->ccTouchMoved(pTouch, pEvent);
 }
 
 void DTLayer::ccTouchEnded(CCTouch *pTouch, CCEvent *pEvent){
     scrollLayer->ccTouchEnded(pTouch, pEvent);
-    // if (layoutTopbar != nullptr){
-    //     for (const auto& label : labels)
-    //     {
-    //         label->touchEnded(pTouch);
-    //     }
-    // }
 }
 
 void DTLayer::ccTouchCancelled(CCTouch *pTouch, CCEvent *pEvent){
     scrollLayer->ccTouchCancelled(pTouch, pEvent);
-    // if (layoutTopbar != nullptr){
-    //     for (const auto& label : labels)
-    //     {
-    //         label->touchEnded(pTouch);
-    //     }
-    // }
 }
 
 void DTLayer::ccTouchesMoved(CCSet* touches, CCEvent* event){
-    scrollLayer->ccTouchesMoved(touches, event);
+    if (doMoveScroll)
+        scrollLayer->ccTouchesMoved(touches, event);
 }
 
 void DTLayer::updateRunsAllowed(){

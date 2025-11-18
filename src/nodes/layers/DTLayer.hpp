@@ -62,6 +62,8 @@ class DTLayer : public Popup<GJGameLevel* const&> {
         std::map<std::string, std::string> specialStrings{};
 
         void organizeLayout();
+
+        bool doMoveScroll = true;
     private:
         organizationTask organizeLayoutTask();
         EventListener<organizationTask> organizationListener;
