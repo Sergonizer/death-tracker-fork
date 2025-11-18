@@ -9,12 +9,12 @@ void Save::setOldLayout(const std::vector<V2LabelLayout>& layout){
     Mod::get()->setSavedValue("Layout", layout);
 }
 
-std::vector<DTLabelInfo> Save::getLayout(){
-    return Mod::get()->getSavedValue<std::vector<DTLabelInfo>>("LabelLayout");
+DTLayoutV3 Save::getLayout(){
+    return Mod::get()->getSavedValue<DTLayoutV3>("DTLayoutV3");
 }
 
-void Save::setLayout(const std::vector<DTLabelInfo>& layout){
-    Mod::get()->setSavedValue("LabelLayout", layout);
+void Save::setLayout(const DTLayoutV3& layout){
+    Mod::get()->setSavedValue("DTLayoutV3", layout);
 }
 
 ccColor3B Save::getNewBestColor(){

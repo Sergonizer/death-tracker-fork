@@ -153,18 +153,16 @@ typedef struct {
 } LevelData;
 
 struct DTLabelInfo_s {
-    int X = -1;
-    int Y = -1;
-
+    int minPlacementRange;
+    int maxPlacementRange;
+    int layer;
+    std::string labelName = "new label";
     std::string text = "new label";
     std::string font = "bigFont.fnt";
     CCTextAlignment horizontalAlignment = CCTextAlignment::kCCTextAlignmentCenter;
-    CCTextAlignment verticalAlignment = CCTextAlignment::kCCTextAlignmentCenter;
     ccColor4B color = {255, 255, 255, 255};
-
     float scale = 1;
-    CCSize contentSize = {100, 100};
-    bool infinityResize;
+    bool isExpanded;
 };
 typedef struct DTLabelInfo_s DTLabelInfo;
 
@@ -172,41 +170,96 @@ template <>
 struct matjson::Serialize<DTLabelInfo> {
     static Result<DTLabelInfo> fromJson(const matjson::Value& value) {
         DTLabelInfo info;
-        GEODE_UNWRAP_INTO(info.X, value["X"].asInt());
-        GEODE_UNWRAP_INTO(info.Y, value["Y"].asInt());
-
+        GEODE_UNWRAP_INTO(info.minPlacementRange, value["minPlacementRange"].asInt());
+        GEODE_UNWRAP_INTO(info.maxPlacementRange, value["maxPlacementRange"].asInt());
+        GEODE_UNWRAP_INTO(info.layer, value["layer"].asInt());
+        
+        GEODE_UNWRAP_INTO(info.labelName, value["labelName"].asString());
         GEODE_UNWRAP_INTO(info.text, value["text"].asString());
         GEODE_UNWRAP_INTO(info.font, value["font"].asString());
         GEODE_UNWRAP_INTO(auto horizontalAlignment, value["horizontalAlignment"].asInt());
         info.horizontalAlignment = static_cast<CCTextAlignment>(horizontalAlignment);
-        GEODE_UNWRAP_INTO(auto verticalAlignment, value["verticalAlignment"].asInt());
-        info.verticalAlignment = static_cast<CCTextAlignment>(verticalAlignment);
         GEODE_UNWRAP_INTO(info.color, value["color"].as<ccColor4B>());
-
+        
         GEODE_UNWRAP_INTO(info.scale, value["scale"].asDouble());
-        GEODE_UNWRAP_INTO(auto contentWidth, value["contentWidth"].asDouble());
-        GEODE_UNWRAP_INTO(auto contentHeight, value["contentHeight"].asDouble());
-        info.contentSize = CCSize(contentWidth, contentHeight);
-        GEODE_UNWRAP_INTO(info.infinityResize, value["infinityResize"].asBool());
+        GEODE_UNWRAP_INTO(info.isExpanded, value["isExpanded"].asBool());
 
         return Ok(info);
     }
 
     static matjson::Value toJson(const DTLabelInfo& value) {
         matjson::Value obj = matjson::makeObject({
-            { "X", value.X },
-            { "Y", value.Y },
+            { "minPlacementRange", value.minPlacementRange },
+            { "maxPlacementRange", value.maxPlacementRange },
+            { "layer", value.layer },
 
+            { "labelName", value.labelName },
             { "text", value.text },
             { "font", value.font },
             { "horizontalAlignment", static_cast<int>(value.horizontalAlignment) },
-            { "verticalAlignment", static_cast<int>(value.verticalAlignment) },
             { "color", value.color },
 
             { "scale", value.scale },
-            { "contentWidth", value.contentSize.width },
-            { "contentHeight", value.contentSize.height },
-            { "infinityResize", value.infinityResize },
+            { "isExpanded", value.isExpanded },
+        });
+        return obj;
+    }
+};
+
+struct DTColumnInfo_s {
+    static float minWidth;
+
+    int orderPos = 0;
+    float currentWidth = minWidth;
+    ccColor3B color = {255, 255, 255};
+};
+typedef struct DTColumnInfo_s DTColumnInfo;
+
+template <>
+struct matjson::Serialize<DTColumnInfo> {
+    static Result<DTColumnInfo> fromJson(const matjson::Value& value) {
+        DTColumnInfo info;
+        GEODE_UNWRAP_INTO(info.orderPos, value["orderPos"].asInt());
+        GEODE_UNWRAP_INTO(info.currentWidth, value["currentWidth"].asDouble());
+        GEODE_UNWRAP_INTO(info.color, value["color"].as<ccColor3B>());
+
+        return Ok(info);
+    }
+
+    static matjson::Value toJson(const DTColumnInfo& value) {
+        matjson::Value obj = matjson::makeObject({
+            { "orderPos", value.orderPos },
+            { "currentWidth", value.currentWidth },
+            { "color", value.color }
+        });
+        return obj;
+    }
+};
+
+struct DTLayoutV3_s {
+    std::vector<DTColumnInfo> columns;
+    std::vector<DTLabelInfo> labels;
+
+    bool isEmpty() const{
+        return !columns.size() && !labels.size();
+    }
+};
+typedef struct DTLayoutV3_s DTLayoutV3;
+
+template <>
+struct matjson::Serialize<DTLayoutV3> {
+    static Result<DTLayoutV3> fromJson(const matjson::Value& value) {
+        DTLayoutV3 info;
+        GEODE_UNWRAP_INTO(info.columns, value["columns"].as<std::vector<DTColumnInfo>>());
+        GEODE_UNWRAP_INTO(info.labels, value["labels"].as<std::vector<DTLabelInfo>>());
+
+        return Ok(info);
+    }
+
+    static matjson::Value toJson(const DTLayoutV3& value) {
+        matjson::Value obj = matjson::makeObject({
+            { "columns", value.columns },
+            { "labels", value.labels }
         });
         return obj;
     }

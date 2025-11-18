@@ -6,6 +6,7 @@
 #include "AdvancedScrollLayer.hpp"
 #include <nodes/SessionSelector.hpp>
 #include <nodes/LayoutColumn.hpp>
+#include <types/DTTypes.hpp>
 
 using namespace geode::prelude;
 
@@ -73,10 +74,17 @@ class DTLayer : public Popup<GJGameLevel* const&> {
 
         //points should be in world space!
         std::multiset<LayoutColumn*, ColumnComperator> getColumnsBetween(CCPoint a, CCPoint b);
+
+        DTLabel* createNewLabel(DTLabelInfo info = DTLabelInfo{});
+
+        void subscribeToOrganizationEvent(CCNode* target, const std::function<void(float)>& callback);
+        void unsubscribeToOrganizationEvent(CCNode* target);
+
+        void fixUpColumnPositions();
+
     private:
         organizationTask organizeLayoutTask();
         EventListener<organizationTask> organizationListener;
-        
         
         std::set<LayoutColumn*, ColumnComperator> columns;
 
@@ -118,4 +126,12 @@ class DTLayer : public Popup<GJGameLevel* const&> {
         uint64_t timeInMs();
         std::string decodeBase64Gzip(const std::string& input);
         float timeForLevelString(const std::string& levelString);
+
+        LayoutColumn* addColumn(std::optional<DTColumnInfo> info = std::nullopt);
+        void addColumnBtnClicked(CCObject*);
+
+        std::map<CCNode*, std::function<void(float)>> onOrganizationCompleteEvent{};
+
+        void setLayoutBy(const DTLayoutV3& layout);
+        void saveCurrentLayout();
 };

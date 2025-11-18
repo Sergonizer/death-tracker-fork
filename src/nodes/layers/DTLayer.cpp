@@ -8,7 +8,7 @@
 #include <utils/CCResizeWidthTo.hpp>
 
 bool ColumnComperator::operator()(LayoutColumn* a, LayoutColumn* b) const {
-    return a->orderPos < b->orderPos;
+    return a->info.orderPos < b->info.orderPos;
 }
 
 DTLayer* DTLayer::instance = nullptr;
@@ -161,8 +161,6 @@ bool DTLayer::setup(GJGameLevel* const& level) {
     settingsBtn->setPosition({m_size.width - 3.f, 3.f});
     m_buttonMenu->addChild(settingsBtn);
 
-    auto layout = Save::getLayout();
-
     columnHolder = CCMenu::create();
     columnHolder->setAnchorPoint({0, 1});
     columnHolder->setLayout(SimpleAxisLayout::create(Axis::Row)
@@ -175,54 +173,21 @@ bool DTLayer::setup(GJGameLevel* const& level) {
     scrollLayer->content->addChild(columnHolder);
 
     labelsHolder = CCNode::create();
+    labelsHolder->setPosition(columnHolder->getPosition());
     scrollLayer->content->addChild(labelsHolder);
 
-    LayoutColumn* column1;
-    LayoutColumn* column2;
-    LayoutColumn* column3;
+    setLayoutBy(Save::getLayout());
 
-    for (int i = 0; i < 4; i++)
-    {
-        auto column = LayoutColumn::create(20, scrollLayer->getContentHeight());
-        columnHolder->addChild(column);
-        column->orderPos = i;
-        column->setZOrder(column->orderPos);
-        columns.insert(column);
-        if (i == 1)
-            column1 = column;
-        if (i == 2)
-            column2 = column;
-        if (i == 3)
-            column3 = column;
-    }
-
-    columnHolder->updateLayout();
-
-    auto label4 = DTLabel::create();
-    label4->name = "bb";
-    labelsHolder->addChild(label4);
-    column2->addLabel(label4);
-
-    auto label3 = DTLabel::create();
-    label3->name = "aa";
-    labelsHolder->addChild(label3);
-    column2->addLabel(label3);
-    column3->addLabel(label3);
-
-    auto label2 = DTLabel::create();
-    label2->name = "fred";
-    labelsHolder->addChild(label2);
-    column1->addLabel(label2);
-    column2->addLabel(label2);
-
-    auto label = DTLabel::create();
-    label->name = "meow";
-    labelsHolder->addChild(label);
-    column1->addLabel(label);
-
-    labelsHolder->setPosition(columnHolder->getPosition());
-
-    this->organizeLayout();
+    auto addColumnButtonSpr = CCSprite::create("GJ_button_01.png");
+    addColumnButtonSpr->setScale(.5f);
+    auto addColumnButton = CCMenuItemSpriteExtra::create(
+        addColumnButtonSpr,
+        this,
+        menu_selector(DTLayer::addColumnBtnClicked)
+    );
+    addColumnButton->setZOrder(1000);
+    columnHolder->addChild(addColumnButton);
+    
 
     auto editLayoutMenu = CCMenu::create();
     editLayoutMenu->setPosition({0, 0});
@@ -247,6 +212,8 @@ bool DTLayer::setup(GJGameLevel* const& level) {
 
     this->setKeypadEnabled(true);
     this->setTouchEnabled(true);
+
+    this->organizeLayout();
 
     this->scheduleUpdate();
 
@@ -330,9 +297,11 @@ void DTLayer::updateRunsAllowed(){
 }
 
 void DTLayer::graphBtnClicked(CCObject*){
-    auto graph = DTGraphLayer::create(this);
-    graph->setZOrder(100);
-    this->addChild(graph);
+    saveCurrentLayout();
+
+    // auto graph = DTGraphLayer::create(this);
+    // graph->setZOrder(100);
+    // this->addChild(graph);
 }
 
 void DTLayer::UpdateSharedStats(){
@@ -732,6 +701,7 @@ void DTLayer::update(float dt){
     float oldWidth = scrollLayer->content->getContentWidth();
 
     scrollLayer->setLimitsWidth(std::max(ogLimits.width, columnHolder->getContentWidth()));
+    scrollLayer->zoomBy(0);
 
     if (oldWidth != scrollLayer->content->getContentWidth()){
         float delta = scrollLayer->content->getContentWidth() - oldWidth;
@@ -752,6 +722,7 @@ void DTLayer::organizeLayout(){
             float oldHeightLimits = scrollLayer->content->getContentHeight();
 
             scrollLayer->setLimitsHeight(cappedHeight);
+            scrollLayer->zoomBy(0);
             columnHolder->setPositionY(cappedHeight);
             labelsHolder->setPosition(columnHolder->getPosition());
 
@@ -766,6 +737,12 @@ void DTLayer::organizeLayout(){
                 label->runAction(CCEaseInOut::create(CCMoveTo::create(.5f, newPos), 2));
                 label->runAction(CCEaseInOut::create(CCResizeWidthTo::create(.5f, newWidth), 2));
             }
+
+            for (const auto& [target, callback] : onOrganizationCompleteEvent)
+            {
+                callback(delta);
+            }
+            
         }
     });
     organizationListener.setFilter(organizeLayoutTask());
@@ -804,6 +781,7 @@ organizationTask DTLayer::organizeLayoutTask(){
 
             data.labelData.push_back({label, targetPosition, targetWidth});
         }
+
         return data;
     }, "DT layout organization");
 }
@@ -816,9 +794,9 @@ std::pair<LayoutColumn*, int> DTLayer::getColumnLayerFromPosition(CCPoint posInW
 
     for (const auto& column : columns)
     {
-        if (column->boundingBox().containsPoint(posInColumnHolderSpace + ccp(LayoutColumn::minWidth / 2, 0))){
+        if (column->boundingBox().containsPoint(posInColumnHolderSpace + ccp(DTColumnInfo::minWidth / 2, 0))){
             columnFound = column;
-            log::info("found column {}", columnFound->orderPos);
+            // log::info("found column {}", columnFound->orderPos);
             break;
         }
     }
@@ -869,4 +847,136 @@ std::multiset<LayoutColumn*, ColumnComperator> DTLayer::getColumnsBetween(CCPoin
     }
 
     return toReturn;
+}
+
+void DTLayer::addColumnBtnClicked(CCObject*){
+    addColumn();
+}
+
+LayoutColumn* DTLayer::addColumn(std::optional<DTColumnInfo> info){
+    if (!info.has_value()){
+        int position = 0;
+
+        if (columnHolder->getChildrenCount() > 1){
+            auto highestColumn = static_cast<CCNode*>(columnHolder->getChildren()->objectAtIndex(columnHolder->getChildrenCount() - 2));
+            position = highestColumn->getZOrder() + 1;
+        }
+
+        info = DTColumnInfo{
+            .orderPos = position
+        };
+    }
+    
+    auto column = LayoutColumn::create(info.value(), 20, scrollLayer->getContentHeight());
+    columnHolder->addChild(column);
+    columns.insert(column);
+
+    return column;
+}
+
+
+DTLabel* DTLayer::createNewLabel(DTLabelInfo info){
+    auto newLabel = DTLabel::create(info);
+    labelsHolder->addChild(newLabel);
+    return newLabel;
+}
+
+
+void DTLayer::subscribeToOrganizationEvent(CCNode* target, const std::function<void(float)>& callback){
+    if (onOrganizationCompleteEvent.contains(target)) return;
+
+    onOrganizationCompleteEvent.insert({target, callback});
+}
+void DTLayer::unsubscribeToOrganizationEvent(CCNode* target){
+    if (!onOrganizationCompleteEvent.contains(target)) return;
+
+    onOrganizationCompleteEvent.erase(target);
+}
+
+void DTLayer::setLayoutBy(const DTLayoutV3& layout){
+    for (const auto& column : columns)
+    {
+        column->destroyColumnAndCleanup();
+    }
+
+    columns.clear();
+
+    for (const auto& column : layout.columns){
+        addColumn(column);
+    }
+
+    fixUpColumnPositions();
+
+    columnHolder->updateLayout();
+
+    std::map<LayoutColumn*, std::vector<DTLabel*>> labelsForColumns{};
+    std::set<DTLabel*> labels{};
+
+    for (const auto& label : layout.labels){
+        auto labelNode = createNewLabel(label);
+
+        for (const auto& column : columns){
+            if (column->info.orderPos >= labelNode->info.minPlacementRange && column->info.orderPos <= labelNode->info.maxPlacementRange){
+                if (labelsForColumns.contains(column))
+                    labelsForColumns[column].push_back(labelNode);
+                else
+                    labelsForColumns.insert({column, {labelNode}});
+            }
+        }
+
+        labels.insert(labelNode);
+    }
+
+    for (const auto& [column, labels] : labelsForColumns)
+    {
+        for (const auto& label : labels)
+        {
+            column->addLabel(label);
+        }
+        
+    }
+
+    for (const auto& label : labels)
+    {
+        if (label->isAlone())
+            label->removeMeAndCleanup();
+    }
+    
+}
+
+void DTLayer::fixUpColumnPositions(){
+
+    int supposedOrder = 0;
+
+    for (const auto& column : columns)
+    {
+        column->info.orderPos = supposedOrder;
+        column->setZOrder(column->info.orderPos);
+
+        supposedOrder++;
+    }
+}
+
+void DTLayer::saveCurrentLayout(){
+    std::set<DTLabel*> labels{};
+
+    DTLayoutV3 layout{};
+
+    for (const auto& column : columns)
+    {
+        layout.columns.push_back(column->info);
+
+        for (const auto& [labelLayer, label] : column->labels)
+        {
+            if (labels.contains(label)) continue;
+
+            labels.insert(label);
+
+            layout.labels.push_back(label->info);
+        }
+    }
+
+    // log::info("saving {} columns and {} labels", layout.columns.size(), layout.labels.size());
+    
+    Save::setLayout(layout);
 }

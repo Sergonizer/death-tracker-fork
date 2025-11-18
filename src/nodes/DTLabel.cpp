@@ -10,12 +10,12 @@ float DTLabel::moveThreshold = 5;
 float DTLabel::labelLerpSpeed = 10;
 
 bool DTLabel::ColumnComperator::operator()(LayoutColumn* a, LayoutColumn* b) const {
-    return a->orderPos < b->orderPos;
+    return a->info.orderPos < b->info.orderPos;
 }
 
-DTLabel* DTLabel::create() {
+DTLabel* DTLabel::create(const DTLabelInfo& info) {
     auto ret = new DTLabel();
-    if (ret && ret->init()) {
+    if (ret && ret->init(info)) {
         ret->autorelease();
     } else {
         delete ret;
@@ -24,8 +24,10 @@ DTLabel* DTLabel::create() {
     return ret;
 }
 
-bool DTLabel::init(){
+bool DTLabel::init(const DTLabelInfo& info){
     if (!CCMenu::init()) return false;
+
+    this->info = info;
 
     this->setAnchorPoint({0, 1});
 
@@ -84,6 +86,15 @@ bool DTLabel::init(){
     expandBtn->setPosition({5.0f, -labelTitleHeight / 2});
     menu->addChild(expandBtn);
 
+    if (info.isExpanded){
+        this->setContentHeight(this->getContentHeight() + 100);
+
+        expandBtn->setRotation(90);
+        expandBtn->setPosition(ccp(8, expandBtn->getPositionY()));
+
+        bg->setContentHeight(this->getContentHeight() / bg->getScale());
+    }
+
     this->scheduleUpdate();
 
     return true;
@@ -111,8 +122,8 @@ void DTLabel::update(float dt){
 
 void DTLabel::moveUpLayer(){
     for (const auto& column : holders)
-        column->labels.erase(layer);
-    layer++;
+        column->labels.erase(info.layer);
+    info.layer++;
     for (const auto& column : holders)
     {
         column->updateLabelPosition(this);
@@ -120,12 +131,12 @@ void DTLabel::moveUpLayer(){
 }
 
 void DTLabel::toggleExpand(CCObject*){
-    isExpanded = !isExpanded;
-    this->setContentHeight(this->getContentHeight() + 100 * (isExpanded ? 1 : -1));
+    info.isExpanded = !info.isExpanded;
+    this->setContentHeight(this->getContentHeight() + 100 * (info.isExpanded ? 1 : -1));
 
     expandBtn->stopAllActions();
-    expandBtn->runAction(CCEaseInOut::create(CCRotateTo::create(.5f, isExpanded ? 90 : 0), 2));
-    expandBtn->runAction(CCEaseInOut::create(CCMoveTo::create(.5f, isExpanded ? ccp(8, expandBtn->getPositionY()) : ccp(5, expandBtn->getPositionY())), 2));
+    expandBtn->runAction(CCEaseInOut::create(CCRotateTo::create(.5f, info.isExpanded ? 90 : 0), 2));
+    expandBtn->runAction(CCEaseInOut::create(CCMoveTo::create(.5f, info.isExpanded ? ccp(8, expandBtn->getPositionY()) : ccp(5, expandBtn->getPositionY())), 2));
 
     bg->stopAllActions();
     bg->runAction(CCEaseInOut::create(CCResizeHeightTo::create(.5f, this->getContentHeight() / bg->getScale()), 2));
@@ -250,12 +261,12 @@ void DTLabel::ccTouchMoved(CCTouch* touch, CCEvent*){
     }
 
     if (currentlyExpandingRight){
-        auto worldPos = this->convertToWorldSpace(ccp(0, 0));
+        auto worldPos = this->convertToWorldSpace(ccp(5, 0));
         auto touchPos = touch->getLocation();
 
         if (touchPos.x <= worldPos.x) return;
 
-        auto columns = DTLayer::get()->getColumnsBetween(touchPos, worldPos);
+        auto columns = DTLayer::get()->getColumnsBetween(worldPos, touchPos);
 
         // log::info("found {} columns", columns.size());
 
@@ -274,18 +285,18 @@ void DTLabel::ccTouchMoved(CCTouch* touch, CCEvent*){
 }
 
 void DTLabel::onSettings(){
-    log::info("opened settings for label {}", name);
+    // log::info("opened settings for label {}", name);
 }
 
 void DTLabel::onMoveBegan(){
-    log::info("started moving label {}", name);
+    // log::info("started moving label {}", name);
 
     holdersSave = holders;
 
     removeFromColumns();
 
-    this->runAction(CCEaseInOut::create(CCResizeWidthTo::create(.5f, LayoutColumn::minWidth), 2));
-    if (isExpanded) toggleExpand(nullptr);
+    this->runAction(CCEaseInOut::create(CCResizeWidthTo::create(.5f, DTColumnInfo::minWidth), 2));
+    if (info.isExpanded) toggleExpand(nullptr);
     else DTLayer::get()->organizeLayout();
 }
 
@@ -298,7 +309,7 @@ void DTLabel::onMoveUpdate(float dt){
 }
 
 void DTLabel::onMoveEnded(){
-    log::info("ended moving label {}", name);
+    // log::info("ended moving label {}", name);
 
     auto res = DTLayer::get()->getColumnLayerFromPosition(this->getParent()->convertToWorldSpace(currentTouchPosition + ccp(-this->getContentWidth(), this->getContentHeight()) / 2));
 
@@ -310,7 +321,7 @@ void DTLabel::onMoveEnded(){
         DTLayer::get()->organizeLayout();
     }
     else{
-        this->layer = res.second;
+        this->info.layer = res.second;
         res.first->addLabel(this);
 
         DTLayer::get()->organizeLayout();
@@ -321,4 +332,41 @@ void DTLabel::removeFromColumns(){
     for (const auto& container : holders){
         container->removeLabel(this);
     }
+}
+
+void DTLabel::addColumnAsHolder(LayoutColumn* column){
+    holders.insert(column);
+
+    updateInfoWithColumnData();
+}
+void DTLabel::removeColumnAsHolder(LayoutColumn* column){
+    holders.erase(column);
+
+    updateInfoWithColumnData();
+}
+
+bool DTLabel::isPartOfColumn(LayoutColumn* column){
+    return holders.contains(column);
+}
+
+bool DTLabel::isAlone(){
+    return !holders.size();
+}
+
+void DTLabel::updateInfoWithColumnData(){
+    int min = std::numeric_limits<int>::max();
+    int max = std::numeric_limits<int>::min();
+
+    for (const auto& column : holders)
+    {
+        min = std::min(min, column->info.orderPos);
+        max = std::max(max, column->info.orderPos);
+    }
+
+    info.minPlacementRange = min;
+    info.maxPlacementRange = max;
+}
+
+std::multiset<LayoutColumn*, DTLabel::ColumnComperator> DTLabel::getHolders(){
+    return holders;
 }

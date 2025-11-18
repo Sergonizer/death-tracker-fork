@@ -7,7 +7,9 @@ using namespace geode::prelude;
 
 class LayoutColumn : public CCMenu {
     public:
-        static LayoutColumn* create(float topHeight, float minHeight);
+        static LayoutColumn* create(const DTColumnInfo& info, float topHeight, float minHeight);
+
+        DTColumnInfo info;
 
         void setColor(ccColor3B color);
 
@@ -18,20 +20,21 @@ class LayoutColumn : public CCMenu {
 
         std::map<int, DTLabel*> labels{};
 
-        int orderPos;
-
         void updateLabelPosition(DTLabel* label);
 
         static float borderWidth;
 
         void setContentHeight(float height);
+        void setContentWidth(float width);
 
         float tempHeight;
 
-        static float minWidth;
+        static float addNewBtnOffset;
+
+        void destroyColumnAndCleanup();
         
     private:
-        bool init(float topHeight, float minHeight);
+        bool init(const DTColumnInfo& info, float topHeight, float minHeight);
 
         float minHeight;
         
@@ -47,6 +50,9 @@ class LayoutColumn : public CCMenu {
         CCScale9Sprite* topBorder3;
         CCScale9Sprite* bgSideBorder;
 
+        CCMenu* menu;
+        CCPoint tempMenuPos;
+
         void updateSizesByContent();
 
         void registerWithTouchDispatcher() override;
@@ -56,4 +62,10 @@ class LayoutColumn : public CCMenu {
         void ccTouchCancelled(cocos2d::CCTouch* touch, cocos2d::CCEvent* event) override;
 
         bool isTouchingSide;
+
+        void onAddLabelBtnClicked(CCObject*);
+
+        void update(float dt) override;
+
+        void onOrganized(float deltaMove);
 };

@@ -3,6 +3,7 @@
 #include <Geode/Geode.hpp>
 #include <unordered_map>
 #include <functional>
+#include <types/DTTypes.hpp>
 
 class LayoutColumn;
 
@@ -10,18 +11,11 @@ using namespace geode::prelude;
 
 class DTLabel : public CCMenu {
     public:
-        static DTLabel* create();
+        static DTLabel* create(const DTLabelInfo& info);
 
-        int layer = 0;
+        DTLabelInfo info;
 
         void moveUpLayer();
-
-        std::string name;
-
-        struct ColumnComperator {
-            bool operator() (LayoutColumn* a, LayoutColumn* b) const;
-        };
-        std::multiset<LayoutColumn*, ColumnComperator> holders{};
 
         CCPoint tempPos;
         float tempWidth;
@@ -31,11 +25,25 @@ class DTLabel : public CCMenu {
         static float labelLerpSpeed;
 
         void removeFromColumns();
+
+        void addColumnAsHolder(LayoutColumn* column);
+        void removeColumnAsHolder(LayoutColumn* column);
+        bool isPartOfColumn(LayoutColumn* column);
+        bool isAlone();
+
+        struct ColumnComperator {
+            bool operator() (LayoutColumn* a, LayoutColumn* b) const;
+        };
+
+        std::multiset<LayoutColumn*, ColumnComperator> getHolders();
         
     private:
-        bool init() override;
+        bool init(const DTLabelInfo& info);
 
         void update(float dt) override;
+
+        
+        std::multiset<LayoutColumn*, ColumnComperator> holders{};
 
         CCScale9Sprite* bg;
         CCScale9Sprite* labelTitleBG;
@@ -47,8 +55,6 @@ class DTLabel : public CCMenu {
         CCScale9Sprite* rightExpandLine;
 
         void toggleExpand(CCObject*);
-
-        bool isExpanded;
 
         void registerWithTouchDispatcher() override;
         bool ccTouchBegan(cocos2d::CCTouch* touch, cocos2d::CCEvent* event) override;
@@ -71,4 +77,6 @@ class DTLabel : public CCMenu {
 
         bool currentlyExpandingLeft;
         bool currentlyExpandingRight;
+
+        void updateInfoWithColumnData();
 };

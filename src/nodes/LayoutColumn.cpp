@@ -3,11 +3,11 @@
 #include <nodes/layers/DTLayer.hpp>
 
 float LayoutColumn::borderWidth = 2;
-float LayoutColumn::minWidth = 40;
+float LayoutColumn::addNewBtnOffset = 15;
 
-LayoutColumn* LayoutColumn::create(float topHeight, float minHeight) {
+LayoutColumn* LayoutColumn::create(const DTColumnInfo& info, float topHeight, float minHeight) {
     auto ret = new LayoutColumn();
-    if (ret && ret->init(topHeight, minHeight)) {
+    if (ret && ret->init(info, topHeight, minHeight)) {
         ret->autorelease();
     } else {
         delete ret;
@@ -16,11 +16,14 @@ LayoutColumn* LayoutColumn::create(float topHeight, float minHeight) {
     return ret;
 }
 
-bool LayoutColumn::init(float topHeight, float minHeight){
+bool LayoutColumn::init(const DTColumnInfo& info, float topHeight, float minHeight){
     if (!CCMenu::init()) return false;
 
+    this->info = info;
+
+    this->setZOrder(info.orderPos);
+
     this->minHeight = minHeight;
-    this->minWidth = minWidth;
     this->topHeight = topHeight;
 
     topSpr = CCScale9Sprite::create("pixel.png");
@@ -59,11 +62,33 @@ bool LayoutColumn::init(float topHeight, float minHeight){
     bgSideBorder->setOpacity(125);
     this->addChild(bgSideBorder);
 
+    menu = CCMenu::create();
+    menu->setPosition({0, 0});
+    this->addChild(menu);
+
+    auto addLabelBtnSpr = CCSprite::create("GJ_button_01.png");
+    addLabelBtnSpr->setScale(.5f);
+    auto addLabelBtn = CCMenuItemSpriteExtra::create(
+        addLabelBtnSpr,
+        this,
+        menu_selector(LayoutColumn::onAddLabelBtnClicked)
+    );
+    menu->addChild(addLabelBtn);
+
     this->setAnchorPoint({0, 1});
     this->ignoreAnchorPointForPosition(false);
-    this->setContentSize({minWidth, minHeight});
+    this->setContentHeight(minHeight);
+    this->setContentWidth(info.currentWidth);
     
     updateSizesByContent();
+
+    onOrganized(0);
+
+    DTLayer::get()->subscribeToOrganizationEvent(this, std::bind(&LayoutColumn::onOrganized, this, std::placeholders::_1));
+
+    this->scheduleUpdate();
+
+    setColor(info.color);
 
     return true;
 }
@@ -90,9 +115,48 @@ void LayoutColumn::updateSizesByContent(){
     bgSideBorder->setPosition(topBorder2->getPosition() - ccp(0, topBorder2->getContentHeight()));
 }
 
+void LayoutColumn::update(float dt){
+    DTLabel* lowestLabel = nullptr;
+
+    for (const auto& [labelLayer, label] : labels){
+        if (lowestLabel == nullptr){
+            lowestLabel = label;
+            continue;
+        }
+
+        if (lowestLabel->getPositionY() > label->getPositionY()) lowestLabel = label;
+    }
+
+    CCPoint targetAddBtnPos;
+
+    if (lowestLabel != nullptr){
+        auto lowestLabelPointWorldSpace = lowestLabel->convertToWorldSpace({0, 0});
+        targetAddBtnPos = this->convertToNodeSpace(lowestLabelPointWorldSpace) - ccp(0, addNewBtnOffset);
+    }
+    else{
+        targetAddBtnPos = bgSpr->getPosition();
+    }
+
+    targetAddBtnPos.x = this->getContentWidth() / 2;
+
+    //log::info("plus button for column {}, {} | {}", orderPos, targetAddBtnPos, tempMenuPos);
+
+    if (!targetAddBtnPos.equals(tempMenuPos)){
+        tempMenuPos = targetAddBtnPos;
+        menu->stopAllActions();
+        menu->runAction(CCEaseInOut::create(CCMoveTo::create(.5f, targetAddBtnPos), 2));
+    }
+}
+
 void LayoutColumn::setContentHeight(float height){
     CCMenu::setContentHeight(height);
     updateSizesByContent();
+}
+
+void LayoutColumn::setContentWidth(float width){
+    CCMenu::setContentWidth(width);
+
+    info.currentWidth = width;
 }
 
 void LayoutColumn::registerWithTouchDispatcher() {
@@ -133,7 +197,7 @@ void LayoutColumn::ccTouchMoved(CCTouch* touch, CCEvent*){
 
     currentWidth += (spacedTouchLoc - spacedPrevTouchLoc).x;
 
-    this->setContentWidth(std::max(minWidth, currentWidth));
+    this->setContentWidth(std::max(DTColumnInfo::minWidth, currentWidth));
 
     updateSizesByContent();
 
@@ -143,23 +207,25 @@ void LayoutColumn::ccTouchMoved(CCTouch* touch, CCEvent*){
 void LayoutColumn::setColor(ccColor3B color){
     topSpr->setColor(color);
     bgSpr->setColor(color);
+
+    info.color = color;
 }
 
 void LayoutColumn::addLabel(DTLabel* label){
-    label->holders.insert(this);
-    if (labels.contains(label->layer)){
-        log::info("same layer found {} | {} - {}", label->name, labels[label->layer]->name, label->layer);
-        labels[label->layer]->moveUpLayer();
+    label->addColumnAsHolder(this);
+    if (labels.contains(label->info.layer)){
+        // log::info("same layer found {} | {} - {}", label->name, labels[label->layer]->name, label->layer);
+        labels[label->info.layer]->moveUpLayer();
     }
     
-    labels.insert({label->layer, label});
+    labels.insert({label->info.layer, label});
 }
 
 void LayoutColumn::removeLabel(DTLabel* label){
-    if (!label->holders.contains(this)) return;
-    label->holders.erase(this);
+    if (!label->isPartOfColumn(this)) return;
+    label->removeColumnAsHolder(this);
 
-    this->labels.erase(label->layer);
+    this->labels.erase(label->info.layer);
 }
 
 void LayoutColumn::updateLabelPositions(){
@@ -212,15 +278,51 @@ void LayoutColumn::updateLabelPositions(){
     if (prevLabel != nullptr)
         diff += prevLabel->getContentHeight();
     
-    tempHeight = diff + topHeight;
+    tempHeight = diff + topHeight + addNewBtnOffset * 2;
 }
 
 void LayoutColumn::updateLabelPosition(DTLabel* label){
-    if (labels.contains(label->layer)){
-        labels[label->layer]->moveUpLayer();
+    if (labels.contains(label->info.layer)){
+        labels[label->info.layer]->moveUpLayer();
     }
 
     // log::info("inserting revamp {}, {}", label->layer, label->name);
 
-    labels.insert({label->layer, label});
+    labels.insert({label->info.layer, label});
+}
+
+void LayoutColumn::onAddLabelBtnClicked(CCObject*){
+    auto newLabel = DTLayer::get()->createNewLabel();
+
+    int highestLayer = 0;
+
+    for (const auto& [labelLayer, _] : labels)
+    {
+        highestLayer = std::max(highestLayer, labelLayer);
+    }
+    newLabel->info.layer = highestLayer + 1;
+
+    addLabel(newLabel);
+
+    DTLayer::get()->organizeLayout();
+}
+
+void LayoutColumn::onOrganized(float deltaMove){
+    menu->setPositionY(menu->getPositionY() - deltaMove);
+    tempHeight = menu->getPositionY();
+}
+
+void LayoutColumn::destroyColumnAndCleanup(){
+
+    for (const auto& [labelLayer, label] : labels)
+    {
+        removeLabel(label);
+
+        if (label->isAlone())
+            label->removeMeAndCleanup();
+    }
+
+    this->removeMeAndCleanup();
+
+    DTLayer::get()->fixUpColumnPositions();
 }

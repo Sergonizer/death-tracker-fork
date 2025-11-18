@@ -10,8 +10,8 @@ class Save {
         static std::vector<V2LabelLayout> getOldLayout();
         static void setOldLayout(const std::vector<V2LabelLayout>& layout);
 
-        static std::vector<DTLabelInfo> getLayout();
-        static void setLayout(const std::vector<DTLabelInfo>& layout);
+        static DTLayoutV3 getLayout();
+        static void setLayout(const DTLayoutV3& layout);
 
         static ccColor3B getNewBestColor();
         static void setNewBestColor(const ccColor3B& color);
