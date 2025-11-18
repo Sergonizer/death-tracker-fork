@@ -7,11 +7,12 @@ using namespace geode::prelude;
 
 class LayoutColumn : public CCMenu {
     public:
-        static LayoutColumn* create(float topHeight, float minHeight, float minWidth);
+        static LayoutColumn* create(float topHeight, float minHeight);
 
         void setColor(ccColor3B color);
 
         void addLabel(DTLabel* label);
+        void removeLabel(DTLabel* label);
 
         void updateLabelPositions();
 
@@ -26,12 +27,14 @@ class LayoutColumn : public CCMenu {
         void setContentHeight(float height);
 
         float tempHeight;
+
+        static float minWidth;
         
     private:
-        bool init(float topHeight, float minHeight, float minWidth);
+        bool init(float topHeight, float minHeight);
 
         float minHeight;
-        float minWidth;
+        
         float topHeight;
 
         float bgOpacity = 125;

@@ -18,13 +18,19 @@ class DTLabel : public CCMenu {
 
         std::string name;
 
-        std::vector<LayoutColumn*> holders{};
+        struct ColumnComperator {
+            bool operator() (LayoutColumn* a, LayoutColumn* b) const;
+        };
+        std::multiset<LayoutColumn*, ColumnComperator> holders{};
 
         CCPoint tempPos;
         float tempWidth;
 
         static float labelTitleHeight;
         static float moveThreshold;
+        static float labelLerpSpeed;
+
+        void removeFromColumns();
         
     private:
         bool init() override;
@@ -36,6 +42,9 @@ class DTLabel : public CCMenu {
         CCMenu* menu;
         CCMenuItemSpriteExtra* expandBtn;
         SimpleTextArea* labelTitleArea;
+
+        CCScale9Sprite* leftExpandLine;
+        CCScale9Sprite* rightExpandLine;
 
         void toggleExpand(CCObject*);
 
@@ -51,7 +60,15 @@ class DTLabel : public CCMenu {
         CCPoint touchStartPoint;
         bool isMovingLabel;
 
+        CCPoint currentTouchPosition;
+
+        std::multiset<LayoutColumn*, ColumnComperator> holdersSave{};
+
         void onSettings();
         void onMoveBegan();
+        void onMoveUpdate(float dt);
         void onMoveEnded();
+
+        bool currentlyExpandingLeft;
+        bool currentlyExpandingRight;
 };

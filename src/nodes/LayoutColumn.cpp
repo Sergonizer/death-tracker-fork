@@ -3,10 +3,11 @@
 #include <nodes/layers/DTLayer.hpp>
 
 float LayoutColumn::borderWidth = 2;
+float LayoutColumn::minWidth = 40;
 
-LayoutColumn* LayoutColumn::create(float topHeight, float minHeight, float minWidth) {
+LayoutColumn* LayoutColumn::create(float topHeight, float minHeight) {
     auto ret = new LayoutColumn();
-    if (ret && ret->init(topHeight, minHeight, minWidth)) {
+    if (ret && ret->init(topHeight, minHeight)) {
         ret->autorelease();
     } else {
         delete ret;
@@ -15,7 +16,7 @@ LayoutColumn* LayoutColumn::create(float topHeight, float minHeight, float minWi
     return ret;
 }
 
-bool LayoutColumn::init(float topHeight, float minHeight, float minWidth){
+bool LayoutColumn::init(float topHeight, float minHeight){
     if (!CCMenu::init()) return false;
 
     this->minHeight = minHeight;
@@ -145,7 +146,7 @@ void LayoutColumn::setColor(ccColor3B color){
 }
 
 void LayoutColumn::addLabel(DTLabel* label){
-    label->holders.push_back(this);
+    label->holders.insert(this);
     if (labels.contains(label->layer)){
         log::info("same layer found {} | {} - {}", label->name, labels[label->layer]->name, label->layer);
         labels[label->layer]->moveUpLayer();
@@ -154,12 +155,19 @@ void LayoutColumn::addLabel(DTLabel* label){
     labels.insert({label->layer, label});
 }
 
+void LayoutColumn::removeLabel(DTLabel* label){
+    if (!label->holders.contains(this)) return;
+    label->holders.erase(this);
+
+    this->labels.erase(label->layer);
+}
+
 void LayoutColumn::updateLabelPositions(){
 
     float diff = 0;
     DTLabel* prevLabel = nullptr;
 
-    log::info("column {}, running sorting", orderPos);
+    // log::info("column {}, running sorting", orderPos);
 
     for (const auto& [layer, label] : labels)
     {
@@ -170,18 +178,18 @@ void LayoutColumn::updateLabelPositions(){
 
             float emptySpaceDifference = prevLabel->tempPos.y + diff;
 
-            log::info("start diff: {}", diff);
-            log::info("normalOffset: {}", normalOffset);
-            log::info("emptySpaceDifference: {}", emptySpaceDifference);
-            log::info("res: {}", normalOffset - emptySpaceDifference);
+            // log::info("start diff: {}", diff);
+            // log::info("normalOffset: {}", normalOffset);
+            // log::info("emptySpaceDifference: {}", emptySpaceDifference);
+            // log::info("res: {}", normalOffset - emptySpaceDifference);
 
             diff += normalOffset - emptySpaceDifference;
             
             diff += prevLabel->getContentHeight();
         }
 
-        log::info("iterating label {}, ({}) - {}", label->name, label->tempPos, label->tempWidth);
-        log::info("dif is {}", diff);
+        // log::info("iterating label {}, ({}) - {}", label->name, label->tempPos, label->tempWidth);
+        // log::info("dif is {}", diff);
 
         float newY = startPosInLabelSpace.y - diff;
 
@@ -194,12 +202,12 @@ void LayoutColumn::updateLabelPositions(){
         //border might cause offset
         label->tempWidth = label->tempWidth + this->getContentWidth();
 
-        log::info("finished iterating label {}, ({}) - {}", label->name, label->tempPos, label->tempWidth);
+        // log::info("finished iterating label {}, ({}) - {}", label->name, label->tempPos, label->tempWidth);
         
         prevLabel = label;
     }
 
-    log::info("----");
+    // log::info("----");
 
     if (prevLabel != nullptr)
         diff += prevLabel->getContentHeight();

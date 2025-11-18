@@ -7,6 +7,10 @@
 #include <regex>
 #include <utils/CCResizeWidthTo.hpp>
 
+bool ColumnComperator::operator()(LayoutColumn* a, LayoutColumn* b) const {
+    return a->orderPos < b->orderPos;
+}
+
 DTLayer* DTLayer::instance = nullptr;
 
 DTLayer* DTLayer::create(GJGameLevel* const& Level) {
@@ -179,7 +183,7 @@ bool DTLayer::setup(GJGameLevel* const& level) {
 
     for (int i = 0; i < 4; i++)
     {
-        auto column = LayoutColumn::create(20, scrollLayer->getContentHeight(), 40);
+        auto column = LayoutColumn::create(20, scrollLayer->getContentHeight());
         columnHolder->addChild(column);
         column->orderPos = i;
         column->setZOrder(column->orderPos);
@@ -802,4 +806,67 @@ organizationTask DTLayer::organizeLayoutTask(){
         }
         return data;
     }, "DT layout organization");
+}
+
+std::pair<LayoutColumn*, int> DTLayer::getColumnLayerFromPosition(CCPoint posInWorldSpace){
+
+    auto posInColumnHolderSpace = columnHolder->convertToNodeSpace(posInWorldSpace);
+
+    LayoutColumn* columnFound = nullptr;
+
+    for (const auto& column : columns)
+    {
+        if (column->boundingBox().containsPoint(posInColumnHolderSpace + ccp(LayoutColumn::minWidth / 2, 0))){
+            columnFound = column;
+            log::info("found column {}", columnFound->orderPos);
+            break;
+        }
+    }
+
+    if (columnFound == nullptr) return {nullptr, 0};
+
+    auto posInLabelHolderSpace = labelsHolder->convertToNodeSpace(posInWorldSpace);
+
+    if (!columnFound->labels.size()) return {columnFound, 0};
+
+    int highestLayerFound = 0;
+
+    for (const auto& [labelLayer, label] : columnFound->labels)
+    {
+        auto highestLabelPoint = label->getPositionY() - label->getContentHeight() + DTLabel::labelTitleHeight / 2;
+
+        if (highestLayerFound < labelLayer) highestLayerFound = labelLayer;
+
+        if (highestLabelPoint < posInLabelHolderSpace.y){
+
+            return {columnFound, labelLayer};
+        }
+    }
+
+    return {columnFound, highestLayerFound + 1};
+}
+
+std::multiset<LayoutColumn*, ColumnComperator> DTLayer::getColumnsBetween(CCPoint a, CCPoint b){
+
+    std::multiset<LayoutColumn*, ColumnComperator> toReturn{};
+
+    a = columnHolder->convertToNodeSpace(a);
+    b = columnHolder->convertToNodeSpace(b);
+
+    auto x = std::min(a.x, b.x);
+    auto y = std::min(a.y, b.y);
+    auto w = fabs(b.x - a.x);
+    auto h = fabs(b.y - a.y);
+
+    auto rect = CCRect{x, y, w, h};
+
+    // log::info("checking rects... {}", rect);
+
+    for (const auto& column : columns)
+    {
+        if (rect.intersectsRect(column->boundingBox()))
+            toReturn.insert(column);
+    }
+
+    return toReturn;
 }

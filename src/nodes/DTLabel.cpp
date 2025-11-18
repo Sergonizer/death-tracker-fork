@@ -3,9 +3,15 @@
 #include <nodes/layers/DTLayer.hpp>
 
 #include <utils/CCResizeHeightTo.hpp>
+#include <utils/CCResizeWidthTo.hpp>
 
 float DTLabel::labelTitleHeight = 15;
 float DTLabel::moveThreshold = 5;
+float DTLabel::labelLerpSpeed = 10;
+
+bool DTLabel::ColumnComperator::operator()(LayoutColumn* a, LayoutColumn* b) const {
+    return a->orderPos < b->orderPos;
+}
 
 DTLabel* DTLabel::create() {
     auto ret = new DTLabel();
@@ -48,6 +54,22 @@ bool DTLabel::init(){
     labelTitleArea->setMaxLines(1);
     this->addChild(labelTitleArea);
 
+    float expandLineWidth = 3;
+
+    leftExpandLine = CCScale9Sprite::create("pixel.png");
+    leftExpandLine->setAnchorPoint({0, 1});
+    leftExpandLine->setContentWidth(expandLineWidth);
+    leftExpandLine->setContentHeight(labelTitleHeight);
+    leftExpandLine->setVisible(false);
+    this->addChild(leftExpandLine);
+
+    rightExpandLine = CCScale9Sprite::create("pixel.png");
+    rightExpandLine->setAnchorPoint({1, 1});
+    rightExpandLine->setContentWidth(expandLineWidth);
+    rightExpandLine->setContentHeight(labelTitleHeight);
+    rightExpandLine->setVisible(false);
+    this->addChild(rightExpandLine);
+
     menu = CCMenu::create();
     menu->setPosition({0,0});
     this->addChild(menu);
@@ -76,6 +98,14 @@ void DTLabel::update(float dt){
 
     labelTitleArea->setWidth(this->getContentWidth() - labelTitleArea->getPositionX() - 4);
     labelTitleArea->setPositionY(this->getContentHeight());
+
+    leftExpandLine->setPositionY(this->getContentHeight());
+
+    rightExpandLine->setPositionY(this->getContentHeight());
+    rightExpandLine->setPositionX(this->getContentWidth());
+
+    if (isMovingLabel)
+        onMoveUpdate(dt);
 }
 
 
@@ -108,11 +138,26 @@ void DTLabel::registerWithTouchDispatcher() {
 }
 
 bool DTLabel::ccTouchBegan(CCTouch* touch, CCEvent* event) {
-    auto touchInSpace = labelTitleBG->getParent()->convertTouchToNodeSpace(touch);
+    auto touchInSpace = this->convertTouchToNodeSpace(touch);
 
-    if (labelTitleBG->boundingBox().containsPoint(touchInSpace)) {
+    if (leftExpandLine->boundingBox().containsPoint(touchInSpace)){
+        leftExpandLine->setVisible(true);
+        currentlyExpandingLeft = true;
+
+        return true;
+    }
+    else if (rightExpandLine->boundingBox().containsPoint(touchInSpace)){
+        rightExpandLine->setVisible(true);
+        currentlyExpandingRight = true;
+
+        return true;
+    }
+    else if (labelTitleBG->boundingBox().containsPoint(touchInSpace)) {
         touchStartPoint = touch->getLocation();
         isBeingTouched = true;
+
+        currentTouchPosition = this->getParent()->convertTouchToNodeSpace(touch);
+
         return true;
     }
 
@@ -120,39 +165,112 @@ bool DTLabel::ccTouchBegan(CCTouch* touch, CCEvent* event) {
 }
 
 void DTLabel::ccTouchEnded(CCTouch* touch, CCEvent*) {
-    if (!isBeingTouched) return;
-    if (!isMovingLabel){
-        auto touchInSpace = labelTitleBG->getParent()->convertTouchToNodeSpace(touch);
+    if (isBeingTouched){
+        if (!isMovingLabel){
+            auto touchInSpace = labelTitleBG->getParent()->convertTouchToNodeSpace(touch);
 
-        if (labelTitleBG->boundingBox().containsPoint(touchInSpace)) {
-            onSettings();
+            if (labelTitleBG->boundingBox().containsPoint(touchInSpace)) {
+                onSettings();
+            }
+        }
+        else {
+            currentTouchPosition = this->getParent()->convertTouchToNodeSpace(touch);
+            onMoveEnded();
         }
     }
-    else onMoveEnded();
+
+    if (currentlyExpandingLeft){
+        leftExpandLine->setVisible(false);
+    }
+    if (currentlyExpandingRight){
+        rightExpandLine->setVisible(false);
+    }
 
     isMovingLabel = false;
     isBeingTouched = false;
+    currentlyExpandingLeft = false;
+    currentlyExpandingRight = false;
 }
 
-void DTLabel::ccTouchCancelled(CCTouch*, CCEvent*) {
-    if (!isBeingTouched) return;
-    if (isMovingLabel) onMoveEnded();
+void DTLabel::ccTouchCancelled(CCTouch* touch, CCEvent*) {
+    if (isBeingTouched){
+        if (isMovingLabel){
+            currentTouchPosition = this->getParent()->convertTouchToNodeSpace(touch);
+            onMoveEnded();
+        }
+    }
+
+    if (currentlyExpandingLeft){
+        leftExpandLine->setVisible(false);
+    }
+    if (currentlyExpandingRight){
+        rightExpandLine->setVisible(false);
+    }
+
     isMovingLabel = false;
     isBeingTouched = false;
+    currentlyExpandingLeft = false;
+    currentlyExpandingRight = false;
 }
 
 void DTLabel::ccTouchMoved(CCTouch* touch, CCEvent*){
-    if (!isBeingTouched) return;
-
-    if (!isMovingLabel){
-        auto touchCurrentLocation = touch->getLocation();
-    
-        if (std::abs((touchStartPoint - touchCurrentLocation).getLength()) >= moveThreshold){
-            isMovingLabel = true;
-            onMoveBegan();
+    if (isBeingTouched){
+        if (!isMovingLabel){
+            auto touchCurrentLocation = touch->getLocation();
+        
+            if (std::abs((touchStartPoint - touchCurrentLocation).getLength()) >= moveThreshold){
+                isMovingLabel = true;
+                onMoveBegan();
+            }
         }
+        else currentTouchPosition = this->getParent()->convertTouchToNodeSpace(touch);
     }
-    
+
+    if (currentlyExpandingLeft){
+        auto worldPos = this->convertToWorldSpace(ccp(this->getContentWidth(), 0));
+        auto touchPos = touch->getLocation();
+
+        if (touchPos.x >= worldPos.x) return;
+
+        auto columns = DTLayer::get()->getColumnsBetween(worldPos, touchPos);
+
+        // log::info("found {} columns", columns.size());
+
+        int oldColumnsSize = holders.size();
+
+        removeFromColumns();
+
+        for (const auto& column : columns)
+        {
+            column->addLabel(this);
+        }
+
+        if (holders.size() != oldColumnsSize)
+            DTLayer::get()->organizeLayout();
+    }
+
+    if (currentlyExpandingRight){
+        auto worldPos = this->convertToWorldSpace(ccp(0, 0));
+        auto touchPos = touch->getLocation();
+
+        if (touchPos.x <= worldPos.x) return;
+
+        auto columns = DTLayer::get()->getColumnsBetween(touchPos, worldPos);
+
+        // log::info("found {} columns", columns.size());
+
+        int oldColumnsSize = holders.size();
+
+        removeFromColumns();
+
+        for (const auto& column : columns)
+        {
+            column->addLabel(this);
+        }
+
+        if (holders.size() != oldColumnsSize)
+            DTLayer::get()->organizeLayout();
+    }
 }
 
 void DTLabel::onSettings(){
@@ -161,8 +279,46 @@ void DTLabel::onSettings(){
 
 void DTLabel::onMoveBegan(){
     log::info("started moving label {}", name);
+
+    holdersSave = holders;
+
+    removeFromColumns();
+
+    this->runAction(CCEaseInOut::create(CCResizeWidthTo::create(.5f, LayoutColumn::minWidth), 2));
+    if (isExpanded) toggleExpand(nullptr);
+    else DTLayer::get()->organizeLayout();
+}
+
+void DTLabel::onMoveUpdate(float dt){
+    auto targetPosition = currentTouchPosition + ccp(-this->getContentWidth(), this->getContentHeight()) / 2;
+    CCPoint currentLerp;
+    currentLerp.x = std::lerp(this->getPositionX(), targetPosition.x, dt * DTLabel::labelLerpSpeed);
+    currentLerp.y = std::lerp(this->getPositionY(), targetPosition.y, dt * DTLabel::labelLerpSpeed);
+    this->setPosition(currentLerp);
 }
 
 void DTLabel::onMoveEnded(){
     log::info("ended moving label {}", name);
+
+    auto res = DTLayer::get()->getColumnLayerFromPosition(this->getParent()->convertToWorldSpace(currentTouchPosition + ccp(-this->getContentWidth(), this->getContentHeight()) / 2));
+
+    if (res.first == nullptr){
+        for (const auto& container : holdersSave){
+            container->addLabel(this);
+        }
+
+        DTLayer::get()->organizeLayout();
+    }
+    else{
+        this->layer = res.second;
+        res.first->addLabel(this);
+
+        DTLayer::get()->organizeLayout();
+    }
+}
+
+void DTLabel::removeFromColumns(){
+    for (const auto& container : holders){
+        container->removeLabel(this);
+    }
 }

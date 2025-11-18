@@ -9,6 +9,10 @@
 
 using namespace geode::prelude;
 
+struct ColumnComperator {
+    bool operator() (LayoutColumn* a, LayoutColumn* b) const;
+};
+
 struct organizationResult{
     std::vector<std::tuple<DTLabel*, CCPoint, float>> labelData{};
     float highestColumn;
@@ -64,15 +68,16 @@ class DTLayer : public Popup<GJGameLevel* const&> {
         void organizeLayout();
 
         bool doMoveScroll = true;
+
+        std::pair<LayoutColumn*, int> getColumnLayerFromPosition(CCPoint posInWorldSpace);
+
+        //points should be in world space!
+        std::multiset<LayoutColumn*, ColumnComperator> getColumnsBetween(CCPoint a, CCPoint b);
     private:
         organizationTask organizeLayoutTask();
         EventListener<organizationTask> organizationListener;
         
-        struct ColumnComperator {
-            bool operator() (LayoutColumn* a, LayoutColumn* b) const {
-                return a->orderPos < b->orderPos;
-            }
-        };
+        
         std::set<LayoutColumn*, ColumnComperator> columns;
 
         bool createDeathsString(const Deaths& deaths, const stringCustomazations& custom, std::string& out, NewBests* const newBests = nullptr, const std::string& newBestColoring = "");
