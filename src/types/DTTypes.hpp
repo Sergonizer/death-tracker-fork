@@ -308,32 +308,6 @@ struct matjson::Serialize<V2LabelLayout> {
     }
 };
 
-struct ViewState{
-    CCPoint pos = ccp(-100000, -100000);
-    float zoom = -100000;
-};
-
-template <>
-struct matjson::Serialize<ViewState> {
-    static Result<ViewState> fromJson(const matjson::Value& value) {
-        ViewState layout;
-        GEODE_UNWRAP_INTO(layout.pos.x, value["posX"].asDouble());
-        GEODE_UNWRAP_INTO(layout.pos.y, value["posY"].asDouble());
-        GEODE_UNWRAP_INTO(layout.zoom, value["zoom"].asDouble());
-
-        return Ok(layout);
-    }
-
-    static matjson::Value toJson(const ViewState& value) {
-        matjson::Value obj = matjson::makeObject({
-            { "posX", value.pos.x },
-            { "posY", value.pos.y },
-            { "zoom", value.zoom },
-        });
-        return obj;
-    }
-};
-
 struct stringCustomazations{
     std::string seperator = "{nl}";
     std::string format = "{per}% X{d}";

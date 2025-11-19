@@ -17,7 +17,7 @@ DTLayer* DTLayer::create(GJGameLevel* const& Level) {
     auto ret = new DTLayer();
     auto winSize = CCDirector::sharedDirector()->getWinSize();
     // @geode-ignore(unknown-resource)
-    if (ret && ret->initAnchored(winSize.width - 30, winSize.height - 30, Level, "geode.loader/GE_square01.png")) {
+    if (ret && ret->initAnchored(winSize.width - 125, winSize.height - 30, Level, "geode.loader/GE_square01.png")) {
         ret->autorelease();
         return ret;
     }
@@ -82,12 +82,6 @@ bool DTLayer::setup(GJGameLevel* const& level) {
     scrollLayer->maxZoom = 0.35f;
     m_mainLayer->addChild(scrollLayer);
 
-    auto viewState = Save::getLastViewState();
-    if (viewState.pos.x != -100000){
-        scrollLayer->moveTo(viewState.pos);
-        scrollLayer->zoomTo(viewState.zoom);
-    }
-
     std::vector<CCPoint> points{
         scrollLayer->getPosition(),
         scrollLayer->getPosition() + ccp(scrollLayer->getContentSize().width, 0),
@@ -104,7 +98,7 @@ bool DTLayer::setup(GJGameLevel* const& level) {
 
     auto outline = CCDrawNode::create();
     outline->m_bUseArea = false;
-    outline->drawLines(&points[0], points.size(), .25f, ccc4FFromccc4B({ 143, 143, 143, 255 }));
+    outline->drawLines(&points[0], points.size(), .5f, ccc4FFromccc4B({ 143, 143, 143, 255 }));
     outline->setZOrder(2);
     m_mainLayer->addChild(outline);
 
@@ -117,12 +111,16 @@ bool DTLayer::setup(GJGameLevel* const& level) {
     m_mainLayer->addChild(shadow);
 
     auto bottomMenu = CCMenu::create();
-    bottomMenu->setContentSize({m_size.width, height / 2.5f});
+    bottomMenu->setContentSize({m_size.width - 15, height / 2.5f});
     bottomMenu->setAnchorPoint({.5f, .5f});
     bottomMenu->setPosition(bottomMenu->getContentSize() / 2 + ccp(0, 7.5f));
     bottomMenu->setLayout(SimpleAxisLayout::create(Axis::Row)
-        ->setGap(50)
+        ->setGap(-15)
+        ->setMainAxisScaling(AxisScaling::ScaleDown)
         ->setCrossAxisScaling(AxisScaling::ScaleDown)
+        ->setMainAxisAlignment(MainAxisAlignment::Even)
+        ->setMinRelativeScale(std::nullopt)
+        ->setMaxRelativeScale(std::nullopt)
     );
     bottomMenu->setID("bottom-menu");
     m_mainLayer->addChild(bottomMenu);
@@ -135,12 +133,6 @@ bool DTLayer::setup(GJGameLevel* const& level) {
     );
     bottomMenu->addChild(levelSpecificOptionsBtn);
 
-    sessionSelector = SessionSelector::create(sessionsOrder.size());
-    sessionSelector->setCallback([&](int newSession){ onSessionSelected(newSession); });
-    bottomMenu->addChild(sessionSelector);
-
-    onSessionSelected(1);
-
     auto graphBtnSpr = CCSprite::createWithSpriteFrameName("graph_button.png"_spr);
     auto graphBtn = CCMenuItemSpriteExtra::create(
         graphBtnSpr,
@@ -149,7 +141,24 @@ bool DTLayer::setup(GJGameLevel* const& level) {
     );
     bottomMenu->addChild(graphBtn);
 
-    bottomMenu->updateLayout();
+    sessionSelector = SessionSelector::create(sessionsOrder.size());
+    sessionSelector->setCallback([&](int newSession){ onSessionSelected(newSession); });
+    bottomMenu->addChild(sessionSelector);
+
+    onSessionSelected(1);
+
+    auto editLayoutBtnSprBG = CCSprite::createWithSpriteFrameName("GJ_plainBtn_001.png");
+    auto editLayoutBtnSpr = CCSprite::createWithSpriteFrameName("layout_button.png"_spr);
+    editLayoutBtnSpr->setPosition(editLayoutBtnSprBG->getContentSize() / 2);
+    editLayoutBtnSprBG->addChild(editLayoutBtnSpr);
+    editLayoutBtnSprBG->setScale(.75f);
+    auto editLayoutBtn = CCMenuItemSpriteExtra::create(
+        editLayoutBtnSprBG,
+        this,
+        menu_selector(DTLayer::onEditLayout)
+    );
+    editLayoutBtn->setPosition(scrollLayer->getPosition() + scrollLayer->getContentSize());
+    bottomMenu->addChild(editLayoutBtn);
 
     auto settingsBtnSpr = CCSprite::createWithSpriteFrameName("GJ_optionsBtn_001.png");
     settingsBtnSpr->setScale(.75f);
@@ -159,7 +168,7 @@ bool DTLayer::setup(GJGameLevel* const& level) {
         menu_selector(DTLayer::onSettings)
     );
     settingsBtn->setPosition({m_size.width - 3.f, 3.f});
-    m_buttonMenu->addChild(settingsBtn);
+    bottomMenu->addChild(settingsBtn);
 
     columnHolder = CCMenu::create();
     columnHolder->setAnchorPoint({0, 1});
@@ -187,26 +196,6 @@ bool DTLayer::setup(GJGameLevel* const& level) {
     );
     addColumnButton->setZOrder(1000);
     columnHolder->addChild(addColumnButton);
-    
-
-    auto editLayoutMenu = CCMenu::create();
-    editLayoutMenu->setPosition({0, 0});
-    editLayoutMenu->setID("edit-layout-menu");
-    editLayoutMenu->setZOrder(3);
-    m_mainLayer->addChild(editLayoutMenu);
-
-    auto editLayoutBtnSprBG = CCSprite::createWithSpriteFrameName("GJ_plainBtn_001.png");
-    auto editLayoutBtnSpr = CCSprite::createWithSpriteFrameName("layout_button.png"_spr);
-    editLayoutBtnSpr->setPosition(editLayoutBtnSprBG->getContentSize() / 2);
-    editLayoutBtnSprBG->addChild(editLayoutBtnSpr);
-    editLayoutBtnSprBG->setScale(.75f);
-    auto editLayoutBtn = CCMenuItemSpriteExtra::create(
-        editLayoutBtnSprBG,
-        this,
-        menu_selector(DTLayer::onEditLayout)
-    );
-    editLayoutBtn->setPosition(scrollLayer->getPosition() + scrollLayer->getContentSize());
-    editLayoutMenu->addChild(editLayoutBtn);
 
     CCTouchDispatcher::get()->removeDelegate(scrollLayer);
 
@@ -216,6 +205,8 @@ bool DTLayer::setup(GJGameLevel* const& level) {
     this->organizeLayout();
 
     this->scheduleUpdate();
+
+    bottomMenu->updateLayout();
 
     return true;
 }
@@ -358,16 +349,6 @@ void DTLayer::keyBackClicked(){
 }
 
 void DTLayer::onClose(CCObject* sender){
-    ViewState state;
-    state.pos = scrollLayer->content->getPosition();
-    state.zoom = scrollLayer->getCurrentZoom();
-
-    Save::setLastViewState(state);
-
-    // if (layoutTopbar != nullptr){
-    //     layoutTopbar->keyBackClicked();
-    //     return;
-    // }
     Popup<GJGameLevel* const&>::onClose(sender);
     instance = nullptr;
 }

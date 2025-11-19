@@ -37,7 +37,7 @@ bool DTLabel::init(const DTLabelInfo& info){
     this->ignoreAnchorPointForPosition(false);
 
     bg = CCScale9Sprite::create("GJ_button_05.png");
-    bg->setOpacity(150);
+    bg->setOpacity(normalBGOpacity);
     bg->setScale(.3f);
     bg->setAnchorPoint({0, 1});
     this->addChild(bg);
@@ -48,7 +48,7 @@ bool DTLabel::init(const DTLabelInfo& info){
     labelTitleBG->setContentHeight(labelTitleHeight / labelTitleBG->getScale());
     this->addChild(labelTitleBG);
 
-    labelTitleArea = SimpleTextArea::create("Label name", "bigFont.fnt", .35f);
+    labelTitleArea = SimpleTextArea::create(info.labelName, "bigFont.fnt", .35f);
     labelTitleArea->setAnchorPoint({0, 1});
     labelTitleArea->setAlignment(CCTextAlignment::kCCTextAlignmentLeft);
     labelTitleArea->setPositionX(15);
@@ -96,6 +96,13 @@ bool DTLabel::init(const DTLabelInfo& info){
     }
 
     this->scheduleUpdate();
+
+    bg->setColor({info.color.r, info.color.g, info.color.b});
+    bg->setOpacity(normalBGOpacity * (info.color.a / 255));
+    labelTitleBG->setColor({info.color.r, info.color.g, info.color.b});
+    labelTitleBG->setOpacity(info.color.a);
+
+    labelTitleArea->setAlignment(info.horizontalAlignment);
 
     return true;
 }

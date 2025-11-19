@@ -36,7 +36,4 @@ class Save {
 
         static stringCustomazations getSessionRunCustomazations();
         static void setSessionRunCustomazations(const stringCustomazations& sessionRunCustom);
-
-        static ViewState getLastViewState();
-        static void setLastViewState(const ViewState& verion);
 };

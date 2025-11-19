@@ -36,8 +36,6 @@ class DTLabel : public CCMenu {
         };
 
         std::multiset<LayoutColumn*, ColumnComperator> getHolders();
-
-        CCScale9Sprite* labelTitleBG;
         
     private:
         bool init(const DTLabelInfo& info);
@@ -48,13 +46,15 @@ class DTLabel : public CCMenu {
         std::multiset<LayoutColumn*, ColumnComperator> holders{};
 
         CCScale9Sprite* bg;
-        
+        CCScale9Sprite* labelTitleBG;
         CCMenu* menu;
         CCMenuItemSpriteExtra* expandBtn;
         SimpleTextArea* labelTitleArea;
 
         CCScale9Sprite* leftExpandLine;
         CCScale9Sprite* rightExpandLine;
+
+        float normalBGOpacity = 150;
 
         void toggleExpand(CCObject*);
 
