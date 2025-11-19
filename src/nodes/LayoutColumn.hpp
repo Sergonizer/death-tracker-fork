@@ -32,6 +32,8 @@ class LayoutColumn : public CCMenu {
         static float addNewBtnOffset;
 
         void destroyColumnAndCleanup();
+
+        void refreshAllLabelsLayer();
         
     private:
         bool init(const DTColumnInfo& info, float topHeight, float minHeight);

@@ -326,3 +326,20 @@ void LayoutColumn::destroyColumnAndCleanup(){
 
     DTLayer::get()->fixUpColumnPositions();
 }
+
+void LayoutColumn::refreshAllLabelsLayer(){
+    auto labelsbackup = labels;
+
+    for (const auto& [labelLayer, label] : labels)
+    {
+        if (!label->isPartOfColumn(this)) continue;
+        label->removeColumnAsHolder(this);
+    }
+
+    labels.clear();
+
+    for (const auto& [labelLayer, label] : labelsbackup)
+    {
+        addLabel(label);
+    }
+}

@@ -749,11 +749,52 @@ void DTLayer::organizeLayout(){
 }
 
 organizationTask DTLayer::organizeLayoutTask(){
-    return organizationTask::run([this](auto progress, auto hasBeenCancelled) -> organizationTask::Result {
-        std::set<DTLabel*> allLabels{};
-        for (const auto& column : columns)
+    struct LabelData {
+        DTLabel* label;
+        std::set<LayoutColumn*> holders;
+    };
+    
+    struct ColumnData {
+        LayoutColumn* column;
+        int orderPos;
+        std::vector<std::pair<int, DTLabel*>> labels;
+    };
+    
+    std::vector<ColumnData> columnSnapshots;
+    std::map<DTLabel*, LabelData> labelSnapshots;
+    
+    for (const auto& column : columns)
+    {
+        ColumnData colData;
+        colData.column = column;
+        colData.orderPos = column->info.orderPos;
+        
+        for (const auto& [layer, label] : column->labels)
         {
-            for (const auto& [layer, label] : column->labels)
+            colData.labels.push_back({layer, label});
+            
+            if (labelSnapshots.find(label) == labelSnapshots.end())
+            {
+                auto holders = label->getHolders();
+                std::set<LayoutColumn*> holderSet;
+                for (const auto& holder : holders)
+                {
+                    holderSet.insert(holder);
+                }
+                labelSnapshots[label] = {label, holderSet};
+            }
+        }
+        
+        columnSnapshots.push_back(colData);
+    }
+    
+    return organizationTask::run([columnSnapshots, labelSnapshots](auto progress, auto hasBeenCancelled) -> organizationTask::Result {
+        std::set<DTLabel*> allLabels{};
+        std::map<DTLabel*, std::set<LayoutColumn*>> labelHolders{};
+
+        for (const auto& colData : columnSnapshots)
+        {
+            for (const auto& [layer, label] : colData.labels)
             {
                 if (allLabels.contains(label)) continue;
 
@@ -763,12 +804,17 @@ organizationTask DTLayer::organizeLayoutTask(){
             }
         }
 
+        for (const auto& [label, data] : labelSnapshots)
+        {
+            labelHolders[label] = data.holders;
+        }
+
         float heighestHeight = 0;
         
-        for (const auto& column : columns){
-            column->updateLabelPositions();
+        for (const auto& colData : columnSnapshots){
+            colData.column->updateLabelPositions();
 
-            if (heighestHeight < column->tempHeight) heighestHeight = column->tempHeight;
+            if (heighestHeight < colData.column->tempHeight) heighestHeight = colData.column->tempHeight;
         }
 
         organizationResult data{};
@@ -780,6 +826,113 @@ organizationTask DTLayer::organizeLayoutTask(){
             auto targetWidth = label->tempWidth - LayoutColumn::borderWidth;
 
             data.labelData.push_back({label, targetPosition, targetWidth});
+        }
+
+        std::map<LayoutColumn*, DTLabel*> lastVisitedLabelForColumn{};
+        std::map<DTLabel*, std::map<LayoutColumn*, std::optional<int>>> labelAwaitingColumnValues{};
+        std::set<DTLabel*> processedLabels{};
+
+        while (true){
+            for (const auto& colData : columnSnapshots)
+            {
+                const auto& column = colData.column;
+                // log::info("goind over column {}", colData.orderPos);
+                DTLabel* prevLabel = nullptr;
+
+                bool foundLastLabel = false;
+
+                for (const auto& [labelLayer, label] : colData.labels)
+                {
+                    // log::info("going through label");
+                    if (!lastVisitedLabelForColumn.contains(column)){
+                        lastVisitedLabelForColumn.insert({column, label});
+                        foundLastLabel = true;
+                    }
+                    else if (label != lastVisitedLabelForColumn[column] && !foundLastLabel){
+                        prevLabel = label;
+                        continue;
+                    }
+                    else foundLastLabel  = true;
+
+                    if (processedLabels.contains(label)){
+                        prevLabel = label;
+                        continue;
+                    }
+
+                    // log::info("label valid");
+                    
+                    lastVisitedLabelForColumn[column] = label;
+
+                    int newLayer = prevLabel == nullptr ? 0 : prevLabel->info.layer + 1;
+
+                    // log::info("destenation layer {}", newLayer);
+
+                    auto& holdersBack = labelHolders[label];
+
+                    if (holdersBack.size() > 1){
+                        // log::info("label is multicolumn");
+                        if (!labelAwaitingColumnValues.contains(label)){
+                            std::map<LayoutColumn*, std::optional<int>> mapToSet{};
+
+                            for (const auto& holder : holdersBack)
+                                mapToSet.insert({holder, std::nullopt});
+
+                            // log::info("populated list for label with {} holders", mapToSet.size());
+
+                            labelAwaitingColumnValues.insert({label, mapToSet});
+                        }
+
+                        // log::info("adding label value?");
+
+                        if (labelAwaitingColumnValues[label].contains(column) && !labelAwaitingColumnValues[label][column].has_value()){
+                            // log::info("label value added");
+                            labelAwaitingColumnValues[label][column] = newLayer;
+                        }
+
+                        int highestOptLayer = 0;
+                        bool wereAllLayersFound = true;
+
+                        // log::info("checking conclusion..");
+
+                        for (const auto& [column, optLayer] : labelAwaitingColumnValues[label]){
+                            if (!optLayer.has_value()){
+                                wereAllLayersFound = false;
+                                break;
+                            }
+
+                            highestOptLayer = std::max(highestOptLayer, optLayer.value());
+                        }
+
+                        if (!wereAllLayersFound){
+                            // log::info("invalid labels were found");
+                            break;
+                        }
+
+                        // log::info("all layer values were found for label");
+
+                        label->info.layer = highestOptLayer;
+                        processedLabels.insert(label);
+
+                        prevLabel = label;
+                        continue;
+                    }
+
+                    // log::info("non double found! adding..");
+                    
+                    label->info.layer = newLayer;
+                    processedLabels.insert(label);
+
+                    prevLabel = label;
+                }
+            }
+
+            // log::info("res: {} | {}", processedLabels.size(), allLabels.size());
+
+            if (processedLabels.size() == allLabels.size()) break;
+        }
+
+        for (const auto& colData : columnSnapshots){
+            colData.column->refreshAllLabelsLayer();
         }
 
         return data;
