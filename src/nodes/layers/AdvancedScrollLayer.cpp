@@ -226,6 +226,7 @@ void AdvancedScrollLayer::setLimits(CCSize newLimits){
         drawGrid(gridsquareSize, gridLineWidth, gridColor);
 
     moveTo(content->getPosition());
+    zoomBy(0);
 }
 
 void AdvancedScrollLayer::setLimitsWidth(float width){

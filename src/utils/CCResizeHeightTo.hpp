@@ -14,8 +14,7 @@ public:
     virtual void startWithTarget(CCNode* target) override;
 
     virtual void update(float time) override;
-
-protected:
+    
     float startHeight;
     float endHeight;
     float deltaHeight;

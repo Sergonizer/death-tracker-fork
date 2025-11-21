@@ -233,29 +233,27 @@ void LayoutColumn::updateLabelPositions(){
     float diff = 0;
     DTLabel* prevLabel = nullptr;
 
-    // log::info("column {}, running sorting", orderPos);
+    log::info("--------");
+    log::info("column {}, running sorting", info.orderPos);
 
     for (const auto& [layer, label] : labels)
     {
         auto startPosInLabelSpace = label->getParent()->convertToNodeSpace(this->convertToWorldSpace(bgSpr->getPosition()));
 
+        float emptySpaceDifference = startPosInLabelSpace.y;
+
         if (prevLabel != nullptr){
-            float normalOffset = startPosInLabelSpace.y;
-
-            float emptySpaceDifference = prevLabel->tempPos.y + diff;
-
-            // log::info("start diff: {}", diff);
-            // log::info("normalOffset: {}", normalOffset);
-            // log::info("emptySpaceDifference: {}", emptySpaceDifference);
-            // log::info("res: {}", normalOffset - emptySpaceDifference);
-
-            diff += normalOffset - emptySpaceDifference;
+            emptySpaceDifference = prevLabel->tempPos.y + diff;
             
             diff += prevLabel->getContentHeight();
         }
 
-        // log::info("iterating label {}, ({}) - {}", label->name, label->tempPos, label->tempWidth);
-        // log::info("dif is {}", diff);
+        float normalOffset = startPosInLabelSpace.y;
+
+        diff += normalOffset - emptySpaceDifference;
+
+        log::info("iterating label {}, ({}) - {}", label->info.labelName, label->tempPos, label->tempWidth);
+        log::info("dif is {}", diff);
 
         float newY = startPosInLabelSpace.y - diff;
 
@@ -268,7 +266,7 @@ void LayoutColumn::updateLabelPositions(){
         //border might cause offset
         label->tempWidth = label->tempWidth + this->getContentWidth();
 
-        // log::info("finished iterating label {}, ({}) - {}", label->name, label->tempPos, label->tempWidth);
+        log::info("finished iterating label {}, ({}) - {}", label->info.labelName, label->tempPos, label->tempWidth);
         
         prevLabel = label;
     }

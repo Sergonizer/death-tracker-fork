@@ -14,8 +14,7 @@ public:
     virtual void startWithTarget(CCNode* target);
 
     virtual void update(float time);
-
-protected:
+    
     CCSize startSize;
     CCSize endSize;
     CCSize deltaSize;

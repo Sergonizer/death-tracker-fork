@@ -15,7 +15,6 @@ public:
 
     virtual void update(float time) override;
 
-protected:
     float startWidth;
     float endWidth;
     float deltaWidth;

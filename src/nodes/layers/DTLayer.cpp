@@ -7,6 +7,8 @@
 #include <regex>
 #include <utils/CCResizeWidthTo.hpp>
 
+float DTLayer::transitionTime = .35f;
+
 bool ColumnComperator::operator()(LayoutColumn* a, LayoutColumn* b) const {
     return a->info.orderPos < b->info.orderPos;
 }
@@ -79,7 +81,7 @@ bool DTLayer::setup(GJGameLevel* const& level) {
     //scrollLayer->drawGrid(50, .5f, ccColor4B{ 143, 143, 143, 255 });
     scrollLayer->setPosition(m_size / 2 - scrollLayer->getContentSize() / 2 + ccp(0, height / 4));
     scrollLayer->setZOrder(2);
-    scrollLayer->maxZoom = 0.35f;
+    scrollLayer->maxZoom = 0.1f;
     m_mainLayer->addChild(scrollLayer);
 
     std::vector<CCPoint> points{
@@ -703,7 +705,6 @@ void DTLayer::organizeLayout(){
             float oldHeightLimits = scrollLayer->content->getContentHeight();
 
             scrollLayer->setLimitsHeight(cappedHeight);
-            scrollLayer->zoomBy(0);
             columnHolder->setPositionY(cappedHeight);
             labelsHolder->setPosition(columnHolder->getPosition());
 
@@ -713,10 +714,50 @@ void DTLayer::organizeLayout(){
             
             for (const auto& [label, newPos, newWidth] : result->labelData)
             {
-                label->stopAllActions();
+                const int MOVEMENT_TAG = 2;
+                const int RESIZE_TAG = 7;
 
-                label->runAction(CCEaseInOut::create(CCMoveTo::create(.5f, newPos), 2));
-                label->runAction(CCEaseInOut::create(CCResizeWidthTo::create(.5f, newWidth), 2));
+                auto taggedMovementAction = label->getActionByTag(MOVEMENT_TAG);
+                auto taggedResizeAction = label->getActionByTag(RESIZE_TAG);
+
+                bool doCreateNewMoveAction = true;
+                bool doCreateNewResizeAction = true;
+                
+                //movement action check
+                if (taggedMovementAction != nullptr){
+                    auto currentMovementActionEase = static_cast<CCEaseInOut*>(taggedMovementAction);
+                    auto currentMovementAction = static_cast<CCMoveTo*>(currentMovementActionEase->getInnerAction());
+
+                    if (!currentMovementAction->m_endPosition.equals(newPos)){
+                        label->stopActionByTag(MOVEMENT_TAG);
+                    }
+                    else doCreateNewMoveAction = false;
+                }
+
+                if (doCreateNewMoveAction){
+                    auto movementAction = CCEaseInOut::create(CCMoveTo::create(DTLayer::transitionTime, newPos), 2);
+                    movementAction->setTag(MOVEMENT_TAG);
+
+                    label->runAction(movementAction);
+                }
+
+                //resize action check
+                if (taggedResizeAction != nullptr){
+                    auto currentResizeActionEase = static_cast<CCEaseInOut*>(taggedResizeAction);
+                    auto currentResizeAction = static_cast<CCResizeWidthTo*>(currentResizeActionEase->getInnerAction());
+
+                    if (currentResizeAction->endWidth != newWidth){
+                        label->stopActionByTag(RESIZE_TAG);
+                    }
+                    else doCreateNewResizeAction = false;
+                }
+
+                if (doCreateNewResizeAction){
+                    auto resizeAction = CCEaseInOut::create(CCResizeWidthTo::create(DTLayer::transitionTime, newWidth), 2);
+                    resizeAction->setTag(RESIZE_TAG);
+
+                    label->runAction(resizeAction);
+                }
             }
 
             for (const auto& [target, callback] : onOrganizationCompleteEvent)
@@ -788,25 +829,6 @@ organizationTask DTLayer::organizeLayoutTask(){
         for (const auto& [label, data] : labelSnapshots)
         {
             labelHolders[label] = data.holders;
-        }
-
-        float heighestHeight = 0;
-        
-        for (const auto& colData : columnSnapshots){
-            colData.column->updateLabelPositions();
-
-            if (heighestHeight < colData.column->tempHeight) heighestHeight = colData.column->tempHeight;
-        }
-
-        organizationResult data{};
-        data.highestColumn = heighestHeight;
-
-        for (const auto& label : allLabels)
-        {
-            auto targetPosition = label->tempPos;
-            auto targetWidth = label->tempWidth - LayoutColumn::borderWidth;
-
-            data.labelData.push_back({label, targetPosition, targetWidth});
         }
 
         std::map<LayoutColumn*, DTLabel*> lastVisitedLabelForColumn{};
@@ -894,6 +916,8 @@ organizationTask DTLayer::organizeLayoutTask(){
                         label->info.layer = highestOptLayer;
                         processedLabels.insert(label);
 
+                        log::info("combo found at {}", highestOptLayer);
+
                         prevLabel = label;
                         continue;
                     }
@@ -902,6 +926,8 @@ organizationTask DTLayer::organizeLayoutTask(){
                     
                     label->info.layer = newLayer;
                     processedLabels.insert(label);
+
+                    log::info("single found at {}", newLayer);
 
                     prevLabel = label;
                 }
@@ -914,6 +940,34 @@ organizationTask DTLayer::organizeLayoutTask(){
 
         for (const auto& colData : columnSnapshots){
             colData.column->refreshAllLabelsLayer();
+        }
+
+        log::info("-----");
+
+        for (const auto& label : allLabels)
+        {
+            log::info("label {} is of layer {}", label->info.labelName, label->info.layer);
+        }
+
+        log::info("-----");
+
+        float heighestHeight = 0;
+        
+        for (const auto& colData : columnSnapshots){
+            colData.column->updateLabelPositions();
+
+            if (heighestHeight < colData.column->tempHeight) heighestHeight = colData.column->tempHeight;
+        }
+
+        organizationResult data{};
+        data.highestColumn = heighestHeight;
+
+        for (const auto& label : allLabels)
+        {
+            auto targetPosition = label->tempPos;
+            auto targetWidth = label->tempWidth - LayoutColumn::borderWidth;
+
+            data.labelData.push_back({label, targetPosition, targetWidth});
         }
 
         return data;

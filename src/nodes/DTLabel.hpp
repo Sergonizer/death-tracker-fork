@@ -54,6 +54,10 @@ class DTLabel : public CCMenu {
         CCScale9Sprite* leftExpandLine;
         CCScale9Sprite* rightExpandLine;
 
+        CCNode* labelTextContainer;
+        SimpleTextArea* labelText;
+        float currentHeight;
+
         float normalBGOpacity = 150;
 
         void toggleExpand(CCObject*);

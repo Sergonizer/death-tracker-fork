@@ -82,6 +82,8 @@ class DTLayer : public Popup<GJGameLevel* const&> {
 
         void fixUpColumnPositions();
 
+        static float transitionTime;
+
     private:
         organizationTask organizeLayoutTask();
         EventListener<organizationTask> organizationListener;

@@ -31,24 +31,46 @@ bool DTLabel::init(const DTLabelInfo& info){
 
     this->setAnchorPoint({0, 1});
 
-    this->setContentHeight(labelTitleHeight);
+    labelTextContainer = CCNode::create();
+    labelTextContainer->setID("text-container");
+    labelTextContainer->setZOrder(1);
+    this->addChild(labelTextContainer);
+
+    labelText = SimpleTextArea::create(info.text, info.font, info.scale);
+    labelText->setID("text");
+    labelText->setAnchorPoint({.5f, 1});
+    labelText->setAlignment(CCTextAlignment::kCCTextAlignmentCenter);
+    labelText->setWrappingMode(WrappingMode::CUTOFF_WRAP);
+    labelText->setWidth(this->getContentWidth());
+    labelTextContainer->addChild(labelText);
+
+    auto textHeight = 0.0f;
+    if (!info.isExpanded) textHeight = 0;
+    else textHeight = labelText->getContentHeight();
+
+    this->setContentHeight(textHeight + labelTitleHeight);
     this->setContentWidth(0);
     this->setPosition({0, 0});
     this->ignoreAnchorPointForPosition(false);
 
+    labelTextContainer->setScale(info.isExpanded ? 1 : 0);
+
     bg = CCScale9Sprite::create("GJ_button_05.png");
+    bg->setID("text-bg");
     bg->setOpacity(normalBGOpacity);
     bg->setScale(.3f);
     bg->setAnchorPoint({0, 1});
     this->addChild(bg);
     
     labelTitleBG = CCScale9Sprite::create("GJ_button_05.png");
+    labelTitleBG->setID("title-bg");
     labelTitleBG->setScale(.3f);
     labelTitleBG->setAnchorPoint({0, 1});
     labelTitleBG->setContentHeight(labelTitleHeight / labelTitleBG->getScale());
     this->addChild(labelTitleBG);
 
     labelTitleArea = SimpleTextArea::create(info.labelName, "bigFont.fnt", .35f);
+    labelTitleArea->setID("title-text");
     labelTitleArea->setAnchorPoint({0, 1});
     labelTitleArea->setAlignment(CCTextAlignment::kCCTextAlignmentLeft);
     labelTitleArea->setPositionX(15);
@@ -59,6 +81,7 @@ bool DTLabel::init(const DTLabelInfo& info){
     float expandLineWidth = 3;
 
     leftExpandLine = CCScale9Sprite::create("pixel.png");
+    leftExpandLine->setID("expand-line-left");
     leftExpandLine->setAnchorPoint({0, 1});
     leftExpandLine->setContentWidth(expandLineWidth);
     leftExpandLine->setContentHeight(labelTitleHeight);
@@ -66,6 +89,7 @@ bool DTLabel::init(const DTLabelInfo& info){
     this->addChild(leftExpandLine);
 
     rightExpandLine = CCScale9Sprite::create("pixel.png");
+    rightExpandLine->setID("expand-line-right");
     rightExpandLine->setAnchorPoint({1, 1});
     rightExpandLine->setContentWidth(expandLineWidth);
     rightExpandLine->setContentHeight(labelTitleHeight);
@@ -73,6 +97,7 @@ bool DTLabel::init(const DTLabelInfo& info){
     this->addChild(rightExpandLine);
 
     menu = CCMenu::create();
+    menu->setID("btn-menu");
     menu->setPosition({0,0});
     this->addChild(menu);
 
@@ -83,17 +108,9 @@ bool DTLabel::init(const DTLabelInfo& info){
         this,
         menu_selector(DTLabel::toggleExpand)
     );
+    expandBtn->setID("expand-btn");
     expandBtn->setPosition({5.0f, -labelTitleHeight / 2});
     menu->addChild(expandBtn);
-
-    if (info.isExpanded){
-        this->setContentHeight(this->getContentHeight() + 100);
-
-        expandBtn->setRotation(90);
-        expandBtn->setPosition(ccp(8, expandBtn->getPositionY()));
-
-        bg->setContentHeight(this->getContentHeight() / bg->getScale());
-    }
 
     this->scheduleUpdate();
 
@@ -108,6 +125,28 @@ bool DTLabel::init(const DTLabelInfo& info){
 }
 
 void DTLabel::update(float dt){
+
+    labelTextContainer->setPosition(bg->getPosition() + ccp(this->getContentWidth() / 2, -labelTitleHeight));
+    labelText->setWidth(this->getContentWidth());
+
+    auto textHeight = 0.0f;
+    if (!info.isExpanded) textHeight = 0;
+    else textHeight = labelText->getContentHeight();
+
+    float targetHeight = textHeight + labelTitleHeight;
+    bool doUpdateLayout = false;
+
+    if (targetHeight != this->getContentHeight()) doUpdateLayout = true;
+
+    this->setContentHeight(targetHeight);
+
+    if (doUpdateLayout) {
+        DTLayer::get()->organizeLayout();
+
+        bg->stopAllActions();
+        bg->runAction(CCEaseInOut::create(CCResizeHeightTo::create(DTLayer::transitionTime, targetHeight / bg->getScale()), 2));
+    }
+
     labelTitleBG->setContentWidth(this->getContentWidth() / labelTitleBG->getScale());
     bg->setContentWidth(this->getContentWidth() / bg->getScale());
     labelTitleBG->setPositionY(this->getContentHeight());
@@ -139,16 +178,13 @@ void DTLabel::moveUpLayer(){
 
 void DTLabel::toggleExpand(CCObject*){
     info.isExpanded = !info.isExpanded;
-    this->setContentHeight(this->getContentHeight() + 100 * (info.isExpanded ? 1 : -1));
 
     expandBtn->stopAllActions();
-    expandBtn->runAction(CCEaseInOut::create(CCRotateTo::create(.5f, info.isExpanded ? 90 : 0), 2));
-    expandBtn->runAction(CCEaseInOut::create(CCMoveTo::create(.5f, info.isExpanded ? ccp(8, expandBtn->getPositionY()) : ccp(5, expandBtn->getPositionY())), 2));
+    expandBtn->runAction(CCEaseInOut::create(CCRotateTo::create(DTLayer::transitionTime, info.isExpanded ? 90 : 0), 2));
+    expandBtn->runAction(CCEaseInOut::create(CCMoveTo::create(DTLayer::transitionTime, info.isExpanded ? ccp(8, expandBtn->getPositionY()) : ccp(5, expandBtn->getPositionY())), 2));
 
-    bg->stopAllActions();
-    bg->runAction(CCEaseInOut::create(CCResizeHeightTo::create(.5f, this->getContentHeight() / bg->getScale()), 2));
-
-    DTLayer::get()->organizeLayout();
+    labelTextContainer->stopAllActions();
+    labelTextContainer->runAction(CCEaseInOut::create(CCScaleTo::create(DTLayer::transitionTime, info.isExpanded ? 1 : 0), 2));
 }
 
 void DTLabel::registerWithTouchDispatcher() {
@@ -302,7 +338,7 @@ void DTLabel::onMoveBegan(){
 
     removeFromColumns();
 
-    this->runAction(CCEaseInOut::create(CCResizeWidthTo::create(.5f, DTColumnInfo::minWidth), 2));
+    this->runAction(CCEaseInOut::create(CCResizeWidthTo::create(DTLayer::transitionTime, DTColumnInfo::minWidth), 2));
     if (info.isExpanded) toggleExpand(nullptr);
     else DTLayer::get()->organizeLayout();
 }
