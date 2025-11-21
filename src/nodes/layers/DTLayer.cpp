@@ -824,6 +824,8 @@ organizationTask DTLayer::organizeLayoutTask(){
                 label->tempPos = ccp(std::numeric_limits<float>::max(), std::numeric_limits<float>::max());
                 label->tempWidth = 0;
             }
+
+            colData.column->tempHeight = 0;
         }
 
         for (const auto& [label, data] : labelSnapshots)
@@ -834,6 +836,35 @@ organizationTask DTLayer::organizeLayoutTask(){
         std::map<LayoutColumn*, DTLabel*> lastVisitedLabelForColumn{};
         std::map<DTLabel*, std::map<LayoutColumn*, std::optional<int>>> labelAwaitingColumnValues{};
         std::set<DTLabel*> processedLabels{};
+
+        auto UpdateTempPos = [](LayoutColumn* column, DTLabel* label, DTLabel* prevLabel){
+            auto startPosInLabelSpace = label->getParent()->convertToNodeSpace(column->convertToWorldSpace(column->bgSpr->getPosition()));
+
+            float prevHeight = startPosInLabelSpace.y;
+
+            if (label->info.layer != 0 && prevLabel != nullptr) prevHeight = prevLabel->tempPos.y - prevLabel->getContentHeight();
+
+            if (prevHeight < label->tempPos.y) label->tempPos.y = prevHeight;
+
+            float newX = startPosInLabelSpace.x;
+
+            if (newX < label->tempPos.x) label->tempPos.x = newX;
+
+            for (const auto& labelColumn : label->getHolders())
+            {
+                auto height = std::abs(label->tempPos.y) + label->getContentHeight() / 2 + labelColumn->topHeight + LayoutColumn::addNewBtnOffset * 2;
+
+                if (labelColumn->tempHeight < height) labelColumn->tempHeight = height;
+            }
+        };
+
+        auto UpdateTempWidth = [](DTLabel* label){
+            label->tempWidth = 0;
+            for (const auto& labelColumn : label->getHolders())
+            {
+                label->tempWidth += labelColumn->getContentWidth();
+            }
+        };
 
         while (true){
             for (const auto& colData : columnSnapshots)
@@ -852,12 +883,14 @@ organizationTask DTLayer::organizeLayoutTask(){
                         foundLastLabel = true;
                     }
                     else if (label != lastVisitedLabelForColumn[column] && !foundLastLabel){
+                        UpdateTempPos(column, label, prevLabel);
                         prevLabel = label;
                         continue;
                     }
                     else foundLastLabel  = true;
 
                     if (processedLabels.contains(label)){
+                        UpdateTempPos(column, label, prevLabel);
                         prevLabel = label;
                         continue;
                     }
@@ -895,6 +928,8 @@ organizationTask DTLayer::organizeLayoutTask(){
                         int highestOptLayer = 0;
                         bool wereAllLayersFound = true;
 
+                        UpdateTempPos(column, label, prevLabel);
+
                         // log::info("checking conclusion..");
 
                         for (const auto& [column, optLayer] : labelAwaitingColumnValues[label]){
@@ -915,8 +950,10 @@ organizationTask DTLayer::organizeLayoutTask(){
 
                         label->info.layer = highestOptLayer;
                         processedLabels.insert(label);
+                        
+                        UpdateTempWidth(label);
 
-                        log::info("combo found at {}", highestOptLayer);
+                        // log::info("combo found at {}", highestOptLayer);
 
                         prevLabel = label;
                         continue;
@@ -927,7 +964,10 @@ organizationTask DTLayer::organizeLayoutTask(){
                     label->info.layer = newLayer;
                     processedLabels.insert(label);
 
-                    log::info("single found at {}", newLayer);
+                    UpdateTempPos(column, label, prevLabel);
+                    UpdateTempWidth(label);
+
+                    // log::info("single found at {}", newLayer);
 
                     prevLabel = label;
                 }
@@ -942,20 +982,9 @@ organizationTask DTLayer::organizeLayoutTask(){
             colData.column->refreshAllLabelsLayer();
         }
 
-        log::info("-----");
-
-        for (const auto& label : allLabels)
-        {
-            log::info("label {} is of layer {}", label->info.labelName, label->info.layer);
-        }
-
-        log::info("-----");
-
         float heighestHeight = 0;
         
         for (const auto& colData : columnSnapshots){
-            colData.column->updateLabelPositions();
-
             if (heighestHeight < colData.column->tempHeight) heighestHeight = colData.column->tempHeight;
         }
 

@@ -16,8 +16,6 @@ class LayoutColumn : public CCMenu {
         void addLabel(DTLabel* label);
         void removeLabel(DTLabel* label);
 
-        void updateLabelPositions();
-
         std::map<int, DTLabel*> labels{};
 
         void updateLabelPosition(DTLabel* label);
@@ -34,18 +32,19 @@ class LayoutColumn : public CCMenu {
         void destroyColumnAndCleanup();
 
         void refreshAllLabelsLayer();
+        CCScale9Sprite* bgSpr;
+
+        float topHeight;
         
     private:
         bool init(const DTColumnInfo& info, float topHeight, float minHeight);
 
         float minHeight;
-        
-        float topHeight;
 
         float bgOpacity = 125;
 
         CCScale9Sprite* topSpr;
-        CCScale9Sprite* bgSpr;
+        
 
         CCScale9Sprite* topBorder1;
         CCScale9Sprite* topBorder2;
