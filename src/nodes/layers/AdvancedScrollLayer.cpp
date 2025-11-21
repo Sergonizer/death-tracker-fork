@@ -152,7 +152,7 @@ void AdvancedScrollLayer::ccTouchMoved(CCTouch* touch, CCEvent*){
     if (!this->boundingBox().containsPoint(this->getParent()->convertToNodeSpace(touch->getLocation()))) return;
 
     CCPoint curr = this->convertToNodeSpace(touch->getLocationInView());
-    CCPoint prev = this->convertToNodeSpace(touch->getPreviousLocationInView());
+    CCPoint prev = this->convertToNodeSpace(touch->m_prevPoint);
     CCPoint delta = curr - prev;
     
     moveBy(delta * scrollSense * ccp(1, -1) / zoomParent->getScale());

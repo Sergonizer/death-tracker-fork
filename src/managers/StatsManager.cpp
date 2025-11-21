@@ -951,7 +951,7 @@ Result<> StatsManager::convertV2SaveToV3(const std::string& levelKey){
     }
     v3Meta.RunsToSave = runsSet;
     v3Meta.trackAnyRun = trackAnyRun;
-    std::set<gd::string> linkedLevelsSet(stats.LinkedLevels.begin(), stats.LinkedLevels.end());
+    std::set<std::string> linkedLevelsSet(stats.LinkedLevels.begin(), stats.LinkedLevels.end());
     v3Meta.LinkedLevels = linkedLevelsSet;
     v3Meta.levelName = stats.levelName;
     v3Meta.attempts = stats.attempts;
