@@ -13,12 +13,12 @@ $execute {
         DTLayoutV3 v3Layout{};
 
         v3Layout.columns.push_back(DTColumnInfo{
-            .currentWidth = 205,
-            .orderPos = 0
+            .orderPos = 0,
+            .currentWidth = 205
         });
         v3Layout.columns.push_back(DTColumnInfo{
-            .currentWidth = 205,
-            .orderPos = 1
+            .orderPos = 1,
+            .currentWidth = 205
         });
         
         std::map<V2LabelLayout*, std::pair<bool, bool>> labelsOrganized{};

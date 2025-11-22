@@ -36,6 +36,8 @@ class DTLabel : public CCMenu {
         };
 
         std::multiset<LayoutColumn*, ColumnComperator> getHolders();
+
+        float textCornerOffset = 5;
         
     private:
         bool init(const DTLabelInfo& info);

@@ -41,12 +41,12 @@ bool DTLabel::init(const DTLabelInfo& info){
     labelText->setAnchorPoint({.5f, 1});
     labelText->setAlignment(CCTextAlignment::kCCTextAlignmentCenter);
     labelText->setWrappingMode(WrappingMode::CUTOFF_WRAP);
-    labelText->setWidth(this->getContentWidth());
+    labelText->setWidth(this->getContentWidth() - textCornerOffset);
     labelTextContainer->addChild(labelText);
 
     auto textHeight = 0.0f;
     if (!info.isExpanded) textHeight = 0;
-    else textHeight = labelText->getContentHeight();
+    else textHeight = labelText->getContentHeight() + textCornerOffset;
 
     this->setContentHeight(textHeight + labelTitleHeight);
     this->setContentWidth(0);
@@ -127,11 +127,11 @@ bool DTLabel::init(const DTLabelInfo& info){
 void DTLabel::update(float dt){
 
     labelTextContainer->setPosition(bg->getPosition() + ccp(this->getContentWidth() / 2, -labelTitleHeight));
-    labelText->setWidth(this->getContentWidth());
+    labelText->setWidth(this->getContentWidth() - textCornerOffset);
 
     auto textHeight = 0.0f;
     if (!info.isExpanded) textHeight = 0;
-    else textHeight = labelText->getContentHeight();
+    else textHeight = labelText->getContentHeight() + textCornerOffset;
 
     float targetHeight = textHeight + labelTitleHeight;
     bool doUpdateLayout = false;

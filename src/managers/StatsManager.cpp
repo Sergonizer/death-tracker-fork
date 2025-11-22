@@ -187,6 +187,8 @@ Result<> StatsManager::setMetadata(const LevelMetadeta& stats, const std::string
         ? matjson::NO_INDENTATION
         : 4;
 
+    log::info("attempted path: {}", levelSaveFilePath.string());
+
     auto jsonStr = matjson::Value(stats).dump(indentation);
     GEODE_UNWRAP(file::writeString(levelSaveFilePath, jsonStr));
 
@@ -247,10 +249,15 @@ Result<> StatsManager::setGeneral(const GeneralData& stats, const std::string& l
 void StatsManager::createFilesIfNeeded(const std::string& levelKey){
     auto levelSaveFilePath = m_savesFolderPath / levelKey;
 
+    log::info("attempting to create level folder at {}", levelSaveFilePath.string());
+
     auto _ = geode::utils::file::createDirectory(levelSaveFilePath);
-    createFile(levelSaveFilePath / METADATA_FILE_NAME);
-    createFile(levelSaveFilePath / FROM0_FILE_NAME);
-    _ = geode::utils::file::createDirectory(levelSaveFilePath / SESSIONS_DIR_NAME);
+    if (_.isErr())
+        log::error("failed to create level folder: {}", _.unwrapErr());
+
+    createFile((levelSaveFilePath / METADATA_FILE_NAME));
+    createFile((levelSaveFilePath / FROM0_FILE_NAME));
+    _ = geode::utils::file::createDirectory((levelSaveFilePath / SESSIONS_DIR_NAME));
 }
 
 void StatsManager::createFile(const std::filesystem::path& path){
@@ -280,7 +287,7 @@ void StatsManager::setCurrentLevel(GJGameLevel* const& level){
         currentFrom0 = GeneralData{};
         currentSession = Session{};
         currentMetadata = LevelMetadeta{};
-        log::error("Failed to apply current level stats as main stats");
+        log::error("Failed to apply current level stats as main stats ({})", metadataRes.unwrapErr());
         return;
     }
 

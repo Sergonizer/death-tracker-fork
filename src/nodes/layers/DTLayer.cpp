@@ -81,7 +81,7 @@ bool DTLayer::setup(GJGameLevel* const& level) {
     //scrollLayer->drawGrid(50, .5f, ccColor4B{ 143, 143, 143, 255 });
     scrollLayer->setPosition(m_size / 2 - scrollLayer->getContentSize() / 2 + ccp(0, height / 4));
     scrollLayer->setZOrder(2);
-    scrollLayer->maxZoom = 0.1f;
+    scrollLayer->maxZoom = 0.05f;
     m_mainLayer->addChild(scrollLayer);
 
     std::vector<CCPoint> points{
