@@ -7,6 +7,7 @@
 #include <nodes/SessionSelector.hpp>
 #include <nodes/LayoutColumn.hpp>
 #include <types/DTTypes.hpp>
+#include <nodes/layers/LayoutOptionsLayer.hpp>
 
 using namespace geode::prelude;
 
@@ -84,7 +85,13 @@ class DTLayer : public Popup<GJGameLevel* const&> {
 
         static float transitionTime;
 
+        void setOptionsLayerTo(DTLabel* label);
+        void setOptionsLayerTo(LayoutColumn* column);
+        void closeOptionsLayer();
+
     private:
+        
+        LayoutOptionsLayer* layoutOptionsLayer;
         organizationTask organizeLayoutTask();
         EventListener<organizationTask> organizationListener;
         

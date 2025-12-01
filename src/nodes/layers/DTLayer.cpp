@@ -19,7 +19,7 @@ DTLayer* DTLayer::create(GJGameLevel* const& Level) {
     auto ret = new DTLayer();
     auto winSize = CCDirector::sharedDirector()->getWinSize();
     // @geode-ignore(unknown-resource)
-    if (ret && ret->initAnchored(winSize.width - 125, winSize.height - 30, Level, "geode.loader/GE_square01.png")) {
+    if (ret && ret->initAnchored(winSize.width - 150, winSize.height - 30, Level, "geode.loader/GE_square01.png")) {
         ret->autorelease();
         return ret;
     }
@@ -210,6 +210,10 @@ bool DTLayer::setup(GJGameLevel* const& level) {
 
     bottomMenu->updateLayout();
 
+    layoutOptionsLayer = LayoutOptionsLayer::create({150, m_size.height});
+    layoutOptionsLayer->setPosition({winSize.width, (winSize.height - layoutOptionsLayer->getContentHeight()) / 2});
+    this->addChild(layoutOptionsLayer);
+// move by 84.5f to the left
     return true;
 }
 
@@ -1197,3 +1201,19 @@ void DTLayer::saveCurrentLayout(){
     
     Save::setLayout(layout);
 }
+
+void DTLayer::setOptionsLayerTo(DTLabel* label){
+    if (layoutOptionsLayer == nullptr) return;
+    if (!layoutOptionsLayer->isEditingNode()){
+        m_mainLayer->runAction(CCEaseBackOut::create(CCMoveBy::create(0.5f, ccp(-85.5f, 0))));
+        layoutOptionsLayer->runAction(CCEaseBackOut::create(CCMoveBy::create(0.5f, ccp(-154, 0))));
+    }
+}
+void DTLayer::setOptionsLayerTo(LayoutColumn* column){
+    if (layoutOptionsLayer == nullptr) return;
+}
+void DTLayer::closeOptionsLayer(){
+
+}
+
+

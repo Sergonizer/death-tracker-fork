@@ -329,6 +329,7 @@ void DTLabel::ccTouchMoved(CCTouch* touch, CCEvent*){
 
 void DTLabel::onSettings(){
     // log::info("opened settings for label {}", name);
+    DTLayer::get()->setOptionsLayerTo(this);
 }
 
 void DTLabel::onMoveBegan(){
