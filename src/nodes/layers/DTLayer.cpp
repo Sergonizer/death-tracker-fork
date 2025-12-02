@@ -1208,12 +1208,20 @@ void DTLayer::setOptionsLayerTo(DTLabel* label){
         m_mainLayer->runAction(CCEaseBackOut::create(CCMoveBy::create(0.5f, ccp(-85.5f, 0))));
         layoutOptionsLayer->runAction(CCEaseBackOut::create(CCMoveBy::create(0.5f, ccp(-154, 0))));
     }
+
+    layoutOptionsLayer->setEditedNodeTo(label);
 }
 void DTLayer::setOptionsLayerTo(LayoutColumn* column){
     if (layoutOptionsLayer == nullptr) return;
+
+    layoutOptionsLayer->setEditedNodeTo(column);
 }
 void DTLayer::closeOptionsLayer(){
+    if (layoutOptionsLayer == nullptr) return;
+    if (layoutOptionsLayer->isEditingNode()){
+        m_mainLayer->runAction(CCEaseBackIn::create(CCMoveBy::create(0.5f, ccp(85.5f, 0))));
+        layoutOptionsLayer->runAction(CCEaseBackIn::create(CCMoveBy::create(0.5f, ccp(154, 0))));
+    }
 
+    layoutOptionsLayer->close();
 }
-
-

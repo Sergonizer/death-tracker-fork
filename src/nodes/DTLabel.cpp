@@ -114,10 +114,7 @@ bool DTLabel::init(const DTLabelInfo& info){
 
     this->scheduleUpdate();
 
-    bg->setColor({info.color.r, info.color.g, info.color.b});
-    bg->setOpacity(normalBGOpacity * (info.color.a / 255));
-    labelTitleBG->setColor({info.color.r, info.color.g, info.color.b});
-    labelTitleBG->setOpacity(info.color.a);
+    setLabelColor(info.labelColor);
 
     labelTitleArea->setAlignment(info.horizontalAlignment);
 
@@ -413,4 +410,44 @@ void DTLabel::updateInfoWithColumnData(){
 
 std::multiset<LayoutColumn*, DTLabel::ColumnComperator> DTLabel::getHolders(){
     return holders;
+}
+
+void DTLabel::setFontSize(float newSize){
+    newSize = std::clamp(newSize, DTLabelInfo::MIN_MAX_SCALE.x, DTLabelInfo::MIN_MAX_SCALE.y);
+    info.scale = newSize;
+
+    labelText->setScale(newSize);
+}
+
+void DTLabel::setLabelName(const std::string& newName){
+    info.labelName = newName;
+
+    labelTitleArea->setText(newName);
+}
+
+void DTLabel::setLabelText(const std::string& newText){
+    info.text = newText;
+
+    labelText->setText(newText);
+}
+
+void DTLabel::setLabelColor(const ccColor4B& newColor){
+    info.labelColor = newColor;
+
+    bg->setColor({info.labelColor.r, info.labelColor.g, info.labelColor.b});
+    bg->setOpacity(normalBGOpacity * (info.labelColor.a / 255));
+    labelTitleBG->setColor({info.labelColor.r, info.labelColor.g, info.labelColor.b});
+    labelTitleBG->setOpacity(info.labelColor.a);
+}
+
+void DTLabel::setTextColor(const ccColor4B& newColor){
+    info.textColor = newColor;
+
+    labelText->setColor(newColor);
+}
+
+void DTLabel::setTextAlignment(CCTextAlignment alignment){
+    info.horizontalAlignment = alignment;
+
+    labelText->setAlignment(alignment);
 }

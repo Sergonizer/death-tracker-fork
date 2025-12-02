@@ -3,8 +3,17 @@ using namespace geode::prelude;
 #include "utils/Save.hpp"
 #include "managers/StatsManager.hpp"
 #include "utils/Settings.hpp"
+#include <geode.custom-keybinds/include/Keybinds.hpp>
+using namespace keybinds;
 
 $execute {
+    BindManager::get()->registerBindable({ "enter-new-line"_spr, "Enter new line",
+        "Enter a new line when editing a labels text",
+        { 
+            Keybind::create(KEY_Enter, Modifier::None) 
+        }
+    });
+
     auto _ = file::createDirectory(Mod::get()->getSaveDir() / "levels");
 
     auto oldLayout = Save::getOldLayout();
@@ -54,7 +63,8 @@ $execute {
             DTLabelInfo labelInfo{};
 
             labelInfo.layer = label->line;
-            labelInfo.color = label->color;
+            labelInfo.textColor = label->color;
+            labelInfo.labelColor = label->color;
             labelInfo.font = StatsManager::getFont(label->font);
             labelInfo.labelName = label->labelName;
             labelInfo.scale = label->fontSize;

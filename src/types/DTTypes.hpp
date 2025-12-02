@@ -160,9 +160,12 @@ struct DTLabelInfo_s {
     std::string text = "new label";
     std::string font = "bigFont.fnt";
     CCTextAlignment horizontalAlignment = CCTextAlignment::kCCTextAlignmentCenter;
-    ccColor4B color = {255, 255, 255, 255};
+    ccColor4B labelColor = {255, 255, 255, 255};
+    ccColor4B textColor = {255, 255, 255, 255};
     float scale = 1;
     bool isExpanded;
+
+    static inline const CCPoint MIN_MAX_SCALE = ccp(-2, 2);
 };
 typedef struct DTLabelInfo_s DTLabelInfo;
 
@@ -179,7 +182,8 @@ struct matjson::Serialize<DTLabelInfo> {
         GEODE_UNWRAP_INTO(info.font, value["font"].asString());
         GEODE_UNWRAP_INTO(auto horizontalAlignment, value["horizontalAlignment"].asInt());
         info.horizontalAlignment = static_cast<CCTextAlignment>(horizontalAlignment);
-        GEODE_UNWRAP_INTO(info.color, value["color"].as<ccColor4B>());
+        GEODE_UNWRAP_INTO(info.labelColor, value["labelColor"].as<ccColor4B>());
+        GEODE_UNWRAP_INTO(info.textColor, value["color"].as<ccColor4B>());
         
         GEODE_UNWRAP_INTO(info.scale, value["scale"].asDouble());
         GEODE_UNWRAP_INTO(info.isExpanded, value["isExpanded"].asBool());
@@ -197,7 +201,8 @@ struct matjson::Serialize<DTLabelInfo> {
             { "text", value.text },
             { "font", value.font },
             { "horizontalAlignment", static_cast<int>(value.horizontalAlignment) },
-            { "color", value.color },
+            { "color", value.textColor },
+            { "labelColor", value.labelColor },
 
             { "scale", value.scale },
             { "isExpanded", value.isExpanded },

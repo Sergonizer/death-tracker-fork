@@ -6,7 +6,7 @@
 
 using namespace geode::prelude;
 
-class LayoutOptionsLayer : public CCLayer {
+class LayoutOptionsLayer : public CCLayer, public geode::ColorPickPopupDelegate {
     public:
         static LayoutOptionsLayer* create(const CCSize& size);
 
@@ -24,4 +24,24 @@ class LayoutOptionsLayer : public CCLayer {
 
         std::optional<DTLabel*> editedLabel = std::nullopt;
         std::optional<LayoutColumn*> editedColumn = std::nullopt;
+
+        CCMenu* labelSettingsNode = nullptr;
+        CCMenu* columnSettingsNode = nullptr;
+
+        TextInput* labelNameInput;
+        TextInput* labelTextInput;
+        TextInput* fontSizeInput;
+
+        void onTextColorBtnClicked(CCObject*);
+        void onLabelColorBtnClicked(CCObject*);
+
+        void updateColor(cocos2d::ccColor4B const& color);
+
+        CCSprite* textColorBtnSprite;
+        CCSprite* labelColorBtnSprite;
+
+        std::function<void(cocos2d::ccColor4B const&)> colorChangeFunc = NULL;
+
+        void onAlignmentChanged(CCObject* sender);
+        CCMenu* alignmentMenu;
 };

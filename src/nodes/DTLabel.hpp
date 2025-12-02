@@ -37,6 +37,13 @@ class DTLabel : public CCMenu {
 
         std::multiset<LayoutColumn*, ColumnComperator> getHolders();
 
+        void setLabelName(const std::string& newName);
+        void setLabelText(const std::string& newText);
+        void setFontSize(float newSize);
+        void setLabelColor(const ccColor4B& newColor);
+        void setTextColor(const ccColor4B& newColor);
+        void setTextAlignment(CCTextAlignment alignment);
+
         float textCornerOffset = 5;
         
     private:
