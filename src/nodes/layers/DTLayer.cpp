@@ -204,6 +204,8 @@ bool DTLayer::setup(GJGameLevel* const& level) {
     this->setKeypadEnabled(true);
     this->setTouchEnabled(true);
 
+    populateSpecialStrings();
+
     this->organizeLayout();
 
     this->scheduleUpdate();
@@ -299,6 +301,67 @@ void DTLayer::graphBtnClicked(CCObject*){
     // auto graph = DTGraphLayer::create(this);
     // graph->setZOrder(100);
     // this->addChild(graph);
+}
+
+void DTLayer::addSpecialString(const std::shared_ptr<SpecialKey>& key){
+    key->setUpdateStartedCallback(std::bind(&DTLayer::specialKeyUpdateStarted, this, std::placeholders::_1));
+    key->setUpdateCompletedCallback(std::bind(&DTLayer::specialKeyUpdateCompleted, this, std::placeholders::_1));
+    specialStrings.emplace(key->getKey(), key);
+    key->updateContent();
+}
+
+void DTLayer::populateSpecialStrings(){
+    auto from0Key = std::make_shared<SpecialKey>("f0");
+    from0Key->setUpdateFunction(UpdateTask::run([&](auto progress, auto hasBeenCancelled) -> UpdateTask::Result {
+        auto& myStats = m_MyLevelStats.unwrap();
+
+        Deaths sharedDeaths = myStats.from0.deaths;
+        NewBests sharedNBs = myStats.from0.newBests;
+
+        for (const auto& levelData : linkedLevelsData)
+        {
+            sharedDeaths.insert(levelData.from0.deaths.begin(), levelData.from0.deaths.end());
+            sharedNBs.insert(levelData.from0.newBests.begin(), levelData.from0.newBests.end());
+        }
+
+        std::string out;
+
+        if (!createDeathsString(sharedDeaths, Save::getFrom0Customazations(), out, &sharedNBs, "{nbc}")) return Err("Failed to create from0 deaths string");
+
+        return Ok(out);
+    }, "Creating from0 deaths string"));
+    addSpecialString(from0Key);
+
+    auto runsKey = std::make_shared<SpecialKey>("runs");
+    runsKey->setUpdateFunction(UpdateTask::run([&](auto progress, auto hasBeenCancelled) -> UpdateTask::Result {
+        auto& myStats = m_MyLevelStats.unwrap();
+
+        Deaths sharedRuns = myStats.from0.runs;
+
+        for (const auto& levelData : linkedLevelsData)
+        {
+            sharedRuns.insert(levelData.from0.runs.begin(), levelData.from0.runs.end());
+        }
+
+        std::string out;
+
+        if (!createDeathsString(sharedRuns, Save::getRunsCustomazations(), out)) return Err("Failed to create run deaths string");
+
+        return Ok(out);
+    }));
+    addSpecialString(runsKey);
+
+    auto nlKey = std::make_shared<SpecialKey>("nl");
+    nlKey->setUpdateFunction(UpdateTask::immediate(Ok("\n")));
+    addSpecialString(nlKey);
+    
+    auto attemptsKey = std::make_shared<SpecialKey>("att");
+    attemptsKey->setUpdateFunction(UpdateTask::immediate(Ok(std::to_string(m_Level->m_attempts.value()))));
+    addSpecialString(attemptsKey);
+
+    auto levelNameKey = std::make_shared<SpecialKey>("lvln");
+    levelNameKey->setUpdateFunction(UpdateTask::immediate(Ok(m_Level->m_levelName)));
+    addSpecialString(levelNameKey);
 }
 
 void DTLayer::UpdateSharedStats(){
@@ -449,36 +512,35 @@ AdvancedScrollLayer* DTLayer::getScrollLayer(){
 void DTLayer::UpdateDeathRelatedStrings(){
     if (m_MyLevelStats.isErr()) return;
 
-    auto& myStats = m_MyLevelStats.unwrap();
+    // auto& myStats = m_MyLevelStats.unwrap();
 
-    Deaths sharedDeaths = myStats.from0.deaths;
-    NewBests sharedNBs = myStats.from0.newBests;
-    Deaths sharedRuns = myStats.from0.runs;
+    // Deaths sharedDeaths = myStats.from0.deaths;
+    // NewBests sharedNBs = myStats.from0.newBests;
+    // Deaths sharedRuns = myStats.from0.runs;
 
-    for (const auto& levelData : linkedLevelsData)
-    {
-        sharedDeaths.insert(levelData.from0.deaths.begin(), levelData.from0.deaths.end());
-        sharedNBs.insert(levelData.from0.newBests.begin(), levelData.from0.newBests.end());
-        sharedRuns.insert(levelData.from0.runs.begin(), levelData.from0.runs.end());
-    }
-    
+    // for (const auto& levelData : linkedLevelsData)
+    // {
+    //     sharedDeaths.insert(levelData.from0.deaths.begin(), levelData.from0.deaths.end());
+    //     sharedNBs.insert(levelData.from0.newBests.begin(), levelData.from0.newBests.end());
+    //     sharedRuns.insert(levelData.from0.runs.begin(), levelData.from0.runs.end());
+    // }
 
-    createDeathsString(myStats.from0.deaths, Save::getFrom0Customazations(), specialStrings["totalLocalDeaths"], &myStats.from0.newBests, "{nbc}");
-    createDeathsString(sharedDeaths, Save::getFrom0Customazations(), specialStrings["totalSharedDeaths"], &sharedNBs, "{nbc}");
+    // createDeathsString(myStats.from0.deaths, Save::getFrom0Customazations(), specialStrings["totalLocalDeaths"], &myStats.from0.newBests, "{nbc}");
+    // createDeathsString(sharedDeaths, Save::getFrom0Customazations(), specialStrings["totalSharedDeaths"], &sharedNBs, "{nbc}");
 
-    createDeathsString(myStats.from0.runs, Save::getRunsCustomazations(), specialStrings["totalLocalRuns"]);
-    createDeathsString(sharedRuns, Save::getRunsCustomazations(), specialStrings["totalSharedRuns"]);
+    // createDeathsString(myStats.from0.runs, Save::getRunsCustomazations(), specialStrings["totalLocalRuns"]);
+    // createDeathsString(sharedRuns, Save::getRunsCustomazations(), specialStrings["totalSharedRuns"]);
 
-    if (currentSessionInfo != std::nullopt){
-        auto& sessionObj = currentSessionInfo.value();
+    // if (currentSessionInfo != std::nullopt){
+    //     auto& sessionObj = currentSessionInfo.value();
 
-        createDeathsString(sessionObj.deaths, Save::getSessionF0Customazations(), specialStrings["totalSessionDeaths"], &sessionObj.newBests, "{sbc}");
-        createDeathsString(sessionObj.runs, Save::getSessionRunCustomazations(), specialStrings["totalSessionRuns"]);
-    }
-    else{
-        specialStrings["totalSessionDeaths"] = "No Deaths Found!";
-        specialStrings["totalSessionRuns"] = "No Deaths Found!";
-    }
+    //     createDeathsString(sessionObj.deaths, Save::getSessionF0Customazations(), specialStrings["totalSessionDeaths"], &sessionObj.newBests, "{sbc}");
+    //     createDeathsString(sessionObj.runs, Save::getSessionRunCustomazations(), specialStrings["totalSessionRuns"]);
+    // }
+    // else{
+    //     specialStrings["totalSessionDeaths"] = "No Deaths Found!";
+    //     specialStrings["totalSessionRuns"] = "No Deaths Found!";
+    // }
 }
 
 bool DTLayer::createDeathsString(const Deaths& deaths, const stringCustomazations& custom, std::string& out, NewBests* const newBests, const std::string& newBestColoring){
@@ -547,7 +609,9 @@ bool DTLayer::createDeathsString(const Deaths& deaths, const stringCustomazation
             std::to_string(amount)
         );
 
-        out += fmt::format("{}{}{}{}", nbColor, format, nbDeColor, custom.seperator);
+        //old coloring
+        //out += fmt::format("{}{}{}{}", nbColor, format, nbDeColor, custom.seperator);
+        out += fmt::format("{}{}", format, custom.seperator);
     }
 
     if (out == "")
@@ -1200,6 +1264,40 @@ void DTLayer::saveCurrentLayout(){
     // log::info("saving {} columns and {} labels", layout.columns.size(), layout.labels.size());
     
     Save::setLayout(layout);
+}
+
+void DTLayer::specialKeyUpdateStarted(SpecialKey* key){
+    std::set<DTLabel*> allLabels{};
+
+    // log::info("special key update started for key {}", key->getKey());
+
+    for (const auto& column : columns)
+    {
+        for (const auto& [layer, label] : column->labels)
+        {
+            if (allLabels.contains(label)) continue;
+            allLabels.insert(label);
+
+            label->setLoading(key);
+        }
+    }
+}
+
+void DTLayer::specialKeyUpdateCompleted(SpecialKey* key){
+    std::set<DTLabel*> allLabels{};
+
+    // log::info("special key update completed for key {}", key->getKey());
+
+    for (const auto& column : columns)
+    {
+        for (const auto& [layer, label] : column->labels)
+        {
+            if (allLabels.contains(label)) continue;
+            allLabels.insert(label);
+
+            label->completeLoading(key);
+        }
+    }
 }
 
 void DTLayer::setOptionsLayerTo(DTLabel* label){

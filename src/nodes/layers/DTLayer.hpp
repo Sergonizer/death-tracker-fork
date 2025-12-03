@@ -7,6 +7,7 @@
 #include <nodes/SessionSelector.hpp>
 #include <nodes/LayoutColumn.hpp>
 #include <types/DTTypes.hpp>
+#include <utils/SpecialKey.hpp>
 #include <nodes/layers/LayoutOptionsLayer.hpp>
 
 using namespace geode::prelude;
@@ -65,7 +66,12 @@ class DTLayer : public Popup<GJGameLevel* const&> {
 
         void UpdateDeathRelatedStrings();
 
-        std::map<std::string, std::string> specialStrings{};
+        std::map<std::string, std::shared_ptr<SpecialKey>> specialStrings{};
+        void addSpecialString(const std::shared_ptr<SpecialKey>& key);
+        void populateSpecialStrings();
+
+        void specialKeyUpdateStarted(SpecialKey* key);
+        void specialKeyUpdateCompleted(SpecialKey* key);
 
         void organizeLayout();
 

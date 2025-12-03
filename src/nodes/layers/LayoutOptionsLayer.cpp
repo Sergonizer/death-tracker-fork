@@ -41,6 +41,7 @@ bool LayoutOptionsLayer::init(const CCSize& size) {
 
     this->setContentSize(size);
 
+    // @geode-ignore(unknown-resource)
     auto bg = CCScale9Sprite::create("geode.loader/GE_square01.png");
     bg->setContentSize(size);
     bg->setPosition(size / 2);
@@ -122,7 +123,7 @@ bool LayoutOptionsLayer::init(const CCSize& size) {
         if (!editedLabel.has_value()) return;
         
         auto newSizeRes = geode::utils::numFromString<float>(newStr);
-        float newSize;
+        float newSize = 0.0f;
 
         if (!newSizeRes.isErr()) newSize = newSizeRes.unwrap();
 
@@ -172,7 +173,7 @@ bool LayoutOptionsLayer::init(const CCSize& size) {
 
     this->setKeyboardEnabled(true);
 
-    addEventListener<keybinds::InvokeBindFilter>([=](keybinds::InvokeBindEvent* event) {
+    addEventListener<keybinds::InvokeBindFilter>([&](keybinds::InvokeBindEvent* event) {
         if (event->isDown() && labelTextInput->getInputNode()->m_selected && editedLabel.has_value()) {
             auto str = labelTextInput->getString();
             int pos = labelTextInput->getInputNode()->m_textField->m_uCursorPos;

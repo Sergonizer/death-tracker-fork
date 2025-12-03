@@ -4,6 +4,7 @@
 #include <unordered_map>
 #include <functional>
 #include <types/DTTypes.hpp>
+#include <utils/SpecialKey.hpp>
 
 class LayoutColumn;
 
@@ -38,19 +39,28 @@ class DTLabel : public CCMenu {
         std::multiset<LayoutColumn*, ColumnComperator> getHolders();
 
         void setLabelName(const std::string& newName);
-        void setLabelText(const std::string& newText);
         void setFontSize(float newSize);
         void setLabelColor(const ccColor4B& newColor);
         void setTextColor(const ccColor4B& newColor);
         void setTextAlignment(CCTextAlignment alignment);
 
         float textCornerOffset = 5;
+
+        void setLabelText(const std::string& text);
+
+        void modifyKeys();
+
+        void setLoading(SpecialKey* key);
+        void completeLoading(SpecialKey* key);
+
+        std::set<std::string> keysUsed{};
         
     private:
         bool init(const DTLabelInfo& info);
 
         void update(float dt) override;
 
+        std::set<SpecialKey*> currentlyLoadingFor{};
         
         std::multiset<LayoutColumn*, ColumnComperator> holders{};
 

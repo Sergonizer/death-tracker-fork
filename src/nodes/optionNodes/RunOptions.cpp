@@ -262,7 +262,7 @@ void RunOptions::onClosed(){
 
 void RunOptions::addNewRun(CCObject*){
     auto dtlayer = DTLayer::get();
-    log::info("{}", dtlayer->specialStrings["totalLocalDeaths"]);
+    //log::info("{}", dtlayer->specialStrings["totalLocalDeaths"]);
     auto numRes = geode::utils::numFromString<int>(runAdditionInput->getString());
 
     if (dtlayer == nullptr || dtlayer->m_MyLevelStats.isErr() || numRes.isErr()) return;

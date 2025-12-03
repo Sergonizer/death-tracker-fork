@@ -165,7 +165,7 @@ struct DTLabelInfo_s {
     float scale = 1;
     bool isExpanded;
 
-    static inline const CCPoint MIN_MAX_SCALE = ccp(-2, 2);
+    static inline const CCPoint MIN_MAX_SCALE = ccp(0.01f, 2);
 };
 typedef struct DTLabelInfo_s DTLabelInfo;
 

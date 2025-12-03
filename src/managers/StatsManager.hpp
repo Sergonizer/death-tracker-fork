@@ -29,7 +29,7 @@ private:
 
     static const std::string METADATA_FILE_NAME;
     static const std::string FROM0_FILE_NAME;
-    static const std::string SESSIONS_DIR_NAME;
+    static const std::string SESSIONS_DIR_NAME; 
 
 public:
     StatsManager() = delete;
@@ -85,8 +85,6 @@ public:
     static void logRuns(const std::vector<Run>& runs);
 
 #pragma endregion
-
-    static std::pair<std::string, std::map<int, std::optional<ccColor3B>>> modifyText(const std::string& str, int keyLevel = 2);
 
     // utility functions
 

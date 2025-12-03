@@ -5,6 +5,10 @@
 #include <utils/CCResizeHeightTo.hpp>
 #include <utils/CCResizeWidthTo.hpp>
 
+#include <regex>
+
+#include <regex>
+
 float DTLabel::labelTitleHeight = 15;
 float DTLabel::moveThreshold = 5;
 float DTLabel::labelLerpSpeed = 10;
@@ -36,8 +40,9 @@ bool DTLabel::init(const DTLabelInfo& info){
     labelTextContainer->setZOrder(1);
     this->addChild(labelTextContainer);
 
-    labelText = SimpleTextArea::create(info.text, info.font, info.scale);
+    labelText = SimpleTextArea::create("", info.font, info.scale);
     labelText->setID("text");
+    setLabelText(info.text);
     labelText->setAnchorPoint({.5f, 1});
     labelText->setAlignment(CCTextAlignment::kCCTextAlignmentCenter);
     labelText->setWrappingMode(WrappingMode::CUTOFF_WRAP);
@@ -46,7 +51,9 @@ bool DTLabel::init(const DTLabelInfo& info){
 
     auto textHeight = 0.0f;
     if (!info.isExpanded) textHeight = 0;
-    else textHeight = labelText->getContentHeight() + textCornerOffset;
+    else{
+        textHeight = labelText->getContentHeight() + textCornerOffset;   
+    }
 
     this->setContentHeight(textHeight + labelTitleHeight);
     this->setContentWidth(0);
@@ -115,6 +122,7 @@ bool DTLabel::init(const DTLabelInfo& info){
     this->scheduleUpdate();
 
     setLabelColor(info.labelColor);
+    setTextColor(info.textColor);
 
     labelTitleArea->setAlignment(info.horizontalAlignment);
 
@@ -124,7 +132,14 @@ bool DTLabel::init(const DTLabelInfo& info){
 void DTLabel::update(float dt){
 
     labelTextContainer->setPosition(bg->getPosition() + ccp(this->getContentWidth() / 2, -labelTitleHeight));
-    labelText->setWidth(this->getContentWidth() - textCornerOffset);
+    if (labelText->getWidth() != this->getContentWidth() - textCornerOffset && info.isExpanded){
+        labelText->setWidth(this->getContentWidth() - textCornerOffset);
+        labelText->setWidth(labelText->getWidth());
+    }
+    if (labelText->getWidth() != this->getContentWidth() - textCornerOffset && info.isExpanded){
+        labelText->setWidth(this->getContentWidth() - textCornerOffset);
+        labelText->setWidth(labelText->getWidth());
+    }
 
     auto textHeight = 0.0f;
     if (!info.isExpanded) textHeight = 0;
@@ -412,6 +427,99 @@ std::multiset<LayoutColumn*, DTLabel::ColumnComperator> DTLabel::getHolders(){
     return holders;
 }
 
+void DTLabel::setLabelText(const std::string& text){
+    info.text = text;    
+    labelText->setText(text);
+
+    modifyKeys();
+}
+
+void DTLabel::modifyKeys(){
+    log::info("modfying");
+    if (currentlyLoadingFor.size() != 0) return;
+    auto text = labelText->getText();
+    
+    log::info("modfying1");
+    keysUsed.clear();
+
+    std::function<std::string(const std::string&)> modifyStr = [&](const std::string& str) -> std::string {
+        std::regex specialKeyRegex(R"(\{([A-Za-z0-9_\\]+)(?:-([^{}]*))?\})");
+
+        std::sregex_iterator begin(str.begin(), str.end(), specialKeyRegex);
+        std::sregex_iterator end;
+
+        std::string result = "";
+
+        int lastPos = 0;
+        for (auto it = begin; it != end; ++it) {
+            const auto& match = *it;
+
+            int matchStart = match.position();
+            int matchEnd = matchStart + match.length();
+
+            result += str.substr(lastPos, matchStart - lastPos);
+
+            std::string key = match.str(1);
+            if (!keysUsed.contains(key))
+                keysUsed.insert(key);
+            
+            bool isCancellation = false;
+            if (key.size() && key[0] == '\\'){
+                isCancellation = true;
+                key = key.erase(0, 1);
+            }
+
+            std::string value = match.size() > 2 ? match.str(2) : "";
+
+            auto dtLayer = DTLayer::get();
+
+            if (dtLayer->specialStrings.contains(key)) {
+                result += modifyStr(dtLayer->specialStrings.at(key)->getContent());
+            }
+            else {
+                result += match.str();
+            }
+
+            lastPos = matchEnd;
+        }
+
+        result += str.substr(lastPos);
+
+        return result;
+    };
+    auto modifiedText = modifyStr(text);
+    if (modifiedText.length() != 0 && modifiedText[modifiedText.length() - 1] == '\n') modifiedText.push_back(' ');
+    labelText->setText(modifiedText);
+}
+
+void DTLabel::setLoading(SpecialKey* key){
+    if (currentlyLoadingFor.contains(key) || !keysUsed.contains(key->getKey())) return;
+    currentlyLoadingFor.insert(key);
+
+    log::info("added key loading {}", key->getKey());
+
+    //add loading circle
+}
+void DTLabel::completeLoading(SpecialKey* key){
+    if (!currentlyLoadingFor.contains(key)) return;
+    currentlyLoadingFor.erase(key);
+
+    log::info("compleiting loading {}", key->getKey());
+
+    if (currentlyLoadingFor.size() == 0){
+        //loading complete, remove circle
+        modifyKeys();
+    }
+}
+
+/*
+- when a specialKey is being updated, all labels using that key will load until finished and update their text accordingly
+- when text is changed update the text with the specialKeys values if not in loading mode
+
+
+
+*/
+
 void DTLabel::setFontSize(float newSize){
     newSize = std::clamp(newSize, DTLabelInfo::MIN_MAX_SCALE.x, DTLabelInfo::MIN_MAX_SCALE.y);
     info.scale = newSize;
@@ -423,12 +531,6 @@ void DTLabel::setLabelName(const std::string& newName){
     info.labelName = newName;
 
     labelTitleArea->setText(newName);
-}
-
-void DTLabel::setLabelText(const std::string& newText){
-    info.text = newText;
-
-    labelText->setText(newText);
 }
 
 void DTLabel::setLabelColor(const ccColor4B& newColor){
