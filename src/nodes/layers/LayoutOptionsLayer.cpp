@@ -7,12 +7,12 @@
 settings needed:
 
 - for labels:
-    - labels name (string)
-    - text color (ccColor3B)
-    - font size (float)
-    - label color (ccColor3B)
-    - text (string)
-    - alignment (CCTextAlignment)
+    - labels name (string) :D
+    - text color (ccColor3B) :D
+    - font size (float) :XD
+    - label color (ccColor3B) :D
+    - text (string) :D
+    - alignment (CCTextAlignment) :D
     - special key selection (other UI)
     - font
     - movement and expanding options maybe
@@ -70,6 +70,11 @@ bool LayoutOptionsLayer::init(const CCSize& size) {
     labelNameInput->setPositionY(-22);
     labelSettingsNode->addChild(labelNameInput);
 
+    auto labelNameInputLabel = CCLabelBMFont::create("Label Name", "bigFont.fnt");
+    labelNameInputLabel->setScale(.4f);
+    labelNameInputLabel->setPosition(labelNameInput->getPosition() + ccp(0, labelNameInput->getScaledContentHeight() / 2 + labelNameInputLabel->getScaledContentHeight() / 2));
+    labelSettingsNode->addChild(labelNameInputLabel);
+
     labelTextInput = TextInput::create((size.width - 10) / .75f, "label text");
     labelTextInput->setScale(.75f);
     labelTextInput->setCommonFilter(CommonFilter::Any);
@@ -81,6 +86,11 @@ bool LayoutOptionsLayer::init(const CCSize& size) {
         editedLabel.value()->setLabelText(newStr);
     });
     labelSettingsNode->addChild(labelTextInput);
+
+    auto labelTextInputLabel = CCLabelBMFont::create("Text", "bigFont.fnt");
+    labelTextInputLabel->setScale(.4f);
+    labelTextInputLabel->setPosition(labelTextInput->getPosition() + ccp(0, labelTextInput->getScaledContentHeight() / 2 + labelTextInputLabel->getScaledContentHeight() / 2));
+    labelSettingsNode->addChild(labelTextInputLabel);
 
     labelColorBtnSprite = CCSprite::createWithSpriteFrameName("GJ_colorBtn_001.png");
     labelColorBtnSprite->setID("color-spr");
@@ -96,8 +106,13 @@ bool LayoutOptionsLayer::init(const CCSize& size) {
         menu_selector(LayoutOptionsLayer::onLabelColorBtnClicked)
     );
     labelColorBtn->setID("label-color-btn");
-    labelColorBtn->setPosition({-30, -100});
+    labelColorBtn->setPosition({-30, -110});
     labelSettingsNode->addChild(labelColorBtn);
+
+    auto labelColorBtnLabel = CCLabelBMFont::create("label", "bigFont.fnt");
+    labelColorBtnLabel->setScale(.4f);
+    labelColorBtnLabel->setPosition(labelColorBtn->getPosition() + ccp(0, labelColorBtn->getScaledContentHeight() / 2 + labelColorBtnLabel->getScaledContentHeight() / 2));
+    labelSettingsNode->addChild(labelColorBtnLabel);
 
     textColorBtnSprite = CCSprite::createWithSpriteFrameName("GJ_colorBtn_001.png");
     textColorBtnSprite->setID("color-spr");
@@ -113,11 +128,22 @@ bool LayoutOptionsLayer::init(const CCSize& size) {
         menu_selector(LayoutOptionsLayer::onTextColorBtnClicked)
     );
     textColorBtn->setID("text-color-btn");
-    textColorBtn->setPosition({30, -100});
+    textColorBtn->setPosition({30, -110});
     labelSettingsNode->addChild(textColorBtn);
 
-    fontSizeInput = TextInput::create((size.width - 10) / .75f, "size");
+    auto textColorBtnLabel = CCLabelBMFont::create("text", "bigFont.fnt");
+    textColorBtnLabel->setScale(.4f);
+    textColorBtnLabel->setPosition(textColorBtn->getPosition() + ccp(0, textColorBtn->getScaledContentHeight() / 2 + textColorBtnLabel->getScaledContentHeight() / 2));
+    labelSettingsNode->addChild(textColorBtnLabel);
+
+    auto colorLabel = CCLabelBMFont::create("color", "bigFont.fnt");
+    colorLabel->setScale(.4f);
+    colorLabel->setPosition({0, -80});
+    labelSettingsNode->addChild(colorLabel);
+
+    fontSizeInput = TextInput::create((size.width - 60) / .75f, "size");
     fontSizeInput->setScale(.75f);
+    fontSizeInput->setPositionY(-195);
     fontSizeInput->setCommonFilter(CommonFilter::Float);
     fontSizeInput->setCallback([&](const std::string& newStr){
         if (!editedLabel.has_value()) return;
@@ -132,8 +158,13 @@ bool LayoutOptionsLayer::init(const CCSize& size) {
     fontSizeInput->setID("font-size-input");
     labelSettingsNode->addChild(fontSizeInput);
 
+    auto fontSizeInputLabel = CCLabelBMFont::create("Font Size", "bigFont.fnt");
+    fontSizeInputLabel->setScale(.4f);
+    fontSizeInputLabel->setPosition(fontSizeInput->getPosition() + ccp(0, fontSizeInput->getScaledContentHeight() / 2 + fontSizeInputLabel->getScaledContentHeight() / 2));
+    labelSettingsNode->addChild(fontSizeInputLabel);
+
     alignmentMenu = CCMenu::create();
-    alignmentMenu->setPosition({0, -145});
+    alignmentMenu->setPosition({0, -155});
     alignmentMenu->setContentSize({133, 28});
     alignmentMenu->setID("alignment-menu");
     labelSettingsNode->addChild(alignmentMenu);
@@ -144,6 +175,11 @@ bool LayoutOptionsLayer::init(const CCSize& size) {
         ->setCrossAxisScaling(AxisScaling::ScaleDown)
         ->setMainAxisAlignment(MainAxisAlignment::Center)
     );
+
+    auto alignmentLabel = CCLabelBMFont::create("Alignment", "bigFont.fnt");
+    alignmentLabel->setScale(.4f);
+    alignmentLabel->setPosition(alignmentMenu->getPosition() + ccp(0, 5 + alignmentMenu->getScaledContentHeight() / 2 + alignmentLabel->getScaledContentHeight() / 2));
+    labelSettingsNode->addChild(alignmentLabel);
 
     auto leftAlignBtn = CCMenuItemSpriteExtra::create(
         CCSprite::createWithSpriteFrameName("alignLeft.png"_spr),
@@ -171,7 +207,7 @@ bool LayoutOptionsLayer::init(const CCSize& size) {
 
     alignmentMenu->updateLayout();
 
-    this->setKeyboardEnabled(true);
+    
 
     addEventListener<keybinds::InvokeBindFilter>([&](keybinds::InvokeBindEvent* event) {
         if (event->isDown() && labelTextInput->getInputNode()->m_selected && editedLabel.has_value()) {
@@ -182,14 +218,11 @@ bool LayoutOptionsLayer::init(const CCSize& size) {
 
             if (pos == -1) str += "{nl}";
             else {
-            str = str.insert(pos, "{nl}");
-            labelTextInput->getInputNode()->m_textField->m_uCursorPos += 4;
+                str = str.insert(pos, "{nl}");
+                labelTextInput->getInputNode()->m_textField->m_uCursorPos += 4;
             }
 
-
-            labelTextInput->setString(
-                str
-            );
+            labelTextInput->setString(str);
             editedLabel.value()->setLabelText(labelTextInput->getString());
         }
         return ListenerResult::Propagate;
@@ -202,6 +235,9 @@ void LayoutOptionsLayer::setEditedNodeTo(DTLabel* label) {
     //setup the options layer to edit the given label
     editedLabel = label;
     editedColumn = std::nullopt;
+
+    if (!label->info.isExpanded)
+        label->toggleExpand(nullptr);
 
     onAlignmentChanged(alignmentMenu->getChildByID(fmt::format(
         "{}-align-btn",

@@ -52,8 +52,10 @@ class DTLabel : public CCMenu {
 
         void setLoading(SpecialKey* key);
         void completeLoading(SpecialKey* key);
-
+        
         std::set<std::string> keysUsed{};
+
+        void toggleExpand(CCObject*);
         
     private:
         bool init(const DTLabelInfo& info);
@@ -78,8 +80,6 @@ class DTLabel : public CCMenu {
         float currentHeight;
 
         float normalBGOpacity = 150;
-
-        void toggleExpand(CCObject*);
 
         void registerWithTouchDispatcher() override;
         bool ccTouchBegan(cocos2d::CCTouch* touch, cocos2d::CCEvent* event) override;
