@@ -45,7 +45,14 @@ bool LayoutOptionsLayer::init(const CCSize& size) {
     auto bg = CCScale9Sprite::create("geode.loader/GE_square01.png");
     bg->setContentSize(size);
     bg->setPosition(size / 2);
+    bg->setID("background");
     this->addChild(bg);
+
+    auto generalBtnsMenu = CCMenu::create();
+    generalBtnsMenu->setPosition({size.width / 2, size.height - 10});
+    generalBtnsMenu->setContentSize({0, 0});
+    generalBtnsMenu->setID("general-btns-menu");
+    this->addChild(generalBtnsMenu);
 
     labelSettingsNode = CCMenu::create();
     labelSettingsNode->setPosition({size.width / 2, size.height - 10});
@@ -58,6 +65,12 @@ bool LayoutOptionsLayer::init(const CCSize& size) {
     columnSettingsNode->setContentSize({0, 0});
     columnSettingsNode->setID("column-settings-node");
     this->addChild(columnSettingsNode);
+
+    fontSelectionNode = CCMenu::create();
+    fontSelectionNode->setPosition({size.width / 2, size.height - 10});
+    fontSelectionNode->setContentSize({0, 0});
+    fontSelectionNode->setID("font-selection-node");
+    this->addChild(fontSelectionNode);
 
     labelNameInput = TextInput::create((size.width - 10) / .75f, "label name");
     labelNameInput->setID("label-name-input");
@@ -73,6 +86,7 @@ bool LayoutOptionsLayer::init(const CCSize& size) {
     auto labelNameInputLabel = CCLabelBMFont::create("Label Name", "bigFont.fnt");
     labelNameInputLabel->setScale(.4f);
     labelNameInputLabel->setPosition(labelNameInput->getPosition() + ccp(0, labelNameInput->getScaledContentHeight() / 2 + labelNameInputLabel->getScaledContentHeight() / 2));
+    labelNameInputLabel->setID("name-input-label");
     labelSettingsNode->addChild(labelNameInputLabel);
 
     labelTextInput = TextInput::create((size.width - 10) / .75f, "label text");
@@ -90,16 +104,12 @@ bool LayoutOptionsLayer::init(const CCSize& size) {
     auto labelTextInputLabel = CCLabelBMFont::create("Text", "bigFont.fnt");
     labelTextInputLabel->setScale(.4f);
     labelTextInputLabel->setPosition(labelTextInput->getPosition() + ccp(0, labelTextInput->getScaledContentHeight() / 2 + labelTextInputLabel->getScaledContentHeight() / 2));
+    labelTextInputLabel->setID("text-color-label");
     labelSettingsNode->addChild(labelTextInputLabel);
 
     labelColorBtnSprite = CCSprite::createWithSpriteFrameName("GJ_colorBtn_001.png");
     labelColorBtnSprite->setID("color-spr");
     labelColorBtnSprite->setScale(.7f);
-    // labelColorBtnSprite->setColor({
-    //     editedLabel.value()->info.labelColor.r,
-    //     editedLabel.value()->info.labelColor.g,
-    //     editedLabel.value()->info.labelColor.b,
-    // });
     auto labelColorBtn = CCMenuItemSpriteExtra::create(
         labelColorBtnSprite,
         this,
@@ -112,16 +122,12 @@ bool LayoutOptionsLayer::init(const CCSize& size) {
     auto labelColorBtnLabel = CCLabelBMFont::create("label", "bigFont.fnt");
     labelColorBtnLabel->setScale(.4f);
     labelColorBtnLabel->setPosition(labelColorBtn->getPosition() + ccp(0, labelColorBtn->getScaledContentHeight() / 2 + labelColorBtnLabel->getScaledContentHeight() / 2));
+    labelColorBtnLabel->setID("label-color-label");
     labelSettingsNode->addChild(labelColorBtnLabel);
 
     textColorBtnSprite = CCSprite::createWithSpriteFrameName("GJ_colorBtn_001.png");
     textColorBtnSprite->setID("color-spr");
     textColorBtnSprite->setScale(.7f);
-    // textColorBtnSprite->setColor({
-    //     editedLabel.value()->info.textColor.r,
-    //     editedLabel.value()->info.textColor.g,
-    //     editedLabel.value()->info.textColor.b,
-    // });
     auto textColorBtn = CCMenuItemSpriteExtra::create(
         textColorBtnSprite,
         this,
@@ -134,11 +140,13 @@ bool LayoutOptionsLayer::init(const CCSize& size) {
     auto textColorBtnLabel = CCLabelBMFont::create("text", "bigFont.fnt");
     textColorBtnLabel->setScale(.4f);
     textColorBtnLabel->setPosition(textColorBtn->getPosition() + ccp(0, textColorBtn->getScaledContentHeight() / 2 + textColorBtnLabel->getScaledContentHeight() / 2));
+    textColorBtnLabel->setID("text-label");
     labelSettingsNode->addChild(textColorBtnLabel);
 
     auto colorLabel = CCLabelBMFont::create("color", "bigFont.fnt");
     colorLabel->setScale(.4f);
     colorLabel->setPosition({0, -80});
+    colorLabel->setID("color-label");
     labelSettingsNode->addChild(colorLabel);
 
     fontSizeInput = TextInput::create((size.width - 60) / .75f, "size");
@@ -153,6 +161,7 @@ bool LayoutOptionsLayer::init(const CCSize& size) {
 
         if (!newSizeRes.isErr()) newSize = newSizeRes.unwrap();
 
+        scaleSlider->setValue((newSize - DTLabelInfo::MIN_MAX_SCALE.x) / (DTLabelInfo::MIN_MAX_SCALE.y - DTLabelInfo::MIN_MAX_SCALE.x));
         editedLabel.value()->setFontSize(newSize);
     });
     fontSizeInput->setID("font-size-input");
@@ -161,7 +170,13 @@ bool LayoutOptionsLayer::init(const CCSize& size) {
     auto fontSizeInputLabel = CCLabelBMFont::create("Font Size", "bigFont.fnt");
     fontSizeInputLabel->setScale(.4f);
     fontSizeInputLabel->setPosition(fontSizeInput->getPosition() + ccp(0, fontSizeInput->getScaledContentHeight() / 2 + fontSizeInputLabel->getScaledContentHeight() / 2));
+    fontSizeInputLabel->setID("font-size-label");
     labelSettingsNode->addChild(fontSizeInputLabel);
+
+    scaleSlider = Slider::create(this, menu_selector(LayoutOptionsLayer::scaleSliderChanged), .5f);
+    scaleSlider->setPositionY(-215);
+    scaleSlider->setID("font-size-slider");
+    labelSettingsNode->addChild(scaleSlider);
 
     alignmentMenu = CCMenu::create();
     alignmentMenu->setPosition({0, -155});
@@ -207,14 +222,34 @@ bool LayoutOptionsLayer::init(const CCSize& size) {
 
     alignmentMenu->updateLayout();
 
-    
+    auto fontSelectionBtnSpr = ButtonSprite::create("Select Font");
+    fontSelectionBtnSpr->setScale(.55f);
+    auto fontSelectionBtn = CCMenuItemSpriteExtra::create(
+        fontSelectionBtnSpr,
+        this,
+        menu_selector(LayoutOptionsLayer::onFontSelection)
+    );
+    fontSelectionBtn->setPositionY(-260);
+    fontSelectionBtn->setID("font-selection-btn");
+    labelSettingsNode->addChild(fontSelectionBtn);
+
+    fontSelectedIndicatorLabel = SimpleTextArea::create("Selected: font -1", "gjFont21.fnt");
+    fontSelectedIndicatorLabel->setID("font-select-indicator-label");
+    fontSelectedIndicatorLabel->setScale(.4f);
+    fontSelectedIndicatorLabel->setAlignment(CCTextAlignment::kCCTextAlignmentCenter);
+    fontSelectedIndicatorLabel->setPosition(fontSelectionBtn->getPosition() + ccp(0, 5 + fontSelectionBtn->getScaledContentHeight() / 2 + fontSelectedIndicatorLabel->getScaledContentHeight() / 2));
+    labelSettingsNode->addChild(fontSelectedIndicatorLabel);
+
+    auto fontSelectionBtnLabel = CCLabelBMFont::create("Font", "bigFont.fnt");
+    fontSelectionBtnLabel->setID("font-selection-label");
+    fontSelectionBtnLabel->setScale(.4f);
+    fontSelectionBtnLabel->setPosition(fontSelectedIndicatorLabel->getPosition() + ccp(0, fontSelectedIndicatorLabel->getScaledContentHeight() / 2 + fontSelectionBtnLabel->getScaledContentHeight() / 2));
+    labelSettingsNode->addChild(fontSelectionBtnLabel);
 
     addEventListener<keybinds::InvokeBindFilter>([&](keybinds::InvokeBindEvent* event) {
         if (event->isDown() && labelTextInput->getInputNode()->m_selected && editedLabel.has_value()) {
             auto str = labelTextInput->getString();
             int pos = labelTextInput->getInputNode()->m_textField->m_uCursorPos;
-
-            log::info("plaing at {}", pos);
 
             if (pos == -1) str += "{nl}";
             else {
@@ -228,11 +263,61 @@ bool LayoutOptionsLayer::init(const CCSize& size) {
         return ListenerResult::Propagate;
     }, "enter-new-line"_spr);
 
+    fontSelectionNode->setScaleY(0);
+    labelSettingsNode->setScaleY(0);
+    columnSettingsNode->setScaleY(0);
+
+    auto backBtnSpr = CCSprite::createWithSpriteFrameName("GJ_arrow_03_001.png");
+    backBtnSpr->setScale(.65f);
+    auto backBtn = CCMenuItemSpriteExtra::create(
+        backBtnSpr,
+        this,
+        menu_selector(LayoutOptionsLayer::onBack)
+    );
+    backBtn->setID("back-btn");
+    backBtn->setPosition({-75, 6});
+    generalBtnsMenu->addChild(backBtn);
+    
+    auto deleteBtnSpr = CCSprite::createWithSpriteFrameName("GJ_trashBtn_001.png");
+    deleteBtnSpr->setScale(.65f);
+    auto deleteBtn = CCMenuItemSpriteExtra::create(
+        deleteBtnSpr,
+        this,
+        menu_selector(LayoutOptionsLayer::onDelete)
+    );
+    deleteBtn->setID("delete-btn");
+    deleteBtn->setPosition({65, 6});
+    generalBtnsMenu->addChild(deleteBtn);
+
+    auto fontsScroll = ScrollLayer::create(size - ccp(8, 30));
+    fontsScroll->setPosition({-size.width / 2, -size.height + 20});
+    fontsScroll->m_contentLayer->setLayout(ColumnLayout::create()
+        ->setGrowCrossAxis(true)
+        ->setCrossAxisOverflow(false)
+        ->setAutoGrowAxis(fontsScroll->getContentHeight())
+        ->setAxisAlignment(AxisAlignment::End)
+    );
+    fontSelectionNode->addChild(fontsScroll);
+
+    auto fontsScrollbar = Scrollbar::create(fontsScroll);
+    fontsScrollbar->setPosition({68, fontsScroll->getPositionY() / 2});
+    fontSelectionNode->addChild(fontsScrollbar);
+
+    for (const auto& font : StatsManager::getAllFonts())
+    {
+        auto cell = FontSelectionCell::create(font, [&](auto cell){onFontSelected(cell);});
+        fontsScroll->m_contentLayer->addChild(cell);
+
+        allFontCells.insert({font, cell});
+    }
+
+    fontsScroll->m_contentLayer->updateLayout();
+
     return true;
 }
 
 void LayoutOptionsLayer::setEditedNodeTo(DTLabel* label) {
-    //setup the options layer to edit the given label
+    if (editedLabel.has_value() && editedLabel.value() == label) return;
     editedLabel = label;
     editedColumn = std::nullopt;
 
@@ -252,27 +337,32 @@ void LayoutOptionsLayer::setEditedNodeTo(DTLabel* label) {
     labelNameInput->setString(label->info.labelName);
     labelTextInput->setString(label->info.text);
 
-    auto scaleText = std::to_string(label->info.scale);
-    for (int i = scaleText.length() - 1; i >= 0; i--)
-    {
-        if (scaleText[i] != '0') break;
+    scaleSlider->setValue(
+        (label->info.scale - DTLabelInfo::MIN_MAX_SCALE.x) / (DTLabelInfo::MIN_MAX_SCALE.y - DTLabelInfo::MIN_MAX_SCALE.x)
+    );
+    scaleSliderChanged(nullptr);
 
-        scaleText.pop_back();
-    }
-    
-    if (scaleText.length() != 0 && scaleText[scaleText.length() - 1] == '.') scaleText.pop_back();
+    fontSelectedIndicatorLabel->setText(fmt::format("selected: \"{}\"", label->info.font.substr(0, label->info.font.length() - 4)));
+    fontSelectedIndicatorLabel->setFont(label->info.font);
+    if (currentlySelectedFontCell != nullptr)
+        currentlySelectedFontCell->deselect();
+    currentlySelectedFontCell = allFontCells[label->info.font];
+    currentlySelectedFontCell->select();
 
-    fontSizeInput->setString(scaleText);
+    switchToMenu(1);
 }
 
 void LayoutOptionsLayer::setEditedNodeTo(LayoutColumn* column) {
-    //setup the options layer to edit the given column
+    if (editedColumn.has_value() && editedColumn.value() == column) return;
     editedColumn = column;
     editedLabel = std::nullopt;
+
+    switchToMenu(2);
 }
 
 void LayoutOptionsLayer::close() {
     //close the options layer
+    switchToMenu(0);
     editedLabel = std::nullopt;
     editedColumn = std::nullopt;
     colorChangeFunc = NULL;
@@ -335,4 +425,101 @@ void LayoutOptionsLayer::onAlignmentChanged(CCObject* sender){
     menuItem->setEnabled(false);
 
     editedLabel.value()->setTextAlignment(alignment);
+}
+
+void LayoutOptionsLayer::scaleSliderChanged(CCObject*){
+    auto numValue = DTLabelInfo::MIN_MAX_SCALE.x + (DTLabelInfo::MIN_MAX_SCALE.y - DTLabelInfo::MIN_MAX_SCALE.x) * scaleSlider->getValue();
+
+    editedLabel.value()->setFontSize(numValue);
+
+    auto scaleText = std::to_string(numValue);
+    for (int i = scaleText.length() - 1; i >= 0; i--)
+    {
+        if (scaleText[i] != '0') break;
+
+        scaleText.pop_back();
+    }
+    
+    if (scaleText.length() != 0 && scaleText[scaleText.length() - 1] == '.') scaleText.pop_back();
+
+    fontSizeInput->setString(scaleText);
+}
+
+void LayoutOptionsLayer::onFontSelection(CCObject*){
+    switchToMenu(3);
+}
+
+void LayoutOptionsLayer::switchToMenu(uint8_t menuID){
+    labelSettingsNode->stopAllActions();
+    columnSettingsNode->stopAllActions();
+    fontSelectionNode->stopAllActions();
+
+    currentPage = menuID;
+
+    auto exitEasing = [](bool open) -> CCEaseExponentialOut* {
+        return CCEaseExponentialOut::create(CCScaleTo::create(.2f, 1, open ? 1 : 0));
+    };
+
+    labelSettingsNode->runAction(exitEasing(false));
+    columnSettingsNode->runAction(exitEasing(false));
+    fontSelectionNode->runAction(exitEasing(false));
+
+    CCNode* selectedNode = nullptr;
+
+    switch (menuID)
+    {
+
+    case 1:
+        selectedNode = labelSettingsNode;
+        break;
+
+    case 2:
+        selectedNode = columnSettingsNode;
+        break;
+
+    case 3:
+        selectedNode = fontSelectionNode;
+        break;
+    
+    default:
+        break;
+    }
+
+    if (selectedNode != nullptr){
+        selectedNode->stopAllActions();
+        selectedNode->runAction(CCSequence::create(
+            exitEasing(false),
+            CCDelayTime::create(.1f),
+            exitEasing(true),
+            nullptr
+        ));
+    }
+}
+
+void LayoutOptionsLayer::onBack(CCObject*){
+    if (currentPage == 3){
+        switchToMenu(editedLabel.has_value() ? 1 : 2);
+        return;
+    }
+
+    if (onBackedOut != NULL)
+        onBackedOut();
+}
+
+void LayoutOptionsLayer::onDelete(CCObject*){
+    if (editedLabel.has_value()){
+        editedLabel.value()->removeFromColumns();
+        editedLabel.value()->removeFromParentAndCleanup(true);
+        DTLayer::get()->organizeLayout();
+        onBackedOut();
+    }
+    else if (editedColumn.has_value()){
+        editedColumn.value()->destroyColumnAndCleanup();
+        DTLayer::get()->organizeLayout();
+        onBackedOut();
+    }
+}
+
+void LayoutOptionsLayer::onFontSelected(FontSelectionCell* cell){
+
 }

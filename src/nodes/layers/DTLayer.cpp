@@ -213,7 +213,8 @@ bool DTLayer::setup(GJGameLevel* const& level) {
     bottomMenu->updateLayout();
 
     layoutOptionsLayer = LayoutOptionsLayer::create({150, m_size.height});
-    layoutOptionsLayer->setPosition({winSize.width, (winSize.height - layoutOptionsLayer->getContentHeight()) / 2});
+    layoutOptionsLayer->setPosition({winSize.width + 10, (winSize.height - layoutOptionsLayer->getContentHeight()) / 2});
+    layoutOptionsLayer->onBackedOut = [&](){closeOptionsLayer();};
     this->addChild(layoutOptionsLayer);
 // move by 84.5f to the left
     return true;
@@ -1304,22 +1305,31 @@ void DTLayer::setOptionsLayerTo(DTLabel* label){
     if (layoutOptionsLayer == nullptr) return;
     if (!layoutOptionsLayer->isEditingNode()){
         m_mainLayer->runAction(CCEaseBackOut::create(CCMoveBy::create(0.5f, ccp(-85.5f, 0))));
-        layoutOptionsLayer->runAction(CCEaseBackOut::create(CCMoveBy::create(0.5f, ccp(-154, 0))));
+        layoutOptionsLayer->runAction(CCEaseBackOut::create(CCMoveBy::create(0.5f, ccp(-164, 0))));
     }
 
     layoutOptionsLayer->setEditedNodeTo(label);
 }
 void DTLayer::setOptionsLayerTo(LayoutColumn* column){
     if (layoutOptionsLayer == nullptr) return;
+    if (!layoutOptionsLayer->isEditingNode()){
+        m_mainLayer->runAction(CCEaseBackOut::create(CCMoveBy::create(0.5f, ccp(-85.5f, 0))));
+        layoutOptionsLayer->runAction(CCEaseBackOut::create(CCMoveBy::create(0.5f, ccp(-164, 0))));
+    }
 
     layoutOptionsLayer->setEditedNodeTo(column);
 }
 void DTLayer::closeOptionsLayer(){
     if (layoutOptionsLayer == nullptr) return;
     if (layoutOptionsLayer->isEditingNode()){
-        m_mainLayer->runAction(CCEaseBackIn::create(CCMoveBy::create(0.5f, ccp(85.5f, 0))));
-        layoutOptionsLayer->runAction(CCEaseBackIn::create(CCMoveBy::create(0.5f, ccp(154, 0))));
+        m_mainLayer->runAction(CCEaseBackOut::create(CCMoveBy::create(0.5f, ccp(85.5f, 0))));
+        layoutOptionsLayer->runAction(CCEaseBackOut::create(CCMoveBy::create(0.5f, ccp(164, 0))));
     }
 
     layoutOptionsLayer->close();
+}
+void DTLayer::removeColumn(LayoutColumn* column){
+    if (!columns.contains(column)) return;
+
+    columns.erase(column);
 }

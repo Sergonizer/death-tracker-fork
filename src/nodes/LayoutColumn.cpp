@@ -1,6 +1,7 @@
 #include "LayoutColumn.hpp"
 
 #include <nodes/layers/DTLayer.hpp>
+#include <nodes/TouchSender.hpp>
 
 float LayoutColumn::borderWidth = 2;
 float LayoutColumn::addNewBtnOffset = 15;
@@ -90,6 +91,44 @@ bool LayoutColumn::init(const DTColumnInfo& info, float topHeight, float minHeig
 
     setColor(info.color);
 
+    auto touchSender = TouchSender::create(0, false);
+    touchSender->setID("touchSender");
+    touchSender->beginCheck = [&](cocos2d::CCTouch* touch, cocos2d::CCEvent* event){
+        auto touchInParentSpace = topBorder2->getParent()->convertTouchToNodeSpace(touch);
+
+        if (topSpr->boundingBox().containsPoint(touchInParentSpace)){
+            isTouchingTopSpr = true;
+            originalTopSprTouchPos = touchInParentSpace;
+            return true;
+        }
+
+        isTouchingTopSpr = false;
+
+        return false;
+    };
+    touchSender->onTouch = [&](TouchSenderState state, cocos2d::CCTouch* touch, cocos2d::CCEvent* event){
+        if (state == TouchSenderState::Moved){
+            if (isTouchingTopSpr){
+                auto touchInParentSpace = topBorder2->getParent()->convertTouchToNodeSpace(touch);
+        
+                auto distance = (originalTopSprTouchPos - touchInParentSpace).getLength();
+
+                if (distance > maxMovementOffset)
+                    isTouchingTopSpr = false;
+            }
+        }
+        else if (state == TouchSenderState::Cancled){
+            isTouchingTopSpr = false;
+        }
+        else if (state == TouchSenderState::Ended){
+            if (isTouchingTopSpr){
+                DTLayer::get()->setOptionsLayerTo(this);
+            }
+            isTouchingTopSpr = false;
+        }
+    };
+    this->addChild(touchSender);
+
     return true;
 }
 
@@ -168,6 +207,7 @@ bool LayoutColumn::ccTouchBegan(CCTouch* touch, CCEvent* event) {
 
     if (topBorder2->boundingBox().containsPoint(touchInParentSpace)) {
         isTouchingSide = true;
+        
         return true;
     }
 
@@ -188,20 +228,20 @@ void LayoutColumn::ccTouchCancelled(CCTouch*, CCEvent*) {
 }
 
 void LayoutColumn::ccTouchMoved(CCTouch* touch, CCEvent*){
-    if (!isTouchingSide) return;
+    if (isTouchingSide){
+        auto currentWidth = this->getContentWidth();
 
-    auto currentWidth = this->getContentWidth();
+        auto spacedTouchLoc = this->getParent()->convertToNodeSpace(touch->getLocation());
+        auto spacedPrevTouchLoc = this->getParent()->convertToNodeSpace(touch->m_prevPoint);
 
-    auto spacedTouchLoc = this->getParent()->convertToNodeSpace(touch->getLocation());
-    auto spacedPrevTouchLoc = this->getParent()->convertToNodeSpace(touch->m_prevPoint);
+        currentWidth += (spacedTouchLoc - spacedPrevTouchLoc).x;
 
-    currentWidth += (spacedTouchLoc - spacedPrevTouchLoc).x;
+        this->setContentWidth(std::max(DTColumnInfo::minWidth, currentWidth));
 
-    this->setContentWidth(std::max(DTColumnInfo::minWidth, currentWidth));
+        updateSizesByContent();
 
-    updateSizesByContent();
-
-    DTLayer::get()->organizeLayout();
+        DTLayer::get()->organizeLayout();
+    }
 }
 
 void LayoutColumn::setColor(ccColor3B color){
@@ -214,7 +254,6 @@ void LayoutColumn::setColor(ccColor3B color){
 void LayoutColumn::addLabel(DTLabel* label){
     label->addColumnAsHolder(this);
     if (labels.contains(label->info.layer)){
-        // log::info("same layer found {} | {} - {}", label->name, labels[label->layer]->name, label->layer);
         labels[label->info.layer]->moveUpLayer();
     }
     
@@ -232,8 +271,6 @@ void LayoutColumn::updateLabelPosition(DTLabel* label){
     if (labels.contains(label->info.layer)){
         labels[label->info.layer]->moveUpLayer();
     }
-
-    // log::info("inserting revamp {}, {}", label->layer, label->name);
 
     labels.insert({label->info.layer, label});
 }
@@ -271,6 +308,7 @@ void LayoutColumn::destroyColumnAndCleanup(){
 
     this->removeMeAndCleanup();
 
+    DTLayer::get()->removeColumn(this);
     DTLayer::get()->fixUpColumnPositions();
 }
 

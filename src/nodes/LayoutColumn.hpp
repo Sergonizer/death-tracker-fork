@@ -63,6 +63,9 @@ class LayoutColumn : public CCMenu {
         void ccTouchCancelled(cocos2d::CCTouch* touch, cocos2d::CCEvent* event) override;
 
         bool isTouchingSide;
+        bool isTouchingTopSpr;
+        CCPoint originalTopSprTouchPos;
+        float maxMovementOffset = 3;
 
         void onAddLabelBtnClicked(CCObject*);
 

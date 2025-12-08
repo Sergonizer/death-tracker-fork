@@ -95,6 +95,8 @@ class DTLayer : public Popup<GJGameLevel* const&> {
         void setOptionsLayerTo(LayoutColumn* column);
         void closeOptionsLayer();
 
+        void removeColumn(LayoutColumn* column);
+
     private:
         
         LayoutOptionsLayer* layoutOptionsLayer;
