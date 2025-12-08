@@ -65,4 +65,5 @@ class LayoutOptionsLayer : public CCLayer, public geode::ColorPickPopupDelegate 
         std::map<std::string, FontSelectionCell*> allFontCells{};
         FontSelectionCell* currentlySelectedFontCell = nullptr;
         void onFontSelected(FontSelectionCell* cell);
+        ScrollLayer* fontsScroll;
 };

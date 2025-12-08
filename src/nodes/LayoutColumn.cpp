@@ -297,7 +297,6 @@ void LayoutColumn::onOrganized(float deltaMove){
 }
 
 void LayoutColumn::destroyColumnAndCleanup(){
-
     for (const auto& [labelLayer, label] : labels)
     {
         removeLabel(label);
@@ -306,9 +305,12 @@ void LayoutColumn::destroyColumnAndCleanup(){
             label->removeMeAndCleanup();
     }
 
-    this->removeMeAndCleanup();
+    // Unsubscribe from organization events before destroying this column
+    DTLayer::get()->unsubscribeToOrganizationEvent(this);
 
     DTLayer::get()->removeColumn(this);
+
+    this->removeMeAndCleanup();
     DTLayer::get()->fixUpColumnPositions();
 }
 

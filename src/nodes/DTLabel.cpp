@@ -527,6 +527,12 @@ void DTLabel::setFontSize(float newSize){
     labelText->setScale(newSize);
 }
 
+void DTLabel::setFont(const std::string& fnt){
+    info.font = fnt;
+    
+    labelText->setFont(fnt);
+}
+
 void DTLabel::setLabelName(const std::string& newName){
     info.labelName = newName;
 

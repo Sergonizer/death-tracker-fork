@@ -40,6 +40,7 @@ class DTLabel : public CCMenu {
 
         void setLabelName(const std::string& newName);
         void setFontSize(float newSize);
+        void setFont(const std::string& fnt);
         void setLabelColor(const ccColor4B& newColor);
         void setTextColor(const ccColor4B& newColor);
         void setTextAlignment(CCTextAlignment alignment);

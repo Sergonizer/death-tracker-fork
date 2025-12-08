@@ -289,13 +289,14 @@ bool LayoutOptionsLayer::init(const CCSize& size) {
     deleteBtn->setPosition({65, 6});
     generalBtnsMenu->addChild(deleteBtn);
 
-    auto fontsScroll = ScrollLayer::create(size - ccp(8, 30));
+    fontsScroll = ScrollLayer::create(size - ccp(8, 30));
     fontsScroll->setPosition({-size.width / 2, -size.height + 20});
     fontsScroll->m_contentLayer->setLayout(ColumnLayout::create()
         ->setGrowCrossAxis(true)
         ->setCrossAxisOverflow(false)
         ->setAutoGrowAxis(fontsScroll->getContentHeight())
         ->setAxisAlignment(AxisAlignment::End)
+        ->setAxisReverse(true)
     );
     fontSelectionNode->addChild(fontsScroll);
 
@@ -312,6 +313,9 @@ bool LayoutOptionsLayer::init(const CCSize& size) {
     }
 
     fontsScroll->m_contentLayer->updateLayout();
+    fontsScroll->moveToTop();
+
+    fontsScroll->setMouseEnabled(false);
 
     return true;
 }
@@ -456,6 +460,8 @@ void LayoutOptionsLayer::switchToMenu(uint8_t menuID){
 
     currentPage = menuID;
 
+    fontsScroll->setMouseEnabled(false);
+
     auto exitEasing = [](bool open) -> CCEaseExponentialOut* {
         return CCEaseExponentialOut::create(CCScaleTo::create(.2f, 1, open ? 1 : 0));
     };
@@ -479,6 +485,8 @@ void LayoutOptionsLayer::switchToMenu(uint8_t menuID){
 
     case 3:
         selectedNode = fontSelectionNode;
+        fontsScroll->setMouseEnabled(true);
+        fontsScroll->moveToTop();
         break;
     
     default:
@@ -521,5 +529,16 @@ void LayoutOptionsLayer::onDelete(CCObject*){
 }
 
 void LayoutOptionsLayer::onFontSelected(FontSelectionCell* cell){
+    if (!isEditingNode()) return;
 
+    if (currentlySelectedFontCell != nullptr) currentlySelectedFontCell->deselect();
+    currentlySelectedFontCell = cell;
+    currentlySelectedFontCell->select();
+
+    if (editedLabel.has_value()){
+        editedLabel.value()->setFont(cell->font);
+        DTLayer::get()->organizeLayout();
+        fontSelectedIndicatorLabel->setText(fmt::format("selected: \"{}\"", cell->font.substr(0, cell->font.length() - 4)));
+        fontSelectedIndicatorLabel->setFont(cell->font);
+    }
 }

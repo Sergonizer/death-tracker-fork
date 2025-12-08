@@ -11,9 +11,12 @@ class FontSelectionCell : public CCMenu {
         void deselect();
         void select();
 
+        std::string font;
     private:
         bool init(const std::string& font, const std::function<void(FontSelectionCell* onSelected)>& onFontChosen);
 
-        std::string font;
         std::function<void(FontSelectionCell* onSelected)> onFontChosen = NULL;
+
+        void onUsedClicked(CCObject*);
+        CCMenuItemSpriteExtra* useBtn;
 };
