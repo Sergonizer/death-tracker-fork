@@ -173,7 +173,7 @@ void LayoutColumn::update(float dt){
         targetAddBtnPos = this->convertToNodeSpace(lowestLabelPointWorldSpace) - ccp(0, addNewBtnOffset);
     }
     else{
-        targetAddBtnPos = bgSpr->getPosition();
+        targetAddBtnPos = bgSpr->getPosition() + ccp(0, -addNewBtnOffset);
     }
 
     targetAddBtnPos.x = this->getContentWidth() / 2;
@@ -293,7 +293,6 @@ void LayoutColumn::onAddLabelBtnClicked(CCObject*){
 
 void LayoutColumn::onOrganized(float deltaMove){
     menu->setPositionY(menu->getPositionY() - deltaMove);
-    tempHeight = menu->getPositionY();
 }
 
 void LayoutColumn::destroyColumnAndCleanup(){

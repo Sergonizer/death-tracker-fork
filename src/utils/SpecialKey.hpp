@@ -9,6 +9,7 @@ class SpecialKey : CCObject {
         std::string currentContent;
 
         std::string key;
+        std::string description;
 
         std::optional<UpdateTask> updateFunction = std::nullopt;
 
@@ -22,7 +23,10 @@ class SpecialKey : CCObject {
         bool updateOngoing = false;
 
     public:
-        SpecialKey(const std::string& key);
+        SpecialKey(const std::string& key, const std::string& description);
+        ~SpecialKey(){
+            //log::info("destroyed special key {}", key);
+        }
 
         bool compareToKey(const std::string& otherKey);
 
@@ -35,6 +39,9 @@ class SpecialKey : CCObject {
         }
         std::string getKey() const{
             return this->key;
+        }
+        std::string getDescription() const{
+            return this->description;
         }
 
         void setUpdateCompletedCallback(const std::function<void(SpecialKey*)>& callback);

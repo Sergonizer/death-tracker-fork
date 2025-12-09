@@ -2,6 +2,7 @@
 #include <nodes/layers/DTLayer.hpp>
 #include <hooks/DTCCTextFieldTTF.hpp>
 #include <geode.custom-keybinds/include/Keybinds.hpp>
+#include <nodes/SpecialKeyCell.hpp>
 
 /*
 settings needed:
@@ -52,6 +53,7 @@ bool LayoutOptionsLayer::init(const CCSize& size) {
     generalBtnsMenu->setPosition({size.width / 2, size.height - 10});
     generalBtnsMenu->setContentSize({0, 0});
     generalBtnsMenu->setID("general-btns-menu");
+    generalBtnsMenu->setZOrder(10);
     this->addChild(generalBtnsMenu);
 
     labelSettingsNode = CCMenu::create();
@@ -71,6 +73,12 @@ bool LayoutOptionsLayer::init(const CCSize& size) {
     fontSelectionNode->setContentSize({0, 0});
     fontSelectionNode->setID("font-selection-node");
     this->addChild(fontSelectionNode);
+
+    specialKeysNode = CCMenu::create();
+    specialKeysNode->setPosition({size.width / 2, size.height - 10});
+    specialKeysNode->setContentSize({0, 0});
+    specialKeysNode->setID("special-keys-node");
+    this->addChild(specialKeysNode);
 
     labelNameInput = TextInput::create((size.width - 10) / .75f, "label name");
     labelNameInput->setID("label-name-input");
@@ -98,14 +106,30 @@ bool LayoutOptionsLayer::init(const CCSize& size) {
         if (!editedLabel.has_value()) return;
 
         editedLabel.value()->setLabelText(newStr);
+
+        labelTextSpecialKeysInput->setString(newStr);
     });
     labelSettingsNode->addChild(labelTextInput);
 
     auto labelTextInputLabel = CCLabelBMFont::create("Text", "bigFont.fnt");
     labelTextInputLabel->setScale(.4f);
     labelTextInputLabel->setPosition(labelTextInput->getPosition() + ccp(0, labelTextInput->getScaledContentHeight() / 2 + labelTextInputLabel->getScaledContentHeight() / 2));
-    labelTextInputLabel->setID("text-color-label");
+    labelTextInputLabel->setID("text-label");
     labelSettingsNode->addChild(labelTextInputLabel);
+
+    auto keysBtnSpr = ButtonSprite::create("Keys");
+    keysBtnSpr->setScale(.35f);
+    auto keysBtn = CCMenuItemSpriteExtra::create(
+        keysBtnSpr,
+        this,
+        menu_selector(LayoutOptionsLayer::onSpecialKeysClicked)
+    );
+    keysBtn->setID("special-keys-page-btn");
+    keysBtn->setPosition(labelTextInputLabel->getPosition() + ccp(
+        labelTextInputLabel->getScaledContentWidth() / 2 + keysBtn->getScaledContentWidth() / 2,
+        0
+    ));
+    labelSettingsNode->addChild(keysBtn);
 
     labelColorBtnSprite = CCSprite::createWithSpriteFrameName("GJ_colorBtn_001.png");
     labelColorBtnSprite->setID("color-spr");
@@ -140,7 +164,7 @@ bool LayoutOptionsLayer::init(const CCSize& size) {
     auto textColorBtnLabel = CCLabelBMFont::create("text", "bigFont.fnt");
     textColorBtnLabel->setScale(.4f);
     textColorBtnLabel->setPosition(textColorBtn->getPosition() + ccp(0, textColorBtn->getScaledContentHeight() / 2 + textColorBtnLabel->getScaledContentHeight() / 2));
-    textColorBtnLabel->setID("text-label");
+    textColorBtnLabel->setID("text-color-label");
     labelSettingsNode->addChild(textColorBtnLabel);
 
     auto colorLabel = CCLabelBMFont::create("color", "bigFont.fnt");
@@ -149,9 +173,10 @@ bool LayoutOptionsLayer::init(const CCSize& size) {
     colorLabel->setID("color-label");
     labelSettingsNode->addChild(colorLabel);
 
-    fontSizeInput = TextInput::create((size.width - 60) / .75f, "size");
+    fontSizeInput = TextInput::create((size.width - 100) / .75f, "size");
     fontSizeInput->setScale(.75f);
     fontSizeInput->setPositionY(-195);
+    fontSizeInput->setPositionX(-32);
     fontSizeInput->setCommonFilter(CommonFilter::Float);
     fontSizeInput->setCallback([&](const std::string& newStr){
         if (!editedLabel.has_value()) return;
@@ -168,14 +193,16 @@ bool LayoutOptionsLayer::init(const CCSize& size) {
     labelSettingsNode->addChild(fontSizeInput);
 
     auto fontSizeInputLabel = CCLabelBMFont::create("Font Size", "bigFont.fnt");
-    fontSizeInputLabel->setScale(.4f);
+    fontSizeInputLabel->setScale(.35f);
     fontSizeInputLabel->setPosition(fontSizeInput->getPosition() + ccp(0, fontSizeInput->getScaledContentHeight() / 2 + fontSizeInputLabel->getScaledContentHeight() / 2));
     fontSizeInputLabel->setID("font-size-label");
     labelSettingsNode->addChild(fontSizeInputLabel);
 
     scaleSlider = Slider::create(this, menu_selector(LayoutOptionsLayer::scaleSliderChanged), .5f);
     scaleSlider->setPositionY(-215);
+    scaleSlider->setPositionX(-117);
     scaleSlider->setID("font-size-slider");
+    scaleSlider->setScaleX(.7f);
     labelSettingsNode->addChild(scaleSlider);
 
     alignmentMenu = CCMenu::create();
@@ -192,6 +219,7 @@ bool LayoutOptionsLayer::init(const CCSize& size) {
     );
 
     auto alignmentLabel = CCLabelBMFont::create("Alignment", "bigFont.fnt");
+    alignmentLabel->setID("alignment-label");
     alignmentLabel->setScale(.4f);
     alignmentLabel->setPosition(alignmentMenu->getPosition() + ccp(0, 5 + alignmentMenu->getScaledContentHeight() / 2 + alignmentLabel->getScaledContentHeight() / 2));
     labelSettingsNode->addChild(alignmentLabel);
@@ -222,6 +250,40 @@ bool LayoutOptionsLayer::init(const CCSize& size) {
 
     alignmentMenu->updateLayout();
 
+    auto wrapModeCutoff = ButtonSprite::create("CUTOFF");
+    wrapModeCutoff->setID("cutoff");
+    wrapModeCutoff->setScale(.5f);
+    auto wrapModeSpace = ButtonSprite::create("SPACE");
+    wrapModeSpace->setID("space");
+    wrapModeSpace->setVisible(false);
+    auto wrapModeWord = ButtonSprite::create("WORD");
+    wrapModeWord->setID("word");
+    wrapModeWord->setVisible(false);
+
+    wrappingModeBtn = CCMenuItemSpriteExtra::create(
+        wrapModeCutoff,
+        this,
+        menu_selector(LayoutOptionsLayer::onWrappingBtn)
+    );
+    wrappingModeBtn->setID("wrapping-mode-btn");
+    
+    wrapModeSpace->setPosition(wrapModeCutoff->getPosition());
+    wrapModeSpace->setScale(wrapModeCutoff->getScale());
+    wrappingModeBtn->addChild(wrapModeSpace);
+    wrapModeWord->setPosition(wrapModeCutoff->getPosition());
+    wrapModeWord->setScale(wrapModeCutoff->getScale());
+    wrappingModeBtn->setPositionY(fontSizeInput->getPositionY());
+    wrappingModeBtn->setPositionX(32);
+    wrappingModeBtn->addChild(wrapModeWord);
+
+    auto wrappingModeLabel = CCLabelBMFont::create("Wrapping", "bigFont.fnt");
+    wrappingModeLabel->setScale(.35f);
+    wrappingModeLabel->setPosition({wrappingModeBtn->getPositionX(), fontSizeInputLabel->getPositionY()});
+    wrappingModeLabel->setID("wrapping-label");
+    labelSettingsNode->addChild(wrappingModeLabel);
+
+    labelSettingsNode->addChild(wrappingModeBtn);
+
     auto fontSelectionBtnSpr = ButtonSprite::create("Select Font");
     fontSelectionBtnSpr->setScale(.55f);
     auto fontSelectionBtn = CCMenuItemSpriteExtra::create(
@@ -247,18 +309,24 @@ bool LayoutOptionsLayer::init(const CCSize& size) {
     labelSettingsNode->addChild(fontSelectionBtnLabel);
 
     addEventListener<keybinds::InvokeBindFilter>([&](keybinds::InvokeBindEvent* event) {
-        if (event->isDown() && labelTextInput->getInputNode()->m_selected && editedLabel.has_value()) {
-            auto str = labelTextInput->getString();
-            int pos = labelTextInput->getInputNode()->m_textField->m_uCursorPos;
+        if (event->isDown() && editedLabel.has_value()) {
+            TextInput* toEdit = nullptr;
+            if (labelTextInput->getInputNode()->m_selected) toEdit = labelTextInput;
+            else if (labelTextSpecialKeysInput->getInputNode()->m_selected) toEdit = labelTextSpecialKeysInput;
+            
+            if (toEdit == nullptr) return ListenerResult::Propagate;
+
+            auto str = toEdit->getString();
+            int pos = toEdit->getInputNode()->m_textField->m_uCursorPos;
 
             if (pos == -1) str += "{nl}";
             else {
                 str = str.insert(pos, "{nl}");
-                labelTextInput->getInputNode()->m_textField->m_uCursorPos += 4;
+                toEdit->getInputNode()->m_textField->m_uCursorPos += 4;
             }
 
-            labelTextInput->setString(str);
-            editedLabel.value()->setLabelText(labelTextInput->getString());
+            toEdit->setString(str);
+            editedLabel.value()->setLabelText(toEdit->getString());
         }
         return ListenerResult::Propagate;
     }, "enter-new-line"_spr);
@@ -266,6 +334,7 @@ bool LayoutOptionsLayer::init(const CCSize& size) {
     fontSelectionNode->setScaleY(0);
     labelSettingsNode->setScaleY(0);
     columnSettingsNode->setScaleY(0);
+    specialKeysNode->setScaleY(0);
 
     auto backBtnSpr = CCSprite::createWithSpriteFrameName("GJ_arrow_03_001.png");
     backBtnSpr->setScale(.65f);
@@ -286,7 +355,7 @@ bool LayoutOptionsLayer::init(const CCSize& size) {
         menu_selector(LayoutOptionsLayer::onDelete)
     );
     deleteBtn->setID("delete-btn");
-    deleteBtn->setPosition({65, 6});
+    deleteBtn->setPosition({62, 6});
     generalBtnsMenu->addChild(deleteBtn);
 
     fontsScroll = ScrollLayer::create(size - ccp(8, 30));
@@ -301,7 +370,8 @@ bool LayoutOptionsLayer::init(const CCSize& size) {
     fontSelectionNode->addChild(fontsScroll);
 
     auto fontsScrollbar = Scrollbar::create(fontsScroll);
-    fontsScrollbar->setPosition({68, fontsScroll->getPositionY() / 2});
+    fontsScrollbar->setPosition({65, fontsScroll->getPositionY()});
+    fontsScrollbar->ignoreAnchorPointForPosition(true);
     fontSelectionNode->addChild(fontsScrollbar);
 
     for (const auto& font : StatsManager::getAllFonts())
@@ -317,13 +387,115 @@ bool LayoutOptionsLayer::init(const CCSize& size) {
 
     fontsScroll->setMouseEnabled(false);
 
+
+    labelTextSpecialKeysInput = TextInput::create((size.width - 10) / .75f, "label text");
+    labelTextSpecialKeysInput->setScale(.75f);
+    labelTextSpecialKeysInput->setCommonFilter(CommonFilter::Any);
+    labelTextSpecialKeysInput->setID("label-text-input");
+    labelTextSpecialKeysInput->setPositionY(-22);
+    labelTextSpecialKeysInput->setCallback([&](const std::string& newStr){
+        if (!editedLabel.has_value()) return;
+
+        editedLabel.value()->setLabelText(newStr);
+
+        labelTextInput->setString(newStr);
+    });
+    specialKeysNode->addChild(labelTextSpecialKeysInput);
+
+    auto labelTextSpecialKeysInputLabel = CCLabelBMFont::create("text", "bigFont.fnt");
+    labelTextSpecialKeysInputLabel->setScale(.4f);
+    labelTextSpecialKeysInputLabel->setPosition(labelTextSpecialKeysInput->getPosition() + ccp(0, labelTextSpecialKeysInput->getScaledContentHeight() / 2 + labelTextSpecialKeysInputLabel->getScaledContentHeight() / 2));
+    labelTextSpecialKeysInputLabel->setID("text-Label");
+    specialKeysNode->addChild(labelTextSpecialKeysInputLabel);
+
+    specialKeysScroll = ScrollLayer::create(size - ccp(8, 60));
+    specialKeysScroll->setPosition({-size.width / 2, -size.height + 20});
+    specialKeysScroll->m_contentLayer->setLayout(ColumnLayout::create()
+        ->setGrowCrossAxis(true)
+        ->setCrossAxisOverflow(false)
+        ->setAutoGrowAxis(specialKeysScroll->getContentHeight())
+        ->setAxisAlignment(AxisAlignment::End)
+        ->setAxisReverse(true)
+    );
+    specialKeysNode->addChild(specialKeysScroll);
+
+    auto specialKeysScrollbar = Scrollbar::create(specialKeysScroll);
+    specialKeysScrollbar->setPosition({65, specialKeysScroll->getPositionY()});
+    specialKeysScrollbar->ignoreAnchorPointForPosition(true);
+    specialKeysNode->addChild(specialKeysScrollbar);
+
+    for (const auto& [key, keyObj] : DTLayer::get()->specialStrings)
+    {
+        auto cell = SpecialKeyCell::create(keyObj, [&](auto str){LayoutOptionsLayer::onSpecialKeyAdded(str);});
+        specialKeysScroll->m_contentLayer->addChild(cell);
+    }
+
+    specialKeysScroll->m_contentLayer->updateLayout();
+    specialKeysScroll->moveToTop();
+    specialKeysScroll->setMouseEnabled(false);
+
+
+
+    columnWidthInput = TextInput::create((size.width - 10) / .75f, "Width");
+    columnWidthInput->setScale(.75f);
+    columnWidthInput->setCommonFilter(CommonFilter::Float);
+    columnWidthInput->setID("column-width-input");
+    columnWidthInput->setPositionY(-30);
+    columnWidthInput->setCallback([&](const std::string& newStr){
+        if (!editedColumn.has_value()) return;
+
+        float endValue = DTColumnInfo::minWidth;
+
+        auto toNumRes = geode::utils::numFromString<float>(newStr);
+        if (toNumRes.isOk()) endValue = toNumRes.unwrap();
+
+        editedColumn.value()->setContentWidth(std::max(DTColumnInfo::minWidth, endValue));
+
+        editedColumn.value()->updateSizesByContent();
+
+        ignoreNextOrganization = true;
+        DTLayer::get()->organizeLayout();
+    });
+    columnSettingsNode->addChild(columnWidthInput);
+
+    auto columnWidthInputLabel = CCLabelBMFont::create("column width", "bigFont.fnt");
+    columnWidthInputLabel->setScale(.4f);
+    columnWidthInputLabel->setPosition(columnWidthInput->getPosition() + ccp(0, columnWidthInput->getScaledContentHeight() / 2 + columnWidthInputLabel->getScaledContentHeight() / 2));
+    columnWidthInputLabel->setID("width-Label");
+    columnSettingsNode->addChild(columnWidthInputLabel);
+
+    DTLayer::get()->subscribeToOrganizationEvent(this, [&](auto _){
+        if (!editedColumn.has_value()) return;
+        if (ignoreNextOrganization){
+            ignoreNextOrganization = false;
+            return;
+        }
+
+        auto widthText = std::to_string(editedColumn.value()->info.currentWidth);
+        for (int i = widthText.length() - 1; i >= 0; i--)
+        {
+            if (widthText[i] != '0') break;
+
+            widthText.pop_back();
+        }
+        
+        if (widthText.length() != 0 && widthText[widthText.length() - 1] == '.') widthText.pop_back();
+
+        columnWidthInput->setString(widthText);
+    });
+
     return true;
 }
 
 void LayoutOptionsLayer::setEditedNodeTo(DTLabel* label) {
     if (editedLabel.has_value() && editedLabel.value() == label) return;
+
+    if (editedLabel.has_value()) editedLabel.value()->onBeingEditedEnded();
+
     editedLabel = label;
     editedColumn = std::nullopt;
+
+    label->onBeingEdited();
 
     if (!label->info.isExpanded)
         label->toggleExpand(nullptr);
@@ -340,6 +512,7 @@ void LayoutOptionsLayer::setEditedNodeTo(DTLabel* label) {
 
     labelNameInput->setString(label->info.labelName);
     labelTextInput->setString(label->info.text);
+    labelTextSpecialKeysInput->setString(label->info.text);
 
     scaleSlider->setValue(
         (label->info.scale - DTLabelInfo::MIN_MAX_SCALE.x) / (DTLabelInfo::MIN_MAX_SCALE.y - DTLabelInfo::MIN_MAX_SCALE.x)
@@ -354,12 +527,29 @@ void LayoutOptionsLayer::setEditedNodeTo(DTLabel* label) {
     currentlySelectedFontCell->select();
 
     switchToMenu(1);
+
+    updateWrapModeBtnVisuals();
 }
 
 void LayoutOptionsLayer::setEditedNodeTo(LayoutColumn* column) {
     if (editedColumn.has_value() && editedColumn.value() == column) return;
+
+    if (editedLabel.has_value()) editedLabel.value()->onBeingEditedEnded();
+
     editedColumn = column;
     editedLabel = std::nullopt;
+
+    auto widthText = std::to_string(column->info.currentWidth);
+    for (int i = widthText.length() - 1; i >= 0; i--)
+    {
+        if (widthText[i] != '0') break;
+
+        widthText.pop_back();
+    }
+    
+    if (widthText.length() != 0 && widthText[widthText.length() - 1] == '.') widthText.pop_back();
+
+    columnWidthInput->setString(widthText);
 
     switchToMenu(2);
 }
@@ -367,6 +557,9 @@ void LayoutOptionsLayer::setEditedNodeTo(LayoutColumn* column) {
 void LayoutOptionsLayer::close() {
     //close the options layer
     switchToMenu(0);
+
+    if (editedLabel.has_value()) editedLabel.value()->onBeingEditedEnded();
+    
     editedLabel = std::nullopt;
     editedColumn = std::nullopt;
     colorChangeFunc = NULL;
@@ -457,18 +650,34 @@ void LayoutOptionsLayer::switchToMenu(uint8_t menuID){
     labelSettingsNode->stopAllActions();
     columnSettingsNode->stopAllActions();
     fontSelectionNode->stopAllActions();
+    specialKeysNode->stopAllActions();
 
     currentPage = menuID;
 
     fontsScroll->setMouseEnabled(false);
+    specialKeysScroll->setMouseEnabled(false);
 
     auto exitEasing = [](bool open) -> CCEaseExponentialOut* {
         return CCEaseExponentialOut::create(CCScaleTo::create(.2f, 1, open ? 1 : 0));
     };
 
+    auto setAllInputs = [](CCNode* node, bool enabled){
+        for (const auto& child : CCArrayExt<CCNode*>(node->getChildren()))
+        {
+            if (auto text = typeinfo_cast<TextInput*>(child))
+                text->setEnabled(enabled);
+        }
+        
+    };
+
     labelSettingsNode->runAction(exitEasing(false));
     columnSettingsNode->runAction(exitEasing(false));
     fontSelectionNode->runAction(exitEasing(false));
+    specialKeysNode->runAction(exitEasing(false));
+    setAllInputs(labelSettingsNode, false);
+    setAllInputs(columnSettingsNode, false);
+    setAllInputs(fontSelectionNode, false);
+    setAllInputs(specialKeysNode, false);
 
     CCNode* selectedNode = nullptr;
 
@@ -488,12 +697,20 @@ void LayoutOptionsLayer::switchToMenu(uint8_t menuID){
         fontsScroll->setMouseEnabled(true);
         fontsScroll->moveToTop();
         break;
+
+    case 4:
+        selectedNode = specialKeysNode;
+        specialKeysScroll->setMouseEnabled(true);
+        specialKeysScroll->moveToTop();
+        break;
     
     default:
         break;
     }
 
     if (selectedNode != nullptr){
+        setAllInputs(selectedNode, true);
+
         selectedNode->stopAllActions();
         selectedNode->runAction(CCSequence::create(
             exitEasing(false),
@@ -507,6 +724,10 @@ void LayoutOptionsLayer::switchToMenu(uint8_t menuID){
 void LayoutOptionsLayer::onBack(CCObject*){
     if (currentPage == 3){
         switchToMenu(editedLabel.has_value() ? 1 : 2);
+        return;
+    }
+    else if (currentPage == 4){
+        switchToMenu(1);
         return;
     }
 
@@ -541,4 +762,75 @@ void LayoutOptionsLayer::onFontSelected(FontSelectionCell* cell){
         fontSelectedIndicatorLabel->setText(fmt::format("selected: \"{}\"", cell->font.substr(0, cell->font.length() - 4)));
         fontSelectedIndicatorLabel->setFont(cell->font);
     }
+}
+
+void LayoutOptionsLayer::onWrappingBtn(CCObject*){
+    if (!editedLabel.has_value()) return;
+
+    WrappingMode newMode = WrappingMode::CUTOFF_WRAP;
+
+    if (wrappingModeBtn->getChildByID("cutoff")->isVisible()){
+        newMode = WrappingMode::SPACE_WRAP;
+    }
+    else if (wrappingModeBtn->getChildByID("space")->isVisible()){
+        newMode = WrappingMode::WORD_WRAP;
+    }
+    else if (wrappingModeBtn->getChildByID("word")->isVisible()){
+        newMode = WrappingMode::CUTOFF_WRAP;
+    }
+
+    editedLabel.value()->setTextWrapping(newMode);
+
+    updateWrapModeBtnVisuals();
+}
+
+void LayoutOptionsLayer::updateWrapModeBtnVisuals(){
+    if (!editedLabel.has_value()) return;
+
+    for (const auto& child : CCArrayExt<CCNode*>(wrappingModeBtn->getChildren()))
+    {
+        child->setVisible(false);
+    }
+
+    switch (editedLabel.value()->info.wrapping)
+    {
+    case WrappingMode::CUTOFF_WRAP:
+        wrappingModeBtn->getChildByID("cutoff")->setVisible(true);
+        break;
+    case WrappingMode::SPACE_WRAP:
+        wrappingModeBtn->getChildByID("space")->setVisible(true);
+        break;
+    case WrappingMode::WORD_WRAP:
+        wrappingModeBtn->getChildByID("word")->setVisible(true);
+        break;
+    
+    default:
+        wrappingModeBtn->getChildByID("cutoff")->setVisible(true);
+        break;
+    }
+}
+
+void LayoutOptionsLayer::onSpecialKeysClicked(CCObject*){
+    switchToMenu(4);
+}
+
+void LayoutOptionsLayer::onSpecialKeyAdded(const std::string& str){
+    if (!editedLabel.has_value()) return;
+
+    auto toEditStr = labelTextSpecialKeysInput->getString();
+    int pos = labelTextSpecialKeysInput->getInputNode()->m_textField->m_uCursorPos;
+
+    // log::info("is selected {}", labelTextSpecialKeysInput->getInputNode()->m_selected);
+
+    auto modifiedStr = fmt::format("{{{}}}", str);
+
+    if (pos == -1) toEditStr += modifiedStr;
+    else {
+        toEditStr = toEditStr.insert(pos, modifiedStr);
+        labelTextSpecialKeysInput->getInputNode()->m_textField->m_uCursorPos += modifiedStr.length();
+    }
+
+    labelTextSpecialKeysInput->setString(toEditStr);
+    editedLabel.value()->setLabelText(labelTextSpecialKeysInput->getString());
+    labelTextSpecialKeysInput->focus();
 }

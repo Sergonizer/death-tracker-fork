@@ -160,10 +160,11 @@ struct DTLabelInfo_s {
     std::string text = "new label";
     std::string font = "bigFont.fnt";
     CCTextAlignment horizontalAlignment = CCTextAlignment::kCCTextAlignmentCenter;
-    ccColor4B labelColor = {255, 255, 255, 255};
+    ccColor4B labelColor = {170, 170, 170, 255};
     ccColor4B textColor = {255, 255, 255, 255};
     float scale = 1;
     bool isExpanded;
+    WrappingMode wrapping = WrappingMode::CUTOFF_WRAP;
 
     static inline const CCPoint MIN_MAX_SCALE = ccp(0.01f, 2);
 };
@@ -187,6 +188,10 @@ struct matjson::Serialize<DTLabelInfo> {
         
         GEODE_UNWRAP_INTO(info.scale, value["scale"].asDouble());
         GEODE_UNWRAP_INTO(info.isExpanded, value["isExpanded"].asBool());
+        if (value.contains("wrapping")){
+            GEODE_UNWRAP_INTO(auto wrapping, value["wrapping"].asInt());
+            info.wrapping = static_cast<WrappingMode>(wrapping);
+        }
 
         return Ok(info);
     }
@@ -206,6 +211,7 @@ struct matjson::Serialize<DTLabelInfo> {
 
             { "scale", value.scale },
             { "isExpanded", value.isExpanded },
+            { "wrapping", static_cast<int>(value.wrapping) },
         });
         return obj;
     }

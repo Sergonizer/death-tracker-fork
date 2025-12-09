@@ -25,8 +25,6 @@ class LayoutColumn : public CCMenu {
         void setContentHeight(float height);
         void setContentWidth(float width);
 
-        float tempHeight;
-
         static float addNewBtnOffset;
 
         void destroyColumnAndCleanup();
@@ -35,6 +33,8 @@ class LayoutColumn : public CCMenu {
         CCScale9Sprite* bgSpr;
 
         float topHeight;
+
+        void updateSizesByContent();
         
     private:
         bool init(const DTColumnInfo& info, float topHeight, float minHeight);
@@ -53,8 +53,6 @@ class LayoutColumn : public CCMenu {
 
         CCMenu* menu;
         CCPoint tempMenuPos;
-
-        void updateSizesByContent();
 
         void registerWithTouchDispatcher() override;
         bool ccTouchBegan(cocos2d::CCTouch* touch, cocos2d::CCEvent* event) override;

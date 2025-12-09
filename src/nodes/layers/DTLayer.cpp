@@ -351,7 +351,7 @@ void DTLayer::addSpecialString(const std::shared_ptr<SpecialKey>& key){
 }
 
 void DTLayer::populateSpecialStrings(){
-    auto from0Key = std::make_shared<SpecialKey>("f0");
+    auto from0Key = std::make_shared<SpecialKey>("f0", "Adds all your runs from 0% (shared with linked levels)");
     from0Key->setUpdateFunction(UpdateTask::run([&](auto progress, auto hasBeenCancelled) -> UpdateTask::Result {
         if (m_MyLevelStats.isErr()) return Err("Failed to create from0 deaths string");
         auto& myStats = m_MyLevelStats.unwrap();
@@ -373,7 +373,7 @@ void DTLayer::populateSpecialStrings(){
     }, "Creating from0 deaths string"));
     addSpecialString(from0Key);
 
-    auto runsKey = std::make_shared<SpecialKey>("runs");
+    auto runsKey = std::make_shared<SpecialKey>("runs", "Adds all your runs from practice mode/start positions (shared with linked levels)");
     runsKey->setUpdateFunction(UpdateTask::run([&](auto progress, auto hasBeenCancelled) -> UpdateTask::Result {
         if (m_MyLevelStats.isErr()) return Err("Failed to create run deaths string");
         auto& myStats = m_MyLevelStats.unwrap();
@@ -393,15 +393,15 @@ void DTLayer::populateSpecialStrings(){
     }, "Creating runs deaths string"));
     addSpecialString(runsKey);
 
-    auto nlKey = std::make_shared<SpecialKey>("nl");
+    auto nlKey = std::make_shared<SpecialKey>("nl", "Adds a new line");
     nlKey->setUpdateFunction(UpdateTask::immediate(Ok("\n")));
     addSpecialString(nlKey);
     
-    auto attemptsKey = std::make_shared<SpecialKey>("att");
+    auto attemptsKey = std::make_shared<SpecialKey>("att", "Adds your geometry dash attempt count (shared with linked levels)");
     attemptsKey->setUpdateFunction(UpdateTask::immediate(Ok(std::to_string(m_Level->m_attempts.value()))));
     addSpecialString(attemptsKey);
 
-    auto levelNameKey = std::make_shared<SpecialKey>("lvln");
+    auto levelNameKey = std::make_shared<SpecialKey>("lvln", "Adds the current levels name");
     levelNameKey->setUpdateFunction(UpdateTask::immediate(Ok(m_Level->m_levelName)));
     addSpecialString(levelNameKey);
 }
@@ -938,8 +938,6 @@ organizationTask DTLayer::organizeLayoutTask(){
                 label->tempPos = ccp(std::numeric_limits<float>::max(), std::numeric_limits<float>::max());
                 label->tempWidth = 0;
             }
-
-            colData.column->tempHeight = 0;
         }
 
         for (const auto& [label, data] : labelSnapshots)
@@ -951,7 +949,7 @@ organizationTask DTLayer::organizeLayoutTask(){
         std::map<DTLabel*, std::map<LayoutColumn*, std::optional<int>>> labelAwaitingColumnValues{};
         std::set<DTLabel*> processedLabels{};
 
-        auto UpdateTempPos = [](LayoutColumn* column, DTLabel* label, DTLabel* prevLabel){
+        auto UpdateTempPos = [&](LayoutColumn* column, DTLabel* label, DTLabel* prevLabel){
             auto startPosInLabelSpace = label->getParent()->convertToNodeSpace(column->convertToWorldSpace(column->bgSpr->getPosition()));
 
             float prevHeight = startPosInLabelSpace.y;
@@ -963,13 +961,6 @@ organizationTask DTLayer::organizeLayoutTask(){
             float newX = startPosInLabelSpace.x;
 
             if (newX < label->tempPos.x) label->tempPos.x = newX;
-
-            for (const auto& labelColumn : label->getHolders())
-            {
-                auto height = std::abs(label->tempPos.y) + label->getContentHeight() / 2 + labelColumn->topHeight + LayoutColumn::addNewBtnOffset * 2;
-
-                if (labelColumn->tempHeight < height) labelColumn->tempHeight = height;
-            }
         };
 
         auto UpdateTempWidth = [](DTLabel* label){
@@ -1099,7 +1090,11 @@ organizationTask DTLayer::organizeLayoutTask(){
         float heighestHeight = 0;
         
         for (const auto& colData : columnSnapshots){
-            if (heighestHeight < colData.column->tempHeight) heighestHeight = colData.column->tempHeight;
+            for (const auto& [_, label] : colData.labels)
+            {
+                auto height = std::abs(label->tempPos.y) + label->getContentHeight() + LayoutColumn::addNewBtnOffset * 2;
+                if (heighestHeight < height) heighestHeight = height;
+            }
         }
 
         organizationResult data{};
@@ -1349,8 +1344,8 @@ void DTLayer::specialKeyUpdateCompleted(SpecialKey* key){
 void DTLayer::setOptionsLayerTo(DTLabel* label){
     if (layoutOptionsLayer == nullptr) return;
     if (!layoutOptionsLayer->isEditingNode()){
-        m_mainLayer->runAction(CCEaseBackOut::create(CCMoveBy::create(0.5f, ccp(-85.5f, 0))));
-        layoutOptionsLayer->runAction(CCEaseBackOut::create(CCMoveBy::create(0.5f, ccp(-164, 0))));
+        m_mainLayer->runAction(CCEaseBackOut::create(CCMoveBy::create(0.5f, ccp(-70.5f, 0))));
+        layoutOptionsLayer->runAction(CCEaseBackOut::create(CCMoveBy::create(0.5f, ccp(-160, 0))));
     }
 
     layoutOptionsLayer->setEditedNodeTo(label);
@@ -1358,8 +1353,8 @@ void DTLayer::setOptionsLayerTo(DTLabel* label){
 void DTLayer::setOptionsLayerTo(LayoutColumn* column){
     if (layoutOptionsLayer == nullptr) return;
     if (!layoutOptionsLayer->isEditingNode()){
-        m_mainLayer->runAction(CCEaseBackOut::create(CCMoveBy::create(0.5f, ccp(-85.5f, 0))));
-        layoutOptionsLayer->runAction(CCEaseBackOut::create(CCMoveBy::create(0.5f, ccp(-164, 0))));
+        m_mainLayer->runAction(CCEaseBackOut::create(CCMoveBy::create(0.5f, ccp(-70.5f, 0))));
+        layoutOptionsLayer->runAction(CCEaseBackOut::create(CCMoveBy::create(0.5f, ccp(-160, 0))));
     }
 
     layoutOptionsLayer->setEditedNodeTo(column);
@@ -1367,8 +1362,8 @@ void DTLayer::setOptionsLayerTo(LayoutColumn* column){
 void DTLayer::closeOptionsLayer(){
     if (layoutOptionsLayer == nullptr) return;
     if (layoutOptionsLayer->isEditingNode()){
-        m_mainLayer->runAction(CCEaseBackOut::create(CCMoveBy::create(0.5f, ccp(85.5f, 0))));
-        layoutOptionsLayer->runAction(CCEaseBackOut::create(CCMoveBy::create(0.5f, ccp(164, 0))));
+        m_mainLayer->runAction(CCEaseBackOut::create(CCMoveBy::create(0.5f, ccp(70.5f, 0))));
+        layoutOptionsLayer->runAction(CCEaseBackOut::create(CCMoveBy::create(0.5f, ccp(160, 0))));
     }
 
     layoutOptionsLayer->close();

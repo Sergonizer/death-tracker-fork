@@ -1,7 +1,8 @@
 #include "SpecialKey.hpp"
 
-SpecialKey::SpecialKey(const std::string& key){
+SpecialKey::SpecialKey(const std::string& key, const std::string& description){
     this->key = key;
+    this->description = description;
 
     //this->autorelease();
 }

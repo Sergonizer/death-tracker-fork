@@ -44,6 +44,7 @@ class DTLabel : public CCMenu {
         void setLabelColor(const ccColor4B& newColor);
         void setTextColor(const ccColor4B& newColor);
         void setTextAlignment(CCTextAlignment alignment);
+        void setTextWrapping(WrappingMode wrapMode);
 
         float textCornerOffset = 5;
 
@@ -57,6 +58,9 @@ class DTLabel : public CCMenu {
         std::set<std::string> keysUsed{};
 
         void toggleExpand(CCObject*);
+
+        void onBeingEdited();
+        void onBeingEditedEnded();
         
     private:
         bool init(const DTLabelInfo& info);
@@ -107,4 +111,6 @@ class DTLabel : public CCMenu {
         void updateInfoWithColumnData();
 
         LoadingCircle* loadingCircle;
+
+        CCSprite* glow;
 };

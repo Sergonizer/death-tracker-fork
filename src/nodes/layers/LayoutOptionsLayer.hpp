@@ -33,37 +33,52 @@ class LayoutOptionsLayer : public CCLayer, public geode::ColorPickPopupDelegate 
         CCMenu* labelSettingsNode = nullptr;
         CCMenu* columnSettingsNode = nullptr;
         CCMenu* fontSelectionNode = nullptr;
+        CCMenu* specialKeysNode = nullptr;
 
         uint8_t currentPage = 0;
 
         TextInput* labelNameInput;
         TextInput* labelTextInput;
         TextInput* fontSizeInput;
-
+        
         void onTextColorBtnClicked(CCObject*);
         void onLabelColorBtnClicked(CCObject*);
-
+        
         void updateColor(cocos2d::ccColor4B const& color);
-
+        
         CCSprite* textColorBtnSprite;
         CCSprite* labelColorBtnSprite;
-
+        
         void scaleSliderChanged(CCObject*);
         Slider* scaleSlider;
-
+        
         std::function<void(cocos2d::ccColor4B const&)> colorChangeFunc = NULL;
-
+        
         void onAlignmentChanged(CCObject* sender);
         CCMenu* alignmentMenu;
-
+        
+        void onWrappingBtn(CCObject*);
+        void updateWrapModeBtnVisuals();
+        CCMenuItemSpriteExtra* wrappingModeBtn;
+        
         void onFontSelection(CCObject*);
         SimpleTextArea* fontSelectedIndicatorLabel;
-
+        
         void onBack(CCObject*);
         void onDelete(CCObject*);
-
+        
         std::map<std::string, FontSelectionCell*> allFontCells{};
         FontSelectionCell* currentlySelectedFontCell = nullptr;
         void onFontSelected(FontSelectionCell* cell);
         ScrollLayer* fontsScroll;
-};
+
+        void onSpecialKeysClicked(CCObject*);
+
+        TextInput* labelTextSpecialKeysInput;
+        ScrollLayer* specialKeysScroll;
+
+        void onSpecialKeyAdded(const std::string& str);
+
+        TextInput* columnWidthInput;
+        bool ignoreNextOrganization;
+    };

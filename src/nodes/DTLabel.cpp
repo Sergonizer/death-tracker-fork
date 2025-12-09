@@ -74,16 +74,17 @@ bool DTLabel::init(const DTLabelInfo& info){
 
     labelTextContainer->setScale(info.isExpanded ? 1 : 0);
 
-    bg = CCScale9Sprite::create("GJ_button_05.png");
+    bg = CCScale9Sprite::create("GJ_squareB_01.png");
     bg->setID("text-bg");
     bg->setOpacity(normalBGOpacity);
     bg->setScale(.3f);
     bg->setAnchorPoint({0, 1});
+    bg->setContentHeight(labelTitleHeight / bg->getScale());
     this->addChild(bg);
     
-    labelTitleBG = CCScale9Sprite::create("GJ_button_05.png");
+    labelTitleBG = CCScale9Sprite::create("GJ_squareB_01.png");
     labelTitleBG->setID("title-bg");
-    labelTitleBG->setScale(.3f);
+    labelTitleBG->setScale(.15f);
     labelTitleBG->setAnchorPoint({0, 1});
     labelTitleBG->setContentHeight(labelTitleHeight / labelTitleBG->getScale());
     this->addChild(labelTitleBG);
@@ -135,8 +136,17 @@ bool DTLabel::init(const DTLabelInfo& info){
 
     setLabelColor(info.labelColor);
     setTextColor(info.textColor);
+    setTextWrapping(info.wrapping);
 
     labelTitleArea->setAlignment(info.horizontalAlignment);
+
+    glow = CCSprite::create("pixel.png");
+    glow->setAnchorPoint({0, 0});
+    ccBlendFunc bf = { GL_ONE, GL_ONE };
+    glow->setBlendFunc(bf);
+    glow->setColor({0, 0, 0});
+    glow->setZOrder(15);
+    this->addChild(glow);
 
     return true;
 }
@@ -152,6 +162,9 @@ void DTLabel::update(float dt){
         labelText->setWidth(this->getContentWidth() - textCornerOffset);
         labelText->setWidth(labelText->getWidth());
     }
+
+    glow->setScaleX(this->getContentWidth() * 2);
+    glow->setScaleY(this->getContentHeight() * 2);
 
     auto textHeight = 0.0f;
     if (!info.isExpanded) textHeight = 0;
@@ -566,4 +579,20 @@ void DTLabel::setTextAlignment(CCTextAlignment alignment){
     info.horizontalAlignment = alignment;
 
     labelText->setAlignment(alignment);
+}
+
+void DTLabel::setTextWrapping(WrappingMode wrapMode){
+    if (wrapMode == WrappingMode::NO_WRAP) wrapMode = WrappingMode::CUTOFF_WRAP;
+    info.wrapping = wrapMode;
+
+    labelText->setWrappingMode(wrapMode);
+}
+
+void DTLabel::onBeingEdited(){
+    glow->stopAllActions();
+    glow->runAction(CCTintTo::create(.2f, 25, 25, 25));
+}
+void DTLabel::onBeingEditedEnded(){
+    glow->stopAllActions();
+    glow->runAction(CCTintTo::create(.2f, 0, 0, 0));
 }
