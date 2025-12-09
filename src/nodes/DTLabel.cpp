@@ -77,7 +77,7 @@ bool DTLabel::init(const DTLabelInfo& info){
     bg = CCScale9Sprite::create("GJ_squareB_01.png");
     bg->setID("text-bg");
     bg->setOpacity(normalBGOpacity);
-    bg->setScale(.3f);
+    bg->setScale(.2f);
     bg->setAnchorPoint({0, 1});
     bg->setContentHeight(labelTitleHeight / bg->getScale());
     this->addChild(bg);
@@ -590,9 +590,9 @@ void DTLabel::setTextWrapping(WrappingMode wrapMode){
 
 void DTLabel::onBeingEdited(){
     glow->stopAllActions();
-    glow->runAction(CCTintTo::create(.2f, 25, 25, 25));
+    glow->runAction(CCTintTo::create(.1f, 35, 35, 35));
 }
 void DTLabel::onBeingEditedEnded(){
     glow->stopAllActions();
-    glow->runAction(CCTintTo::create(.2f, 0, 0, 0));
+    glow->runAction(CCTintTo::create(.1f, 0, 0, 0));
 }
