@@ -35,6 +35,18 @@ bool DTLabel::init(const DTLabelInfo& info){
 
     this->setAnchorPoint({0, 1});
 
+    auto circleLayer = CCLayer::create();
+    circleLayer->setID("circle-layer");
+    circleLayer->setZOrder(5);
+    this->addChild(circleLayer);
+
+    loadingCircle = LoadingCircle::create();
+    loadingCircle->setParentLayer(circleLayer);
+    loadingCircle->show();
+    loadingCircle->ignoreAnchorPointForPosition(false);
+    loadingCircle->setVisible(false);
+    loadingCircle->setScale(.4f);
+
     labelTextContainer = CCNode::create();
     labelTextContainer->setID("text-container");
     labelTextContainer->setZOrder(1);
@@ -164,6 +176,8 @@ void DTLabel::update(float dt){
     labelTitleBG->setPositionY(this->getContentHeight());
     bg->setPositionY(this->getContentHeight());
     menu->setPositionY(this->getContentHeight());
+
+    loadingCircle->setPosition({this->getContentWidth() / 2, this->getContentHeight() - labelTitleHeight / 2});
 
     labelTitleArea->setWidth(this->getContentWidth() - labelTitleArea->getPositionX() - 4);
     labelTitleArea->setPositionY(this->getContentHeight());
@@ -435,11 +449,9 @@ void DTLabel::setLabelText(const std::string& text){
 }
 
 void DTLabel::modifyKeys(){
-    log::info("modfying");
     if (currentlyLoadingFor.size() != 0) return;
     auto text = labelText->getText();
     
-    log::info("modfying1");
     keysUsed.clear();
 
     std::function<std::string(const std::string&)> modifyStr = [&](const std::string& str) -> std::string {
@@ -496,18 +508,14 @@ void DTLabel::setLoading(SpecialKey* key){
     if (currentlyLoadingFor.contains(key) || !keysUsed.contains(key->getKey())) return;
     currentlyLoadingFor.insert(key);
 
-    log::info("added key loading {}", key->getKey());
-
-    //add loading circle
+    loadingCircle->setVisible(true);
 }
 void DTLabel::completeLoading(SpecialKey* key){
     if (!currentlyLoadingFor.contains(key)) return;
     currentlyLoadingFor.erase(key);
 
-    log::info("compleiting loading {}", key->getKey());
-
     if (currentlyLoadingFor.size() == 0){
-        //loading complete, remove circle
+        loadingCircle->setVisible(false);
         modifyKeys();
     }
 }

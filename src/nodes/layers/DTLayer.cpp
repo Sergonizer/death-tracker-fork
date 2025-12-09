@@ -41,8 +41,11 @@ bool DTLayer::setup(GJGameLevel* const& level) {
         LevelData newData;
         m_MyLevelStats = Ok(newData);
     }
-    else if (m_MyLevelStats.isErr())
-        geode::Notification::create(fmt::format("Failed to load DT level data! {}", m_MyLevelStats.unwrapErr()), NotificationIcon::Error)->show();
+    else if (m_MyLevelStats.isErr()){
+        auto notif = geode::Notification::create(fmt::format("Failed to load DT level data! {}", m_MyLevelStats.unwrapErr()), NotificationIcon::Error, 3);
+        notif->show();
+        notif->setZOrder(101);
+    }
     
     if (m_MyLevelStats.isOk()){
         auto stats = m_MyLevelStats.unwrap();
@@ -65,7 +68,6 @@ bool DTLayer::setup(GJGameLevel* const& level) {
     instance = this;
 
     this->setID("dt-layer");
-    this->setZOrder(100);
 
     if (Save::getLastOpenedVersion() != Mod::get()->getVersion().toNonVString()){
         Save::setLastOpenedVersion(Mod::get()->getVersion().toNonVString());
@@ -216,7 +218,44 @@ bool DTLayer::setup(GJGameLevel* const& level) {
     layoutOptionsLayer->setPosition({winSize.width + 10, (winSize.height - layoutOptionsLayer->getContentHeight()) / 2});
     layoutOptionsLayer->onBackedOut = [&](){closeOptionsLayer();};
     this->addChild(layoutOptionsLayer);
-// move by 84.5f to the left
+
+    // tutorial test
+    // auto dark = CCScale9Sprite::create("pixel.png");
+    // dark->setOpacity(180);
+    // dark->setPosition(ccp(winSize.width/2, winSize.height/2));
+    // dark->setContentSize(winSize);
+    // dark->setColor({0,0,0});
+    // this->addChild(dark, 100);
+
+    // ccBlendFunc bf = { GL_ONE, GL_ONE };
+
+    // auto glowNode = CCMenu::create();
+    // this->addChild(glowNode, 101);
+
+    // auto lightSprite1 = CCSprite::createWithSpriteFrameName("d_gradient_c_02_001.png");
+    // lightSprite1->setBlendFunc(bf);
+    // lightSprite1->setAnchorPoint({1, 0});
+    // glowNode->addChild(lightSprite1);
+
+    // auto lightSprite2 = CCSprite::createWithSpriteFrameName("d_gradient_c_02_001.png");
+    // lightSprite2->setBlendFunc(bf);
+    // lightSprite2->setRotation(90);
+    // lightSprite2->setAnchorPoint({1, 0});
+    // glowNode->addChild(lightSprite2);
+
+    // auto lightSprite3 = CCSprite::createWithSpriteFrameName("d_gradient_c_02_001.png");
+    // lightSprite3->setBlendFunc(bf);
+    // lightSprite3->setRotation(180);
+    // lightSprite3->setAnchorPoint({1, 0});
+    // glowNode->addChild(lightSprite3);
+
+    // auto lightSprite4 = CCSprite::createWithSpriteFrameName("d_gradient_c_02_001.png");
+    // lightSprite4->setBlendFunc(bf);
+    // lightSprite4->setRotation(270);
+    // lightSprite4->setAnchorPoint({1, 0});
+    // glowNode->addChild(lightSprite4);
+
+    
     return true;
 }
 
@@ -314,6 +353,7 @@ void DTLayer::addSpecialString(const std::shared_ptr<SpecialKey>& key){
 void DTLayer::populateSpecialStrings(){
     auto from0Key = std::make_shared<SpecialKey>("f0");
     from0Key->setUpdateFunction(UpdateTask::run([&](auto progress, auto hasBeenCancelled) -> UpdateTask::Result {
+        if (m_MyLevelStats.isErr()) return Err("Failed to create from0 deaths string");
         auto& myStats = m_MyLevelStats.unwrap();
 
         Deaths sharedDeaths = myStats.from0.deaths;
@@ -335,6 +375,7 @@ void DTLayer::populateSpecialStrings(){
 
     auto runsKey = std::make_shared<SpecialKey>("runs");
     runsKey->setUpdateFunction(UpdateTask::run([&](auto progress, auto hasBeenCancelled) -> UpdateTask::Result {
+        if (m_MyLevelStats.isErr()) return Err("Failed to create run deaths string");
         auto& myStats = m_MyLevelStats.unwrap();
 
         Deaths sharedRuns = myStats.from0.runs;
@@ -349,7 +390,7 @@ void DTLayer::populateSpecialStrings(){
         if (!createDeathsString(sharedRuns, Save::getRunsCustomazations(), out)) return Err("Failed to create run deaths string");
 
         return Ok(out);
-    }));
+    }, "Creating runs deaths string"));
     addSpecialString(runsKey);
 
     auto nlKey = std::make_shared<SpecialKey>("nl");
@@ -425,6 +466,7 @@ void DTLayer::onClose(CCObject* sender){
 
 void DTLayer::show(){
     Popup<GJGameLevel* const&>::show();
+    this->setZOrder(100);
 
     m_mainLayer->stopAllActions();
     m_mainLayer->setScale(1);
@@ -545,6 +587,7 @@ void DTLayer::UpdateDeathRelatedStrings(){
 }
 
 bool DTLayer::createDeathsString(const Deaths& deaths, const stringCustomazations& custom, std::string& out, NewBests* const newBests, const std::string& newBestColoring){
+    log::info("making str...");
     out = "";
     if (m_MyLevelStats.isErr()) return false;
     auto& myStats = m_MyLevelStats.unwrap();
@@ -566,6 +609,8 @@ bool DTLayer::createDeathsString(const Deaths& deaths, const stringCustomazation
 
         return runA.start < runB.start;
     });
+
+    log::info("a");
 
     for (const auto& [run, amount] : deathVec)
     {

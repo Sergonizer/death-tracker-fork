@@ -105,4 +105,6 @@ class DTLabel : public CCMenu {
         bool currentlyExpandingRight;
 
         void updateInfoWithColumnData();
+
+        LoadingCircle* loadingCircle;
 };
