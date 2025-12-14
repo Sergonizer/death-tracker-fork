@@ -7,7 +7,7 @@ using namespace geode::prelude;
 
 class LayoutColumn : public CCMenu {
     public:
-        static LayoutColumn* create(const DTColumnInfo& info, float topHeight, float minHeight);
+        static LayoutColumn* create(const DTColumnInfo& info, bool startVisible, float minHeight);
 
         DTColumnInfo info;
 
@@ -32,16 +32,20 @@ class LayoutColumn : public CCMenu {
         void refreshAllLabelsLayer();
         CCScale9Sprite* bgSpr;
 
-        float topHeight;
+        static float topHeight;
 
         void updateSizesByContent();
+
+        void setVisibility(bool visible);
         
     private:
-        bool init(const DTColumnInfo& info, float topHeight, float minHeight);
+        bool init(const DTColumnInfo& info, bool startVisible, float minHeight);
 
         float minHeight;
 
-        float bgOpacity = 125;
+        bool isVisible;
+
+        int bgOpacity = 125;
 
         CCScale9Sprite* topSpr;
         

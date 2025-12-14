@@ -4,17 +4,17 @@ using namespace geode::prelude;
 
 using UpdateTask = geode::Task<Result<std::string>, int>;
 
-class SpecialKey : CCObject {
+class SpecialKey : public CCObject, public std::enable_shared_from_this<SpecialKey> {
     private:
         std::string currentContent;
 
         std::string key;
         std::string description;
 
-        std::optional<UpdateTask> updateFunction = std::nullopt;
+        std::optional<std::function<UpdateTask()>> updateFunction = std::nullopt;
 
-        std::function<void(SpecialKey*)> updateCompletedCallback = NULL;
-        std::function<void(SpecialKey*)> updateStartedCallback = NULL;
+        std::function<void(const std::shared_ptr<SpecialKey>&)> updateCompletedCallback = nullptr;
+        std::function<void(const std::shared_ptr<SpecialKey>&)> updateStartedCallback = nullptr;
 
         geode::EventListener<UpdateTask> updateListener;
 
@@ -30,7 +30,7 @@ class SpecialKey : CCObject {
 
         bool compareToKey(const std::string& otherKey);
 
-        void setUpdateFunction(const UpdateTask& task);
+        void setUpdateFunction(const std::function<UpdateTask()>& task);
 
         void updateContent();
 
@@ -44,6 +44,6 @@ class SpecialKey : CCObject {
             return this->description;
         }
 
-        void setUpdateCompletedCallback(const std::function<void(SpecialKey*)>& callback);
-        void setUpdateStartedCallback(const std::function<void(SpecialKey*)>& callback);
+        void setUpdateCompletedCallback(const std::function<void(const std::shared_ptr<SpecialKey>&)>& callback);
+        void setUpdateStartedCallback(const std::function<void(const std::shared_ptr<SpecialKey>&)>& callback);
 };

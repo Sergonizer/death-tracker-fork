@@ -5,10 +5,11 @@
 
 float LayoutColumn::borderWidth = 2;
 float LayoutColumn::addNewBtnOffset = 15;
+float LayoutColumn::topHeight = 20;
 
-LayoutColumn* LayoutColumn::create(const DTColumnInfo& info, float topHeight, float minHeight) {
+LayoutColumn* LayoutColumn::create(const DTColumnInfo& info, bool startVisible, float minHeight) {
     auto ret = new LayoutColumn();
-    if (ret && ret->init(info, topHeight, minHeight)) {
+    if (ret && ret->init(info, startVisible, minHeight)) {
         ret->autorelease();
     } else {
         delete ret;
@@ -17,7 +18,7 @@ LayoutColumn* LayoutColumn::create(const DTColumnInfo& info, float topHeight, fl
     return ret;
 }
 
-bool LayoutColumn::init(const DTColumnInfo& info, float topHeight, float minHeight){
+bool LayoutColumn::init(const DTColumnInfo& info, bool startVisible, float minHeight){
     if (!CCMenu::init()) return false;
 
     this->info = info;
@@ -25,7 +26,6 @@ bool LayoutColumn::init(const DTColumnInfo& info, float topHeight, float minHeig
     this->setZOrder(info.orderPos);
 
     this->minHeight = minHeight;
-    this->topHeight = topHeight;
 
     topSpr = CCScale9Sprite::create("pixel.png");
     topSpr->setID("top-spr");
@@ -36,6 +36,7 @@ bool LayoutColumn::init(const DTColumnInfo& info, float topHeight, float minHeig
     bgSpr->setID("bg-spr");
     bgSpr->setAnchorPoint({0, 1});
     bgSpr->setOpacity(bgOpacity);
+    bgSpr->setVisible(false);
     this->addChild(bgSpr);
 
     topBorder1 = CCScale9Sprite::create("pixel.png");
@@ -60,11 +61,12 @@ bool LayoutColumn::init(const DTColumnInfo& info, float topHeight, float minHeig
     bgSideBorder->setID("bg-side-border");
     bgSideBorder->setAnchorPoint({1, 1});
     bgSideBorder->setColor({0,0,0});
-    bgSideBorder->setOpacity(125);
+    bgSideBorder->setOpacity(bgOpacity);
     this->addChild(bgSideBorder);
 
     menu = CCMenu::create();
     menu->setPosition({0, 0});
+    menu->setEnabled(startVisible);
     this->addChild(menu);
 
     auto addLabelBtnSpr = CCSprite::create("GJ_button_01.png");
@@ -94,6 +96,7 @@ bool LayoutColumn::init(const DTColumnInfo& info, float topHeight, float minHeig
     auto touchSender = TouchSender::create(0, false);
     touchSender->setID("touchSender");
     touchSender->beginCheck = [&](cocos2d::CCTouch* touch, cocos2d::CCEvent* event){
+        if (!isVisible) return false;
         auto touchInParentSpace = topBorder2->getParent()->convertTouchToNodeSpace(touch);
 
         if (topSpr->boundingBox().containsPoint(touchInParentSpace)){
@@ -128,6 +131,15 @@ bool LayoutColumn::init(const DTColumnInfo& info, float topHeight, float minHeig
         }
     };
     this->addChild(touchSender);
+
+    if (!startVisible){
+        for (const auto& child : CCArrayExt<CCNode*>(this->getChildren()))
+        {
+            if (auto rgbChild = typeinfo_cast<CCRGBAProtocol*>(child))
+                rgbChild->setOpacity(0);
+        }
+    }
+    isVisible = startVisible;
 
     return true;
 }
@@ -182,8 +194,10 @@ void LayoutColumn::update(float dt){
 
     if (!targetAddBtnPos.equals(tempMenuPos)){
         tempMenuPos = targetAddBtnPos;
-        menu->stopAllActions();
-        menu->runAction(CCEaseInOut::create(CCMoveTo::create(.5f, targetAddBtnPos), 2));
+        menu->stopActionByTag(1);
+        auto btnMoveAction = CCEaseInOut::create(CCMoveTo::create(.5f, targetAddBtnPos), 2);
+        btnMoveAction->setTag(1);
+        menu->runAction(btnMoveAction);
     }
 }
 
@@ -203,6 +217,7 @@ void LayoutColumn::registerWithTouchDispatcher() {
 }
 
 bool LayoutColumn::ccTouchBegan(CCTouch* touch, CCEvent* event) {
+    if (!isVisible) return false;
     auto touchInParentSpace = topBorder2->getParent()->convertTouchToNodeSpace(touch);
 
     if (topBorder2->boundingBox().containsPoint(touchInParentSpace)) {
@@ -327,5 +342,21 @@ void LayoutColumn::refreshAllLabelsLayer(){
     for (const auto& [labelLayer, label] : labelsbackup)
     {
         addLabel(label);
+    }
+}
+
+void LayoutColumn::setVisibility(bool visible){
+    isVisible = visible;
+    menu->setEnabled(visible);
+
+    for (const auto& child : CCArrayExt<CCNode*>(this->getChildren()))
+    {
+        child->stopActionByTag(5);
+
+        int maxOpacity = 255;
+        if (child == bgSpr || child == bgSideBorder) maxOpacity = bgOpacity;
+        auto opacityAction = CCFadeTo::create(.15f, visible ? maxOpacity : 0);
+        opacityAction->setTag(5);
+        child->runAction(opacityAction);
     }
 }

@@ -199,8 +199,9 @@ bool LayoutOptionsLayer::init(const CCSize& size) {
     labelSettingsNode->addChild(fontSizeInputLabel);
 
     scaleSlider = Slider::create(this, menu_selector(LayoutOptionsLayer::scaleSliderChanged), .5f);
+    scaleSlider->setContentSize({0, 0});
     scaleSlider->setPositionY(-215);
-    scaleSlider->setPositionX(-117);
+    scaleSlider->setPositionX(fontSizeInput->getPositionX());
     scaleSlider->setID("font-size-slider");
     scaleSlider->setScaleX(.7f);
     labelSettingsNode->addChild(scaleSlider);
@@ -325,8 +326,7 @@ bool LayoutOptionsLayer::init(const CCSize& size) {
                 toEdit->getInputNode()->m_textField->m_uCursorPos += 4;
             }
 
-            toEdit->setString(str);
-            editedLabel.value()->setLabelText(toEdit->getString());
+            toEdit->setString(str, true);
         }
         return ListenerResult::Propagate;
     }, "enter-new-line"_spr);
@@ -830,7 +830,10 @@ void LayoutOptionsLayer::onSpecialKeyAdded(const std::string& str){
         labelTextSpecialKeysInput->getInputNode()->m_textField->m_uCursorPos += modifiedStr.length();
     }
 
-    labelTextSpecialKeysInput->setString(toEditStr);
-    editedLabel.value()->setLabelText(labelTextSpecialKeysInput->getString());
+    labelTextSpecialKeysInput->setString(toEditStr, true);
     labelTextSpecialKeysInput->focus();
+}
+
+void LayoutOptionsLayer::keyBackClicked(){
+    onBack(nullptr);
 }

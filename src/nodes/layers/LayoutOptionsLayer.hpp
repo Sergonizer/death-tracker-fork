@@ -22,6 +22,8 @@ class LayoutOptionsLayer : public CCLayer, public geode::ColorPickPopupDelegate 
 
         std::function<void()> onBackedOut = NULL;
 
+        void keyBackClicked() override;
+
     private:
         bool init(const CCSize& size);
 
@@ -44,7 +46,7 @@ class LayoutOptionsLayer : public CCLayer, public geode::ColorPickPopupDelegate 
         void onTextColorBtnClicked(CCObject*);
         void onLabelColorBtnClicked(CCObject*);
         
-        void updateColor(cocos2d::ccColor4B const& color);
+        void updateColor(cocos2d::ccColor4B const& color) override;
         
         CCSprite* textColorBtnSprite;
         CCSprite* labelColorBtnSprite;

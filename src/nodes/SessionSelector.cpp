@@ -17,6 +17,7 @@ bool SessionSelector::init(int count){
 
     this->setContentSize({ 180, 30 });
     this->setPosition({0, 0});
+    this->ignoreAnchorPointForPosition(false);
 
     inputNode = geode::TextInput::create(120, "Session", "gjFont17.fnt");
     inputNode->setPosition(this->getContentSize() / 2);

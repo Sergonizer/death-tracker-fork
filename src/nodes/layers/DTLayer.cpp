@@ -114,7 +114,7 @@ bool DTLayer::setup(GJGameLevel* const& level) {
     shadow->setOpacity(100);
     m_mainLayer->addChild(shadow);
 
-    auto bottomMenu = CCMenu::create();
+    bottomMenu = CCMenu::create();
     bottomMenu->setContentSize({m_size.width - 15, height / 2.5f});
     bottomMenu->setAnchorPoint({.5f, .5f});
     bottomMenu->setPosition(bottomMenu->getContentSize() / 2 + ccp(0, 7.5f));
@@ -146,13 +146,19 @@ bool DTLayer::setup(GJGameLevel* const& level) {
     bottomMenu->addChild(graphBtn);
 
     sessionSelector = SessionSelector::create(sessionsOrder.size());
-    sessionSelector->setCallback([&](int newSession){ onSessionSelected(newSession); });
-    bottomMenu->addChild(sessionSelector);
+    sessionSelector->setCallback([&](int newSession){ onSessionSelected(newSession, true); });
+    sessionSelector->setScale(.75f);
+    sessionSelector->setPosition({m_size.width / 2, 20});
+    m_mainLayer->addChild(sessionSelector);
 
-    onSessionSelected(1);
+    auto fixerNode = CCNode::create();
+    fixerNode->setContentWidth(sessionSelector->getContentWidth() / 2);
+    bottomMenu->addChild(fixerNode);
+
+    onSessionSelected(1, false);
 
     auto editLayoutBtnSprBG = CCSprite::createWithSpriteFrameName("GJ_plainBtn_001.png");
-    auto editLayoutBtnSpr = CCSprite::createWithSpriteFrameName("layout_button.png"_spr);
+    editLayoutBtnSpr = CCSprite::createWithSpriteFrameName("layout_button.png"_spr);
     editLayoutBtnSpr->setPosition(editLayoutBtnSprBG->getContentSize() / 2);
     editLayoutBtnSprBG->addChild(editLayoutBtnSpr);
     editLayoutBtnSprBG->setScale(.75f);
@@ -193,13 +199,15 @@ bool DTLayer::setup(GJGameLevel* const& level) {
 
     auto addColumnButtonSpr = CCSprite::create("GJ_button_01.png");
     addColumnButtonSpr->setScale(.5f);
-    auto addColumnButton = CCMenuItemSpriteExtra::create(
+    addColumnButton = CCMenuItemSpriteExtra::create(
         addColumnButtonSpr,
         this,
         menu_selector(DTLayer::addColumnBtnClicked)
     );
     addColumnButton->setZOrder(1000);
     columnHolder->addChild(addColumnButton);
+    addColumnButton->setOpacity(0);
+    columnHolder->setEnabled(false);
 
     CCTouchDispatcher::get()->removeDelegate(scrollLayer);
 
@@ -218,6 +226,34 @@ bool DTLayer::setup(GJGameLevel* const& level) {
     layoutOptionsLayer->setPosition({winSize.width + 10, (winSize.height - layoutOptionsLayer->getContentHeight()) / 2});
     layoutOptionsLayer->onBackedOut = [&](){closeOptionsLayer();};
     this->addChild(layoutOptionsLayer);
+
+    editLayoutMenu = CCMenu::create();
+    editLayoutMenu->setEnabled(false);
+    m_mainLayer->addChild(editLayoutMenu);
+    
+    applyChangesButtonSpr = ButtonSprite::create("Apply Changes", "goldFont.fnt", "GJ_button_01.png");
+    applyChangesButtonSpr->m_BGSprite->setOpacity(0);
+    applyChangesButtonSpr->m_label->setOpacity(0);
+    applyChangesButtonSpr->setScale(.5f);
+    auto applyChangesButton = CCMenuItemSpriteExtra::create(
+        applyChangesButtonSpr,
+        this,
+        menu_selector(DTLayer::onApplyLayoutChanges)
+    );
+    applyChangesButton->setPosition({41, -140});
+    editLayoutMenu->addChild(applyChangesButton);
+    
+    discardChangesButtonSpr = ButtonSprite::create("Discard Changes", "goldFont.fnt", "GJ_button_06.png");
+    discardChangesButtonSpr->m_BGSprite->setOpacity(0);
+    discardChangesButtonSpr->m_label->setOpacity(0);
+    discardChangesButtonSpr->setScale(.45f);
+    auto discardChangesButton = CCMenuItemSpriteExtra::create(
+        discardChangesButtonSpr,
+        this,
+        menu_selector(DTLayer::onDiscardLayoutChanges)
+    );
+    discardChangesButton->setPosition({-191, -140});
+    editLayoutMenu->addChild(discardChangesButton);
 
     // tutorial test
     // auto dark = CCScale9Sprite::create("pixel.png");
@@ -260,48 +296,49 @@ bool DTLayer::setup(GJGameLevel* const& level) {
 }
 
 void DTLayer::onEditLayout(CCObject*){
-    // if (layoutTopbar != nullptr) return;
+    isEditingLayout = true;
 
-    // for (const auto& label : labels)
-    //     label->enterEditMode();
+    std::set<DTLabel*> visitedLabels{};
 
-    // auto winSize = CCDirector::sharedDirector()->getWinSize();
+    for (const auto& column : columns)
+    {
+        column->setVisibility(true);
 
-    // static_cast<CCMenu*>(m_mainLayer->getChildByID("bottom-menu"))->setEnabled(false);
-    // m_buttonMenu->setEnabled(false);
-    // m_buttonMenu->setOpacity(100);
-    // sessionSelector->setEnabled(false);
+        for (const auto& [_, label] : column->labels)
+        {
+            if (visitedLabels.contains(label)) continue;
+
+            visitedLabels.insert(label);
+            label->setEditable(true);
+        }
+    }
+
+    bottomMenu->setEnabled(false);
+    bottomMenu->stopAllActions();
+    bottomMenu->runAction(CCFadeTo::create(.15f, 0));
+    m_buttonMenu->setEnabled(false);
+    m_buttonMenu->stopAllActions();
+    m_buttonMenu->runAction(CCFadeTo::create(.15f, 0));
+    editLayoutBtnSpr->stopAllActions();
+    editLayoutBtnSpr->runAction(CCFadeTo::create(.15f, 0));
     
-    // layoutTopbar = EditLayoutTopbar::create();
-    // layoutTopbar->setZOrder(10);
-    // layoutTopbar->setPosition({
-    //     (winSize.width - layoutTopbar->getContentWidth()) / 2,
-    //     10
-    // });
-    // layoutTopbar->onExit = [&](bool didApply){
-    //     if (!didApply)
-    //         for (const auto& label : labels)
-    //             label->revert();
+    editLayoutMenu->setEnabled(true);
+    applyChangesButtonSpr->m_BGSprite->stopAllActions();
+    applyChangesButtonSpr->m_BGSprite->runAction(CCFadeTo::create(.15f, 255));
+    applyChangesButtonSpr->m_label->stopAllActions();
+    applyChangesButtonSpr->m_label->runAction(CCFadeTo::create(.15f, 255));
+    discardChangesButtonSpr->m_BGSprite->stopAllActions();
+    discardChangesButtonSpr->m_BGSprite->runAction(CCFadeTo::create(.15f, 255));
+    discardChangesButtonSpr->m_label->stopAllActions();
+    discardChangesButtonSpr->m_label->runAction(CCFadeTo::create(.15f, 255));
 
-    //     std::vector<DTLabelInfo> newInfo{};
+    addColumnButton->stopAllActions();
+    addColumnButton->runAction(CCFadeTo::create(.15f, 255));
+    columnHolder->setEnabled(true);
 
-    //     for (const auto& label : labels){
-    //         label->exitEditMode();
-    //         if (didApply && labels.contains(label))
-    //             newInfo.push_back(label->labelInfo);
-    //     }
+    scrollLayer->moveBy(ccp(0, -LayoutColumn::topHeight));
 
-    //     if (didApply)
-    //         Save::setLayout(newInfo);
-
-    //     layoutTopbar = nullptr;
-
-    //     static_cast<CCMenu*>(m_mainLayer->getChildByID("bottom-menu"))->setEnabled(true);
-    //     m_buttonMenu->setEnabled(true);
-    //     m_buttonMenu->setOpacity(255);
-    //     sessionSelector->setEnabled(true);
-    // };
-    // this->addChild(layoutTopbar);
+    this->organizeLayout();
 }
 
 bool DTLayer::ccTouchBegan(CCTouch *pTouch, CCEvent *pEvent){
@@ -344,15 +381,27 @@ void DTLayer::graphBtnClicked(CCObject*){
 }
 
 void DTLayer::addSpecialString(const std::shared_ptr<SpecialKey>& key){
-    key->setUpdateStartedCallback(std::bind(&DTLayer::specialKeyUpdateStarted, this, std::placeholders::_1));
-    key->setUpdateCompletedCallback(std::bind(&DTLayer::specialKeyUpdateCompleted, this, std::placeholders::_1));
+    key->setUpdateStartedCallback([this](const std::shared_ptr<SpecialKey>& k){ this->specialKeyUpdateStarted(k); });
+    key->setUpdateCompletedCallback([this](const std::shared_ptr<SpecialKey>& k){ this->specialKeyUpdateCompleted(k); });
     specialStrings.emplace(key->getKey(), key);
     key->updateContent();
 }
 
 void DTLayer::populateSpecialStrings(){
+    auto nlKey = std::make_shared<SpecialKey>("nl", "Adds a new line");
+    nlKey->setUpdateFunction([&](){ return UpdateTask::immediate(Ok("\n"));});
+    addSpecialString(nlKey);
+
+    auto attemptsKey = std::make_shared<SpecialKey>("att", "Adds your geometry dash attempt count (shared with linked levels)");
+    attemptsKey->setUpdateFunction([&](){ return UpdateTask::immediate(Ok(std::to_string(m_Level->m_attempts.value())));});
+    addSpecialString(attemptsKey);
+
+    auto levelNameKey = std::make_shared<SpecialKey>("lvln", "Adds the current levels name");
+    levelNameKey->setUpdateFunction([&](){ return UpdateTask::immediate(Ok(m_Level->m_levelName));});
+    addSpecialString(levelNameKey);
+
     auto from0Key = std::make_shared<SpecialKey>("f0", "Adds all your runs from 0% (shared with linked levels)");
-    from0Key->setUpdateFunction(UpdateTask::run([&](auto progress, auto hasBeenCancelled) -> UpdateTask::Result {
+    from0Key->setUpdateFunction([&](){ return UpdateTask::run([&](auto progress, auto hasBeenCancelled) -> UpdateTask::Result {
         if (m_MyLevelStats.isErr()) return Err("Failed to create from0 deaths string");
         auto& myStats = m_MyLevelStats.unwrap();
 
@@ -370,11 +419,11 @@ void DTLayer::populateSpecialStrings(){
         if (!createDeathsString(sharedDeaths, Save::getFrom0Customazations(), out, &sharedNBs, "{nbc}")) return Err("Failed to create from0 deaths string");
 
         return Ok(out);
-    }, "Creating from0 deaths string"));
+    }, "Creating from0 deaths string");});
     addSpecialString(from0Key);
 
     auto runsKey = std::make_shared<SpecialKey>("runs", "Adds all your runs from practice mode/start positions (shared with linked levels)");
-    runsKey->setUpdateFunction(UpdateTask::run([&](auto progress, auto hasBeenCancelled) -> UpdateTask::Result {
+    runsKey->setUpdateFunction([&](){ return UpdateTask::run([&](auto progress, auto hasBeenCancelled) -> UpdateTask::Result {
         if (m_MyLevelStats.isErr()) return Err("Failed to create run deaths string");
         auto& myStats = m_MyLevelStats.unwrap();
 
@@ -390,20 +439,58 @@ void DTLayer::populateSpecialStrings(){
         if (!createDeathsString(sharedRuns, Save::getRunsCustomazations(), out)) return Err("Failed to create run deaths string");
 
         return Ok(out);
-    }, "Creating runs deaths string"));
+    }, "Creating runs deaths string");});
     addSpecialString(runsKey);
 
-    auto nlKey = std::make_shared<SpecialKey>("nl", "Adds a new line");
-    nlKey->setUpdateFunction(UpdateTask::immediate(Ok("\n")));
-    addSpecialString(nlKey);
-    
-    auto attemptsKey = std::make_shared<SpecialKey>("att", "Adds your geometry dash attempt count (shared with linked levels)");
-    attemptsKey->setUpdateFunction(UpdateTask::immediate(Ok(std::to_string(m_Level->m_attempts.value()))));
-    addSpecialString(attemptsKey);
+    auto sessionFrom0Key = std::make_shared<SpecialKey>("s0", "Adds all your runs on the selected session from 0");
+    sessionFrom0Key->setUpdateFunction([&](){ return UpdateTask::run([&](auto progress, auto hasBeenCancelled) -> UpdateTask::Result {
+        auto i = sessionSelector->getCurrentCount();
 
-    auto levelNameKey = std::make_shared<SpecialKey>("lvln", "Adds the current levels name");
-    levelNameKey->setUpdateFunction(UpdateTask::immediate(Ok(m_Level->m_levelName)));
-    addSpecialString(levelNameKey);
+        if (i == 0 || i > sessionsOrder.size())
+            return Err("Failed to create session from 0 deaths string");
+
+        auto it = sessionsOrder.begin();
+        std::advance(it, i - 1);
+        
+        auto levelKey = it->second;
+
+        Result<Session> sessionRes = StatsManager::getSession(levelKey, it->first);
+        if (sessionRes.isErr()) return Err("Failed to get session from0 deaths");
+
+        std::string out;
+
+        auto session = sessionRes.unwrap();
+
+        if (!createDeathsString(session.deaths, Save::getSessionF0Customazations(), out, &session.newBests, "{sbc}")) return Err("Failed to create session from0 deaths string");
+
+        return Ok(out);
+    }, "Creating session from0 deaths string");});
+    addSpecialString(sessionFrom0Key);
+
+    auto sessionRuns0Key = std::make_shared<SpecialKey>("sruns", "Adds all your runs on the selected session");
+    sessionRuns0Key->setUpdateFunction([&](){ return UpdateTask::run([&](auto progress, auto hasBeenCancelled) -> UpdateTask::Result {
+        auto i = sessionSelector->getCurrentCount();
+
+        if (i == 0 || i > sessionsOrder.size())
+            return Err("Failed to create session run deaths string");
+
+        auto it = sessionsOrder.begin();
+        std::advance(it, i - 1);
+        
+        auto levelKey = it->second;
+
+        Result<Session> sessionRes = StatsManager::getSession(levelKey, it->first);
+        if (sessionRes.isErr()) return Err("Failed to get session run deaths");
+
+        std::string out;
+
+        auto session = sessionRes.unwrap();
+        
+        if (!createDeathsString(session.runs, Save::getRunsCustomazations(), out)) return Err("Failed to create session run deaths string");
+
+        return Ok(out);
+    }, "Creating session run deaths string");});
+    addSpecialString(sessionRuns0Key);
 }
 
 void DTLayer::UpdateSharedStats(){
@@ -440,7 +527,12 @@ void DTLayer::UpdateSharedStats(){
         if (startSize == linkedLevels.size()) break;
     }
 
+    visitedLevels.insert({sharedStats.levelKey, sharedStats});
+
+    log::info("creating shared stats");
+
     for (const auto& [_, level] : visitedLevels){
+        log::info("visiting level {}", _);
         std::for_each(level.sessionNames.begin(), level.sessionNames.end(), [&](long long key) {
             this->sessionsOrder.emplace(key, level.levelKey);
         });
@@ -456,7 +548,17 @@ void DTLayer::onSettings(CCObject*){
 }
 
 void DTLayer::keyBackClicked(){
-    DTLayer::onClose(nullptr);
+    if (isEditingLayout){
+        if (layoutOptionsLayer != nullptr){
+            if (!layoutOptionsLayer->isEditingNode())
+                onApplyLayoutChanges(nullptr);
+            else{
+                layoutOptionsLayer->keyBackClicked();
+            }
+        }
+    }
+    else
+        DTLayer::onClose(nullptr);
 }
 
 void DTLayer::onClose(CCObject* sender){
@@ -484,37 +586,6 @@ void DTLayer::onLSOClicked(CCObject*){
 }
 
 DTLayer* DTLayer::get() { return instance; }
-
-// DTLabel* DTLayer::createLabel(DTLabelInfo info){
-//     auto label = DTLabel::create(info, 50 / 10);
-//     scrollLayer->content->addChild(label);
-//     labels.insert(label);
-//     label->onClicked = [&](DTLabel* clickedLabel){
-//         if (layoutTopbar == nullptr || !labels.contains(clickedLabel)) return;
-
-//         layoutTopbar->setTarget(clickedLabel);
-//     };
-
-//     if (layoutTopbar != nullptr){
-//         label->enterEditMode();
-//         label->wasCreatedThisEdit = true;
-//         label->onSelected(nullptr);
-//     }
-
-//     return label;
-// }
-
-// void DTLayer::removeLabel(DTLabel* label, bool forceDelete){
-//     if (!labels.contains(label)) return;
-
-//     if (forceDelete || layoutTopbar == nullptr){
-//         label->removeMeAndCleanup();
-//         labels.erase(label);
-//     }
-//     else if (layoutTopbar != nullptr){
-//         label->softDelete();
-//     }
-// }
 
 AdvancedScrollLayer* DTLayer::getScrollLayer(){
     return scrollLayer;
@@ -587,7 +658,6 @@ void DTLayer::UpdateDeathRelatedStrings(){
 }
 
 bool DTLayer::createDeathsString(const Deaths& deaths, const stringCustomazations& custom, std::string& out, NewBests* const newBests, const std::string& newBestColoring){
-    log::info("making str...");
     out = "";
     if (m_MyLevelStats.isErr()) return false;
     auto& myStats = m_MyLevelStats.unwrap();
@@ -609,8 +679,6 @@ bool DTLayer::createDeathsString(const Deaths& deaths, const stringCustomazation
 
         return runA.start < runB.start;
     });
-
-    log::info("a");
 
     for (const auto& [run, amount] : deathVec)
     {
@@ -666,20 +734,19 @@ bool DTLayer::createDeathsString(const Deaths& deaths, const stringCustomazation
     return true;
 }
 
-void DTLayer::onSessionSelected(int sessionNum){
-    currentSession = sessionNum - 1;
-
-    if (!sessionsOrder.contains(currentSession)) return;
-
+void DTLayer::onSessionSelected(int sessionNum, bool updateContent){
     auto it = sessionsOrder.begin();
-    std::advance(it, currentSession);
+    std::advance(it, sessionNum - 1);
     
     if (it == sessionsOrder.end()) return;
 
-    auto sessionRes = StatsManager::getSession(it->second, it->first);
-    if (sessionRes.isErr()) return;
+    if (sessionNum - 1 == currentSession) return;
+    currentSession = sessionNum - 1;
 
-    currentSessionInfo = sessionRes.unwrap();
+    if (updateContent){
+        specialStrings["s0"]->updateContent();
+        specialStrings["sruns"]->updateContent();
+    }
 }
 
 //better info time calc
@@ -797,10 +864,11 @@ void DTLayer::update(float dt){
 
     float oldWidth = scrollLayer->content->getContentWidth();
 
-    scrollLayer->setLimitsWidth(std::max(ogLimits.width, columnHolder->getContentWidth()));
-    scrollLayer->zoomBy(0);
+    float width = std::max(ogLimits.width, columnHolder->getContentWidth() - (isEditingLayout ? 0 : addColumnButton->getContentWidth()));
 
-    if (oldWidth != scrollLayer->content->getContentWidth()){
+    if (oldWidth != width){
+        scrollLayer->setLimitsWidth(width);
+        scrollLayer->zoomBy(0);
         float delta = scrollLayer->content->getContentWidth() - oldWidth;
 
         scrollLayer->moveBy(ccp(delta / 2, 0));
@@ -810,11 +878,12 @@ void DTLayer::update(float dt){
 void DTLayer::organizeLayout(){
     organizationListener.bind([this](organizationTask::Event* event){
         if (auto result = event->getValue()){
+            float fixedhighest = result->highestColumn - (isEditingLayout ? 0 : LayoutColumn::topHeight + LayoutColumn::addNewBtnOffset * 2);
             for (const auto& column : columns){
-                column->setContentHeight(result->highestColumn);
+                column->setContentHeight(fixedhighest);
             }
 
-            float cappedHeight = std::max(result->highestColumn, ogLimits.height);
+            float cappedHeight = std::max(fixedhighest, ogLimits.height);
 
             float oldHeightLimits = scrollLayer->content->getContentHeight();
 
@@ -822,8 +891,12 @@ void DTLayer::organizeLayout(){
             columnHolder->setPositionY(cappedHeight);
             labelsHolder->setPosition(columnHolder->getPosition());
 
-            float delta = oldHeightLimits - scrollLayer->content->getContentHeight();
+            float delta = 0;
+            
+            delta = oldHeightLimits - scrollLayer->content->getContentHeight();
 
+            log::info("delta {}", delta);
+            log::info("{} | {}", oldHeightLimits, scrollLayer->content->getContentHeight());
             scrollLayer->moveBy(ccp(0, delta / 2));
             
             for (const auto& [label, newPos, newWidth] : result->labelData)
@@ -849,10 +922,16 @@ void DTLayer::organizeLayout(){
                 }
 
                 if (doCreateNewMoveAction){
-                    auto movementAction = CCEaseInOut::create(CCMoveTo::create(DTLayer::transitionTime, newPos), 2);
-                    movementAction->setTag(MOVEMENT_TAG);
+                    auto pos = newPos + ccp(0, isEditingLayout ? 0 : LayoutColumn::topHeight);
+                    if (!cornerOnNextOrganization){
+                        auto movementAction = CCEaseInOut::create(CCMoveTo::create(DTLayer::transitionTime, pos), 2);
+                        movementAction->setTag(MOVEMENT_TAG);
 
-                    label->runAction(movementAction);
+                        label->runAction(movementAction);
+                    }
+                    else{
+                        label->setPosition(pos);
+                    }
                 }
 
                 //resize action check
@@ -867,10 +946,15 @@ void DTLayer::organizeLayout(){
                 }
 
                 if (doCreateNewResizeAction){
-                    auto resizeAction = CCEaseInOut::create(CCResizeWidthTo::create(DTLayer::transitionTime, newWidth), 2);
-                    resizeAction->setTag(RESIZE_TAG);
+                    if (!cornerOnNextOrganization){
+                        auto resizeAction = CCEaseInOut::create(CCResizeWidthTo::create(DTLayer::transitionTime, newWidth), 2);
+                        resizeAction->setTag(RESIZE_TAG);
 
-                    label->runAction(resizeAction);
+                        label->runAction(resizeAction);
+                    }
+                    else{
+                        label->setContentWidth(newWidth);
+                    }
                 }
             }
 
@@ -879,6 +963,10 @@ void DTLayer::organizeLayout(){
                 callback(delta);
             }
             
+            if (cornerOnNextOrganization){
+                cornerOnNextOrganization = false;
+                scrollLayer->moveToCorner(true, false);
+            }
         }
     });
     organizationListener.setFilter(organizeLayoutTask());
@@ -1193,7 +1281,7 @@ LayoutColumn* DTLayer::addColumn(std::optional<DTColumnInfo> info){
         };
     }
     
-    auto column = LayoutColumn::create(info.value(), 20, scrollLayer->getContentHeight());
+    auto column = LayoutColumn::create(info.value(), isEditingLayout, scrollLayer->getContentHeight());
     columnHolder->addChild(column);
     columns.insert(column);
 
@@ -1204,6 +1292,7 @@ LayoutColumn* DTLayer::addColumn(std::optional<DTColumnInfo> info){
 DTLabel* DTLayer::createNewLabel(DTLabelInfo info){
     auto newLabel = DTLabel::create(info);
     labelsHolder->addChild(newLabel);
+    if (isEditingLayout) newLabel->setEditable(true);
     return newLabel;
 }
 
@@ -1267,7 +1356,8 @@ void DTLayer::setLayoutBy(const DTLayoutV3& layout){
         if (label->isAlone())
             label->removeMeAndCleanup();
     }
-    
+
+    cornerOnNextOrganization = true;
 }
 
 void DTLayer::fixUpColumnPositions(){
@@ -1307,7 +1397,7 @@ void DTLayer::saveCurrentLayout(){
     Save::setLayout(layout);
 }
 
-void DTLayer::specialKeyUpdateStarted(SpecialKey* key){
+void DTLayer::specialKeyUpdateStarted(const std::shared_ptr<SpecialKey>& key){
     std::set<DTLabel*> allLabels{};
 
     // log::info("special key update started for key {}", key->getKey());
@@ -1324,10 +1414,10 @@ void DTLayer::specialKeyUpdateStarted(SpecialKey* key){
     }
 }
 
-void DTLayer::specialKeyUpdateCompleted(SpecialKey* key){
+void DTLayer::specialKeyUpdateCompleted(const std::shared_ptr<SpecialKey>& key){
     std::set<DTLabel*> allLabels{};
 
-    // log::info("special key update completed for key {}", key->getKey());
+    log::info("special key update completed for key {}", key->getKey());
 
     for (const auto& column : columns)
     {
@@ -1344,8 +1434,16 @@ void DTLayer::specialKeyUpdateCompleted(SpecialKey* key){
 void DTLayer::setOptionsLayerTo(DTLabel* label){
     if (layoutOptionsLayer == nullptr) return;
     if (!layoutOptionsLayer->isEditingNode()){
-        m_mainLayer->runAction(CCEaseBackOut::create(CCMoveBy::create(0.5f, ccp(-70.5f, 0))));
-        layoutOptionsLayer->runAction(CCEaseBackOut::create(CCMoveBy::create(0.5f, ccp(-160, 0))));
+        m_mainLayer->runAction(
+            CCEaseBackOut::create(
+                CCMoveBy::create(0.5f, ccp(-70.5f, 0))
+            )
+        );
+        layoutOptionsLayer->runAction(
+            CCEaseBackOut::create(
+                CCMoveBy::create(0.5f, ccp(-160, 0))
+            )
+        );
     }
 
     layoutOptionsLayer->setEditedNodeTo(label);
@@ -1353,8 +1451,16 @@ void DTLayer::setOptionsLayerTo(DTLabel* label){
 void DTLayer::setOptionsLayerTo(LayoutColumn* column){
     if (layoutOptionsLayer == nullptr) return;
     if (!layoutOptionsLayer->isEditingNode()){
-        m_mainLayer->runAction(CCEaseBackOut::create(CCMoveBy::create(0.5f, ccp(-70.5f, 0))));
-        layoutOptionsLayer->runAction(CCEaseBackOut::create(CCMoveBy::create(0.5f, ccp(-160, 0))));
+        m_mainLayer->runAction(
+            CCEaseBackOut::create(
+                CCMoveBy::create(0.5f, ccp(-70.5f, 0))
+            )
+        );
+        layoutOptionsLayer->runAction(
+            CCEaseBackOut::create(
+                CCMoveBy::create(0.5f, ccp(-160, 0))
+            )
+        );
     }
 
     layoutOptionsLayer->setEditedNodeTo(column);
@@ -1362,8 +1468,16 @@ void DTLayer::setOptionsLayerTo(LayoutColumn* column){
 void DTLayer::closeOptionsLayer(){
     if (layoutOptionsLayer == nullptr) return;
     if (layoutOptionsLayer->isEditingNode()){
-        m_mainLayer->runAction(CCEaseBackOut::create(CCMoveBy::create(0.5f, ccp(70.5f, 0))));
-        layoutOptionsLayer->runAction(CCEaseBackOut::create(CCMoveBy::create(0.5f, ccp(160, 0))));
+        m_mainLayer->runAction(
+            CCEaseBackOut::create(
+                CCMoveBy::create(0.5f, ccp(70.5f, 0))
+            )
+        );
+        layoutOptionsLayer->runAction(
+            CCEaseBackOut::create(
+                CCMoveBy::create(0.5f, ccp(160, 0))
+            )
+        );
     }
 
     layoutOptionsLayer->close();
@@ -1372,4 +1486,65 @@ void DTLayer::removeColumn(LayoutColumn* column){
     if (!columns.contains(column)) return;
 
     columns.erase(column);
+}
+
+void DTLayer::onApplyLayoutChanges(CCObject*){
+
+    saveCurrentLayout();
+
+    exitLayoutEditing();
+}
+void DTLayer::onDiscardLayoutChanges(CCObject*){
+
+    setLayoutBy(Save::getLayout());
+
+    exitLayoutEditing();
+}
+
+void DTLayer::exitLayoutEditing(){
+    isEditingLayout = false;
+
+    closeOptionsLayer();
+
+    std::set<DTLabel*> visitedLabels{};
+
+    for (const auto& column : columns)
+    {
+        column->setVisibility(false);
+
+        for (const auto& [_, label] : column->labels)
+        {
+            if (visitedLabels.contains(label)) continue;
+
+            visitedLabels.insert(label);
+            label->setEditable(false);
+        }
+    }
+
+    bottomMenu->setEnabled(true);
+    bottomMenu->stopAllActions();
+    bottomMenu->runAction(CCFadeTo::create(.15f, 255));
+    m_buttonMenu->setEnabled(true);
+    m_buttonMenu->stopAllActions();
+    m_buttonMenu->runAction(CCFadeTo::create(.15f, 255));
+    editLayoutBtnSpr->stopAllActions();
+    editLayoutBtnSpr->runAction(CCFadeTo::create(.15f, 255));
+    
+    editLayoutMenu->setEnabled(false);
+    applyChangesButtonSpr->m_BGSprite->stopAllActions();
+    applyChangesButtonSpr->m_BGSprite->runAction(CCFadeTo::create(.15f, 0));
+    applyChangesButtonSpr->m_label->stopAllActions();
+    applyChangesButtonSpr->m_label->runAction(CCFadeTo::create(.15f, 0));
+    discardChangesButtonSpr->m_BGSprite->stopAllActions();
+    discardChangesButtonSpr->m_BGSprite->runAction(CCFadeTo::create(.15f, 0));
+    discardChangesButtonSpr->m_label->stopAllActions();
+    discardChangesButtonSpr->m_label->runAction(CCFadeTo::create(.15f, 0));
+
+    addColumnButton->stopAllActions();
+    addColumnButton->runAction(CCFadeTo::create(.15f, 0));
+    columnHolder->setEnabled(false);
+
+    scrollLayer->moveBy(ccp(0, LayoutColumn::topHeight));
+
+    this->organizeLayout();   
 }

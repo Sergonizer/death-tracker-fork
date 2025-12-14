@@ -52,8 +52,8 @@ class DTLabel : public CCMenu {
 
         void modifyKeys();
 
-        void setLoading(SpecialKey* key);
-        void completeLoading(SpecialKey* key);
+        void setLoading(const std::shared_ptr<SpecialKey>& key);
+        void completeLoading(const std::shared_ptr<SpecialKey>& key);
         
         std::set<std::string> keysUsed{};
 
@@ -61,13 +61,18 @@ class DTLabel : public CCMenu {
 
         void onBeingEdited();
         void onBeingEditedEnded();
-        
+
+        void setEditable(bool editable);
+
+        ~DTLabel();
     private:
         bool init(const DTLabelInfo& info);
 
         void update(float dt) override;
 
-        std::set<SpecialKey*> currentlyLoadingFor{};
+        bool isEditable;
+
+        std::set<std::shared_ptr<SpecialKey>> currentlyLoadingFor{};
         
         std::multiset<LayoutColumn*, ColumnComperator> holders{};
 
@@ -113,4 +118,6 @@ class DTLabel : public CCMenu {
         LoadingCircle* loadingCircle;
 
         CCSprite* glow;
+
+        std::string modifyStrRecursive(const std::string& str);
 };

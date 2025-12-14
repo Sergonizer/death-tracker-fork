@@ -40,8 +40,7 @@ class DTLayer : public Popup<GJGameLevel* const&> {
 
         Result<LevelData> m_MyLevelStats = Err("");
         std::vector<LevelData> linkedLevelsData{};
-        std::multimap<long long, std::string, std::greater<long long>> sessionsOrder{};
-        std::optional<Session> currentSessionInfo = std::nullopt;
+        std::map<long long, std::string, std::greater<long long>> sessionsOrder{};
         
 
         void show() override;
@@ -70,8 +69,8 @@ class DTLayer : public Popup<GJGameLevel* const&> {
         void addSpecialString(const std::shared_ptr<SpecialKey>& key);
         void populateSpecialStrings();
 
-        void specialKeyUpdateStarted(SpecialKey* key);
-        void specialKeyUpdateCompleted(SpecialKey* key);
+        void specialKeyUpdateStarted(const std::shared_ptr<SpecialKey>& key);
+        void specialKeyUpdateCompleted(const std::shared_ptr<SpecialKey>& key);
 
         void organizeLayout();
 
@@ -96,6 +95,9 @@ class DTLayer : public Popup<GJGameLevel* const&> {
         void closeOptionsLayer();
 
         void removeColumn(LayoutColumn* column);
+        bool cornerOnNextOrganization;
+        void saveCurrentLayout();
+        bool isEditingLayout;
 
     private:
         
@@ -111,7 +113,7 @@ class DTLayer : public Popup<GJGameLevel* const&> {
 
         void update(float dt) override;
 
-        void onSessionSelected(int sessionNum);
+        void onSessionSelected(int sessionNum, bool updateContent);
 
         bool ccTouchBegan(CCTouch *pTouch, CCEvent *pEvent) override;
         void ccTouchMoved(CCTouch *pTouch, CCEvent *pEvent) override;
@@ -150,5 +152,16 @@ class DTLayer : public Popup<GJGameLevel* const&> {
         std::map<CCNode*, std::function<void(float)>> onOrganizationCompleteEvent{};
 
         void setLayoutBy(const DTLayoutV3& layout);
-        void saveCurrentLayout();
+
+        CCMenuItemSpriteExtra* addColumnButton;
+        CCSprite* editLayoutBtnSpr;
+
+        CCMenu* bottomMenu;
+        CCMenu* editLayoutMenu;
+        ButtonSprite* discardChangesButtonSpr;
+        ButtonSprite* applyChangesButtonSpr;
+        void onApplyLayoutChanges(CCObject*);
+        void onDiscardLayoutChanges(CCObject*);
+
+        void exitLayoutEditing();
 };

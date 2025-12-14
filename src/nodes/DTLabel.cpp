@@ -7,8 +7,6 @@
 
 #include <regex>
 
-#include <regex>
-
 float DTLabel::labelTitleHeight = 15;
 float DTLabel::moveThreshold = 5;
 float DTLabel::labelLerpSpeed = 10;
@@ -28,7 +26,17 @@ DTLabel* DTLabel::create(const DTLabelInfo& info) {
     return ret;
 }
 
+DTLabel::~DTLabel(){
+    if (DTLayer::get() != nullptr)
+        DTLayer::get()->unsubscribeToOrganizationEvent(this);
+}
+
 bool DTLabel::init(const DTLabelInfo& info){
+    if (DTLayer::get() != nullptr)
+        DTLayer::get()->subscribeToOrganizationEvent(this, [&](auto _){
+            bg->stopAllActions();
+            bg->runAction(CCEaseInOut::create(CCResizeHeightTo::create(DTLayer::transitionTime, this->getContentHeight() / bg->getScale()), 2));
+        });
     if (!CCMenu::init()) return false;
 
     this->info = info;
@@ -54,11 +62,11 @@ bool DTLabel::init(const DTLabelInfo& info){
 
     labelText = SimpleTextArea::create("", info.font, info.scale);
     labelText->setID("text");
-    setLabelText(info.text);
     labelText->setAnchorPoint({.5f, 1});
     labelText->setAlignment(CCTextAlignment::kCCTextAlignmentCenter);
     labelText->setWrappingMode(WrappingMode::CUTOFF_WRAP);
     labelText->setWidth(this->getContentWidth() - textCornerOffset);
+    setLabelText(info.text);
     labelTextContainer->addChild(labelText);
 
     auto textHeight = 0.0f;
@@ -177,11 +185,14 @@ void DTLabel::update(float dt){
 
     this->setContentHeight(targetHeight);
 
-    if (doUpdateLayout) {
-        DTLayer::get()->organizeLayout();
+    if (doUpdateLayout){
+        if (!DTLayer::get()->cornerOnNextOrganization){
+            DTLayer::get()->organizeLayout();
+            
+        }
+        else{
 
-        bg->stopAllActions();
-        bg->runAction(CCEaseInOut::create(CCResizeHeightTo::create(DTLayer::transitionTime, targetHeight / bg->getScale()), 2));
+        }
     }
 
     labelTitleBG->setContentWidth(this->getContentWidth() / labelTitleBG->getScale());
@@ -219,11 +230,38 @@ void DTLabel::toggleExpand(CCObject*){
     info.isExpanded = !info.isExpanded;
 
     expandBtn->stopAllActions();
-    expandBtn->runAction(CCEaseInOut::create(CCRotateTo::create(DTLayer::transitionTime, info.isExpanded ? 90 : 0), 2));
-    expandBtn->runAction(CCEaseInOut::create(CCMoveTo::create(DTLayer::transitionTime, info.isExpanded ? ccp(8, expandBtn->getPositionY()) : ccp(5, expandBtn->getPositionY())), 2));
+    expandBtn->runAction(
+        CCEaseInOut::create(
+            CCRotateTo::create(
+                DTLayer::transitionTime, 
+                info.isExpanded ? 90 : 0
+            ), 
+            2
+        )
+    );
+    expandBtn->runAction(
+        CCEaseInOut::create(
+            CCMoveTo::create(
+                DTLayer::transitionTime, 
+                info.isExpanded ? ccp(8, expandBtn->getPositionY()) : ccp(5, expandBtn->getPositionY())
+            ),
+            2
+        )
+    );
 
     labelTextContainer->stopAllActions();
-    labelTextContainer->runAction(CCEaseInOut::create(CCScaleTo::create(DTLayer::transitionTime, info.isExpanded ? 1 : 0), 2));
+    labelTextContainer->runAction(
+        CCEaseInOut::create(
+            CCScaleTo::create(
+                DTLayer::transitionTime, 
+                info.isExpanded ? 1 : 0
+            ), 
+            2
+        )
+    );
+
+    if (!DTLayer::get()->isEditingLayout)
+        DTLayer::get()->saveCurrentLayout();
 }
 
 void DTLabel::registerWithTouchDispatcher() {
@@ -231,6 +269,7 @@ void DTLabel::registerWithTouchDispatcher() {
 }
 
 bool DTLabel::ccTouchBegan(CCTouch* touch, CCEvent* event) {
+    if (!isEditable) return false;
     auto touchInSpace = this->convertTouchToNodeSpace(touch);
 
     if (leftExpandLine->boundingBox().containsPoint(touchInSpace)){
@@ -378,7 +417,15 @@ void DTLabel::onMoveBegan(){
 
     removeFromColumns();
 
-    this->runAction(CCEaseInOut::create(CCResizeWidthTo::create(DTLayer::transitionTime, DTColumnInfo::minWidth), 2));
+    this->runAction(
+        CCEaseInOut::create(
+            CCResizeWidthTo::create(
+                DTLayer::transitionTime, 
+                DTColumnInfo::minWidth
+            ), 
+            2
+        )
+    );
     if (info.isExpanded) toggleExpand(nullptr);
     else DTLayer::get()->organizeLayout();
 }
@@ -467,68 +514,31 @@ void DTLabel::modifyKeys(){
     
     keysUsed.clear();
 
-    std::function<std::string(const std::string&)> modifyStr = [&](const std::string& str) -> std::string {
-        std::regex specialKeyRegex(R"(\{([A-Za-z0-9_\\]+)(?:-([^{}]*))?\})");
-
-        std::sregex_iterator begin(str.begin(), str.end(), specialKeyRegex);
-        std::sregex_iterator end;
-
-        std::string result = "";
-
-        int lastPos = 0;
-        for (auto it = begin; it != end; ++it) {
-            const auto& match = *it;
-
-            int matchStart = match.position();
-            int matchEnd = matchStart + match.length();
-
-            result += str.substr(lastPos, matchStart - lastPos);
-
-            std::string key = match.str(1);
-            if (!keysUsed.contains(key))
-                keysUsed.insert(key);
-            
-            bool isCancellation = false;
-            if (key.size() && key[0] == '\\'){
-                isCancellation = true;
-                key = key.erase(0, 1);
-            }
-
-            std::string value = match.size() > 2 ? match.str(2) : "";
-
-            auto dtLayer = DTLayer::get();
-
-            if (dtLayer->specialStrings.contains(key)) {
-                result += modifyStr(dtLayer->specialStrings.at(key)->getContent());
-            }
-            else {
-                result += match.str();
-            }
-
-            lastPos = matchEnd;
-        }
-
-        result += str.substr(lastPos);
-
-        return result;
-    };
-    auto modifiedText = modifyStr(text);
+    log::info("modifying {}", info.labelName);
+    
+    auto modifiedText = modifyStrRecursive(text);
     if (modifiedText.length() != 0 && modifiedText[modifiedText.length() - 1] == '\n') modifiedText.push_back(' ');
     labelText->setText(modifiedText);
+    log::info("ended, {} keys exist | {}", keysUsed.size(), info.labelName);
 }
 
-void DTLabel::setLoading(SpecialKey* key){
+void DTLabel::setLoading(const std::shared_ptr<SpecialKey>& key){
     if (currentlyLoadingFor.contains(key) || !keysUsed.contains(key->getKey())) return;
     currentlyLoadingFor.insert(key);
 
+    //log::info("started loading for {}", key->getKey());
+
     loadingCircle->setVisible(true);
 }
-void DTLabel::completeLoading(SpecialKey* key){
+void DTLabel::completeLoading(const std::shared_ptr<SpecialKey>& key){
     if (!currentlyLoadingFor.contains(key)) return;
     currentlyLoadingFor.erase(key);
 
+    //log::info("ended loading for {}", key->getContent());
+
     if (currentlyLoadingFor.size() == 0){
         loadingCircle->setVisible(false);
+        labelText->setText(info.text);
         modifyKeys();
     }
 }
@@ -595,4 +605,57 @@ void DTLabel::onBeingEdited(){
 void DTLabel::onBeingEditedEnded(){
     glow->stopAllActions();
     glow->runAction(CCTintTo::create(.1f, 0, 0, 0));
+}
+
+void DTLabel::setEditable(bool editable){
+    isEditable = editable;
+}
+
+std::string DTLabel::modifyStrRecursive(const std::string& str){
+    std::regex specialKeyRegex(R"(\{([A-Za-z0-9_\\]+)(?:-([^{}]*))?\})");
+
+    std::sregex_iterator begin(str.begin(), str.end(), specialKeyRegex);
+    std::sregex_iterator end;
+
+    std::string result = "";
+
+    int lastPos = 0;
+    for (auto it = begin; it != end; ++it) {
+        const auto& match = *it;
+
+        int matchStart = match.position();
+        int matchEnd = matchStart + match.length();
+
+        result += str.substr(lastPos, matchStart - lastPos);
+
+        auto dtLayer = DTLayer::get();
+
+        std::string key = match.str(1);
+        if (!keysUsed.contains(key)){
+            keysUsed.insert(key);
+        }
+        
+        bool isCancellation = false;
+        if (key.size() && key[0] == '\\'){
+            isCancellation = true;
+            key = key.erase(0, 1);
+        }
+
+        std::string value = match.size() > 2 ? match.str(2) : "";
+
+        if (dtLayer->specialStrings.contains(key)) {
+            auto modified = modifyStrRecursive(dtLayer->specialStrings.at(key)->getContent());
+            result += modified;
+            if (key == "nl") log::info("adding {}", dtLayer->specialStrings.at(key)->getContent());
+        }
+        else {
+            result += match.str();
+        }
+
+        lastPos = matchEnd;
+    }
+
+    result += str.substr(lastPos);
+
+    return result;
 }
