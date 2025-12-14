@@ -397,7 +397,7 @@ void DTLayer::populateSpecialStrings(){
     addSpecialString(attemptsKey);
 
     auto levelNameKey = std::make_shared<SpecialKey>("lvln", "Adds the current levels name");
-    levelNameKey->setUpdateFunction([&](){ return UpdateTask::immediate(Ok(m_Level->m_levelName));});
+    levelNameKey->setUpdateFunction([&](){ return UpdateTask::immediate(Ok(std::string(m_Level->m_levelName)));});
     addSpecialString(levelNameKey);
 
     auto from0Key = std::make_shared<SpecialKey>("f0", "Adds all your runs from 0% (shared with linked levels)");
