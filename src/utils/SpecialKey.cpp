@@ -47,8 +47,6 @@ void SpecialKey::onUpdateCompleted(UpdateTask::Event* e){
         else
             this->currentContent = val->unwrap();
 
-        log::info("key {} res gotten, new content is {}", key, val->unwrap());
-
         if (this->updateCompletedCallback)
             this->updateCompletedCallback(this->shared_from_this());
 

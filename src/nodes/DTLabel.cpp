@@ -514,12 +514,12 @@ void DTLabel::modifyKeys(){
     
     keysUsed.clear();
 
-    log::info("modifying {}", info.labelName);
+    //log::info("modifying {}", info.labelName);
     
     auto modifiedText = modifyStrRecursive(text);
     if (modifiedText.length() != 0 && modifiedText[modifiedText.length() - 1] == '\n') modifiedText.push_back(' ');
     labelText->setText(modifiedText);
-    log::info("ended, {} keys exist | {}", keysUsed.size(), info.labelName);
+    //log::info("ended, {} keys exist | {}", keysUsed.size(), info.labelName);
 }
 
 void DTLabel::setLoading(const std::shared_ptr<SpecialKey>& key){
@@ -644,9 +644,7 @@ std::string DTLabel::modifyStrRecursive(const std::string& str){
         std::string value = match.size() > 2 ? match.str(2) : "";
 
         if (dtLayer->specialStrings.contains(key)) {
-            auto modified = modifyStrRecursive(dtLayer->specialStrings.at(key)->getContent());
-            result += modified;
-            if (key == "nl") log::info("adding {}", dtLayer->specialStrings.at(key)->getContent());
+            result += modifyStrRecursive(dtLayer->specialStrings.at(key)->getContent());
         }
         else {
             result += match.str();

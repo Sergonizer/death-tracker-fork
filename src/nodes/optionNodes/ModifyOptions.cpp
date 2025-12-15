@@ -43,6 +43,7 @@ bool ModifyOptions::setup(){
 
     auto sessionSelector = SessionSelector::create(sessionAmount);
     sessionSelector->setScale(.7f);
+    sessionSelector->ignoreAnchorPointForPosition(true);
     sessionSelector->setPosition(TypeToggler->getPosition() + ccp(size.width / 2.5f / 2, 0) - sessionSelector->getContentSize() / 2);
     this->addChild(sessionSelector);
 
@@ -133,7 +134,25 @@ bool ModifyOptions::setup(){
     deathFormatInput->setCommonFilter(CommonFilter::Any);
     this->addChild(deathFormatInput);
 
-    
+    auto seperator1 = CCScale9Sprite::create("pixel.png");
+    seperator1->setContentSize({2, size.height - (deathFormatInput->getContentHeight() / 2 + deathFormatInput->getPositionY() + 10)});
+    seperator1->setPositionX(size.width / 2 - 20);
+    seperator1->setPositionY(deathFormatInput->getScaledContentHeight() / 2 + deathFormatInput->getPositionY() + 10 + seperator1->getContentHeight() / 2);
+    this->addChild(seperator1);
+
+    auto seperator2 = CCScale9Sprite::create("pixel.png");
+    seperator2->setContentSize({deathFormatInput->getScaledContentWidth(), 2});
+    seperator2->setAnchorPoint({0, 0});
+    seperator2->setPositionX(seperator1->getPositionX());
+    seperator2->setPositionY(seperator1->getPositionY() - seperator1->getContentHeight() / 2);
+    this->addChild(seperator2);
+
+    auto seperator3 = CCScale9Sprite::create("pixel.png");
+    seperator3->setContentSize({2, size.height - seperator1->getContentHeight()});
+    seperator3->setAnchorPoint({1, 1});
+    seperator3->setPositionX(seperator2->getPositionX() + seperator2->getContentWidth());
+    seperator3->setPositionY(seperator2->getPositionY());
+    this->addChild(seperator3);
 
     return true;
 }

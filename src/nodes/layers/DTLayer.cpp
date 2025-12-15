@@ -529,10 +529,7 @@ void DTLayer::UpdateSharedStats(){
 
     visitedLevels.insert({sharedStats.levelKey, sharedStats});
 
-    log::info("creating shared stats");
-
     for (const auto& [_, level] : visitedLevels){
-        log::info("visiting level {}", _);
         std::for_each(level.sessionNames.begin(), level.sessionNames.end(), [&](long long key) {
             this->sessionsOrder.emplace(key, level.levelKey);
         });
