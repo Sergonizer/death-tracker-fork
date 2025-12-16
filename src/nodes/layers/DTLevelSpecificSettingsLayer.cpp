@@ -73,6 +73,7 @@ bool DTLevelSpecificSettingsLayer::setup() {
 CCNode* DTLevelSpecificSettingsLayer::createPageBtn(const std::string& text, OptionsNode* page){
 
     auto spr = CCLabelBMFont::create(text.c_str(), "gjFont17.fnt", 50);
+    spr->setScale(.85f);
     auto button = CCMenuItemSpriteExtra::create(
         spr,
         this,

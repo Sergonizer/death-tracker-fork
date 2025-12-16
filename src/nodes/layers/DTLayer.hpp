@@ -99,6 +99,12 @@ class DTLayer : public Popup<GJGameLevel* const&> {
         void saveCurrentLayout();
         bool isEditingLayout;
 
+        void subscribeKeyListener(DTLabel* label);
+        void unsubscribeKeyListener(DTLabel* label);
+
+        int getCurrentSelectedSession();
+        void onSessionSelected(int sessionNum, bool updateContent);
+
     private:
         
         LayoutOptionsLayer* layoutOptionsLayer;
@@ -107,13 +113,13 @@ class DTLayer : public Popup<GJGameLevel* const&> {
         
         std::set<LayoutColumn*, ColumnComperator> columns;
 
+        std::set<DTLabel*> keyListeners{};
+
         bool createDeathsString(const Deaths& deaths, const stringCustomazations& custom, std::string& out, NewBests* const newBests = nullptr, const std::string& newBestColoring = "");
 
         int currentSession;
 
         void update(float dt) override;
-
-        void onSessionSelected(int sessionNum, bool updateContent);
 
         bool ccTouchBegan(CCTouch *pTouch, CCEvent *pEvent) override;
         void ccTouchMoved(CCTouch *pTouch, CCEvent *pEvent) override;

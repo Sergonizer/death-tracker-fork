@@ -32,6 +32,14 @@ bool ModifyOptions::setup(){
         size.width / 2.5f / 2 - size.width / 2.5f / 2 / 2,
         size.height - TypeSessionBtnSpr->getScaledContentSize().height / 2 - topeToggleHightPadding
     });
+    TypeToggler->setCallback([&](bool res){
+        if (res){
+            updatePreviewName(res);
+        }
+        else{
+            updatePreviewName(res);
+        }
+    });
     this->addChild(TypeToggler);
 
     auto dtLayer = DTLayer::get();
@@ -42,65 +50,71 @@ bool ModifyOptions::setup(){
     }
 
     auto sessionSelector = SessionSelector::create(sessionAmount);
+    sessionSelector->setCallback([&](int newSession) {
+        DTLayer::get()->onSessionSelected(newSession, true);
+        if (TypeToggler->isToggled())
+            updatePreviewName(TypeToggler->isToggled());
+    });
     sessionSelector->setScale(.7f);
     sessionSelector->ignoreAnchorPointForPosition(true);
+    sessionSelector->setCurrentCount(DTLayer::get()->getCurrentSelectedSession(), true);
     sessionSelector->setPosition(TypeToggler->getPosition() + ccp(size.width / 2.5f / 2, 0) - sessionSelector->getContentSize() / 2);
     this->addChild(sessionSelector);
 
     float localSharedMargin = 10;
     float localSharedTopPadding = 10;
     
-    auto localViewBtnSpr = ButtonSprite::create("local", "gjFont17.fnt", "GJ_button_04.png");
-    localViewBtnSpr->setScale(.5f);
-    localViewBtnSpr->setID("enabled");
-    localViewBtn = CCMenuItemSpriteExtra::create(
-        localViewBtnSpr,
+    auto from0ViewBtnSpr = ButtonSprite::create("from 0", "gjFont17.fnt", "GJ_button_04.png");
+    from0ViewBtnSpr->setScale(.5f);
+    from0ViewBtnSpr->setID("enabled");
+    from0ViewBtn = CCMenuItemSpriteExtra::create(
+        from0ViewBtnSpr,
         this,
-        menu_selector(ModifyOptions::onLocalView)
+        menu_selector(ModifyOptions::onLevelView)
     );
-    localViewBtn->setPosition({
-        size.width / 2.5f / 2 - localViewBtn->getContentWidth() / 2 - localSharedMargin,
-        TypeToggler->getPositionY() - localViewBtn->getContentHeight() / 2 - TypeToggler->getContentHeight() / 2 - localSharedTopPadding
+    from0ViewBtn->setPosition({
+        size.width / 2.5f / 2 - from0ViewBtn->getContentWidth() / 2 - localSharedMargin,
+        TypeToggler->getPositionY() - from0ViewBtn->getContentHeight() / 2 - TypeToggler->getContentHeight() / 2 - localSharedTopPadding
     });
 
-    auto localViewBtnSprDisabled = ButtonSprite::create("local", "gjFont17.fnt", "GJ_button_01.png");
-    localViewBtnSprDisabled->setScale(.5f);
-    localViewBtnSprDisabled->setPosition(localViewBtnSpr->getPosition());
-    localViewBtnSprDisabled->setID("disabled");
-    localViewBtnSprDisabled->setVisible(false);
-    localViewBtn->addChild(localViewBtnSprDisabled);
+    auto from0ViewBtnSprDisabled = ButtonSprite::create("from 0", "gjFont17.fnt", "GJ_button_01.png");
+    from0ViewBtnSprDisabled->setScale(.5f);
+    from0ViewBtnSprDisabled->setPosition(from0ViewBtnSpr->getPosition());
+    from0ViewBtnSprDisabled->setID("disabled");
+    from0ViewBtnSprDisabled->setVisible(false);
+    from0ViewBtn->addChild(from0ViewBtnSprDisabled);
 
-    auto sharedViewBtnSpr = ButtonSprite::create("shared", "gjFont17.fnt", "GJ_button_04.png");
-    sharedViewBtnSpr->setID("enabled");
-    sharedViewBtnSpr->setScale(.5f);
-    sharedViewBtn = CCMenuItemSpriteExtra::create(
-        sharedViewBtnSpr,
+    auto runViewBtnSpr = ButtonSprite::create("runs", "gjFont17.fnt", "GJ_button_04.png");
+    runViewBtnSpr->setID("enabled");
+    runViewBtnSpr->setScale(.5f);
+    runViewBtn = CCMenuItemSpriteExtra::create(
+        runViewBtnSpr,
         this,
-        menu_selector(ModifyOptions::onSharedView)
+        menu_selector(ModifyOptions::onRunsView)
     );
-    sharedViewBtnSpr->setVisible(false);
-    sharedViewBtn->setPosition({
-        size.width / 2.5f / 2 + sharedViewBtn->getContentWidth() / 2 + localSharedMargin,
-        TypeToggler->getPositionY() - sharedViewBtn->getContentHeight() / 2 - TypeToggler->getContentHeight() / 2 - localSharedTopPadding
+    runViewBtnSpr->setVisible(false);
+    runViewBtn->setPosition({
+        size.width / 2.5f / 2 + runViewBtn->getContentWidth() / 2 + localSharedMargin,
+        TypeToggler->getPositionY() - runViewBtn->getContentHeight() / 2 - TypeToggler->getContentHeight() / 2 - localSharedTopPadding
     });
 
-    auto sharedViewBtnSprDisabled = ButtonSprite::create("shared", "gjFont17.fnt", "GJ_button_01.png");
-    sharedViewBtnSprDisabled->setScale(.5f);
-    sharedViewBtnSprDisabled->setPosition(sharedViewBtnSpr->getPosition());
-    sharedViewBtnSprDisabled->setID("disabled");
-    sharedViewBtn->addChild(sharedViewBtnSprDisabled);
+    auto runViewBtnSprDisabled = ButtonSprite::create("runs", "gjFont17.fnt", "GJ_button_01.png");
+    runViewBtnSprDisabled->setScale(.5f);
+    runViewBtnSprDisabled->setPosition(runViewBtnSpr->getPosition());
+    runViewBtnSprDisabled->setID("disabled");
+    runViewBtn->addChild(runViewBtnSprDisabled);
 
-    sharedViewBtn->setEnabled(false);
+    runViewBtn->setEnabled(false);
 
-    this->addChild(localViewBtn);
-    this->addChild(sharedViewBtn);
+    this->addChild(from0ViewBtn);
+    this->addChild(runViewBtn);
 
     float previewBGMargin = 10;
 
     auto previewBG = CCScale9Sprite::create("square02_001.png");
     previewBG->setContentSize({
         size.width / 2.5f - previewBGMargin,
-        size.height - TypeToggler->getContentHeight() - localViewBtn->getContentHeight() - localSharedTopPadding - topeToggleHightPadding - previewBGMargin
+        size.height - TypeToggler->getContentHeight() - from0ViewBtn->getContentHeight() - localSharedTopPadding - topeToggleHightPadding - previewBGMargin
     });
     previewBG->setPosition({
         size.width / 2.5f / 2 + previewBGMargin / 2,
@@ -109,6 +123,39 @@ bool ModifyOptions::setup(){
     previewBG->setAnchorPoint({0.5f, 0});
     previewBG->setOpacity(150);
     this->addChild(previewBG);
+
+    previewScroll = ScrollLayer::create(previewBG->getContentSize() - ccp(5, 5));
+    previewScroll->setPosition(previewBG->getPosition() + ccp(0, 2.5f));
+    previewScroll->ignoreAnchorPointForPosition(false);
+    previewScroll->setAnchorPoint({.5f, 0});
+    previewScroll->m_contentLayer->setLayout(ColumnLayout::create()
+        ->setAutoGrowAxis(previewScroll->getContentHeight())
+        ->setAxisAlignment(AxisAlignment::End)
+        ->setCrossAxisAlignment(AxisAlignment::Center)
+        ->setCrossAxisOverflow(false)
+    );
+    this->addChild(previewScroll);
+
+    auto scrollbar = Scrollbar::create(previewScroll);
+    scrollbar->ignoreAnchorPointForPosition(false);
+    scrollbar->setPosition(previewScroll->getPosition() + previewScroll->getContentSize() / 2);
+    this->addChild(scrollbar);
+
+    DTLabelInfo info;
+    info.scale = .5f;
+    info.wrapping = WrappingMode::SPACE_WRAP;
+    info.isExpanded = true;
+
+    myLabel = DTLabel::create(info);
+    myLabel->setExpandable(false);
+    myLabel->setContentWidth(previewScroll->getContentWidth());
+    previewScroll->m_contentLayer->addChild(myLabel);
+
+    TypeToggler->toggleWithCallback(true);
+    TypeToggler->toggleWithCallback(false);
+
+    previewScroll->m_contentLayer->updateLayout();
+    previewScroll->moveToTop();
 
     auto runSeperatorInput = TextInput::create(60, "Run Sep", "gjFont17.fnt");
     runSeperatorInput->setPosition({
@@ -135,24 +182,35 @@ bool ModifyOptions::setup(){
     this->addChild(deathFormatInput);
 
     auto seperator1 = CCScale9Sprite::create("pixel.png");
-    seperator1->setContentSize({2, size.height - (deathFormatInput->getContentHeight() / 2 + deathFormatInput->getPositionY() + 10)});
+    seperator1->setContentSize({1.5f, size.height - (deathFormatInput->getContentHeight() / 2 + deathFormatInput->getPositionY() + 10)});
     seperator1->setPositionX(size.width / 2 - 20);
     seperator1->setPositionY(deathFormatInput->getScaledContentHeight() / 2 + deathFormatInput->getPositionY() + 10 + seperator1->getContentHeight() / 2);
     this->addChild(seperator1);
 
     auto seperator2 = CCScale9Sprite::create("pixel.png");
-    seperator2->setContentSize({deathFormatInput->getScaledContentWidth(), 2});
+    seperator2->setContentSize({deathFormatInput->getScaledContentWidth(), 1.5f});
     seperator2->setAnchorPoint({0, 0});
     seperator2->setPositionX(seperator1->getPositionX());
     seperator2->setPositionY(seperator1->getPositionY() - seperator1->getContentHeight() / 2);
     this->addChild(seperator2);
 
     auto seperator3 = CCScale9Sprite::create("pixel.png");
-    seperator3->setContentSize({2, size.height - seperator1->getContentHeight()});
+    seperator3->setContentSize({1.5f, size.height - seperator1->getContentHeight()});
     seperator3->setAnchorPoint({1, 1});
     seperator3->setPositionX(seperator2->getPositionX() + seperator2->getContentWidth());
     seperator3->setPositionY(seperator2->getPositionY());
     this->addChild(seperator3);
+
+    auto amountInput = TextInput::create(60, "amount", "gjFont17.fnt");
+    amountInput->setPosition({
+        seperator1->getPositionX() + amountInput->getScaledContentWidth() / 2 + 15,
+        seperator1->getPositionY()
+    });
+    amountInput->setCommonFilter(CommonFilter::Uint);
+    this->addChild(amountInput);
+
+    scheduleUpdate();
+    onLevelView(nullptr);
 
     return true;
 }
@@ -172,23 +230,58 @@ void ModifyOptions::onClosed(){
     this->setEnabled(false);
 }
 
-void ModifyOptions::onLocalView(CCObject*){
-    sharedViewBtn->setEnabled(true);
-    localViewBtn->setEnabled(false);
+void ModifyOptions::onLevelView(CCObject*){
+    runViewBtn->setEnabled(true);
+    from0ViewBtn->setEnabled(false);
 
-    sharedViewBtn->getChildByID("enabled")->setVisible(true);
-    sharedViewBtn->getChildByID("disabled")->setVisible(false);
+    runViewBtn->getChildByID("enabled")->setVisible(true);
+    runViewBtn->getChildByID("disabled")->setVisible(false);
 
-    localViewBtn->getChildByID("enabled")->setVisible(false);
-    localViewBtn->getChildByID("disabled")->setVisible(true);
+    from0ViewBtn->getChildByID("enabled")->setVisible(false);
+    from0ViewBtn->getChildByID("disabled")->setVisible(true);
+
+    updatePreviewName(TypeToggler->isToggled());
 }
-void ModifyOptions::onSharedView(CCObject*){
-    sharedViewBtn->setEnabled(false);
-    localViewBtn->setEnabled(true);
+void ModifyOptions::onRunsView(CCObject*){
+    runViewBtn->setEnabled(false);
+    from0ViewBtn->setEnabled(true);
 
-    sharedViewBtn->getChildByID("enabled")->setVisible(false);
-    sharedViewBtn->getChildByID("disabled")->setVisible(true);
+    runViewBtn->getChildByID("enabled")->setVisible(false);
+    runViewBtn->getChildByID("disabled")->setVisible(true);
 
-    localViewBtn->getChildByID("enabled")->setVisible(true);
-    localViewBtn->getChildByID("disabled")->setVisible(false);
+    from0ViewBtn->getChildByID("enabled")->setVisible(true);
+    from0ViewBtn->getChildByID("disabled")->setVisible(false);
+
+    updatePreviewName(TypeToggler->isToggled());
+}
+
+void ModifyOptions::update(float dt){
+    float prevHeight = previewScroll->m_contentLayer->getContentHeight();
+    previewScroll->m_contentLayer->updateLayout();
+    if (previewScroll->m_contentLayer->getContentHeight() != prevHeight)
+        previewScroll->moveToTop();
+}
+
+void ModifyOptions::updatePreviewName(bool categotyIsSession){
+    std::string category = !categotyIsSession ?
+        "level" :
+        fmt::format("session {}", DTLayer::get()->getCurrentSelectedSession());
+    std::string type = !from0ViewBtn->isEnabled() ?
+        "from 0" :
+        "runs";
+
+    myLabel->setLabelName(fmt::format("preview ({}, {})", category, type));
+
+    std::string text;
+
+    if (!categotyIsSession){
+        if (!from0ViewBtn->isEnabled()) text = "f0";
+        else text = "runs";
+    }
+    else{
+        if (!from0ViewBtn->isEnabled()) text = "s0";
+        else text = "sruns";
+    }
+
+    myLabel->setLabelText(fmt::format("{{{}}}", text));
 }

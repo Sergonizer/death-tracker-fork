@@ -64,6 +64,8 @@ class DTLabel : public CCMenu {
 
         void setEditable(bool editable);
 
+        void setExpandable(bool enabled);
+
         ~DTLabel();
     private:
         bool init(const DTLabelInfo& info);
@@ -71,6 +73,8 @@ class DTLabel : public CCMenu {
         void update(float dt) override;
 
         bool isEditable;
+
+        bool isExpandable = true;
 
         std::set<std::shared_ptr<SpecialKey>> currentlyLoadingFor{};
         

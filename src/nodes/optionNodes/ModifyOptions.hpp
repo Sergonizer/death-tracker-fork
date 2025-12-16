@@ -3,6 +3,7 @@
 #include <Geode/Geode.hpp>
 #include <nodes/OptionsNode.hpp>
 #include <nodes/SimpleToggler.hpp>
+#include <nodes/DTLabel.hpp>
 
 using namespace geode::prelude;
 
@@ -15,10 +16,17 @@ class ModifyOptions : public OptionsNode {
 
         SimpleToggler* TypeToggler;
 
-        void onLocalView(CCObject*);
-        void onSharedView(CCObject*);
-        CCMenuItemSpriteExtra* localViewBtn;
-        CCMenuItemSpriteExtra* sharedViewBtn;
+        void onLevelView(CCObject*);
+        void onRunsView(CCObject*);
+        CCMenuItemSpriteExtra* from0ViewBtn;
+        CCMenuItemSpriteExtra* runViewBtn;
+
+        DTLabel* myLabel;
+
+        void update(float dt);
+        ScrollLayer* previewScroll;
+        void updatePreviewName(bool categotyIsSession);
+
     public:
         virtual void onOpened();
         virtual void onClosed();

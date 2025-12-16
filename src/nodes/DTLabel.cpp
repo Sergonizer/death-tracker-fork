@@ -27,16 +27,20 @@ DTLabel* DTLabel::create(const DTLabelInfo& info) {
 }
 
 DTLabel::~DTLabel(){
-    if (DTLayer::get() != nullptr)
+    if (DTLayer::get() != nullptr){
         DTLayer::get()->unsubscribeToOrganizationEvent(this);
+        DTLayer::get()->unsubscribeKeyListener(this);
+    }
 }
 
 bool DTLabel::init(const DTLabelInfo& info){
-    if (DTLayer::get() != nullptr)
+    if (DTLayer::get() != nullptr){
         DTLayer::get()->subscribeToOrganizationEvent(this, [&](auto _){
             bg->stopAllActions();
             bg->runAction(CCEaseInOut::create(CCResizeHeightTo::create(DTLayer::transitionTime, this->getContentHeight() / bg->getScale()), 2));
         });
+        DTLayer::get()->subscribeKeyListener(this);
+    }
     if (!CCMenu::init()) return false;
 
     this->info = info;
@@ -63,7 +67,7 @@ bool DTLabel::init(const DTLabelInfo& info){
     labelText = SimpleTextArea::create("", info.font, info.scale);
     labelText->setID("text");
     labelText->setAnchorPoint({.5f, 1});
-    labelText->setAlignment(CCTextAlignment::kCCTextAlignmentCenter);
+    labelText->setAlignment(info.horizontalAlignment);
     labelText->setWrappingMode(WrappingMode::CUTOFF_WRAP);
     labelText->setWidth(this->getContentWidth() - textCornerOffset);
     setLabelText(info.text);
@@ -88,6 +92,7 @@ bool DTLabel::init(const DTLabelInfo& info){
     bg->setScale(.2f);
     bg->setAnchorPoint({0, 1});
     bg->setContentHeight(labelTitleHeight / bg->getScale());
+    if (info.isExpanded) bg->setContentHeight(this->getContentHeight() / bg->getScale());
     this->addChild(bg);
     
     labelTitleBG = CCScale9Sprite::create("GJ_squareB_01.png");
@@ -227,6 +232,8 @@ void DTLabel::moveUpLayer(){
 }
 
 void DTLabel::toggleExpand(CCObject*){
+    if (!isExpandable) return;
+
     info.isExpanded = !info.isExpanded;
 
     expandBtn->stopAllActions();
@@ -656,4 +663,8 @@ std::string DTLabel::modifyStrRecursive(const std::string& str){
     result += str.substr(lastPos);
 
     return result;
+}
+void DTLabel::setExpandable(bool enabled){
+    isExpandable = enabled;
+    expandBtn->setVisible(enabled);
 }

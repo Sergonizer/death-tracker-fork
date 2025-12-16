@@ -731,6 +731,10 @@ bool DTLayer::createDeathsString(const Deaths& deaths, const stringCustomazation
     return true;
 }
 
+int DTLayer::getCurrentSelectedSession(){
+    return sessionSelector->getCurrentCount();
+}
+
 void DTLayer::onSessionSelected(int sessionNum, bool updateContent){
     auto it = sessionsOrder.begin();
     std::advance(it, sessionNum - 1);
@@ -739,6 +743,8 @@ void DTLayer::onSessionSelected(int sessionNum, bool updateContent){
 
     if (sessionNum - 1 == currentSession) return;
     currentSession = sessionNum - 1;
+
+    if (sessionSelector->getCurrentCount() != currentSession + 1) sessionSelector->setCurrentCount(currentSession + 1);
 
     if (updateContent){
         specialStrings["s0"]->updateContent();
@@ -1395,36 +1401,16 @@ void DTLayer::saveCurrentLayout(){
 }
 
 void DTLayer::specialKeyUpdateStarted(const std::shared_ptr<SpecialKey>& key){
-    std::set<DTLabel*> allLabels{};
-
-    // log::info("special key update started for key {}", key->getKey());
-
-    for (const auto& column : columns)
+    for (const auto& label : keyListeners)
     {
-        for (const auto& [layer, label] : column->labels)
-        {
-            if (allLabels.contains(label)) continue;
-            allLabels.insert(label);
-
-            label->setLoading(key);
-        }
+        label->setLoading(key);
     }
 }
 
 void DTLayer::specialKeyUpdateCompleted(const std::shared_ptr<SpecialKey>& key){
-    std::set<DTLabel*> allLabels{};
-
-    log::info("special key update completed for key {}", key->getKey());
-
-    for (const auto& column : columns)
+    for (const auto& label : keyListeners)
     {
-        for (const auto& [layer, label] : column->labels)
-        {
-            if (allLabels.contains(label)) continue;
-            allLabels.insert(label);
-
-            label->completeLoading(key);
-        }
+        label->completeLoading(key);
     }
 }
 
@@ -1544,4 +1530,15 @@ void DTLayer::exitLayoutEditing(){
     scrollLayer->moveBy(ccp(0, LayoutColumn::topHeight));
 
     this->organizeLayout();   
+}
+
+void DTLayer::subscribeKeyListener(DTLabel* label){
+    if (keyListeners.contains(label)) return;
+
+    keyListeners.insert(label);
+}
+void DTLayer::unsubscribeKeyListener(DTLabel* label){
+    if (!keyListeners.contains(label)) return;
+
+    keyListeners.erase(label);
 }
