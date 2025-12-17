@@ -1542,3 +1542,10 @@ void DTLayer::unsubscribeKeyListener(DTLabel* label){
 
     keyListeners.erase(label);
 }
+
+void DTLayer::modifyRun(int startPer, std::optional<int> sessionNumber){
+
+}
+void DTLayer::modifyRun(int startPer, int endPer, std::optional<int> sessionNumber){
+
+}

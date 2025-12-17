@@ -283,8 +283,19 @@ bool ModifyOptions::setup(){
     addPercentInput->setCommonFilter(CommonFilter::Uint);
     this->addChild(addPercentInput);
 
-    addPlusMinusBtns(addPercentInput, false, [&](bool isPlus){
+    addPlusMinusBtns(addPercentInput, false, [&, addPercentInput, amountInput](bool isPlus){
+        auto amountRes = utils::numFromString<int>(amountInput->getString());
+        if (amountRes.isErr()) return;
+        auto amount = amountRes.unwrap();
+        auto addPerRes = utils::numFromString<int>(addPercentInput->getString());
+        if (addPerRes.isErr()) return;
+        auto addPer = addPerRes.unwrap();
 
+        std::optional<int> sessionNum = std::nullopt;
+        if (TypeToggler->isToggled())
+            sessionNum = sessionSelector->getCurrentCount();
+
+        DTLayer::get()->modifyRun(addPer * (isPlus ? 1 : -1), sessionNum);
     }, .9f);
 
     auto addPercentInputLabel = CCLabelBMFont::create("From 0", "bigFont.fnt");
@@ -406,8 +417,8 @@ bool ModifyOptions::setup(){
     addNewBestInput->setCommonFilter(CommonFilter::Uint);
     this->addChild(addNewBestInput);
 
-    addPlusMinusBtns(addNewBestInput, false, [&](bool isPlus){
-
+    addPlusMinusBtns(addNewBestInput, false, [&, amountInput](bool isPlus){
+        
     }, .9f);
 
     auto addNewBestInputLabel = CCLabelBMFont::create("New Bests", "bigFont.fnt");
