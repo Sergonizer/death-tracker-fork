@@ -17,6 +17,10 @@ class SessionSelector : public CCMenu, public TextInputDelegate {
         int getCurrentCount();
 
         void setEnabled(bool value);
+
+        geode::TextInput* getTextInput() const{
+            return inputNode;
+        }
         
     private:
         bool init(int count);

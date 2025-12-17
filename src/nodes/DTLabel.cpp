@@ -4,6 +4,8 @@
 
 #include <utils/CCResizeHeightTo.hpp>
 #include <utils/CCResizeWidthTo.hpp>
+#include <utils/CCTextAreaTintTo.hpp>
+#include <utils/CCTextAreaFadeTo.hpp>
 
 #include <regex>
 
@@ -587,6 +589,8 @@ void DTLabel::setLabelColor(const ccColor4B& newColor){
 }
 
 void DTLabel::setTextColor(const ccColor4B& newColor){
+    labelText->stopActionByTag(10);
+    labelText->stopActionByTag(11);
     info.textColor = newColor;
 
     labelText->setColor(newColor);
@@ -667,4 +671,34 @@ std::string DTLabel::modifyStrRecursive(const std::string& str){
 void DTLabel::setExpandable(bool enabled){
     isExpandable = enabled;
     expandBtn->setVisible(enabled);
+}
+
+void DTLabel::fadeTextColorTo(ccColor4B newColor, float time){
+    info.textColor = newColor;
+
+    labelText->stopActionByTag(10);
+    labelText->stopActionByTag(11);
+
+    auto faceAction = CCTextAreaFadeTo::create(time, newColor.a);
+    faceAction->setTag(10);
+
+    auto colorAction = CCTextAreaTintTo::create(time, {newColor.r, newColor.g, newColor.b});
+    colorAction->setTag(11);
+
+    labelText->runAction(faceAction);
+    labelText->runAction(colorAction);
+}
+
+void DTLabel::fadeTitleColorTo(ccColor4B newColor, float time){
+    labelTitleArea->stopActionByTag(10);
+    labelTitleArea->stopActionByTag(11);
+
+    auto faceAction = CCTextAreaFadeTo::create(time, newColor.a);
+    faceAction->setTag(10);
+
+    auto colorAction = CCTextAreaTintTo::create(time, {newColor.r, newColor.g, newColor.b});
+    colorAction->setTag(11);
+
+    labelTitleArea->runAction(faceAction);
+    labelTitleArea->runAction(colorAction);
 }

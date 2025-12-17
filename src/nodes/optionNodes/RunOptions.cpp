@@ -219,16 +219,12 @@ void RunOptions::onOpened(){
     TARToggler->runAction(CCFadeIn::create(fadeTime));
     ResetAsDeathToggler->runAction(CCFadeIn::create(fadeTime));
 
-    runAdditionInput->setEnabled(true);
     runAdditionInput->getInputNode()->m_textLabel->setOpacity(0);
     Dev::fadeTextInput(runAdditionInput, true, fadeTime);
-    HideByLenInput->setEnabled(true);
     HideByLenInput->getInputNode()->m_textLabel->setOpacity(0);
     Dev::fadeTextInput(HideByLenInput, true, fadeTime);
-    RealEndPerInput->setEnabled(true);
     RealEndPerInput->getInputNode()->m_textLabel->setOpacity(0);
     Dev::fadeTextInput(RealEndPerInput, true, fadeTime);
-    HidUpToInput->setEnabled(true);
     HidUpToInput->getInputNode()->m_textLabel->setOpacity(0);
     Dev::fadeTextInput(HidUpToInput, true, fadeTime);
 
@@ -244,13 +240,9 @@ void RunOptions::onClosed(){
     TARToggler->runAction(CCFadeOut::create(fadeTime));
     ResetAsDeathToggler->runAction(CCFadeOut::create(fadeTime));
 
-    runAdditionInput->setEnabled(false);
     Dev::fadeTextInput(runAdditionInput, false, fadeTime);
-    HideByLenInput->setEnabled(false);
     Dev::fadeTextInput(HideByLenInput, false, fadeTime);
-    RealEndPerInput->setEnabled(false);
     Dev::fadeTextInput(RealEndPerInput, false, fadeTime);
-    HidUpToInput->setEnabled(false);
     Dev::fadeTextInput(HidUpToInput, false, fadeTime);
 
     for (const auto& child : CCArrayExt<CCMenu*>(runsMenu->getChildren())){

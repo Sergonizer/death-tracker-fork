@@ -1,6 +1,6 @@
 #include <nodes/optionNodes/ModifyOptions.hpp>
-#include <nodes/SessionSelector.hpp>
 #include <nodes/layers/DTLayer.hpp>
+#include <utils/Dev.hpp>
 
 ModifyOptions* ModifyOptions::create(const CCSize& size) {
     auto ret = new ModifyOptions();
@@ -22,6 +22,8 @@ bool ModifyOptions::setup(){
 
     auto TypLevelBtnSpr = ButtonSprite::create("Level");
     auto TypeSessionBtnSpr = ButtonSprite::create("Session");
+    btnSprites.insert(TypLevelBtnSpr);
+    btnSprites.insert(TypeSessionBtnSpr);
     TypeToggler = SimpleToggler::create(
         TypLevelBtnSpr,
         TypeSessionBtnSpr,
@@ -49,7 +51,7 @@ bool ModifyOptions::setup(){
         sessionAmount = dtLayer->sessionsOrder.size();
     }
 
-    auto sessionSelector = SessionSelector::create(sessionAmount);
+    sessionSelector = SessionSelector::create(sessionAmount);
     sessionSelector->setCallback([&](int newSession) {
         DTLayer::get()->onSessionSelected(newSession, true);
         if (TypeToggler->isToggled())
@@ -65,6 +67,7 @@ bool ModifyOptions::setup(){
     float localSharedTopPadding = 10;
     
     auto from0ViewBtnSpr = ButtonSprite::create("from 0", "gjFont17.fnt", "GJ_button_04.png");
+    btnSprites.insert(from0ViewBtnSpr);
     from0ViewBtnSpr->setScale(.5f);
     from0ViewBtnSpr->setID("enabled");
     from0ViewBtn = CCMenuItemSpriteExtra::create(
@@ -78,6 +81,7 @@ bool ModifyOptions::setup(){
     });
 
     auto from0ViewBtnSprDisabled = ButtonSprite::create("from 0", "gjFont17.fnt", "GJ_button_01.png");
+    btnSprites.insert(from0ViewBtnSprDisabled);
     from0ViewBtnSprDisabled->setScale(.5f);
     from0ViewBtnSprDisabled->setPosition(from0ViewBtnSpr->getPosition());
     from0ViewBtnSprDisabled->setID("disabled");
@@ -85,6 +89,7 @@ bool ModifyOptions::setup(){
     from0ViewBtn->addChild(from0ViewBtnSprDisabled);
 
     auto runViewBtnSpr = ButtonSprite::create("runs", "gjFont17.fnt", "GJ_button_04.png");
+    btnSprites.insert(runViewBtnSpr);
     runViewBtnSpr->setID("enabled");
     runViewBtnSpr->setScale(.5f);
     runViewBtn = CCMenuItemSpriteExtra::create(
@@ -99,6 +104,7 @@ bool ModifyOptions::setup(){
     });
 
     auto runViewBtnSprDisabled = ButtonSprite::create("runs", "gjFont17.fnt", "GJ_button_01.png");
+    btnSprites.insert(runViewBtnSprDisabled);
     runViewBtnSprDisabled->setScale(.5f);
     runViewBtnSprDisabled->setPosition(runViewBtnSpr->getPosition());
     runViewBtnSprDisabled->setID("disabled");
@@ -111,7 +117,10 @@ bool ModifyOptions::setup(){
 
     float previewBGMargin = 10;
 
-    auto previewBG = CCScale9Sprite::create("square02_001.png");
+    auto previewBGHolder = CCNode::create();
+    this->addChild(previewBGHolder);
+
+    previewBG = CCScale9Sprite::create("square02_001.png");
     previewBG->setContentSize({
         size.width / 2.5f - previewBGMargin,
         size.height - TypeToggler->getContentHeight() - from0ViewBtn->getContentHeight() - localSharedTopPadding - topeToggleHightPadding - previewBGMargin
@@ -121,8 +130,8 @@ bool ModifyOptions::setup(){
         0 + previewBGMargin / 2
     });
     previewBG->setAnchorPoint({0.5f, 0});
-    previewBG->setOpacity(150);
-    this->addChild(previewBG);
+    previewBG->setOpacity(0);
+    previewBGHolder->addChild(previewBG);
 
     previewScroll = ScrollLayer::create(previewBG->getContentSize() - ccp(5, 5));
     previewScroll->setPosition(previewBG->getPosition() + ccp(0, 2.5f));
@@ -134,9 +143,10 @@ bool ModifyOptions::setup(){
         ->setCrossAxisAlignment(AxisAlignment::Center)
         ->setCrossAxisOverflow(false)
     );
+    previewScroll->setMouseEnabled(false);
     this->addChild(previewScroll);
 
-    auto scrollbar = Scrollbar::create(previewScroll);
+    scrollbar = Scrollbar::create(previewScroll);
     scrollbar->ignoreAnchorPointForPosition(false);
     scrollbar->setPosition(previewScroll->getPosition() + previewScroll->getContentSize() / 2);
     this->addChild(scrollbar);
@@ -162,6 +172,16 @@ bool ModifyOptions::setup(){
         previewBG->getPositionX() + previewBG->getContentWidth() / 2 + runSeperatorInput->getContentWidth() / 2 + previewBGMargin,
         runSeperatorInput->getContentHeight() / 2 + previewBGMargin / 2
     });
+    runSeperatorInput->setString(Save::getRunsCustomazations().seperator);
+    runSeperatorInput->setCallback([&](auto newStr){
+        auto curr = Save::getRunsCustomazations();
+        curr.seperator = newStr;
+
+        Save::setRunCustomazations(curr);
+
+        DTLayer::get()->specialStrings["runs"]->updateContent();
+        DTLayer::get()->specialStrings["sruns"]->updateContent();
+    });
     runSeperatorInput->setCommonFilter(CommonFilter::Any);
     this->addChild(runSeperatorInput);
 
@@ -170,6 +190,16 @@ bool ModifyOptions::setup(){
         previewBG->getPositionX() + previewBG->getContentWidth() / 2 + f0SeperatorInput->getContentWidth() / 2 + previewBGMargin,
         previewBGMargin / 2 + previewBG->getContentHeight() / 2
     });
+    f0SeperatorInput->setString(Save::getFrom0Customazations().seperator);
+    f0SeperatorInput->setCallback([&](auto newStr){
+        auto curr = Save::getFrom0Customazations();
+        curr.seperator = newStr;
+
+        Save::setFrom0Customazations(curr);
+
+        DTLayer::get()->specialStrings["f0"]->updateContent();
+        DTLayer::get()->specialStrings["s0"]->updateContent();
+    });
     f0SeperatorInput->setCommonFilter(CommonFilter::Any);
     this->addChild(f0SeperatorInput);
 
@@ -177,6 +207,21 @@ bool ModifyOptions::setup(){
     deathFormatInput->setPosition({
         previewBG->getPositionX() + previewBG->getContentWidth() / 2 + deathFormatInput->getContentWidth() / 2 + previewBGMargin,
         previewBGMargin / 2 + previewBG->getContentHeight() - deathFormatInput->getContentHeight() / 2
+    });
+    deathFormatInput->setString(Save::getFrom0Customazations().format);
+    deathFormatInput->setCallback([&](auto newStr){
+        auto currF0 = Save::getFrom0Customazations();
+        auto currRuns = Save::getRunsCustomazations();
+        currF0.format = newStr;
+        currRuns.format = newStr;
+
+        Save::setFrom0Customazations(currF0);
+        Save::setRunCustomazations(currRuns);
+
+        DTLayer::get()->specialStrings["f0"]->updateContent();
+        DTLayer::get()->specialStrings["s0"]->updateContent();
+        DTLayer::get()->specialStrings["runs"]->updateContent();
+        DTLayer::get()->specialStrings["sruns"]->updateContent();
     });
     deathFormatInput->setCommonFilter(CommonFilter::Any);
     this->addChild(deathFormatInput);
@@ -206,11 +251,196 @@ bool ModifyOptions::setup(){
         seperator1->getPositionX() + amountInput->getScaledContentWidth() / 2 + 15,
         seperator1->getPositionY()
     });
+    amountInput->setString(std::to_string(currAmount));
+    amountInput->setCallback([&, amountInput](auto newstr){
+        auto numRes = geode::utils::numFromString<int>(newstr);
+        if (numRes.isErr()) return;
+        currAmount = numRes.unwrap();
+
+        if (currAmount > 100) {
+            currAmount = 100;
+            amountInput->setString("100");
+        }
+    });
     amountInput->setCommonFilter(CommonFilter::Uint);
     this->addChild(amountInput);
 
+    auto addPercentInput = TextInput::create(75, "percent", "gjFont17.fnt");
+    addPercentInput->setPosition({
+        size.width - size.width / 5,
+        size.height - size.height / 5
+    });
+    addPercentInput->setCallback([addPercentInput](auto newstr){
+        auto numRes = geode::utils::numFromString<int>(newstr);
+        if (numRes.isErr()) return;
+        int num = numRes.unwrap();
+
+        if (num > 100) {
+            num = 100;
+            addPercentInput->setString("100");
+        }
+    });
+    addPercentInput->setCommonFilter(CommonFilter::Uint);
+    this->addChild(addPercentInput);
+
+    addPlusMinusBtns(addPercentInput, false, [&](bool isPlus){
+
+    }, .9f);
+
+    auto addPercentInputLabel = CCLabelBMFont::create("From 0", "bigFont.fnt");
+    addPercentInputLabel->setPosition(addPercentInput->getPosition() + ccp(0, addPercentInput->getContentHeight() / 2));
+    addPercentInputLabel->setAnchorPoint({.5f, 0});
+    addPercentInputLabel->setScale(.5f);
+    this->addChild(addPercentInputLabel);
+
+    auto addRunSeperator = CCLabelBMFont::create("-", "bigFont.fnt");
+    addRunSeperator->setPosition({
+        size.width - size.width / 5,
+        size.height - (size.height / 5 * 2.25f)
+    });
+    addRunSeperator->setScale(.5f);
+    this->addChild(addRunSeperator);
+
+    auto addRunStartInput = TextInput::create(40, "sta%", "gjFont17.fnt");
+    addRunStartInput->setPosition(addRunSeperator->getPosition() + ccp(-addRunSeperator->getScaledContentWidth() / 2 - addRunStartInput->getContentWidth() / 2 - 5, 0));
+    addRunStartInput->setCommonFilter(CommonFilter::Uint);
+    this->addChild(addRunStartInput);
+
+    auto addRunEndInput = TextInput::create(40, "end%", "gjFont17.fnt");
+    addRunEndInput->setPosition(addRunSeperator->getPosition() + ccp(addRunSeperator->getScaledContentWidth() / 2 + addRunEndInput->getContentWidth() / 2 + 5, 0));
+    addRunEndInput->setCommonFilter(CommonFilter::Uint);
+    this->addChild(addRunEndInput);
+
+    addRunStartInput->setCallback([&, addRunStartInput, addRunEndInput](auto newstr){
+        auto numStartRes = geode::utils::numFromString<int>(newstr);
+        if (numStartRes.isErr()) return;
+        int numStart = numStartRes.unwrap();
+        auto numEndRes = geode::utils::numFromString<int>(addRunEndInput->getString());
+        int numEnd;
+        if (numEndRes.isErr()) numEnd = 0;
+        else numEnd = numEndRes.unwrap();
+
+        if (numStart > 100) {
+            numStart = 100;
+            addRunStartInput->setString("100");
+        }
+
+        if (numStart > numEnd){
+            numStart = numEnd;
+            addRunStartInput->setString(std::to_string(numStart));
+        }
+
+        if (numEnd < numStart){
+            numEnd = numStart;
+            addRunEndInput->setString(std::to_string(numEnd));
+        }
+    });
+
+    addRunEndInput->setCallback([&, addRunStartInput, addRunEndInput](auto newstr){
+        auto numStartRes = geode::utils::numFromString<int>(addRunStartInput->getString());
+        int numStart;
+        if (numStartRes.isErr()) numStart = 0;
+        else numStart = numStartRes.unwrap();
+        auto numEndRes = geode::utils::numFromString<int>(newstr);
+        if (numEndRes.isErr()) return;
+        int numEnd = numEndRes.unwrap();
+
+        if (numEnd > 100) {
+            numEnd = 100;
+            addRunEndInput->setString("100");
+        }
+
+        if (numEnd < numStart){
+            numEnd = numStart;
+            addRunEndInput->setString(std::to_string(numEnd));
+        }
+
+        if (numStart > numEnd){
+            numStart = numEnd;
+            addRunStartInput->setString(std::to_string(numStart));
+        }
+    });
+
+    auto addRunOverallNode = CCNode::create();
+    addRunOverallNode->setPosition(addRunSeperator->getPosition());
+    addRunOverallNode->setAnchorPoint({.5f, .5f});
+    addRunOverallNode->setContentWidth(addRunSeperator->getScaledContentWidth() + addRunStartInput->getContentWidth() + addRunEndInput->getContentWidth() + 10);
+    this->addChild(addRunOverallNode);
+
+    addPlusMinusBtns(addRunOverallNode, false, [&](bool isPlus){
+
+    }, .9f);
+
     scheduleUpdate();
     onLevelView(nullptr);
+
+    auto addRunLabel = CCLabelBMFont::create("Runs", "bigFont.fnt");
+    addRunLabel->setPosition(addRunSeperator->getPosition() + ccp(0, addRunStartInput->getContentHeight() / 2));
+    addRunLabel->setAnchorPoint({.5f, 0});
+    addRunLabel->setScale(.5f);
+    this->addChild(addRunLabel);
+
+    auto seperator4 = CCScale9Sprite::create("pixel.png");
+    seperator4->setContentSize({size.width / 3, 1.5f});
+    seperator4->setPosition({
+        size.width - size.width / 5,
+        size.height - (size.height / 5 * 3)
+    });
+    this->addChild(seperator4);
+
+    auto addNewBestInput = TextInput::create(75, "NB perce", "gjFont17.fnt");
+    addNewBestInput->setPosition({
+        size.width - size.width / 5,
+        size.height - (size.height / 5 * 4)
+    });
+    addNewBestInput->setCallback([addNewBestInput](auto newstr){
+        auto numRes = geode::utils::numFromString<int>(newstr);
+        if (numRes.isErr()) return;
+        int num = numRes.unwrap();
+
+        if (num > 100) {
+            num = 100;
+            addNewBestInput->setString("100");
+        }
+    });
+    addNewBestInput->setCommonFilter(CommonFilter::Uint);
+    this->addChild(addNewBestInput);
+
+    addPlusMinusBtns(addNewBestInput, false, [&](bool isPlus){
+
+    }, .9f);
+
+    auto addNewBestInputLabel = CCLabelBMFont::create("New Bests", "bigFont.fnt");
+    addNewBestInputLabel->setPosition(addNewBestInput->getPosition() + ccp(0, addNewBestInput->getContentHeight() / 2));
+    addNewBestInputLabel->setAnchorPoint({.5f, 0});
+    addNewBestInputLabel->setScale(.5f);
+    this->addChild(addNewBestInputLabel);
+
+    for (const auto& child : CCArrayExt<CCNode*>(this->getChildren()))
+    {
+        if (auto textInput = typeinfo_cast<TextInput*>(child)){
+            Dev::fadeTextInput(textInput, false, 0);
+        }
+    }
+    this->setOpacity(0);
+    TypeToggler->setOpacity(0);
+
+    for (const auto& btnSpr : btnSprites)
+    {
+        btnSpr->m_BGSprite->setOpacity(0);
+        btnSpr->m_label->setOpacity(0);
+    }
+
+    myLabel->setOpacity(0);
+    myLabel->setTextColor({255, 255, 255, 0});
+    myLabel->fadeTitleColorTo({255, 255, 255, 0}, 0);
+    Dev::fadeTextInput(sessionSelector->getTextInput(), false, 0);
+
+    static_cast<CCScale9Sprite*>(scrollbar->getChildren()->objectAtIndex(0))->setOpacity(0);
+    static_cast<CCScale9Sprite*>(scrollbar->getChildren()->objectAtIndex(1))->setOpacity(0);
+    scrollbar->setTouchEnabled(false);
+
+    sessionSelector->setEnabled(false);
 
     return true;
 }
@@ -219,15 +449,65 @@ void ModifyOptions::onOpened(){
     float fadeTime = .2f;
     this->runAction(CCFadeIn::create(fadeTime));
     TypeToggler->runAction(CCFadeIn::create(fadeTime));
+    previewBG->runAction(CCFadeTo::create(fadeTime, 150));
+
+    for (const auto& child : CCArrayExt<CCNode*>(this->getChildren()))
+    {
+        if (auto textInput = typeinfo_cast<TextInput*>(child)){
+            Dev::fadeTextInput(textInput, true, fadeTime);
+        }   
+    }
+
+    for (const auto& btnSpr : btnSprites)
+    {
+        btnSpr->m_BGSprite->runAction(CCFadeIn::create(fadeTime));
+        btnSpr->m_label->runAction(CCFadeIn::create(fadeTime));
+    }
+
+    myLabel->runAction(CCFadeIn::create(fadeTime));
+    myLabel->fadeTextColorTo({255, 255, 255, 255}, fadeTime);
+    myLabel->fadeTitleColorTo({255, 255, 255, 255}, fadeTime);
+    Dev::fadeTextInput(sessionSelector->getTextInput(), true, fadeTime);
+    sessionSelector->setEnabled(true);
+
+    static_cast<CCScale9Sprite*>(scrollbar->getChildren()->objectAtIndex(0))->runAction(CCFadeTo::create(fadeTime, 150));
+    static_cast<CCScale9Sprite*>(scrollbar->getChildren()->objectAtIndex(1))->runAction(CCFadeTo::create(fadeTime, 255));
+    scrollbar->setTouchEnabled(true);
 
     this->setEnabled(true);
+    previewScroll->setMouseEnabled(true);  
 }
 void ModifyOptions::onClosed(){
     float fadeTime = .2f;
     this->runAction(CCFadeOut::create(fadeTime));
     TypeToggler->runAction(CCFadeOut::create(fadeTime));
+    previewBG->runAction(CCFadeTo::create(fadeTime, 0));
+
+    for (const auto& child : CCArrayExt<CCNode*>(this->getChildren()))
+    {
+        if (auto textInput = typeinfo_cast<TextInput*>(child)){
+            Dev::fadeTextInput(textInput, false, fadeTime);
+        }   
+    }
+
+    for (const auto& btnSpr : btnSprites)
+    {
+        btnSpr->m_BGSprite->runAction(CCFadeOut::create(fadeTime));
+        btnSpr->m_label->runAction(CCFadeOut::create(fadeTime));
+    }
+
+    myLabel->runAction(CCFadeOut::create(fadeTime));
+    myLabel->fadeTextColorTo({255, 255, 255, 0}, fadeTime);
+    myLabel->fadeTitleColorTo({255, 255, 255, 0}, fadeTime);
+    Dev::fadeTextInput(sessionSelector->getTextInput(), false, fadeTime);
+    sessionSelector->setEnabled(false);
+
+    static_cast<CCScale9Sprite*>(scrollbar->getChildren()->objectAtIndex(0))->runAction(CCFadeTo::create(fadeTime, 0));
+    static_cast<CCScale9Sprite*>(scrollbar->getChildren()->objectAtIndex(1))->runAction(CCFadeTo::create(fadeTime, 0));
+    scrollbar->setTouchEnabled(false);
 
     this->setEnabled(false);
+    previewScroll->setMouseEnabled(false);
 }
 
 void ModifyOptions::onLevelView(CCObject*){
@@ -284,4 +564,44 @@ void ModifyOptions::updatePreviewName(bool categotyIsSession){
     }
 
     myLabel->setLabelText(fmt::format("{{{}}}", text));
+}
+
+void ModifyOptions::addPlusMinusBtns(CCNode* around, bool flip, const std::function<void(bool isPlus)>& callback, float scale){
+    auto plusBtnSpr = CCSprite::createWithSpriteFrameName("GJ_plus3Btn_001.png");
+    plusBtnSpr->setScale(scale);
+    auto plusBtn = CCMenuItemSpriteExtra::create(
+        plusBtnSpr,
+        this,
+        menu_selector(ModifyOptions::onPlusMinusBtn)
+    );
+    plusBtn->setTag(1);
+    this->addChild(plusBtn);
+    
+    auto minusBtnSpr = CCSprite::createWithSpriteFrameName("minus_button.png"_spr);
+    minusBtnSpr->setScale(scale);
+    auto minusBtn = CCMenuItemSpriteExtra::create(
+        minusBtnSpr,
+        this,
+        menu_selector(ModifyOptions::onPlusMinusBtn)
+    );
+    minusBtn->setTag(2);
+    this->addChild(minusBtn);
+
+    plusBtn->setPosition(around->getPosition() +
+        ccp((flip ? -1 : 1) * (around->getScaledContentWidth() * around->getAnchorPoint().x + plusBtn->getContentWidth() / 2 + 5), 0)
+    );
+
+    minusBtn->setPosition(around->getPosition() +
+        ccp((flip ? 1 : -1) * (around->getScaledContentWidth() * around->getAnchorPoint().x + minusBtn->getContentWidth() / 2 + 5), 0)
+    );
+
+    plusMinusCallbacks.insert({plusBtn, callback});
+    plusMinusCallbacks.insert({minusBtn, callback});
+}
+void ModifyOptions::onPlusMinusBtn(CCObject* sender){
+    if (auto btnSender = typeinfo_cast<CCMenuItemSpriteExtra*>(sender)){
+        if (!plusMinusCallbacks.contains(btnSender)) return;
+
+        plusMinusCallbacks[btnSender](btnSender->getTag() == 1);
+    }
 }

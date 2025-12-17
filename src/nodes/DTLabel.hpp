@@ -66,6 +66,9 @@ class DTLabel : public CCMenu {
 
         void setExpandable(bool enabled);
 
+        void fadeTextColorTo(ccColor4B newColor, float time);
+        void fadeTitleColorTo(ccColor4B newColor, float time);
+
         ~DTLabel();
     private:
         bool init(const DTLabelInfo& info);
