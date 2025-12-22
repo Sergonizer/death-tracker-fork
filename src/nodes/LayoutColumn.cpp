@@ -93,7 +93,7 @@ bool LayoutColumn::init(const DTColumnInfo& info, bool startVisible, float minHe
 
     setColor(info.color);
 
-    auto touchSender = TouchSender::create(0, false);
+    auto touchSender = TouchSender::create(-502, false);
     touchSender->setID("touchSender");
     touchSender->beginCheck = [&](cocos2d::CCTouch* touch, cocos2d::CCEvent* event){
         if (!isVisible) return false;
@@ -213,7 +213,7 @@ void LayoutColumn::setContentWidth(float width){
 }
 
 void LayoutColumn::registerWithTouchDispatcher() {
-    CCDirector::sharedDirector()->getTouchDispatcher()->addTargetedDelegate(this, 0, true);
+    CCDirector::sharedDirector()->getTouchDispatcher()->addTargetedDelegate(this, -502, true);
 }
 
 bool LayoutColumn::ccTouchBegan(CCTouch* touch, CCEvent* event) {

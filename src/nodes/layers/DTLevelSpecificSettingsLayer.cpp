@@ -79,6 +79,7 @@ CCNode* DTLevelSpecificSettingsLayer::createPageBtn(const std::string& text, Opt
         this,
         menu_selector(DTLevelSpecificSettingsLayer::switchPage)
     );
+    page->setSettingsLayer(this);
     pages.insert({button, page});
 
     if (page != nullptr){

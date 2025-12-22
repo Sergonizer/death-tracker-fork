@@ -30,6 +30,7 @@ private:
     static const std::string METADATA_FILE_NAME;
     static const std::string FROM0_FILE_NAME;
     static const std::string SESSIONS_DIR_NAME; 
+    static const std::string BACKUPS_DIR_NAME; 
 
 public:
     StatsManager() = delete;
@@ -53,6 +54,7 @@ public:
     static Result<GeneralData> getGeneral(const std::string& levelKey);
     static Result<LevelData> getLevelData(GJGameLevel* const level);
     static Result<LevelData> getLevelData(const std::string& levelKey);
+    static Result<BackupLevelData> getBackupData(const std::string& levelKey, long long backupName);
 
     static Result<> setMetadata(const LevelMetadeta& stats, GJGameLevel* const level);
     static Result<> setMetadata(const LevelMetadeta& stats, const std::string& levelKey);
@@ -60,11 +62,15 @@ public:
     static Result<> setSession(Session& stats, const std::string& levelKey, long long sessionTime, bool updateLastPlayed);
     static Result<> setGeneral(const GeneralData& stats, GJGameLevel* const level);
     static Result<> setGeneral(const GeneralData& stats, const std::string& levelKey);
+    static Result<> addBackup(const std::string& levelKey, bool saveLevelStats, std::optional<int> sessionsToSave);
 
     static Result<std::set<long long>> getAllSessionTimesForLevel(GJGameLevel* const level);
     static std::set<long long> getAllSessionTimesForLevel(const std::string& levelKey);
 
+    static std::set<long long> getBackupsCount(const std::string& levelKey);
+
     static Result<> deleteLevelStats(const std::string& levelKey);
+    static Result<> deleteBackup(const std::string& levelKey, long long backupName);
 
     static Result<> convertV2SaveToV3(const std::string& levelKey);
     static std::vector<std::string> allV2FileLevelKeys();

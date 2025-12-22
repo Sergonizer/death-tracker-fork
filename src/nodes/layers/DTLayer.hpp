@@ -105,8 +105,11 @@ class DTLayer : public Popup<GJGameLevel* const&> {
         int getCurrentSelectedSession();
         void onSessionSelected(int sessionNum, bool updateContent);
 
-        void modifyRun(int startPer, std::optional<int> sessionNumber);
-        void modifyRun(int startPer, int endPer, std::optional<int> sessionNumber);
+        void modifyRun(int startPer, int amount, std::optional<int> sessionNumber);
+        void modifyRun(int startPer, int endPer, int amount, std::optional<int> sessionNumber);
+        void modifyNewBest(int percent, bool makeTrue, std::optional<int> sessionNumber);
+
+        bool DeleteSave();
 
     private:
         

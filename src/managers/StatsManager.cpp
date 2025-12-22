@@ -38,6 +38,7 @@ Session StatsManager::currentSession{};
 const std::string StatsManager::METADATA_FILE_NAME = "metadata";
 const std::string StatsManager::FROM0_FILE_NAME = "general.dt";
 const std::string StatsManager::SESSIONS_DIR_NAME = "sessions";
+const std::string StatsManager::BACKUPS_DIR_NAME = "backups";
 
 std::filesystem::path StatsManager::m_savesFolderPath = Settings::getSavePath();
 
@@ -172,6 +173,43 @@ Result<LevelData> StatsManager::getLevelData(const std::string& levelKey){
     return Ok(data);
 }
 
+Result<BackupLevelData> StatsManager::getBackupData(const std::string& levelKey, long long backupName){
+    BackupLevelData data;
+
+    auto levelSaveFilePath = m_savesFolderPath / levelKey / StatsManager::BACKUPS_DIR_NAME / std::to_string(backupName);
+    data.backupDate = backupName;
+
+    if (!std::filesystem::exists(levelSaveFilePath))
+        return Err("1 (no stats exist for backup!)");
+
+    if (std::filesystem::exists(levelSaveFilePath / StatsManager::FROM0_FILE_NAME)){
+        auto levelStatsJsonRes = file::readJson(levelSaveFilePath / StatsManager::FROM0_FILE_NAME);
+        if (levelStatsJsonRes.isErr()) return Err("Failed to get backup level stats!");
+        auto levelStatsJson = levelStatsJsonRes.unwrap();
+        
+        auto metaJsonObjRes = levelStatsJson.as<GeneralData>();
+        if (metaJsonObjRes.isErr()) return Err("Failed to get backup metadata!");
+        data.from0 = metaJsonObjRes.unwrap();
+    }
+
+    if (std::filesystem::exists(levelSaveFilePath / StatsManager::SESSIONS_DIR_NAME)){
+        std::set<long long> sessionDates{};
+
+        for (const auto& entry : std::filesystem::directory_iterator(levelSaveFilePath / StatsManager::SESSIONS_DIR_NAME)) {
+            if (!entry.is_directory()) continue;
+
+            auto numRes = geode::utils::numFromString<long long>(entry.path().filename().string());
+            if (numRes.isErr()) continue;
+
+            sessionDates.insert(numRes.unwrap());
+        }
+
+        data.sessionNames = sessionDates;
+    }
+
+    return Ok(data);
+}
+
 Result<> StatsManager::setMetadata(const LevelMetadeta& stats, GJGameLevel* const level){
     GEODE_UNWRAP_INTO(auto levelKey, StatsManager::getLevelKey(level));
     GEODE_UNWRAP(setMetadata(stats, levelKey));
@@ -187,7 +225,7 @@ Result<> StatsManager::setMetadata(const LevelMetadeta& stats, const std::string
         ? matjson::NO_INDENTATION
         : 4;
 
-    log::info("attempted path: {}", levelSaveFilePath.string());
+    // log::info("attempted path: {}", levelSaveFilePath.string());
 
     auto jsonStr = matjson::Value(stats).dump(indentation);
     GEODE_UNWRAP(file::writeString(levelSaveFilePath, jsonStr));
@@ -246,12 +284,102 @@ Result<> StatsManager::setGeneral(const GeneralData& stats, const std::string& l
     return Ok();
 }
 
+Result<> StatsManager::addBackup(const std::string& levelKey, bool saveLevelStats, std::optional<int> sessionsToSave){
+    auto metaRes = getMetadata(levelKey);
+    if (metaRes.isErr()) return Err("No level to back up! {}", metaRes.unwrapErr());
+    auto metadata = metaRes.unwrap();
+    
+    createFilesIfNeeded(levelKey);
+
+    auto levelBackupsFilePath = m_savesFolderPath / levelKey / StatsManager::BACKUPS_DIR_NAME;
+
+    auto _ = geode::utils::file::createDirectory(levelBackupsFilePath);
+    if (_.isErr()) return Err("failed to create backups folder! {}", _.unwrapErr());
+
+    auto currBackupName = StatsManager::getNowSeconds();
+
+    levelBackupsFilePath /= std::to_string(currBackupName);
+
+    _ = geode::utils::file::createDirectory(levelBackupsFilePath);
+    if (_.isErr()) return Err("failed to create backup folder! {}", _.unwrapErr());
+
+    if (saveLevelStats){
+
+        if (getGeneral(levelKey).isErr()){
+            _ = deleteBackup(levelKey, currBackupName);
+
+            return Err("backup failed! failed to read general stats");
+        }
+
+        if (!std::filesystem::copy_file(m_savesFolderPath / levelKey / StatsManager::FROM0_FILE_NAME, levelBackupsFilePath / StatsManager::FROM0_FILE_NAME, std::filesystem::copy_options::overwrite_existing))
+            return Err("Failed to backup level stats!");
+    }
+
+    if (metadata.maxBackupsAmount != std::nullopt){
+        auto count = getBackupsCount(levelKey);
+
+        if (count.size() > metadata.maxBackupsAmount.value()){
+            int index = 0;
+            for (const auto& backupName : count)
+            {
+                if (index == count.size() - metadata.maxBackupsAmount.value()) break;
+
+                _ = deleteBackup(levelKey, backupName);
+
+                index++;
+            }
+        }
+    }
+
+    if (sessionsToSave == std::nullopt) return Ok();
+
+    if (sessionsToSave.value() > -1){
+        levelBackupsFilePath /= StatsManager::SESSIONS_DIR_NAME;
+
+        auto _ = geode::utils::file::createDirectory(levelBackupsFilePath);
+        if (_.isErr()) return Err("failed to create backup sessions folder! {}", _.unwrapErr());
+
+        std::set<long long, std::greater<long long>> sessionTimes{};
+        auto nonSorted = getAllSessionTimesForLevel(levelKey);
+        sessionTimes.insert(nonSorted.begin(), nonSorted.end());
+
+        int numToSave = sessionsToSave.value();
+        if (numToSave == -1)
+            numToSave = sessionTimes.size();
+
+        int index = 0;
+        for (const auto& sessionTime : sessionTimes)
+        {
+            if (index == numToSave) break;
+
+            if (getSession(levelKey, sessionTime).isErr()){
+                log::error("Failed to backup session {}", sessionTime);
+
+                continue;
+            }
+
+            if (!std::filesystem::copy_file(
+                m_savesFolderPath / levelKey / StatsManager::SESSIONS_DIR_NAME / (std::to_string(sessionTime) + ".dt"), 
+                levelBackupsFilePath / (std::to_string(sessionTime) + ".dt"), 
+                std::filesystem::copy_options::overwrite_existing
+            ))
+                return Err("Failed to backup session {}", sessionTime);
+
+            index++;
+        }
+    }
+
+    return Ok();
+}
+
 void StatsManager::createFilesIfNeeded(const std::string& levelKey){
+    auto _ = geode::utils::file::createDirectory(m_savesFolderPath);
+
     auto levelSaveFilePath = m_savesFolderPath / levelKey;
 
-    log::info("attempting to create level folder at {}", levelSaveFilePath.string());
+    // log::info("attempting to create level folder at {}", levelSaveFilePath.string());
 
-    auto _ = geode::utils::file::createDirectory(levelSaveFilePath);
+    _ = geode::utils::file::createDirectory(levelSaveFilePath);
     if (_.isErr())
         log::error("failed to create level folder: {}", _.unwrapErr());
 
@@ -533,14 +661,25 @@ bool StatsManager::hasPlayedLevel() {
 ======================= */
 
 Result<> StatsManager::deleteLevelStats(const std::string& levelKey){
-    auto levelSaveFilePath = m_savesFolderPath / (levelKey + ".json");
+    auto levelSaveFilePath = m_savesFolderPath / levelKey;
 
-    if (std::filesystem::exists(levelSaveFilePath)){
-        std::filesystem::remove(levelSaveFilePath);
+    if (std::filesystem::is_directory(levelSaveFilePath)){
+        if (std::filesystem::remove_all(levelSaveFilePath) == static_cast<std::uintmax_t>(-1)) return Err("Failed to delete stats folder!");
         return Ok();
     }
 
     return Err("Cant delete stats because level save file does not exist: " + levelSaveFilePath.string());
+}
+
+Result<> StatsManager::deleteBackup(const std::string& levelKey, long long backupName){
+    auto levelSaveFilePath = m_savesFolderPath / levelKey / StatsManager::BACKUPS_DIR_NAME / std::to_string(backupName);
+
+    if (std::filesystem::is_directory(levelSaveFilePath)){
+        if (std::filesystem::remove_all(levelSaveFilePath) == static_cast<std::uintmax_t>(-1)) return Err("Failed to delete backup {}!", backupName);
+        return Ok();
+    }
+
+    return Err("Cant delete backup because level save file does not exist: " + levelSaveFilePath.string());
 }
 
 Result<std::tuple<NewBests, int>> StatsManager::calcNewBests(GJGameLevel* const& level) {
@@ -755,6 +894,25 @@ std::set<long long> StatsManager::getAllSessionTimesForLevel(const std::string& 
 
     for (const auto& entry : std::filesystem::directory_iterator(levelSaveFilePath)) {
         if (!entry.is_regular_file() || entry.path().extension() != ".dt") continue;
+
+        auto numRes = geode::utils::numFromString<long long>(entry.path().filename().string());
+        if (numRes.isErr()) continue;
+
+        toReturn.insert(numRes.unwrap());
+    }
+
+    return toReturn;
+}
+
+std::set<long long> StatsManager::getBackupsCount(const std::string& levelKey){
+    auto levelSaveFilePath = m_savesFolderPath / levelKey / StatsManager::BACKUPS_DIR_NAME;
+
+    if (!std::filesystem::exists(levelSaveFilePath)) return {};
+
+    std::set<long long> toReturn{};
+
+    for (const auto& entry : std::filesystem::directory_iterator(levelSaveFilePath)) {
+        if (!entry.is_directory()) continue;
 
         auto numRes = geode::utils::numFromString<long long>(entry.path().filename().string());
         if (numRes.isErr()) continue;

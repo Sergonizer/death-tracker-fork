@@ -295,7 +295,10 @@ bool ModifyOptions::setup(){
         if (TypeToggler->isToggled())
             sessionNum = sessionSelector->getCurrentCount();
 
-        DTLayer::get()->modifyRun(addPer * (isPlus ? 1 : -1), sessionNum);
+        DTLayer::get()->modifyRun(addPer, amount * (isPlus ? 1 : -1), sessionNum);
+        
+        if (sessionNum == std::nullopt) DTLayer::get()->specialStrings["f0"]->updateContent();
+        else DTLayer::get()->specialStrings["s0"]->updateContent();
     }, .9f);
 
     auto addPercentInputLabel = CCLabelBMFont::create("From 0", "bigFont.fnt");
@@ -339,11 +342,28 @@ bool ModifyOptions::setup(){
         if (numStart > numEnd){
             numStart = numEnd;
             addRunStartInput->setString(std::to_string(numStart));
+            auto tint = CCTintTo::create(.2f, 255, 0, 0);
+            auto seq = CCSequence::create(
+                CCTintTo::create(.2f, 255, 0, 0),
+                CCTintTo::create(.2f, 255, 255, 255),
+                nullptr
+            );
+            seq->setTag(8);
+            addRunEndInput->getInputNode()->m_textLabel->stopActionByTag(8);
+            addRunEndInput->getInputNode()->m_textLabel->runAction(seq);
         }
 
         if (numEnd < numStart){
             numEnd = numStart;
             addRunEndInput->setString(std::to_string(numEnd));
+            auto seq = CCSequence::create(
+                CCTintTo::create(.2f, 255, 0, 0),
+                CCTintTo::create(.2f, 255, 255, 255),
+                nullptr
+            );
+            seq->setTag(8);
+            addRunStartInput->getInputNode()->m_textLabel->stopActionByTag(8);
+            addRunStartInput->getInputNode()->m_textLabel->runAction(seq);
         }
     });
 
@@ -364,11 +384,28 @@ bool ModifyOptions::setup(){
         if (numEnd < numStart){
             numEnd = numStart;
             addRunEndInput->setString(std::to_string(numEnd));
+            auto seq = CCSequence::create(
+                CCTintTo::create(.2f, 255, 0, 0),
+                CCTintTo::create(.2f, 255, 255, 255),
+                nullptr
+            );
+            seq->setTag(8);
+            addRunStartInput->getInputNode()->m_textLabel->stopActionByTag(8);
+            addRunStartInput->getInputNode()->m_textLabel->runAction(seq);
         }
 
         if (numStart > numEnd){
             numStart = numEnd;
             addRunStartInput->setString(std::to_string(numStart));
+            auto tint = CCTintTo::create(.2f, 255, 0, 0);
+            auto seq = CCSequence::create(
+                CCTintTo::create(.2f, 255, 0, 0),
+                CCTintTo::create(.2f, 255, 255, 255),
+                nullptr
+            );
+            seq->setTag(8);
+            addRunEndInput->getInputNode()->m_textLabel->stopActionByTag(8);
+            addRunEndInput->getInputNode()->m_textLabel->runAction(seq);
         }
     });
 
@@ -378,8 +415,25 @@ bool ModifyOptions::setup(){
     addRunOverallNode->setContentWidth(addRunSeperator->getScaledContentWidth() + addRunStartInput->getContentWidth() + addRunEndInput->getContentWidth() + 10);
     this->addChild(addRunOverallNode);
 
-    addPlusMinusBtns(addRunOverallNode, false, [&](bool isPlus){
+    addPlusMinusBtns(addRunOverallNode, false, [&, amountInput, addRunStartInput, addRunEndInput](bool isPlus){
+        auto amountRes = utils::numFromString<int>(amountInput->getString());
+        if (amountRes.isErr()) return;
+        auto amount = amountRes.unwrap();
+        auto startPerRes = utils::numFromString<int>(addRunStartInput->getString());
+        if (startPerRes.isErr()) return;
+        auto startPer = startPerRes.unwrap();
+        auto endPerRes = utils::numFromString<int>(addRunEndInput->getString());
+        if (endPerRes.isErr()) return;
+        auto endPer = endPerRes.unwrap();
 
+        std::optional<int> sessionNum = std::nullopt;
+        if (TypeToggler->isToggled())
+            sessionNum = sessionSelector->getCurrentCount();
+
+        DTLayer::get()->modifyRun(startPer, endPer, amount * (isPlus ? 1 : -1), sessionNum);
+        
+        if (sessionNum == std::nullopt) DTLayer::get()->specialStrings["runs"]->updateContent();
+        else DTLayer::get()->specialStrings["sruns"]->updateContent();
     }, .9f);
 
     scheduleUpdate();
@@ -417,8 +471,22 @@ bool ModifyOptions::setup(){
     addNewBestInput->setCommonFilter(CommonFilter::Uint);
     this->addChild(addNewBestInput);
 
-    addPlusMinusBtns(addNewBestInput, false, [&, amountInput](bool isPlus){
-        
+    addPlusMinusBtns(addNewBestInput, false, [&, amountInput, addNewBestInput](bool isPlus){
+        auto amountRes = utils::numFromString<int>(amountInput->getString());
+        if (amountRes.isErr()) return;
+        auto amount = amountRes.unwrap();
+        auto nbPercentRes = utils::numFromString<int>(addNewBestInput->getString());
+        if (nbPercentRes.isErr()) return;
+        auto nbPercent = nbPercentRes.unwrap();
+
+        std::optional<int> sessionNum = std::nullopt;
+        if (TypeToggler->isToggled())
+            sessionNum = sessionSelector->getCurrentCount();
+
+        DTLayer::get()->modifyNewBest(nbPercent, isPlus, sessionNum);
+
+        if (sessionNum == std::nullopt) DTLayer::get()->specialStrings["f0"]->updateContent();
+        else DTLayer::get()->specialStrings["s0"]->updateContent();
     }, .9f);
 
     auto addNewBestInputLabel = CCLabelBMFont::create("New Bests", "bigFont.fnt");

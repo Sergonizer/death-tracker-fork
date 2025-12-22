@@ -45,6 +45,8 @@ bool DTLabel::init(const DTLabelInfo& info){
     }
     if (!CCMenu::init()) return false;
 
+    this->setCascadeOpacityEnabled(true);
+
     this->info = info;
 
     this->setAnchorPoint({0, 1});
@@ -134,6 +136,7 @@ bool DTLabel::init(const DTLabelInfo& info){
     menu = CCMenu::create();
     menu->setID("btn-menu");
     menu->setPosition({0,0});
+    menu->setTouchPriority(-503);
     this->addChild(menu);
 
     auto expandBtnSpr = CCSprite::createWithSpriteFrameName("navArrowBtn_001.png");
@@ -146,6 +149,11 @@ bool DTLabel::init(const DTLabelInfo& info){
     expandBtn->setID("expand-btn");
     expandBtn->setPosition({5.0f, -labelTitleHeight / 2});
     menu->addChild(expandBtn);
+
+    if (info.isExpanded){
+        expandBtn->setRotation(90);
+        expandBtn->setPositionX(8);
+    }
 
     this->scheduleUpdate();
 
@@ -164,6 +172,10 @@ bool DTLabel::init(const DTLabelInfo& info){
     this->addChild(glow);
 
     return true;
+}
+
+void DTLabel::registerWithTouchDispatcher(){
+    CCTouchDispatcher::get()->addPrioTargetedDelegate(this, -502, true);
 }
 
 void DTLabel::update(float dt){
@@ -273,9 +285,11 @@ void DTLabel::toggleExpand(CCObject*){
         DTLayer::get()->saveCurrentLayout();
 }
 
-void DTLabel::registerWithTouchDispatcher() {
-    CCDirector::sharedDirector()->getTouchDispatcher()->addTargetedDelegate(this, 0, true);
-}
+// void DTLabel::registerWithTouchDispatcher() {
+//     //CCDirector::sharedDirector()->getTouchDispatcher()->addTargetedDelegate(this, -500, true);
+//     //if (auto handler = CCTouchDispatcher::get()->findHandler(this))
+//     //    CCTouchDispatcher::get()->setPriority(-500, handler->getDelegate());
+// }
 
 bool DTLabel::ccTouchBegan(CCTouch* touch, CCEvent* event) {
     if (!isEditable) return false;

@@ -39,6 +39,7 @@ bool DTLayer::setup(GJGameLevel* const& level) {
     m_MyLevelStats = StatsManager::getLevelData(m_Level);
     if (m_MyLevelStats.isErr() && m_MyLevelStats.unwrapErr().size() && m_MyLevelStats.unwrapErr()[0] == '1'){
         LevelData newData;
+        newData.levelKey = StatsManager::getLevelKey(level).unwrap();
         m_MyLevelStats = Ok(newData);
     }
     else if (m_MyLevelStats.isErr()){
@@ -400,6 +401,7 @@ void DTLayer::populateSpecialStrings(){
     levelNameKey->setUpdateFunction([&](){ return UpdateTask::immediate(Ok(std::string(m_Level->m_levelName)));});
     addSpecialString(levelNameKey);
 
+    //f0
     auto from0Key = std::make_shared<SpecialKey>("f0", "Adds all your runs from 0% (shared with linked levels)");
     from0Key->setUpdateFunction([&](){ return UpdateTask::run([&](auto progress, auto hasBeenCancelled) -> UpdateTask::Result {
         if (m_MyLevelStats.isErr()) return Err("Failed to create from0 deaths string");
@@ -421,6 +423,30 @@ void DTLayer::populateSpecialStrings(){
         return Ok(out);
     }, "Creating from0 deaths string");});
     addSpecialString(from0Key);
+
+    //dtatt
+    auto dtattKey = std::make_shared<SpecialKey>("dtatt", "Adds your death tracker attempt count (shared with linked levels)");
+    dtattKey->setUpdateFunction([&](){ return UpdateTask::run([&](auto progress, auto hasBeenCancelled) -> UpdateTask::Result {
+        if (m_MyLevelStats.isErr()) return Err("Failed to create death tracker attempts string");
+        auto& myStats = m_MyLevelStats.unwrap();
+
+        unsigned long long attempts = 0;
+
+        auto deaths = [&attempts](const Deaths& deaths){
+            for (const auto& [_, count] : deaths)
+                attempts += count;
+        };
+
+        deaths(myStats.from0.deaths);
+
+        for (const auto& levelData : linkedLevelsData)
+        {
+            deaths(levelData.from0.deaths);
+        }
+
+        return Ok(std::to_string(attempts));
+    }, "Creating death tracker attempts string");});
+    addSpecialString(dtattKey);
 
     auto runsKey = std::make_shared<SpecialKey>("runs", "Adds all your runs from practice mode/start positions (shared with linked levels)");
     runsKey->setUpdateFunction([&](){ return UpdateTask::run([&](auto progress, auto hasBeenCancelled) -> UpdateTask::Result {
@@ -1408,6 +1434,10 @@ void DTLayer::specialKeyUpdateStarted(const std::shared_ptr<SpecialKey>& key){
 }
 
 void DTLayer::specialKeyUpdateCompleted(const std::shared_ptr<SpecialKey>& key){
+    if (key->getKey() == "f0"){
+        specialStrings["dtatt"]->updateContent();
+    }
+
     for (const auto& label : keyListeners)
     {
         label->completeLoading(key);
@@ -1543,9 +1573,185 @@ void DTLayer::unsubscribeKeyListener(DTLabel* label){
     keyListeners.erase(label);
 }
 
-void DTLayer::modifyRun(int startPer, std::optional<int> sessionNumber){
+void DTLayer::modifyRun(int startPer, int amount, std::optional<int> sessionNumber){
+    if (m_MyLevelStats.isErr()) return;
 
+    auto processRun = [&, amount, startPer](Deaths& data) -> bool {
+        auto runStr = std::to_string(startPer);
+        if (!data.contains(runStr)){
+            if (amount < 0)
+                return false;
+
+            data.insert({runStr, amount});
+            return true;
+        }
+
+        auto newNum = data[runStr] + amount;
+
+        if (newNum <= 0){
+            data.erase(runStr);
+            return true;
+        }
+
+        data[runStr] = newNum;
+
+        return true;
+    };
+
+    if (sessionNumber.has_value()){
+        auto it = sessionsOrder.begin();
+        std::advance(it, sessionNumber.value() - 1);
+        
+        if (it == sessionsOrder.end()) return;
+
+        auto sessionRes = StatsManager::getSession(it->second, it->first);
+        if (sessionRes.isErr()) return;
+        auto session = sessionRes.unwrap();
+
+        if (!processRun(session.deaths)) return;
+
+        auto _ = StatsManager::setSession(session, it->second, it->first, false);
+        if (_.isErr()) log::error("{}", _.unwrapErr());
+    }
+    else{
+        auto& stats = m_MyLevelStats.unwrap();
+
+        if (processRun(stats.from0.deaths)){
+            auto _ = StatsManager::setGeneral(stats.from0, stats.levelKey);
+            if (_.isErr()) log::error("{}", _.unwrapErr());
+            return;
+        }
+
+        for (auto& linkedLevel : linkedLevelsData)
+        {
+            if (processRun(linkedLevel.from0.deaths)){
+                auto _ = StatsManager::setGeneral(linkedLevel.from0, linkedLevel.levelKey);
+                if (_.isErr()) log::error("{}", _.unwrapErr());
+                return;
+            }
+        }
+    }
 }
-void DTLayer::modifyRun(int startPer, int endPer, std::optional<int> sessionNumber){
+void DTLayer::modifyRun(int startPer, int endPer, int amount, std::optional<int> sessionNumber){
+    if (m_MyLevelStats.isErr()) return;
 
+    auto processRun = [&, amount, startPer, endPer](Deaths& data) -> bool {
+        auto runStr = fmt::format("{}-{}", startPer, endPer);
+        if (!data.contains(runStr)){
+            if (amount < 0)
+                return false;
+
+            data.insert({runStr, amount});
+            return true;
+        }
+
+        auto newNum = data[runStr] + amount;
+
+        if (newNum <= 0){
+            data.erase(runStr);
+            return true;
+        }
+
+        data[runStr] = newNum;
+
+        return true;
+    };
+
+    if (sessionNumber.has_value()){
+        auto it = sessionsOrder.begin();
+        std::advance(it, sessionNumber.value() - 1);
+        
+        if (it == sessionsOrder.end()) return;
+
+        auto sessionRes = StatsManager::getSession(it->second, it->first);
+        if (sessionRes.isErr()) return;
+        auto session = sessionRes.unwrap();
+
+        if (!processRun(session.runs)) return;
+
+        auto _ = StatsManager::setSession(session, it->second, it->first, false);
+        if (_.isErr()) log::error("{}", _.unwrapErr());
+    }
+    else{
+        auto& stats = m_MyLevelStats.unwrap();
+
+        if (processRun(stats.from0.runs)){
+            auto _ = StatsManager::setGeneral(stats.from0, stats.levelKey);
+            if (_.isErr()) log::error("{}", _.unwrapErr());
+            return;
+        }
+
+        for (auto& linkedLevel : linkedLevelsData)
+        {
+            if (processRun(linkedLevel.from0.runs)){
+                auto _ = StatsManager::setGeneral(linkedLevel.from0, linkedLevel.levelKey);
+                if (_.isErr()) log::error("{}", _.unwrapErr());
+                return;
+            }
+        }
+    }
+}
+
+void DTLayer::modifyNewBest(int percent, bool makeTrue, std::optional<int> sessionNumber){
+    if (m_MyLevelStats.isErr()) return;
+
+    auto processBest = [&, percent, makeTrue](NewBests& bests) -> bool {
+        if (makeTrue){
+            if (!bests.contains(percent)) return false;
+
+            bests.insert(percent);
+        }
+        else{
+            if (bests.contains(percent)) return false;
+
+            bests.erase(percent);
+        }
+
+        return true;
+    };
+
+    if (sessionNumber.has_value()){
+        auto it = sessionsOrder.begin();
+        std::advance(it, sessionNumber.value() - 1);
+        
+        if (it == sessionsOrder.end()) return;
+
+        auto sessionRes = StatsManager::getSession(it->second, it->first);
+        if (sessionRes.isErr()) return;
+        auto session = sessionRes.unwrap();
+
+        processBest(session.newBests);
+
+        auto _ = StatsManager::setSession(session, it->second, it->first, false);
+        if (_.isErr()) log::error("{}", _.unwrapErr());
+    }
+    else{
+        auto& stats = m_MyLevelStats.unwrap();
+
+        if (processBest(stats.from0.newBests)){
+            auto _ = StatsManager::setGeneral(stats.from0, stats.levelKey);
+            if (_.isErr()) log::error("{}", _.unwrapErr());
+            return;
+        }
+
+        for (auto& linkedLevel : linkedLevelsData)
+        {
+            if (processBest(linkedLevel.from0.newBests)){
+                auto _ = StatsManager::setGeneral(linkedLevel.from0, linkedLevel.levelKey);
+                if (_.isErr()) log::error("{}", _.unwrapErr());
+                return;
+            }
+        }
+    }
+}
+
+bool DTLayer::DeleteSave(){
+    auto deleteRes = StatsManager::deleteLevelStats(m_MyLevelStats.unwrap().levelKey);
+    if (deleteRes.isErr()){
+        log::error("{}", deleteRes.unwrapErr());
+        return false;
+    }
+
+    onClose(nullptr);
+    return true;
 }

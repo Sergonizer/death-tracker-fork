@@ -107,6 +107,10 @@ typedef struct LevelMetadeta {
     int hideRunLength = 0;
     int realEndPercent = 100;
     bool resetAsDeath = false;
+    std::optional<int> maxBackupsAmount = 2;
+    bool autoBackup = true;
+    bool autoBackupLevelStats = true;
+    std::optional<int> autoSessionsToBackupAmount = -1;
 } LevelMetadeta;
 
 template <>
@@ -124,6 +128,20 @@ struct matjson::Serialize<LevelMetadeta> {
         GEODE_UNWRAP_INTO(stats.trackAnyRun, value["trackAnyRun"].asBool());
         GEODE_UNWRAP_INTO(stats.realEndPercent, value["realEndPercent"].asInt());
         GEODE_UNWRAP_INTO(stats.resetAsDeath, value["resetAsDeath"].asBool());
+        if (value.contains("maxBackupsAmount")){
+            GEODE_UNWRAP_INTO(auto maxBackupsAmountRes, value["maxBackupsAmount"].asInt());
+            stats.maxBackupsAmount = maxBackupsAmountRes == -1 ? std::nullopt : std::make_optional(maxBackupsAmountRes);
+        }
+        if (value.contains("autoBackup")){
+            GEODE_UNWRAP_INTO(stats.autoBackup, value["autoBackup"].asBool());
+        }
+        if (value.contains("autoBackupLevelStats")){
+            GEODE_UNWRAP_INTO(stats.autoBackupLevelStats, value["autoBackupLevelStats"].asBool());
+        }
+        if (value.contains("autoSessionsToBackupAmount")){
+            GEODE_UNWRAP_INTO(auto autoSessionsToBackupAmountRes, value["autoSessionsToBackupAmount"].asInt());
+            stats.autoSessionsToBackupAmount = autoSessionsToBackupAmountRes == -2 ? std::nullopt : std::make_optional(autoSessionsToBackupAmountRes);
+        }
 
         return Ok(stats);
     }
@@ -140,6 +158,10 @@ struct matjson::Serialize<LevelMetadeta> {
             { "hideUpto", value.hideUpto },
             { "realEndPercent", value.realEndPercent },
             { "resetAsDeath", value.resetAsDeath },
+            { "maxBackupsAmount", value.maxBackupsAmount == std::nullopt ? -1 : value.maxBackupsAmount.value() },
+            { "autoBackup", value.autoBackup },
+            { "autoBackupLevelStats", value.autoBackupLevelStats },
+            { "autoSessionsToBackupAmount", value.autoSessionsToBackupAmount == std::nullopt ? -2 : value.autoSessionsToBackupAmount.value() },
         });
         return obj;
     }
@@ -151,6 +173,12 @@ typedef struct {
     GeneralData from0;
     std::set<long long> sessionNames;
 } LevelData;
+
+struct BackupLevelData {
+    std::optional<GeneralData> from0 = std::nullopt;
+    std::optional<std::set<long long>> sessionNames = std::nullopt;
+    long long backupDate;
+};
 
 struct DTLabelInfo_s {
     int minPlacementRange;
