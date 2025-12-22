@@ -32,14 +32,21 @@ bool SaveOptions::setup(){
     this->addChild(backupBtn);
 
 
+    this->setEnabled(false);
+    this->setOpacity(0);
+
     return true;
 }
 
 void SaveOptions::onOpened(){
-    
+    float fadeTime = .2f;
+    this->setEnabled(true);
+    this->runAction(CCFadeTo::create(fadeTime, 255));
 }
 void SaveOptions::onClosed(){
-    
+    float fadeTime = .2f;
+    this->setEnabled(false);
+    this->runAction(CCFadeTo::create(fadeTime, 0));
 }
 
 void SaveOptions::onDelete(CCObject*){
@@ -73,3 +80,4 @@ void SaveOptions::createChoiceAlert(const std::string& title, const std::string&
     alert->show();
     choiceAlertsMap.insert({alert, callback});
 }
+

@@ -1003,3 +1003,15 @@ std::vector<std::string> StatsManager::allV2FileLevelKeys(){
 
     return toReturn;
 }
+
+std::vector<std::string> StatsManager::allV3FileLevelKeys(){
+    std::vector<std::string> toReturn{};
+
+    for (const auto& entry : std::filesystem::directory_iterator(m_savesFolderPath)){
+        if (!entry.is_directory()) continue;
+
+        toReturn.push_back(entry.path().stem().string());
+    }
+
+    return toReturn;
+}

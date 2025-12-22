@@ -74,6 +74,8 @@ public:
 
     static Result<> convertV2SaveToV3(const std::string& levelKey);
     static std::vector<std::string> allV2FileLevelKeys();
+
+    static std::vector<std::string> allV3FileLevelKeys();
     
 #pragma endregion
 
