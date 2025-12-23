@@ -16,8 +16,6 @@ class RunOptions : public OptionsNode {
 
         void addNewRun(CCObject*);
 
-        SimpleToggler* TARToggler;
-        SimpleToggler* ResetAsDeathToggler;
         TextInput* runAdditionInput;
         TextInput* HideByLenInput;
         TextInput* RealEndPerInput;

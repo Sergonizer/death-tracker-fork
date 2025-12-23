@@ -75,7 +75,7 @@ bool LinkOptions::setup(){
     linkedScrollLabel->setPosition(linkedScrollPageLabel->getPosition() + ccp(0, linkedScrollPageLabel->getScaledContentHeight() / 2 + linkedScrollLabel->getScaledContentHeight() / 2 + 5));
     this->addChild(linkedScrollLabel);
 
-    float arrowOffset = 40;
+    float arrowOffset = 60;
 
     auto linkPageForwardSpr = CCSprite::createWithSpriteFrameName("GJ_arrow_03_001.png");
     linkPageForwardSpr->setScale(.6f);
@@ -147,7 +147,7 @@ bool LinkOptions::setup(){
     });
     this->addChild(searchBar);
 
-    idToggler = SimpleToggler::create(
+    auto idToggler = SimpleToggler::create(
         CCSprite::createWithSpriteFrameName("GJ_checkOff_001.png"),
         CCSprite::createWithSpriteFrameName("GJ_checkOn_001.png"),
         .6f
@@ -166,7 +166,30 @@ bool LinkOptions::setup(){
     idTogglerLabel->setPosition(idToggler->getPosition() + ccp(idToggler->getScaledContentWidth() / 2 + idTogglerLabel->getScaledContentWidth() / 2 + 5, 0));
     this->addChild(idTogglerLabel);
 
-    getAllLevelsData();
+    auto parentLayer = CCLayer::create();
+    parentLayer->ignoreAnchorPointForPosition(false);
+    parentLayer->setContentSize({0, 0});
+    this->addChild(parentLayer);
+
+    loadingShadow = CCScale9Sprite::create("pixel.png");
+    loadingShadow->setColor({0,0,0});
+    loadingShadow->setOpacity(100);
+    loadingShadow->setAnchorPoint({0,0});
+    loadingShadow->setContentSize({size.width, linkedScroll->getContentHeight()});
+    parentLayer->addChild(loadingShadow);
+
+    loadingCircle = LoadingCircle::create();
+    loadingCircle->setParentLayer(parentLayer);
+    loadingCircle->ignoreAnchorPointForPosition(false);
+    loadingCircle->setPosition(linkedScroll->getPosition() + linkedScroll->getContentSize() + ccp(5, -linkedScroll->getContentHeight() / 4));
+    loadingCircle->show();
+    //loadingCircle->setVisible(false);
+
+    loadingLabel = CCLabelBMFont::create("Loading levels...", "bigFont.fnt");
+    loadingLabel->setScale(.75f);
+    loadingLabel->setPosition(loadingCircle->getPosition() - ccp(0, loadingCircle->m_sprite->getScaledContentHeight() / 2 + loadingLabel->getScaledContentHeight() / 2 + 5));
+    loadingLabel->setAlignment(CCTextAlignment::kCCTextAlignmentCenter);
+    parentLayer->addChild(loadingLabel);
 
     this->setEnabled(false);
     this->setOpacity(0);
@@ -188,7 +211,13 @@ bool LinkOptions::setup(){
     nonePlayedFoundText->runAction(CCTextAreaFadeTo::create(0, 0));
     noneLinkedFoundText->runAction(CCTextAreaFadeTo::create(0, 0));
     
-    idToggler->setOpacity(0);
+    loadingLabel->setOpacity(0);
+    loadingShadow->setOpacity(0);
+    loadingCircle->m_sprite->setOpacity(0);
+
+    loadingLabel->setVisible(false);
+    loadingShadow->setVisible(false);
+    loadingCircle->m_sprite->setVisible(false);
 
     scheduleUpdate();
 
@@ -217,9 +246,13 @@ void LinkOptions::onOpened(){
 
     nonePlayedFoundText->runAction(CCTextAreaFadeTo::create(fadeTime, 255));
     noneLinkedFoundText->runAction(CCTextAreaFadeTo::create(fadeTime, 255));
+    loadingLabel->runAction(CCFadeTo::create(fadeTime, 255));
+    loadingShadow->runAction(CCFadeTo::create(fadeTime, 100));
+    loadingCircle->m_sprite->runAction(CCFadeTo::create(fadeTime, 200));
 
     Dev::fadeTextInput(searchBar, true, fadeTime);
-    idToggler->runAction(CCFadeTo::create(fadeTime, 255));
+
+    getAllLevelsData();
 }
 void LinkOptions::onClosed(){
     float fadeTime = .2f;
@@ -244,18 +277,33 @@ void LinkOptions::onClosed(){
     nonePlayedFoundText->runAction(CCTextAreaFadeTo::create(fadeTime, 0));
     noneLinkedFoundText->runAction(CCTextAreaFadeTo::create(fadeTime, 0));
 
+    loadingLabel->runAction(CCFadeTo::create(fadeTime, 0));
+    loadingShadow->runAction(CCFadeTo::create(fadeTime, 0));
+    loadingCircle->m_sprite->runAction(CCFadeTo::create(fadeTime, 0));
+
     Dev::fadeTextInput(searchBar, false, fadeTime);
-    idToggler->runAction(CCFadeTo::create(fadeTime, 0));
 }
 
 void LinkOptions::getAllLevelsData(){
+    if (getallLevelsListener.getFilter().isPending() || data.size()) return;
+
+    loadingLabel->setVisible(true);
+    loadingShadow->setVisible(true);
+    loadingCircle->m_sprite->setVisible(true);
+
     auto task = GetLevelsTask::run([&](auto progress, auto hasBeenCancelled) -> GetLevelsTask::Result {
-        progress({"Getting list of played levels...", -1, -1});
+        auto progresObject = GetLevelsTaskProgress{"Getting list of played levels...", -1, -1};
+
+        progress(progresObject);
 
         auto allLevels = StatsManager::allV3FileLevelKeys();
         if (allLevels.empty()) return std::vector<LinkData>{};
 
-        progress({"Getting level data...", 0, static_cast<int>(allLevels.size())});
+        progresObject.message = "Getting level data...";
+        progresObject.current = 0;
+        progresObject.max = static_cast<int>(allLevels.size());
+
+        progress(progresObject);
 
         std::vector<LinkData> metadatas{};
         metadatas.reserve(allLevels.size());
@@ -273,7 +321,8 @@ void LinkOptions::getAllLevelsData(){
             }
 
             i++;
-            progress({"Getting level data...", i, static_cast<int>(allLevels.size())});
+            progresObject.current = i;
+            progress(progresObject);
         }
         
         return metadatas;
@@ -288,10 +337,14 @@ void LinkOptions::onGetLevels(GetLevelsTask::Event* e){
         if (val == nullptr) return;
         data = std::move(*val);
 
+        loadingLabel->setVisible(false);
+        loadingShadow->setVisible(false);
+        loadingCircle->m_sprite->setVisible(false);
+
         updateScrollsContent();
     }
     else if (auto progress = e->getProgress()){
-        log::info("[LinkOptions] GetLevelsTask progress: {} ({}/{})", progress->message, progress->current, progress->max);
+        loadingLabel->setString(fmt::format("{}\n{}/{}", progress->message, progress->current, progress->max).c_str());
     }
 }
 

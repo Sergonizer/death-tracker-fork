@@ -63,9 +63,12 @@ class LinkOptions : public OptionsNode {
         std::string searchStr;
         bool searchForID;
         TextInput* searchBar;
-        SimpleToggler* idToggler;
 
         void update(float dt);
+
+        CCLabelBMFont* loadingLabel;
+        LoadingCircle* loadingCircle;
+        CCScale9Sprite* loadingShadow;
 
     public:
         virtual void onOpened();

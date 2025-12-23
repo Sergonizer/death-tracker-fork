@@ -62,6 +62,8 @@ public:
     static Result<> setSession(Session& stats, const std::string& levelKey, long long sessionTime, bool updateLastPlayed);
     static Result<> setGeneral(const GeneralData& stats, GJGameLevel* const level);
     static Result<> setGeneral(const GeneralData& stats, const std::string& levelKey);
+    // add a backup into the levels backups folder
+    // sessionsToSave: how many sessions to save into the backup, -1 for all, nullopt for none
     static Result<> addBackup(const std::string& levelKey, bool saveLevelStats, std::optional<int> sessionsToSave);
 
     static Result<std::set<long long>> getAllSessionTimesForLevel(GJGameLevel* const level);

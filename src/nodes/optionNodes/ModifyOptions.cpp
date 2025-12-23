@@ -502,7 +502,6 @@ bool ModifyOptions::setup(){
         }
     }
     this->setOpacity(0);
-    TypeToggler->setOpacity(0);
 
     for (const auto& btnSpr : btnSprites)
     {
@@ -527,7 +526,6 @@ bool ModifyOptions::setup(){
 void ModifyOptions::onOpened(){
     float fadeTime = .2f;
     this->runAction(CCFadeIn::create(fadeTime));
-    TypeToggler->runAction(CCFadeIn::create(fadeTime));
     previewBG->runAction(CCFadeTo::create(fadeTime, 150));
 
     for (const auto& child : CCArrayExt<CCNode*>(this->getChildren()))
@@ -559,7 +557,6 @@ void ModifyOptions::onOpened(){
 void ModifyOptions::onClosed(){
     float fadeTime = .2f;
     this->runAction(CCFadeOut::create(fadeTime));
-    TypeToggler->runAction(CCFadeOut::create(fadeTime));
     previewBG->runAction(CCFadeTo::create(fadeTime, 0));
 
     for (const auto& child : CCArrayExt<CCNode*>(this->getChildren()))

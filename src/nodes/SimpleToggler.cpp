@@ -26,6 +26,9 @@ bool SimpleToggler::init(CCNode* offSprite, CCNode* onSprite, float scale, bool 
     offSprite->setScale(scale);
     onSprite->setScale(scale);
 
+    this->setCascadeColorEnabled(true);
+    this->setCascadeOpacityEnabled(true);
+
     if (!CCMenuItemToggler::init(offSprite, onSprite, this, menu_selector(SimpleToggler::onToggled))) return false;
 
     this->toggle(startState);

@@ -25,7 +25,7 @@ bool RunOptions::setup(){
 
     auto dtlayer = DTLayer::get();
 
-    TARToggler = SimpleToggler::createWithDefaults(
+    auto TARToggler = SimpleToggler::createWithDefaults(
         .75f,
         dtlayer == nullptr ? false : (dtlayer->m_MyLevelStats.isOk() ? dtlayer->m_MyLevelStats.unwrap().metadata.trackAnyRun : false)
     );
@@ -187,7 +187,7 @@ bool RunOptions::setup(){
     RealEndPerLabel->setAnchorPoint({1, .5f});
     this->addChild(RealEndPerLabel);
 
-    ResetAsDeathToggler = SimpleToggler::createWithDefaults(
+    auto ResetAsDeathToggler = SimpleToggler::createWithDefaults(
         .75f,
         dtlayer == nullptr ? false : (dtlayer->m_MyLevelStats.isOk() ? dtlayer->m_MyLevelStats.unwrap().metadata.resetAsDeath : false)
     );
@@ -216,8 +216,6 @@ bool RunOptions::setup(){
 void RunOptions::onOpened(){
     float fadeTime = .2f;
     this->runAction(CCFadeIn::create(fadeTime));
-    TARToggler->runAction(CCFadeIn::create(fadeTime));
-    ResetAsDeathToggler->runAction(CCFadeIn::create(fadeTime));
 
     runAdditionInput->getInputNode()->m_textLabel->setOpacity(0);
     Dev::fadeTextInput(runAdditionInput, true, fadeTime);
@@ -237,8 +235,6 @@ void RunOptions::onOpened(){
 void RunOptions::onClosed(){
     float fadeTime = .2f;
     this->runAction(CCFadeOut::create(fadeTime));
-    TARToggler->runAction(CCFadeOut::create(fadeTime));
-    ResetAsDeathToggler->runAction(CCFadeOut::create(fadeTime));
 
     Dev::fadeTextInput(runAdditionInput, false, fadeTime);
     Dev::fadeTextInput(HideByLenInput, false, fadeTime);
