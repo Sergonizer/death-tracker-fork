@@ -1,6 +1,5 @@
 #include "LayoutOptionsLayer.hpp"
 #include <nodes/layers/DTLayer.hpp>
-#include <hooks/DTCCTextFieldTTF.hpp>
 #include <geode.custom-keybinds/include/Keybinds.hpp>
 #include <nodes/SpecialKeyCell.hpp>
 

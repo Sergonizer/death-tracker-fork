@@ -2,6 +2,7 @@
 #include <nodes/layers/DTLayer.hpp>
 #include <utils/Dev.hpp>
 #include <geode.custom-keybinds/include/Keybinds.hpp>
+#include <hooks/DTCCTextInputNode.hpp>
 
 ModifyOptions* ModifyOptions::create(const CCSize& size) {
     auto ret = new ModifyOptions();
@@ -325,6 +326,26 @@ bool ModifyOptions::setup(){
     addRunEndInput->setCommonFilter(CommonFilter::Uint);
     this->addChild(addRunEndInput);
 
+    static_cast<DTCCTextInputNode*>(addRunStartInput->getInputNode())->setCallback([addRunStartInput, addRunEndInput, addRunSeperator](const std::string& newText){
+        if (newText == "-" && addRunStartInput->getInputNode()->m_selected){
+            addRunStartInput->defocus();
+            addRunEndInput->focus();
+            addRunEndInput->setString("");
+            addRunSeperator->setColor({ 0, 255, 0 });
+            addRunSeperator->runAction(CCTintTo::create(.5f, 255, 255, 255));
+        }
+    });
+
+    static_cast<DTCCTextInputNode*>(addRunEndInput->getInputNode())->setCallback([addRunStartInput, addRunEndInput, addRunSeperator](const std::string& newText){
+        if (newText == "-" && addRunEndInput->getInputNode()->m_selected){
+            addRunEndInput->defocus();
+            addRunStartInput->focus();
+            addRunStartInput->setString("");
+            addRunSeperator->setColor({ 0, 255, 0 });
+            addRunSeperator->runAction(CCTintTo::create(.5f, 255, 255, 255));
+        }
+    });
+
     addRunStartInput->setCallback([&, addRunStartInput, addRunEndInput](auto newstr){
         auto numStartRes = geode::utils::numFromString<int>(newstr);
         if (numStartRes.isErr()) return;
@@ -337,33 +358,6 @@ bool ModifyOptions::setup(){
         if (numStart > 100) {
             numStart = 100;
             addRunStartInput->setString("100");
-        }
-
-        if (numStart > numEnd){
-            numStart = numEnd;
-            addRunStartInput->setString(std::to_string(numStart));
-            auto tint = CCTintTo::create(.2f, 255, 0, 0);
-            auto seq = CCSequence::create(
-                CCTintTo::create(.2f, 255, 0, 0),
-                CCTintTo::create(.2f, 255, 255, 255),
-                nullptr
-            );
-            seq->setTag(8);
-            addRunEndInput->getInputNode()->m_textLabel->stopActionByTag(8);
-            addRunEndInput->getInputNode()->m_textLabel->runAction(seq);
-        }
-
-        if (numEnd < numStart){
-            numEnd = numStart;
-            addRunEndInput->setString(std::to_string(numEnd));
-            auto seq = CCSequence::create(
-                CCTintTo::create(.2f, 255, 0, 0),
-                CCTintTo::create(.2f, 255, 255, 255),
-                nullptr
-            );
-            seq->setTag(8);
-            addRunStartInput->getInputNode()->m_textLabel->stopActionByTag(8);
-            addRunStartInput->getInputNode()->m_textLabel->runAction(seq);
         }
     });
 
@@ -379,33 +373,6 @@ bool ModifyOptions::setup(){
         if (numEnd > 100) {
             numEnd = 100;
             addRunEndInput->setString("100");
-        }
-
-        if (numEnd < numStart){
-            numEnd = numStart;
-            addRunEndInput->setString(std::to_string(numEnd));
-            auto seq = CCSequence::create(
-                CCTintTo::create(.2f, 255, 0, 0),
-                CCTintTo::create(.2f, 255, 255, 255),
-                nullptr
-            );
-            seq->setTag(8);
-            addRunStartInput->getInputNode()->m_textLabel->stopActionByTag(8);
-            addRunStartInput->getInputNode()->m_textLabel->runAction(seq);
-        }
-
-        if (numStart > numEnd){
-            numStart = numEnd;
-            addRunStartInput->setString(std::to_string(numStart));
-            auto tint = CCTintTo::create(.2f, 255, 0, 0);
-            auto seq = CCSequence::create(
-                CCTintTo::create(.2f, 255, 0, 0),
-                CCTintTo::create(.2f, 255, 255, 255),
-                nullptr
-            );
-            seq->setTag(8);
-            addRunEndInput->getInputNode()->m_textLabel->stopActionByTag(8);
-            addRunEndInput->getInputNode()->m_textLabel->runAction(seq);
         }
     });
 
@@ -425,6 +392,19 @@ bool ModifyOptions::setup(){
         auto endPerRes = utils::numFromString<int>(addRunEndInput->getString());
         if (endPerRes.isErr()) return;
         auto endPer = endPerRes.unwrap();
+
+        if (startPer > endPer){
+            auto tint = CCTintTo::create(.2f, 255, 0, 0);
+            auto seq = CCSequence::create(
+                CCTintTo::create(.2f, 255, 0, 0),
+                CCTintTo::create(.2f, 255, 255, 255),
+                nullptr
+            );
+            seq->setTag(8);
+            addRunStartInput->getInputNode()->m_textLabel->stopActionByTag(8);
+            addRunStartInput->getInputNode()->m_textLabel->runAction(seq);
+            return;
+        }
 
         std::optional<int> sessionNum = std::nullopt;
         if (TypeToggler->isToggled())
