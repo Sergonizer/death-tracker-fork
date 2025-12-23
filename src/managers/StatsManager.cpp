@@ -166,7 +166,7 @@ Result<LevelData> StatsManager::getLevelData(GJGameLevel* const level){
 Result<LevelData> StatsManager::getLevelData(const std::string& levelKey){
     LevelData data;
     GEODE_UNWRAP_INTO(data.metadata, StatsManager::getMetadata(levelKey));
-    GEODE_UNWRAP_INTO(data.from0, StatsManager::getGeneral(levelKey));
+    data.from0 = StatsManager::getGeneral(levelKey);
     data.sessionNames = StatsManager::getAllSessionTimesForLevel(levelKey);
     data.levelKey = levelKey;
 

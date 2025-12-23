@@ -406,14 +406,19 @@ void DTLayer::populateSpecialStrings(){
     from0Key->setUpdateFunction([&](){ return UpdateTask::run([&](auto progress, auto hasBeenCancelled) -> UpdateTask::Result {
         if (m_MyLevelStats.isErr()) return Err("Failed to create from0 deaths string");
         auto& myStats = m_MyLevelStats.unwrap();
+        if (myStats.from0.isErr()) return Err("Failed to create from0 deaths string");
+        auto& myFrom0Stats = myStats.from0.unwrap();
 
-        Deaths sharedDeaths = myStats.from0.deaths;
-        NewBests sharedNBs = myStats.from0.newBests;
+        Deaths sharedDeaths = myFrom0Stats.deaths;
+        NewBests sharedNBs = myFrom0Stats.newBests;
 
         for (const auto& levelData : linkedLevelsData)
         {
-            sharedDeaths.insert(levelData.from0.deaths.begin(), levelData.from0.deaths.end());
-            sharedNBs.insert(levelData.from0.newBests.begin(), levelData.from0.newBests.end());
+            if (levelData.from0.isErr()) continue;
+            auto& levelFrom0Stats = levelData.from0.unwrap();
+
+            sharedDeaths.insert(levelFrom0Stats.deaths.begin(), levelFrom0Stats.deaths.end());
+            sharedNBs.insert(levelFrom0Stats.newBests.begin(), levelFrom0Stats.newBests.end());
         }
 
         std::string out;
@@ -429,6 +434,8 @@ void DTLayer::populateSpecialStrings(){
     dtattKey->setUpdateFunction([&](){ return UpdateTask::run([&](auto progress, auto hasBeenCancelled) -> UpdateTask::Result {
         if (m_MyLevelStats.isErr()) return Err("Failed to create death tracker attempts string");
         auto& myStats = m_MyLevelStats.unwrap();
+        if (myStats.from0.isErr()) return Err("Failed to create death tracker attempts string");
+        auto& myFrom0Stats = myStats.from0.unwrap();
 
         unsigned long long attempts = 0;
 
@@ -437,11 +444,14 @@ void DTLayer::populateSpecialStrings(){
                 attempts += count;
         };
 
-        deaths(myStats.from0.deaths);
+        deaths(myFrom0Stats.deaths);
 
         for (const auto& levelData : linkedLevelsData)
         {
-            deaths(levelData.from0.deaths);
+            if (levelData.from0.isErr()) continue;
+            auto& levelFrom0Stats = levelData.from0.unwrap();
+
+            deaths(levelFrom0Stats.deaths);
         }
 
         return Ok(std::to_string(attempts));
@@ -452,12 +462,17 @@ void DTLayer::populateSpecialStrings(){
     runsKey->setUpdateFunction([&](){ return UpdateTask::run([&](auto progress, auto hasBeenCancelled) -> UpdateTask::Result {
         if (m_MyLevelStats.isErr()) return Err("Failed to create run deaths string");
         auto& myStats = m_MyLevelStats.unwrap();
+        if (myStats.from0.isErr()) return Err("Failed to create run deaths string");
+        auto& myFrom0Stats = myStats.from0.unwrap();
 
-        Deaths sharedRuns = myStats.from0.runs;
+        Deaths sharedRuns = myFrom0Stats.runs;
 
         for (const auto& levelData : linkedLevelsData)
         {
-            sharedRuns.insert(levelData.from0.runs.begin(), levelData.from0.runs.end());
+            if (levelData.from0.isErr()) continue;
+            auto& levelFrom0Stats = levelData.from0.unwrap();
+            
+            sharedRuns.insert(levelFrom0Stats.runs.begin(), levelFrom0Stats.runs.end());
         }
 
         std::string out;
@@ -1562,17 +1577,22 @@ void DTLayer::modifyRun(int startPer, int amount, std::optional<int> sessionNumb
     }
     else{
         auto& stats = m_MyLevelStats.unwrap();
+        if (stats.from0.isErr()) return;
+        auto& from0Stats = stats.from0.unwrap();
 
-        if (processRun(stats.from0.deaths)){
-            auto _ = StatsManager::setGeneral(stats.from0, stats.levelKey);
+        if (processRun(from0Stats.deaths)){
+            auto _ = StatsManager::setGeneral(from0Stats, stats.levelKey);
             if (_.isErr()) log::error("{}", _.unwrapErr());
             return;
         }
 
         for (auto& linkedLevel : linkedLevelsData)
         {
-            if (processRun(linkedLevel.from0.deaths)){
-                auto _ = StatsManager::setGeneral(linkedLevel.from0, linkedLevel.levelKey);
+            if (linkedLevel.from0.isErr()) continue;
+            auto& linkedLevelFrom0Stats = linkedLevel.from0.unwrap();
+
+            if (processRun(linkedLevelFrom0Stats.deaths)){
+                auto _ = StatsManager::setGeneral(linkedLevelFrom0Stats, linkedLevel.levelKey);
                 if (_.isErr()) log::error("{}", _.unwrapErr());
                 return;
             }
@@ -1621,17 +1641,22 @@ void DTLayer::modifyRun(int startPer, int endPer, int amount, std::optional<int>
     }
     else{
         auto& stats = m_MyLevelStats.unwrap();
+        if (stats.from0.isErr()) return;
+        auto& from0Stats = stats.from0.unwrap();
 
-        if (processRun(stats.from0.runs)){
-            auto _ = StatsManager::setGeneral(stats.from0, stats.levelKey);
+        if (processRun(from0Stats.runs)){
+            auto _ = StatsManager::setGeneral(from0Stats, stats.levelKey);
             if (_.isErr()) log::error("{}", _.unwrapErr());
             return;
         }
 
         for (auto& linkedLevel : linkedLevelsData)
         {
-            if (processRun(linkedLevel.from0.runs)){
-                auto _ = StatsManager::setGeneral(linkedLevel.from0, linkedLevel.levelKey);
+            if (linkedLevel.from0.isErr()) continue;
+            auto& linkedLevelFrom0Stats = linkedLevel.from0.unwrap();
+
+            if (processRun(linkedLevelFrom0Stats.runs)){
+                auto _ = StatsManager::setGeneral(linkedLevelFrom0Stats, linkedLevel.levelKey);
                 if (_.isErr()) log::error("{}", _.unwrapErr());
                 return;
             }
@@ -1674,17 +1699,22 @@ void DTLayer::modifyNewBest(int percent, bool makeTrue, std::optional<int> sessi
     }
     else{
         auto& stats = m_MyLevelStats.unwrap();
+        if (stats.from0.isErr()) return;
+        auto& from0Stats = stats.from0.unwrap();
 
-        if (processBest(stats.from0.newBests)){
-            auto _ = StatsManager::setGeneral(stats.from0, stats.levelKey);
+        if (processBest(from0Stats.newBests)){
+            auto _ = StatsManager::setGeneral(from0Stats, stats.levelKey);
             if (_.isErr()) log::error("{}", _.unwrapErr());
             return;
         }
 
         for (auto& linkedLevel : linkedLevelsData)
         {
-            if (processBest(linkedLevel.from0.newBests)){
-                auto _ = StatsManager::setGeneral(linkedLevel.from0, linkedLevel.levelKey);
+            if (linkedLevel.from0.isErr()) continue;
+            auto& linkedLevelFrom0Stats = linkedLevel.from0.unwrap();
+            
+            if (processBest(linkedLevelFrom0Stats.newBests)){
+                auto _ = StatsManager::setGeneral(linkedLevelFrom0Stats, linkedLevel.levelKey);
                 if (_.isErr()) log::error("{}", _.unwrapErr());
                 return;
             }

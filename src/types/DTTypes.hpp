@@ -167,12 +167,12 @@ struct matjson::Serialize<LevelMetadeta> {
     }
 };
 
-typedef struct {
+struct LevelData {
     std::string levelKey;
     LevelMetadeta metadata;
-    GeneralData from0;
+    Result<GeneralData> from0 = Err("Not loaded");
     std::set<long long> sessionNames;
-} LevelData;
+};
 
 struct BackupLevelData {
     std::optional<GeneralData> from0 = std::nullopt;
