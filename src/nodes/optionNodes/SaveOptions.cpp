@@ -273,7 +273,11 @@ void SaveOptions::onBackup(CCObject*){
     auto popup = CreateBackupPopup::create();
     popup->setCallback([this](bool general, std::optional<int> sessions) {
         auto _ = StatsManager::addBackup(DTLayer::get()->m_MyLevelStats.unwrap().levelKey, general, sessions);
-        if (_.isErr()) log::error("{}", _.unwrapErr());
+        if (_.isErr()) {
+            log::error("{}", _.unwrapErr());
+            Notification::create("Failed to create backup!", NotificationIcon::Error)->show();
+        }
+        else Notification::create("Created backup successfully!", NotificationIcon::Success)->show();
         
         updateBackupsList();
     });

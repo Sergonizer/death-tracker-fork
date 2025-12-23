@@ -8,9 +8,27 @@ using namespace keybinds;
 
 $execute {
     BindManager::get()->registerBindable({ "enter-new-line"_spr, "Enter new line",
-        "Enter a new line when editing a labels text",
+        "Enters a new line when editing a labels text",
         { 
             Keybind::create(KEY_Enter, Modifier::None) 
+        }
+    });
+    BindManager::get()->registerBindable({ "enter-new-run-per"_spr, "Enter new run percentage",
+        "Enters a new run percent when inputting for adding a new percent to your \"runs to track\"",
+        { 
+            Keybind::create(KEY_Enter, Modifier::None) 
+        }
+    });
+    BindManager::get()->registerBindable({ "add-deaths"_spr, "Add deaths",
+        "Adds deaths while you input a percent to change deaths to your level",
+        { 
+            Keybind::create(KEY_Enter, Modifier::None)
+        }
+    });
+    BindManager::get()->registerBindable({ "remove-deaths"_spr, "Remove deaths",
+        "Removes deaths while you input a percent to change deaths to your level",
+        { 
+            Keybind::create(KEY_Enter, Modifier::Shift)
         }
     });
 

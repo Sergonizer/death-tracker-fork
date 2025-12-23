@@ -30,6 +30,7 @@ class ModifyOptions : public OptionsNode {
 
         void addPlusMinusBtns(CCNode* around, bool flip, const std::function<void(bool isPlus)>& callback, float scale);
         void onPlusMinusBtn(CCObject* sender);
+        std::map<CCNode*, std::pair<CCMenuItemSpriteExtra*, CCMenuItemSpriteExtra*>> holdersOfPlusMinusBtns{};
         std::map<CCMenuItemSpriteExtra*, std::function<void(bool isPlus)>> plusMinusCallbacks{};
         CCScale9Sprite* previewBG;
 

@@ -2,6 +2,7 @@
 
 #include <nodes/layers/DTLayer.hpp>
 #include <utils/Dev.hpp>
+#include <geode.custom-keybinds/include/Keybinds.hpp>
 
 RunOptions* RunOptions::create(const CCSize& size) {
     auto ret = new RunOptions();
@@ -209,6 +210,13 @@ bool RunOptions::setup(){
     this->addChild(ResetAsDeathLabel);
 
     this->setOpacity(0);
+
+    addEventListener<keybinds::InvokeBindFilter>([&](keybinds::InvokeBindEvent* event) {
+        if (event->isDown() && runAdditionInput->getInputNode()->m_selected) {
+            addNewRun(nullptr);
+        }
+        return ListenerResult::Propagate;
+    }, "enter-new-run-per"_spr);
 
     return true;
 }

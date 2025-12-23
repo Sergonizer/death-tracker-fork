@@ -1,6 +1,7 @@
 #include <nodes/optionNodes/ModifyOptions.hpp>
 #include <nodes/layers/DTLayer.hpp>
 #include <utils/Dev.hpp>
+#include <geode.custom-keybinds/include/Keybinds.hpp>
 
 ModifyOptions* ModifyOptions::create(const CCSize& size) {
     auto ret = new ModifyOptions();
@@ -513,6 +514,36 @@ bool ModifyOptions::setup(){
 
     sessionSelector->setEnabled(false);
 
+    addEventListener<keybinds::InvokeBindFilter>([&, addNewBestInput, addRunOverallNode, addRunStartInput, addRunEndInput, addPercentInput](keybinds::InvokeBindEvent* event) {
+        if (event->isDown()) {
+            if (addNewBestInput->getInputNode()->m_selected) {
+                plusMinusCallbacks[holdersOfPlusMinusBtns[addNewBestInput].first](true);
+            }
+            else if (addRunStartInput->getInputNode()->m_selected || addRunEndInput->getInputNode()->m_selected){
+                plusMinusCallbacks[holdersOfPlusMinusBtns[addRunOverallNode].first](true);
+            }
+            else if (addPercentInput->getInputNode()->m_selected) {
+                plusMinusCallbacks[holdersOfPlusMinusBtns[addPercentInput].first](true);
+            }
+        }
+        return ListenerResult::Propagate;
+    }, "add-deaths"_spr);
+
+    addEventListener<keybinds::InvokeBindFilter>([&, addNewBestInput, addRunOverallNode, addRunStartInput, addRunEndInput, addPercentInput](keybinds::InvokeBindEvent* event) {
+        if (event->isDown()) {
+            if (addNewBestInput->getInputNode()->m_selected) {
+                plusMinusCallbacks[holdersOfPlusMinusBtns[addNewBestInput].second](false);
+            }
+            else if (addRunStartInput->getInputNode()->m_selected || addRunEndInput->getInputNode()->m_selected){
+                plusMinusCallbacks[holdersOfPlusMinusBtns[addRunOverallNode].second](false);
+            }
+            else if (addPercentInput->getInputNode()->m_selected) {
+                plusMinusCallbacks[holdersOfPlusMinusBtns[addPercentInput].second](false);
+            }
+        }
+        return ListenerResult::Propagate;
+    }, "remove-deaths"_spr);
+
     return true;
 }
 
@@ -656,6 +687,8 @@ void ModifyOptions::addPlusMinusBtns(CCNode* around, bool flip, const std::funct
 
     plusMinusCallbacks.insert({plusBtn, callback});
     plusMinusCallbacks.insert({minusBtn, callback});
+
+    holdersOfPlusMinusBtns.insert({around, std::make_pair(plusBtn, minusBtn)});
 }
 void ModifyOptions::onPlusMinusBtn(CCObject* sender){
     if (auto btnSender = typeinfo_cast<CCMenuItemSpriteExtra*>(sender)){
