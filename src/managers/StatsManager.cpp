@@ -333,7 +333,7 @@ Result<> StatsManager::addBackup(const std::string& levelKey, bool saveLevelStat
 
     if (sessionsToSave == std::nullopt) return Ok();
 
-    if (sessionsToSave.value() > -1){
+    if (sessionsToSave.value() >= -1){
         levelBackupsFilePath /= StatsManager::SESSIONS_DIR_NAME;
 
         auto _ = geode::utils::file::createDirectory(levelBackupsFilePath);
@@ -921,6 +921,37 @@ std::set<long long> StatsManager::getBackupsCount(const std::string& levelKey){
     }
 
     return toReturn;
+}
+
+uintmax_t StatsManager::getBackupFileSize(const std::string& levelKey, long long backupName){
+    auto levelSaveFilePath = m_savesFolderPath / levelKey / StatsManager::BACKUPS_DIR_NAME / std::to_string(backupName);
+
+    if (!std::filesystem::exists(levelSaveFilePath)) return 0;
+
+    uintmax_t totalSize = 0;
+
+    for (const auto& entry : std::filesystem::recursive_directory_iterator(levelSaveFilePath)) {
+        if (!entry.is_regular_file()) continue;
+
+        totalSize += std::filesystem::file_size(entry.path());
+    }
+
+    return totalSize;
+}
+
+Result<> StatsManager::reveretBackupSessions(const std::string& levelKey, long long backupName){
+    auto bakupSessionDirPath = m_savesFolderPath / levelKey / StatsManager::BACKUPS_DIR_NAME / std::to_string(backupName) / StatsManager::SESSIONS_DIR_NAME;
+    auto sessionDirPath = m_savesFolderPath / levelKey / StatsManager::SESSIONS_DIR_NAME;
+
+    if (!std::filesystem::exists(bakupSessionDirPath)) return Err("No sessions backup found!");
+
+    if (std::filesystem::exists(sessionDirPath)){
+        if (std::filesystem::remove_all(sessionDirPath) == static_cast<std::uintmax_t>(-1)) return Err("Failed to delete current sessions folder!");
+    }
+
+    std::filesystem::copy(bakupSessionDirPath, sessionDirPath, std::filesystem::copy_options::recursive | std::filesystem::copy_options::overwrite_existing);
+
+    return Ok();
 }
 
 Result<> StatsManager::convertV2SaveToV3(const std::string& levelKey){

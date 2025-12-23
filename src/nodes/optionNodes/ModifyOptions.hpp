@@ -33,7 +33,6 @@ class ModifyOptions : public OptionsNode {
         std::map<CCMenuItemSpriteExtra*, std::function<void(bool isPlus)>> plusMinusCallbacks{};
         CCScale9Sprite* previewBG;
 
-        std::set<ButtonSprite*> btnSprites{};
         SessionSelector* sessionSelector;
         Scrollbar* scrollbar;
 

@@ -22,14 +22,13 @@ bool ModifyOptions::setup(){
 
     auto TypLevelBtnSpr = ButtonSprite::create("Level");
     auto TypeSessionBtnSpr = ButtonSprite::create("Session");
-    btnSprites.insert(TypLevelBtnSpr);
-    btnSprites.insert(TypeSessionBtnSpr);
+    TypLevelBtnSpr->setCascadeOpacityEnabled(true);
+    TypeSessionBtnSpr->setCascadeOpacityEnabled(true);
     TypeToggler = SimpleToggler::create(
         TypLevelBtnSpr,
         TypeSessionBtnSpr,
         .75f
     );
-    TypeToggler->setOpacity(0);
     TypeToggler->setPosition({
         size.width / 2.5f / 2 - size.width / 2.5f / 2 / 2,
         size.height - TypeSessionBtnSpr->getScaledContentSize().height / 2 - topeToggleHightPadding
@@ -67,7 +66,7 @@ bool ModifyOptions::setup(){
     float localSharedTopPadding = 10;
     
     auto from0ViewBtnSpr = ButtonSprite::create("from 0", "gjFont17.fnt", "GJ_button_04.png");
-    btnSprites.insert(from0ViewBtnSpr);
+    from0ViewBtnSpr->setCascadeOpacityEnabled(true);
     from0ViewBtnSpr->setScale(.5f);
     from0ViewBtnSpr->setID("enabled");
     from0ViewBtn = CCMenuItemSpriteExtra::create(
@@ -81,7 +80,7 @@ bool ModifyOptions::setup(){
     });
 
     auto from0ViewBtnSprDisabled = ButtonSprite::create("from 0", "gjFont17.fnt", "GJ_button_01.png");
-    btnSprites.insert(from0ViewBtnSprDisabled);
+    from0ViewBtnSprDisabled->setCascadeOpacityEnabled(true);
     from0ViewBtnSprDisabled->setScale(.5f);
     from0ViewBtnSprDisabled->setPosition(from0ViewBtnSpr->getPosition());
     from0ViewBtnSprDisabled->setID("disabled");
@@ -89,7 +88,7 @@ bool ModifyOptions::setup(){
     from0ViewBtn->addChild(from0ViewBtnSprDisabled);
 
     auto runViewBtnSpr = ButtonSprite::create("runs", "gjFont17.fnt", "GJ_button_04.png");
-    btnSprites.insert(runViewBtnSpr);
+    runViewBtnSpr->setCascadeOpacityEnabled(true);
     runViewBtnSpr->setID("enabled");
     runViewBtnSpr->setScale(.5f);
     runViewBtn = CCMenuItemSpriteExtra::create(
@@ -104,7 +103,7 @@ bool ModifyOptions::setup(){
     });
 
     auto runViewBtnSprDisabled = ButtonSprite::create("runs", "gjFont17.fnt", "GJ_button_01.png");
-    btnSprites.insert(runViewBtnSprDisabled);
+    runViewBtnSprDisabled->setCascadeOpacityEnabled(true);
     runViewBtnSprDisabled->setScale(.5f);
     runViewBtnSprDisabled->setPosition(runViewBtnSpr->getPosition());
     runViewBtnSprDisabled->setID("disabled");
@@ -503,12 +502,6 @@ bool ModifyOptions::setup(){
     }
     this->setOpacity(0);
 
-    for (const auto& btnSpr : btnSprites)
-    {
-        btnSpr->m_BGSprite->setOpacity(0);
-        btnSpr->m_label->setOpacity(0);
-    }
-
     myLabel->setOpacity(0);
     myLabel->setTextColor({255, 255, 255, 0});
     myLabel->fadeTitleColorTo({255, 255, 255, 0}, 0);
@@ -535,11 +528,7 @@ void ModifyOptions::onOpened(){
         }   
     }
 
-    for (const auto& btnSpr : btnSprites)
-    {
-        btnSpr->m_BGSprite->runAction(CCFadeIn::create(fadeTime));
-        btnSpr->m_label->runAction(CCFadeIn::create(fadeTime));
-    }
+    sessionSelector->setMaximumCount(DTLayer::get()->sessionSelector->getMaximumCount(), false);
 
     myLabel->runAction(CCFadeIn::create(fadeTime));
     myLabel->fadeTextColorTo({255, 255, 255, 255}, fadeTime);
@@ -564,12 +553,6 @@ void ModifyOptions::onClosed(){
         if (auto textInput = typeinfo_cast<TextInput*>(child)){
             Dev::fadeTextInput(textInput, false, fadeTime);
         }   
-    }
-
-    for (const auto& btnSpr : btnSprites)
-    {
-        btnSpr->m_BGSprite->runAction(CCFadeOut::create(fadeTime));
-        btnSpr->m_label->runAction(CCFadeOut::create(fadeTime));
     }
 
     myLabel->runAction(CCFadeOut::create(fadeTime));

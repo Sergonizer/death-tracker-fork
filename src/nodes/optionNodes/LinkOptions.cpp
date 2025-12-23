@@ -183,7 +183,6 @@ bool LinkOptions::setup(){
     loadingCircle->ignoreAnchorPointForPosition(false);
     loadingCircle->setPosition(linkedScroll->getPosition() + linkedScroll->getContentSize() + ccp(5, -linkedScroll->getContentHeight() / 4));
     loadingCircle->show();
-    //loadingCircle->setVisible(false);
 
     loadingLabel = CCLabelBMFont::create("Loading levels...", "bigFont.fnt");
     loadingLabel->setScale(.75f);
@@ -443,7 +442,7 @@ void LinkOptions::updateScrollsContent(){
 void LinkOptions::onLinkCellClicked(const std::string& levelKey, bool isLeftAligned){
     if (DTLayer::get()->m_MyLevelStats.isErr()) return;
 
-    log::info("[LinkOptions] onLinkCellClicked: {} (isLeftAligned: {})", levelKey, isLeftAligned);
+    // log::info("[LinkOptions] onLinkCellClicked: {} (isLeftAligned: {})", levelKey, isLeftAligned);
 
     if (!isLeftAligned){
         auto& myData = DTLayer::get()->m_MyLevelStats.unwrap();

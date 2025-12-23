@@ -11,17 +11,20 @@ class SessionSelector : public CCMenu, public TextInputDelegate {
 
         void setCallback(const std::function<void(int)>& callback);
 
-        void setMaximumCount(int count);
+        void setMaximumCount(int count, bool runCallback = false);
         void setCurrentCount(int count, bool ignoreIfUnchanged = true, bool runCallback = false);
 
         int getCurrentCount();
+        int getMaximumCount() const {
+            return maxCount;
+        }
 
         void setEnabled(bool value);
 
         geode::TextInput* getTextInput() const{
             return inputNode;
         }
-        
+
     private:
         bool init(int count);
 
@@ -33,9 +36,9 @@ class SessionSelector : public CCMenu, public TextInputDelegate {
         void textChanged(CCTextInputNode* input);
 
         geode::TextInput* inputNode;
-        bool isInputOpened;
+        bool isInputOpened = false;
 
-        std::function<void(int)> callback = NULL;
+        std::function<void(int)> callback{};
 
         int maxCount = 0;
         int currentCount = 0;

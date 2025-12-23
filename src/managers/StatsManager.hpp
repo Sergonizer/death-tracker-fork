@@ -70,6 +70,9 @@ public:
     static std::set<long long> getAllSessionTimesForLevel(const std::string& levelKey);
 
     static std::set<long long> getBackupsCount(const std::string& levelKey);
+    static uintmax_t getBackupFileSize(const std::string& levelKey, long long backupName);
+
+    static Result<> reveretBackupSessions(const std::string& levelKey, long long backupName);
 
     static Result<> deleteLevelStats(const std::string& levelKey);
     static Result<> deleteBackup(const std::string& levelKey, long long backupName);

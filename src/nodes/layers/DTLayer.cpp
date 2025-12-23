@@ -563,6 +563,9 @@ void DTLayer::UpdateSharedStats(){
         linkedLevelsData.push_back(level);
     }
 
+    if (sessionSelector != nullptr)
+        sessionSelector->setMaximumCount(sessionsOrder.size(), false);
+
     UpdateDeathRelatedStrings();
 }
 
@@ -614,70 +617,14 @@ AdvancedScrollLayer* DTLayer::getScrollLayer(){
     return scrollLayer;
 }
 
-// void DTLayer::saveAndUpdateStats(bool updateShared){
-//     if (m_MyLevelStats.isErr()) return;
-    
-//     auto& levelStats = m_MyLevelStats.unwrap();
-//     StatsManager::setLevelStats(levelStats, m_Level, false);
-//     if (updateShared)
-//         UpdateSharedStats();
-// }
-
-// void DTLayer::UpdateOnAllShared(const std::function<void(LevelStats& stats)>& lambda){
-//     if (m_MyLevelStats.isErr() || m_SharedLevelStats.isErr() || lambda == NULL) return;
-
-//     auto& sharedStats = m_SharedLevelStats.unwrap();
-
-//     for (const auto& linkedLevel : sharedStats.LinkedLevels)
-//     {
-//         auto statsRes = StatsManager::getLevelStats(linkedLevel, false);
-//         if (statsRes.isErr()) continue;
-//         auto currentStats = statsRes.unwrap();
-
-//         lambda(currentStats);
-
-//         StatsManager::setLevelStats(currentStats, linkedLevel, false);
-//     }
-    
-//     auto& myStats = m_MyLevelStats.unwrap();
-//     lambda(myStats);
-//     lambda(sharedStats);
-
-//     UpdateDeathRelatedStrings();
-// }
-
 void DTLayer::UpdateDeathRelatedStrings(){
     if (m_MyLevelStats.isErr()) return;
 
-    // auto& myStats = m_MyLevelStats.unwrap();
-
-    // Deaths sharedDeaths = myStats.from0.deaths;
-    // NewBests sharedNBs = myStats.from0.newBests;
-    // Deaths sharedRuns = myStats.from0.runs;
-
-    // for (const auto& levelData : linkedLevelsData)
-    // {
-    //     sharedDeaths.insert(levelData.from0.deaths.begin(), levelData.from0.deaths.end());
-    //     sharedNBs.insert(levelData.from0.newBests.begin(), levelData.from0.newBests.end());
-    //     sharedRuns.insert(levelData.from0.runs.begin(), levelData.from0.runs.end());
-    // }
-
-    // createDeathsString(myStats.from0.deaths, Save::getFrom0Customazations(), specialStrings["totalLocalDeaths"], &myStats.from0.newBests, "{nbc}");
-    // createDeathsString(sharedDeaths, Save::getFrom0Customazations(), specialStrings["totalSharedDeaths"], &sharedNBs, "{nbc}");
-
-    // createDeathsString(myStats.from0.runs, Save::getRunsCustomazations(), specialStrings["totalLocalRuns"]);
-    // createDeathsString(sharedRuns, Save::getRunsCustomazations(), specialStrings["totalSharedRuns"]);
-
-    // if (currentSessionInfo != std::nullopt){
-    //     auto& sessionObj = currentSessionInfo.value();
-
-    //     createDeathsString(sessionObj.deaths, Save::getSessionF0Customazations(), specialStrings["totalSessionDeaths"], &sessionObj.newBests, "{sbc}");
-    //     createDeathsString(sessionObj.runs, Save::getSessionRunCustomazations(), specialStrings["totalSessionRuns"]);
-    // }
-    // else{
-    //     specialStrings["totalSessionDeaths"] = "No Deaths Found!";
-    //     specialStrings["totalSessionRuns"] = "No Deaths Found!";
-    // }
+    for (const auto& [_, key] : specialStrings)
+    {
+        if (key->getKey() == "f0" || key->getKey() == "s0" || key->getKey() == "runs" || key->getKey() == "sruns")
+            key->updateContent();
+    }
 }
 
 bool DTLayer::createDeathsString(const Deaths& deaths, const stringCustomazations& custom, std::string& out, NewBests* const newBests, const std::string& newBestColoring){

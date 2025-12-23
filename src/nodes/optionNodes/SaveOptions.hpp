@@ -3,9 +3,9 @@
 #include <Geode/Geode.hpp>
 #include <nodes/OptionsNode.hpp>
 #include <nodes/SimpleToggler.hpp>
+#include <nodes/BackupCell.hpp>
 
 using namespace geode::prelude;
-
 
 class SaveOptions : public OptionsNode, public FLAlertLayerProtocol {
     public:
@@ -16,6 +16,8 @@ class SaveOptions : public OptionsNode, public FLAlertLayerProtocol {
         void onDelete(CCObject*);
         void onBackup(CCObject*);
         void onAutoBackupsSettings(CCObject*);
+        void onExport(CCObject*);
+        void onImport(CCObject*);
 
         void FLAlert_Clicked(FLAlertLayer* layer, bool btn2) override;
 
@@ -24,6 +26,12 @@ class SaveOptions : public OptionsNode, public FLAlertLayerProtocol {
 
         SimpleToggler* ultimitedBackupsToggler;
         TextInput* maxBackupsInput;
+        ScrollLayer* backupsScrollLayer;
+
+        void onBackupRevert(BackupCell* cell);
+        void onBackupDelete(BackupCell* cell);
+
+        void updateBackupsList();
 
     public:
         virtual void onOpened() override;

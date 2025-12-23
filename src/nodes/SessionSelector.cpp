@@ -65,9 +65,16 @@ void SessionSelector::setCallback(const std::function<void(int)>& callback){
     this->callback = callback;
 }
 
-void SessionSelector::setMaximumCount(int count){
+void SessionSelector::setMaximumCount(int count, bool runCallback){
     count = std::max(count, 1);
     maxCount = count;
+
+    if (currentCount > maxCount){
+        setCurrentCount(maxCount, runCallback);
+    }
+
+    if (!isInputOpened)
+        inputNode->setString(fmt::format("{}/{}", currentCount, maxCount));
 }
 void SessionSelector::setCurrentCount(int count, bool ignoreIfUnchanged, bool runCallback){
     if (currentCount == count && ignoreIfUnchanged) return;
@@ -83,7 +90,7 @@ void SessionSelector::setCurrentCount(int count, bool ignoreIfUnchanged, bool ru
 
     inputNode->setString(newText);
 
-    if (callback != NULL && runCallback)
+    if (runCallback && callback)
         callback(currentCount);
 }
 

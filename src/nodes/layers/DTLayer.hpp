@@ -111,6 +111,8 @@ class DTLayer : public Popup<GJGameLevel* const&> {
 
         bool DeleteSave();
 
+        SessionSelector* sessionSelector = nullptr;
+
     private:
         
         LayoutOptionsLayer* layoutOptionsLayer;
@@ -142,8 +144,6 @@ class DTLayer : public Popup<GJGameLevel* const&> {
         CCSize ogLimits;
 
         CCNode* labelsHolder;
-
-        SessionSelector* sessionSelector;
 
         void onLSOClicked(CCObject*);
 
