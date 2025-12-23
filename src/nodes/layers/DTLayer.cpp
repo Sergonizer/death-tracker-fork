@@ -230,6 +230,9 @@ bool DTLayer::setup(GJGameLevel* const& level) {
 
     editLayoutMenu = CCMenu::create();
     editLayoutMenu->setEnabled(false);
+    editLayoutMenu->setPosition({winSize.width / 2,160});
+    editLayoutMenu->ignoreAnchorPointForPosition(false);
+    editLayoutMenu->setAnchorPoint({0,0});
     m_mainLayer->addChild(editLayoutMenu);
     
     applyChangesButtonSpr = ButtonSprite::create("Apply Changes", "goldFont.fnt", "GJ_button_01.png");
