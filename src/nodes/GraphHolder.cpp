@@ -29,6 +29,8 @@ bool GraphHolder::init(const CCSize& scaling){
     this->setContentSize(scaling);
     this->setAnchorPoint({.5f, .5f});
 
+    labelEvery = labelEveryBase;
+
     scrollLayer = AdvancedScrollLayer::create(scaling, scaling + ccp(.01f,.01f));
     scrollLayer->setHorizontalScrollbarPosition(true);
     this->addChild(scrollLayer);
@@ -225,13 +227,17 @@ void GraphHolder::update(float dt){
     if (prevZoom != scrollLayer->getCurrentZoom()){
         prevZoom = scrollLayer->getCurrentZoom();
 
+        labelEvery = labelEveryBase / scrollLayer->getCurrentZoom();
+
         GraphHolder::refreshGrid();
         GraphHolder::updateLabels();
     }
 
     auto posInSpace = LabelsHorizontalContainer->getParent()->convertToNodeSpace(scrollLayer->content->convertToWorldSpace(scrollLayer->content->getPosition()));
 
-    LabelsHorizontalContainer->setPositionX(posInSpace.x - this->getContentWidth() * (1 - scrollLayer->getCurrentZoom()));
-    LabelsVerticalContainer->setPositionY(scrollLayer->content->getPositionY() / scrollLayer->getCurrentZoom());
-    boldGridNode->setPosition(scrollLayer->content->getPosition() / scrollLayer->getCurrentZoom());
+    auto zoomModification = this->getContentSize() * ((scrollLayer->getCurrentZoom() - 1) * 0.5f);
+
+    LabelsHorizontalContainer->setPositionX(posInSpace.x - zoomModification.width);
+    LabelsVerticalContainer->setPositionY(posInSpace.y - zoomModification.height);
+    boldGridNode->setPosition(posInSpace - zoomModification);
 }

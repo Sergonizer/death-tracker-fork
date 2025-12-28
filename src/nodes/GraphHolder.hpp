@@ -35,7 +35,8 @@ class GraphHolder : public CCNode {
         float outlineThickness = 0.2f;
         ccColor4B outlineColor = { 124, 124, 124, 255};
 
-        int labelEvery = 5;
+        int labelEveryBase = 5;
+        int labelEvery;
 
         CCDrawNode* boldGridNode = nullptr;
         ccColor4B boldGridColor = { 29, 29, 29, 255 };
