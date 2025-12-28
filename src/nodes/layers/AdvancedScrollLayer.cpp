@@ -51,8 +51,8 @@ bool AdvancedScrollLayer::init(CCSize size, CCSize limits){
     
     horizontalBar = Scrollbar::create(widthScrollExt);
     horizontalBar->setPositionX(size.width / 2);
-    horizontalBar->setPositionY(-4);
     horizontalBar->setRotation(90);
+    setHorizontalScrollbarPosition(false);
     this->addChild(horizontalBar);
 
     heightScrollExt = new CCScrollLayerExt({0, 0, size.width, size.height});
@@ -212,6 +212,10 @@ void AdvancedScrollLayer::keyUp(enumKeyCodes key){
 
 void AdvancedScrollLayer::registerWithTouchDispatcher() {
     CCDirector::sharedDirector()->getTouchDispatcher()->addTargetedDelegate(this, 0, true);
+}
+
+void AdvancedScrollLayer::setHorizontalScrollbarPosition(bool onTop){
+    horizontalBar->setPositionY(onTop ? this->getContentHeight() + 4 : -4);
 }
 
 void AdvancedScrollLayer::setLimits(CCSize newLimits){

@@ -178,7 +178,7 @@ bool SaveOptions::setup(){
         this,
         menu_selector(SaveOptions::onExport)
     );
-    exportBtn->setPosition({exportBtn->getContentWidth() / 2 + 5, size.height - exportBtn->getContentHeight() / 2 - 5});
+    exportBtn->setPosition({exportBtn->getContentWidth() / 2 + 5, size.height - exportBtn->getContentHeight() / 2});
     this->addChild(exportBtn);
 
     auto exportBtnLabel = CCLabelBMFont::create("Export Save", "bigFont.fnt");

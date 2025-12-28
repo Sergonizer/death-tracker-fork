@@ -56,6 +56,8 @@ class AdvancedScrollLayer : public CCLayer {
         void setLimitsWidth(float width);
         void setLimitsHeight(float height);
 
+        void setHorizontalScrollbarPosition(bool onTop);
+
         void drawGrid(float squaresAmount, float lineWidth, ccColor4B color);
 
         void addFromCenter(CCNode* child, CCPoint offset = {0, 0});

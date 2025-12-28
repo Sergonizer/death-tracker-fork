@@ -377,11 +377,7 @@ void DTLayer::updateRunsAllowed(){
 }
 
 void DTLayer::graphBtnClicked(CCObject*){
-    saveCurrentLayout();
-
-    // auto graph = DTGraphLayer::create(this);
-    // graph->setZOrder(100);
-    // this->addChild(graph);
+    DTGraphLayer::create()->show();
 }
 
 void DTLayer::addSpecialString(const std::shared_ptr<SpecialKey>& key){
