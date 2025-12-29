@@ -21,8 +21,6 @@ struct organizationResult{
     float highestColumn;
 };
 
-using DeathStringTask = Task<Result<std::vector<DeathInfo>>>;
-using ResultTask = Task<Result<>>;
 using organizationTask = Task<organizationResult>;
 
 class DTLayer : public Popup<GJGameLevel* const&> {
@@ -50,18 +48,10 @@ class DTLayer : public Popup<GJGameLevel* const&> {
 
         static DTLayer* get();
 
-        // DTLabel* createLabel(DTLabelInfo info = DTLabelInfo());
-
-        // void removeLabel(DTLabel* label, bool forceDelete = false);
-
         AdvancedScrollLayer* getScrollLayer();
         
         virtual void onClose(CCObject*) override;
         virtual void keyBackClicked() override;
-
-        // void saveAndUpdateStats(bool updateShared);
-
-        // void UpdateOnAllShared(const std::function<void(LevelStats& stats)>& lambda);
 
         void UpdateDeathRelatedStrings();
 
@@ -138,8 +128,6 @@ class DTLayer : public Popup<GJGameLevel* const&> {
         static DTLayer* instance;
 
         AdvancedScrollLayer* scrollLayer = nullptr;
-        // std::set<DTLabel*> labels{};
-        // EditLayoutTopbar* layoutTopbar = nullptr;
         CCMenu* columnHolder;
         CCSize ogLimits;
 

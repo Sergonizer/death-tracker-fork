@@ -8,14 +8,21 @@
 class GraphHolder : public CCNode {
     public:
         static GraphHolder* create(const CCSize& scaling);
-
-
-    private:
-        bool init(const CCSize& scaling);
-
+        
+        void setSmallLinesColor(const ccColor4B& newColor);
+        void setBoldLinesColor(const ccColor4B& newColor);
+        void setLabelsColor(const ccColor4B& newColor);
+        
         void setBGFillColor(const ccColor4B& color);
         void setOutlineThickness(float thickness);
         void setOutlineColor(const ccColor4B& color);
+
+        void addGraph(const DTGraphInfo& graph);
+        DTGraphNode* getGraphNode(const std::string& graphName);
+        void removeGraph(const std::string& graphName);
+
+    private:
+        bool init(const CCSize& scaling);
 
         void refreshBackground(const ccColor4B& newFillColor, float newOutlineThickness, const ccColor4B& newOutlineColor);
 
@@ -24,10 +31,6 @@ class GraphHolder : public CCNode {
         void updateLabels();
 
         void update(float dt);
-
-        // void setSmallLinesColor(const ccColor4B& newColor);
-        // void setBoldLinesColor(const ccColor4B& newColor);
-        // void setLabelsColor(const ccColor4B& newColor);
 
         AdvancedScrollLayer* scrollLayer;
 
@@ -61,7 +64,11 @@ class GraphHolder : public CCNode {
 
         std::unordered_map<std::string, DTGraphNode*> allGraphs{};
 
+        CCNode* graphContainer;
+
         float prevZoom;
 
         float labelMaskOffset = 8.5f;
+
+        float inGraphOffset = 7.5f;
 };

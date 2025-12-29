@@ -1,4 +1,5 @@
 #include "GraphHolder.hpp"
+#include <nodes/layers/DTLayer.hpp>
 
 GraphHolder* GraphHolder::create(const CCSize& scaling){
     auto ret = new GraphHolder();
@@ -21,6 +22,7 @@ bool GraphHolder::init(const CCSize& scaling){
 
     scrollLayer = AdvancedScrollLayer::create(scaling, scaling + ccp(.01f,.01f));
     scrollLayer->setHorizontalScrollbarPosition(true);
+    scrollLayer->minZoom = 5;
     this->addChild(scrollLayer);
 
     LabelsContainer = CCNode::create();
@@ -112,6 +114,9 @@ void GraphHolder::refreshBackground(const ccColor4B& newFillColor, float newOutl
         mask = CCClippingNode::create();
         mask->setID("mask");
         this->addChild(mask);
+
+        graphContainer = CCNode::create();
+        mask->addChild(graphContainer);
     }
 
     fillNode->drawPolygon(MaskShape, 4, ccc4FFromccc4B(newFillColor), newOutlineThickness, ccc4FFromccc4B(newOutlineColor));
@@ -140,7 +145,7 @@ void GraphHolder::refreshGrid(){
     auto lowerCorner = this->convertToNodeSpace(scrollLayer->content->convertToWorldSpace({0, 0}));
     auto heigherCorner = this->convertToNodeSpace(scrollLayer->content->convertToWorldSpace(scrollLayer->content->getContentSize()));
 
-    CCSize devidedSize = (heigherCorner - lowerCorner) / 100;
+    CCSize devidedSize = (heigherCorner - lowerCorner - inGraphOffset) / 100;
 
     for (int i = 0; i <= 100; i++){
         if (floor(static_cast<float>(i) / labelEvery) == static_cast<float>(i) / labelEvery){
@@ -165,12 +170,12 @@ void GraphHolder::updateLabels(){
     auto HlowerCorner = LabelsHorizontalContainer->getParent()->convertToNodeSpace(scrollLayer->content->convertToWorldSpace({0, 0}));
     auto HheigherCorner = LabelsHorizontalContainer->getParent()->convertToNodeSpace(scrollLayer->content->convertToWorldSpace(scrollLayer->content->getContentSize()));
 
-    CCSize devidedHSize = (HheigherCorner - HlowerCorner) / 100;
+    CCSize devidedHSize = (HheigherCorner - HlowerCorner - inGraphOffset) / 100;
 
     auto VlowerCorner = LabelsVerticalContainer->getParent()->convertToNodeSpace(scrollLayer->content->convertToWorldSpace({0, 0}));
     auto VheigherCorner = LabelsVerticalContainer->getParent()->convertToNodeSpace(scrollLayer->content->convertToWorldSpace(scrollLayer->content->getContentSize()));
 
-    CCSize devidedVSize = (VheigherCorner - VlowerCorner) / 100;
+    CCSize devidedVSize = (VheigherCorner - VlowerCorner - inGraphOffset) / 100;
 
     for (int i = 0; i <= 100; i++)
     {
@@ -244,35 +249,45 @@ void GraphHolder::updateLabels(){
     }
 }
 
-// void GraphHolder::setSmallLinesColor(const ccColor4B& newColor){
-//     smallLineColor = newColor;
-//     for (auto line : smallLines){
-//         line->setColor({newColor.r, newColor.g, newColor.b});
-//         line->setOpacity(newColor.a);
-//     }
-// }
+void GraphHolder::setSmallLinesColor(const ccColor4B& newColor){
+    smallLineColor = newColor;
+    for (auto line : smallLines){
+        line->setColor({newColor.r, newColor.g, newColor.b});
+        line->setOpacity(newColor.a);
+    }
+}
 
-// void GraphHolder::setBoldLinesColor(const ccColor4B& newColor){
-//     boldLineColor = newColor;
-//     for (auto line : boldLines){
-//         line->setColor({newColor.r, newColor.g, newColor.b});
-//         line->setOpacity(newColor.a);
-//     }
-// }
+void GraphHolder::setBoldLinesColor(const ccColor4B& newColor){
+    boldLineColor = newColor;
+    for (auto line : boldLines){
+        line->setColor({newColor.r, newColor.g, newColor.b});
+        line->setOpacity(newColor.a);
+    }
+}
 
-// void GraphHolder::setLabelsColor(const ccColor4B& newColor){
-//     labelColor = newColor;
-//     for (auto label : labels){
-//         label->setColor({newColor.r, newColor.g, newColor.b});
-//         label->setOpacity(newColor.a);
-//     }
-// }
+void GraphHolder::setLabelsColor(const ccColor4B& newColor){
+    labelColor = newColor;
+    for (auto label : labels){
+        label->setColor({newColor.r, newColor.g, newColor.b});
+        label->setOpacity(newColor.a);
+    }
+}
 
 void GraphHolder::update(float dt){
     if (prevZoom != scrollLayer->getCurrentZoom()){
         prevZoom = scrollLayer->getCurrentZoom();
 
         labelEvery = labelEveryBase / scrollLayer->getCurrentZoom();
+
+        auto lowerCorner = this->convertToNodeSpace(scrollLayer->content->convertToWorldSpace({0, 0}));
+        auto heigherCorner = this->convertToNodeSpace(scrollLayer->content->convertToWorldSpace(scrollLayer->content->getContentSize()));
+
+        CCSize size = (heigherCorner - lowerCorner - inGraphOffset);
+
+        for (const auto& [_, graph] : allGraphs)
+        {
+            graph->setScaling(size);
+        }
 
         GraphHolder::refreshGrid();
         GraphHolder::updateLabels();
@@ -281,7 +296,35 @@ void GraphHolder::update(float dt){
     auto posInSpaceH = LabelsHorizontalContainer->getParent()->convertToNodeSpace(scrollLayer->content->convertToWorldSpace({0,0}));
     auto posInSpaceV = LabelsVerticalContainer->getParent()->convertToNodeSpace(scrollLayer->content->convertToWorldSpace({0,0}));
 
-    LabelsHorizontalContainer->setPositionX(posInSpaceH.x);
-    LabelsVerticalContainer->setPositionY(posInSpaceV.y);
-    boldGridNode->setPosition({posInSpaceH.x - labelMaskOffset / 2, posInSpaceV.y - labelMaskOffset / 2});
+    LabelsHorizontalContainer->setPositionX(posInSpaceH.x + inGraphOffset / 2);
+    LabelsVerticalContainer->setPositionY(posInSpaceV.y + inGraphOffset / 2);
+    boldGridNode->setPosition({posInSpaceH.x - labelMaskOffset / 2 + inGraphOffset / 2, posInSpaceV.y - labelMaskOffset / 2 + inGraphOffset / 2});
+    graphContainer->setPosition({posInSpaceH.x - labelMaskOffset / 2 + inGraphOffset / 2, posInSpaceV.y - labelMaskOffset / 2 + inGraphOffset / 2});
 }
+
+void GraphHolder::addGraph(const DTGraphInfo& graph){
+    if (allGraphs.contains(graph.name)) return;
+
+    auto lowerCorner = this->convertToNodeSpace(scrollLayer->content->convertToWorldSpace({0, 0}));
+    auto heigherCorner = this->convertToNodeSpace(scrollLayer->content->convertToWorldSpace(scrollLayer->content->getContentSize()));
+
+    CCSize size = (heigherCorner - lowerCorner);
+
+    auto graphNode = DTGraphNode::create();
+    graphNode->setInfo(graph);
+    graphNode->setScaling(size);
+    graphContainer->addChild(graphNode);
+    allGraphs.insert({graph.name, graphNode});
+}
+DTGraphNode* GraphHolder::getGraphNode(const std::string& graphName){
+    if (!allGraphs.contains(graphName)) return nullptr;
+
+    return allGraphs[graphName];
+}
+void GraphHolder::removeGraph(const std::string& graphName){
+    if (!allGraphs.contains(graphName)) return;
+
+    allGraphs[graphName]->removeMeAndCleanup();
+    allGraphs.erase(graphName);
+}
+

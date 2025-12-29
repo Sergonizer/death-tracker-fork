@@ -30,9 +30,19 @@ bool DTGraphLayer::setup() {
     noGraphLabel->setPosition({46, 3});
     m_mainLayer->addChild(noGraphLabel);
 
-    auto graph = GraphHolder::create(ccp(m_size.height - 50, m_size.height - 50));
-    graph->setPosition({m_size.width - graph->getContentWidth() / 2 - 20, m_size.height / 2 + 5});
+    auto graph = GraphHolder::create(ccp(m_size.width - 50, m_size.height - 50 - 30));
+    graph->setPosition({m_size.width - graph->getContentWidth() / 2 - 20, m_size.height / 2 + 5 + 30 / 2});
     this->m_mainLayer->addChild(graph);
+
+    graph->addGraph(DTGraphInfo{
+        .coverage = DTGraphCoverage::GeneralCover,
+        .type = DTGraphType::Passrate,
+        .thickness = .5f,
+        .outlineThickness = .5f,
+        .color = { 255, 255, 0, 255 },
+        .outlineColor = { 0, 217, 255, 255 },
+        .name = "general graph"
+    });
 
     // CCScale9Sprite* FontTextDisplayBG = CCScale9Sprite::create("square02b_001.png", {0,0, 80, 80});
     // FontTextDisplayBG->setPosition(graph->getPosition());

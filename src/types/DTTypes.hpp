@@ -18,16 +18,6 @@ struct Run_s{
 };
 typedef struct Run_s Run; 
 
-struct DeathInfo_s{
-    Run run;
-    bool isNewBest;
-    int deaths;
-
-    DeathInfo_s(Run _run, bool _isNewBest, int _deaths, float _passrate) : run(_run), isNewBest(_isNewBest), deaths(_deaths){}
-    DeathInfo_s(Run _run, int _deaths, float _passrate) : run(_run), deaths(_deaths){}
-};
-typedef struct DeathInfo_s DeathInfo;
-
 typedef struct {
     std::string ownerLevelKey;
     long long lastPlayed;
@@ -496,6 +486,68 @@ struct matjson::Serialize<V2LevelStats> {
             { "difficulty", value.difficulty },
             { "hideRunLength", value.hideRunLength },
             { "hideUpto", value.hideUpto },
+        });
+        return obj;
+    }
+};
+
+enum DTGraphCoverage{
+    GeneralCover,
+    GeneralRunsCover,
+    SessionCover,
+    SessionRunsCover,
+    SectionCover
+};
+
+enum DTGraphType{
+    Passrate,
+    Reachrate
+};
+
+struct DTGraphInfo {
+    DTGraphCoverage coverage;
+    DTGraphType type;
+
+    float thickness;
+    float outlineThickness;
+
+    ccColor4B color;
+    ccColor4B outlineColor;
+
+    std::string name;
+};
+
+template <>
+struct matjson::Serialize<DTGraphInfo> {
+    static Result<DTGraphInfo> fromJson(const matjson::Value& value) {
+
+        DTGraphInfo info;
+
+        GEODE_UNWRAP_INTO(auto coverageInt, value["coverage"].asInt());
+        info.coverage = static_cast<DTGraphCoverage>(coverageInt);
+        GEODE_UNWRAP_INTO(auto typeInt, value["type"].asInt());
+        info.type = static_cast<DTGraphType>(typeInt);
+        
+        GEODE_UNWRAP_INTO(info.thickness, value["thickness"].asDouble());
+        GEODE_UNWRAP_INTO(info.outlineThickness, value["outlineThickness"].asDouble());
+
+        GEODE_UNWRAP_INTO(info.color, value["color"].as<ccColor4B>());
+        GEODE_UNWRAP_INTO(info.outlineColor, value["outlineColor"].as<ccColor4B>());
+
+        GEODE_UNWRAP_INTO(info.name, value["name"].asString());
+
+        return Ok(info);
+    }
+
+    static matjson::Value toJson(const DTGraphInfo& value) {
+        matjson::Value obj = matjson::makeObject({
+            { "coverage", static_cast<int>(value.coverage) },
+            { "type", static_cast<int>(value.type) },
+            { "thickness", value.thickness },
+            { "outlineThickness", value.outlineThickness },
+            { "color", value.color },
+            { "outlineColor", value.outlineColor },
+            { "name", value.name }
         });
         return obj;
     }
