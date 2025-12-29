@@ -695,21 +695,23 @@ bool DTLayer::createDeathsString(const Deaths& deaths, const stringCustomazation
 
         auto format = custom.format;
 
+        std::string toReplaceWith = includeRunStart ? fmt::format("{}-{}", runSplit.start, runSplit.end) : fmt::format("{}", runSplit.end);
         format = std::regex_replace(
             format,
             std::regex("\\{per\\}"),
-            includeRunStart ? fmt::format("{}-{}", runSplit.start, runSplit.end) : fmt::format("{}", runSplit.end)
+            toReplaceWith
         );
-
+        
         format = std::regex_replace(
             format,
             std::regex("\\{d\\}"),
             std::to_string(amount)
         );
-
+        
         //old coloring
         //out += fmt::format("{}{}{}{}", nbColor, format, nbDeColor, custom.seperator);
-        out += fmt::format("{}{}", format, custom.seperator);
+        auto toAdd = fmt::format("{}{}", format, custom.seperator);
+        out += toAdd;
     }
 
     if (out == "")
