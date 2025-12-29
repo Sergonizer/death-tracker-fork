@@ -62,4 +62,6 @@ class GraphHolder : public CCNode {
         std::unordered_map<std::string, DTGraphNode*> allGraphs{};
 
         float prevZoom;
+
+        float labelMaskOffset = 8.5f;
 };

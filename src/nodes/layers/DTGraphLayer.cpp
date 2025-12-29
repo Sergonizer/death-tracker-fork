@@ -3,7 +3,8 @@
 
 DTGraphLayer* DTGraphLayer::create() {
     auto ret = new DTGraphLayer();
-    if (ret && ret->initAnchored(520, 280, "square01_001.png", {0.f, 0.f, 94.f, 94.f})) {
+    auto winSize = CCDirector::sharedDirector()->getWinSize();
+    if (ret && ret->initAnchored(winSize.width - 120, winSize.height - 30, "square01_001.png", {0.f, 0.f, 94.f, 94.f})) {
         ret->autorelease();
         return ret;
     }
@@ -29,16 +30,16 @@ bool DTGraphLayer::setup() {
     noGraphLabel->setPosition({46, 3});
     m_mainLayer->addChild(noGraphLabel);
 
-    auto graph = GraphHolder::create(ccp(475, 200));
-    graph->setPosition({268, 158});
+    auto graph = GraphHolder::create(ccp(m_size.height - 50, m_size.height - 50));
+    graph->setPosition({m_size.width - graph->getContentWidth() / 2 - 20, m_size.height / 2 + 5});
     this->m_mainLayer->addChild(graph);
 
-    CCScale9Sprite* FontTextDisplayBG = CCScale9Sprite::create("square02b_001.png", {0,0, 80, 80});
-    FontTextDisplayBG->setPosition(graph->getPosition());
-    FontTextDisplayBG->setContentSize(graph->getContentSize());
-    FontTextDisplayBG->setColor({0,0,0});
-    FontTextDisplayBG->setOpacity(125);
-    m_mainLayer->addChild(FontTextDisplayBG);
+    // CCScale9Sprite* FontTextDisplayBG = CCScale9Sprite::create("square02b_001.png", {0,0, 80, 80});
+    // FontTextDisplayBG->setPosition(graph->getPosition());
+    // FontTextDisplayBG->setContentSize(graph->getContentSize());
+    // FontTextDisplayBG->setColor({0,0,0});
+    // FontTextDisplayBG->setOpacity(125);
+    // m_mainLayer->addChild(FontTextDisplayBG);
 
     auto SessionSelectCont = CCNode::create();
     SessionSelectCont->setID("Session-Select-Container");

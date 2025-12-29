@@ -13,18 +13,6 @@ GraphHolder* GraphHolder::create(const CCSize& scaling){
 
 bool GraphHolder::init(const CCSize& scaling){
     if (!CCNode::init()) return false;
-
-    LabelsContainer = CCNode::create();
-    LabelsContainer->setID("labels-container");
-    this->addChild(LabelsContainer);
-
-    LabelsVerticalContainer = CCNode::create();
-    LabelsVerticalContainer->setID("labels-vertical-container");
-    LabelsContainer->addChild(LabelsVerticalContainer);
-
-    LabelsHorizontalContainer = CCNode::create();
-    LabelsHorizontalContainer->setID("labels-horizontal-container");
-    LabelsContainer->addChild(LabelsHorizontalContainer);
     
     this->setContentSize(scaling);
     this->setAnchorPoint({.5f, .5f});
@@ -34,6 +22,52 @@ bool GraphHolder::init(const CCSize& scaling){
     scrollLayer = AdvancedScrollLayer::create(scaling, scaling + ccp(.01f,.01f));
     scrollLayer->setHorizontalScrollbarPosition(true);
     this->addChild(scrollLayer);
+
+    LabelsContainer = CCNode::create();
+    LabelsContainer->setID("labels-container");
+    this->addChild(LabelsContainer);
+
+    CCPoint LabelsVerticalMaskShape[4] = {
+        ccp(0, 0),
+        ccp(40, 0),
+        ccp(40, scaling.height + labelMaskOffset),
+        ccp(0, scaling.height + labelMaskOffset)
+    };
+
+    auto LabelsVerticalMask = CCClippingNode::create();
+    auto verticalStencil = CCDrawNode::create();
+    verticalStencil->drawPolygon(LabelsVerticalMaskShape, 4, ccc4FFromccc4B({0, 0, 0, 0}), .01f, ccc4FFromccc4B({0,0,0,0}));
+    LabelsVerticalMask->setStencil(verticalStencil);
+    LabelsVerticalMask->setContentSize({40, scaling.height + labelMaskOffset});
+    LabelsVerticalMask->setAnchorPoint({1,0});
+    LabelsVerticalMask->setPositionY(-labelMaskOffset / 2);
+    LabelsContainer->addChild(LabelsVerticalMask);
+
+    LabelsVerticalContainer = CCNode::create();
+    LabelsVerticalContainer->setID("labels-vertical-container");
+    LabelsVerticalContainer->setPositionX(LabelsVerticalMask->getContentWidth());
+    LabelsVerticalMask->addChild(LabelsVerticalContainer);
+
+    CCPoint LabelsHorizontalMaskShape[4] = {
+        ccp(0, 0),
+        ccp(scaling.width + labelMaskOffset, 0),
+        ccp(scaling.width + labelMaskOffset, 40),
+        ccp(0, 40)
+    };
+
+    auto LabelsHorizontalMask = CCClippingNode::create();
+    auto horizontalStencil = CCDrawNode::create();
+    horizontalStencil->drawPolygon(LabelsHorizontalMaskShape, 4, ccc4FFromccc4B({0, 0, 0, 0}), .01f, ccc4FFromccc4B({0,0,0,0}));
+    LabelsHorizontalMask->setStencil(horizontalStencil);
+    LabelsHorizontalMask->setContentSize({scaling.width + labelMaskOffset, 40});
+    LabelsHorizontalMask->setAnchorPoint({0,1});
+    LabelsHorizontalMask->setPositionX(-labelMaskOffset / 2);
+    LabelsContainer->addChild(LabelsHorizontalMask);
+
+    LabelsHorizontalContainer = CCNode::create();
+    LabelsHorizontalContainer->setID("labels-horizontal-container");
+    LabelsHorizontalContainer->setPositionY(LabelsHorizontalMask->getContentHeight());
+    LabelsHorizontalMask->addChild(LabelsHorizontalContainer);
 
     GraphHolder::refreshBackground(fillColor, outlineThickness, outlineColor);
 
@@ -100,10 +134,13 @@ void GraphHolder::refreshGrid(){
         boldGridNode = CCDrawNode::create();
         boldGridNode->setZOrder(-1);
         boldGridNode->m_bUseArea = false;
-        this->addChild(boldGridNode);
+        mask->addChild(boldGridNode);
     }
 
-    auto devidedSize = (scrollLayer->content->getContentSize() * scrollLayer->getCurrentZoom() + this->getContentSize()) / 100;
+    auto lowerCorner = this->convertToNodeSpace(scrollLayer->content->convertToWorldSpace({0, 0}));
+    auto heigherCorner = this->convertToNodeSpace(scrollLayer->content->convertToWorldSpace(scrollLayer->content->getContentSize()));
+
+    CCSize devidedSize = (heigherCorner - lowerCorner) / 100;
 
     for (int i = 0; i <= 100; i++){
         if (floor(static_cast<float>(i) / labelEvery) == static_cast<float>(i) / labelEvery){
@@ -125,12 +162,20 @@ void GraphHolder::updateLabels(){
     LabelsHorizontalContainer->removeAllChildrenWithCleanup(true);
     LabelsVerticalContainer->removeAllChildrenWithCleanup(true);
 
-    auto devidedSize = (scrollLayer->content->getContentSize() * scrollLayer->getCurrentZoom() + this->getContentSize()) / 100;
+    auto HlowerCorner = LabelsHorizontalContainer->getParent()->convertToNodeSpace(scrollLayer->content->convertToWorldSpace({0, 0}));
+    auto HheigherCorner = LabelsHorizontalContainer->getParent()->convertToNodeSpace(scrollLayer->content->convertToWorldSpace(scrollLayer->content->getContentSize()));
+
+    CCSize devidedHSize = (HheigherCorner - HlowerCorner) / 100;
+
+    auto VlowerCorner = LabelsVerticalContainer->getParent()->convertToNodeSpace(scrollLayer->content->convertToWorldSpace({0, 0}));
+    auto VheigherCorner = LabelsVerticalContainer->getParent()->convertToNodeSpace(scrollLayer->content->convertToWorldSpace(scrollLayer->content->getContentSize()));
+
+    CCSize devidedVSize = (VheigherCorner - VlowerCorner) / 100;
 
     for (int i = 0; i <= 100; i++)
     {
         auto labelPr = CCSprite::createWithSpriteFrameName("gridLine01_001.png");
-        labelPr->setPositionX(i * devidedSize.width);
+        labelPr->setPositionX(i * devidedHSize.width);
         labelPr->setRotation(90);
         labelPr->setColor({smallLineColor.r, smallLineColor.g, smallLineColor.b});
         labelPr->setOpacity(smallLineColor.a);
@@ -145,7 +190,7 @@ void GraphHolder::updateLabels(){
             labelPr->setOpacity(boldLineColor.a);
 
             auto labelPrText = CCLabelBMFont::create(std::to_string(i).c_str(), "chatFont.fnt");
-            labelPrText->setPositionX(i * devidedSize.width);
+            labelPrText->setPositionX(i * devidedHSize.width);
             labelPrText->setScale(0.4f);
             labelPrText->setPositionY(-labelPr->getScaledContentSize().width - labelPrText->getScaledContentSize().height);
             labelPrText->setColor({labelColor.r, labelColor.g, labelColor.b});
@@ -166,7 +211,7 @@ void GraphHolder::updateLabels(){
         //
 
         auto labelPS = CCSprite::createWithSpriteFrameName("gridLine01_001.png");
-        labelPS->setPositionY(i * devidedSize.height);
+        labelPS->setPositionY(i * devidedVSize.height);
         labelPS->setColor({smallLineColor.r, smallLineColor.g, smallLineColor.b});
         labelPS->setOpacity(smallLineColor.a);
         LabelsVerticalContainer->addChild(labelPS);
@@ -178,7 +223,7 @@ void GraphHolder::updateLabels(){
             labelPS->setOpacity(boldLineColor.a);
 
             auto labelPSText = CCLabelBMFont::create(std::to_string(i).c_str(), "chatFont.fnt");
-            labelPSText->setPositionY(i * devidedSize.height);
+            labelPSText->setPositionY(i * devidedVSize.height);
             labelPSText->setScale(0.4f);
             labelPSText->setPositionX(-labelPS->getScaledContentSize().width - XForPr);
             labelPSText->setColor({labelColor.r, labelColor.g, labelColor.b});
@@ -233,11 +278,10 @@ void GraphHolder::update(float dt){
         GraphHolder::updateLabels();
     }
 
-    auto posInSpace = LabelsHorizontalContainer->getParent()->convertToNodeSpace(scrollLayer->content->convertToWorldSpace(scrollLayer->content->getPosition()));
+    auto posInSpaceH = LabelsHorizontalContainer->getParent()->convertToNodeSpace(scrollLayer->content->convertToWorldSpace({0,0}));
+    auto posInSpaceV = LabelsVerticalContainer->getParent()->convertToNodeSpace(scrollLayer->content->convertToWorldSpace({0,0}));
 
-    auto zoomModification = this->getContentSize() * ((scrollLayer->getCurrentZoom() - 1) * 0.5f);
-
-    LabelsHorizontalContainer->setPositionX(posInSpace.x - zoomModification.width);
-    LabelsVerticalContainer->setPositionY(posInSpace.y - zoomModification.height);
-    boldGridNode->setPosition(posInSpace - zoomModification);
+    LabelsHorizontalContainer->setPositionX(posInSpaceH.x);
+    LabelsVerticalContainer->setPositionY(posInSpaceV.y);
+    boldGridNode->setPosition({posInSpaceH.x - labelMaskOffset / 2, posInSpaceV.y - labelMaskOffset / 2});
 }
