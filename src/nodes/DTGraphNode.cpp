@@ -107,6 +107,13 @@ void DTGraphNode::updateGraphContent(){
 
         CCPoint previousPoint = ccp(-1, -1);
 
+        std::optional<int> endPointIndex = std::nullopt;
+        bool firstPercentPoint = false;
+
+        bool secondPercentPoint = false;
+        int firstAfterSecondPointIndex = -1;
+        int firstAfterSecondPoint = -1;
+
         for (const auto& dwp : deathsWithPassCount)
         {
             //save point
@@ -128,20 +135,45 @@ void DTGraphNode::updateGraphContent(){
                 }
             }
 
+            if (myPoint.x == 100)
+                endPointIndex = points.size();
+
+            if (!secondPercentPoint && firstAfterSecondPoint == -1 && myPoint.x > 2){
+                firstAfterSecondPoint = myPoint.x;
+                firstAfterSecondPointIndex = points.size();
+            }
+
+            if (myPoint.x == 1)
+                firstPercentPoint = true;
+            if (myPoint.x == 2)
+                secondPercentPoint = true;
+
             points.emplace_back(myPoint * scaling);
             previousPoint = myPoint;
         }
 
         if (points.size()){
-            if (points[points.size() - 1].x == 100 * scaling.width){
-                points[points.size() - 1].y = 100 * scaling.height;
+            int added = 0;
+            if (points[0].x != 0){
+                points.insert(points.begin(), ccp(0, 100 * scaling.height));
+                added++;
+                if (!firstPercentPoint){
+
+
+                    if (!secondPercentPoint){
+                        points.insert(std::next(points.begin(), firstAfterSecondPointIndex + 1), ccp((firstAfterSecondPoint - 1) * scaling.width, 100 * scaling.height));
+                        added++;
+                    }
+                }
+            }
+
+            if (endPointIndex.has_value()){
+                points[endPointIndex.value() + added].y = 100 * scaling.height;
+                if (endPointIndex.value() - 1 != 0)
+                    points.erase(std::next(points.begin(), endPointIndex.value() + added - 1 ));
             }
             else{
                 points.push_back(ccp(100 * scaling.width, 0));
-            }
-
-            if (points[0].x != 0){
-                points.insert(points.begin(), ccp(0, 100 * scaling.height));
             }
         }
     }
