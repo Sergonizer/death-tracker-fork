@@ -1,0 +1,136 @@
+#include "GraphCell.hpp"
+#include <managers/StatsManager.hpp>
+#include <nodes/SimpleToggler.hpp>
+
+GraphCell* GraphCell::create(float width, const DTGraphInfo& graphInfo){
+    auto ret = new GraphCell();
+    if (ret && ret->init(width, graphInfo)) {
+        ret->autorelease();
+    } else {
+        delete ret;
+        ret = nullptr;
+    }
+    return ret;
+}
+
+bool GraphCell::init(float width, const DTGraphInfo& graphInfo){
+    if (!CCMenu::init()) return false;
+
+    this->setContentSize({width, 32});
+
+    this->graphInfo = graphInfo;
+
+    auto bg = CCScale9Sprite::create("square01_001.png");
+    bg->setAnchorPoint({0, 0});
+    bg->setScale(.2f);
+    bg->setContentSize((this->getContentSize() - ccp(0, 2.5f)) / bg->getScale());
+    this->addChild(bg);
+
+    auto label = SimpleTextArea::create(graphInfo.name, "bigFont.fnt");
+    label->setScale(.25f);
+    label->setAnchorPoint({0, 1});
+    label->setPosition(ccp(0 + 3, this->getContentHeight() - 5));
+    label->setWidth(width - 10);
+    label->setAlignment(CCTextAlignment::kCCTextAlignmentLeft);
+    this->addChild(label);
+
+    auto outerColor = CCSprite::create("circle.png");
+    outerColor->setColor({graphInfo.outlineColor.r, graphInfo.outlineColor.g, graphInfo.outlineColor.b});
+    outerColor->setOpacity(graphInfo.outlineColor.a);
+
+    auto innerColor = CCSprite::create("circle.png");
+    innerColor->setScale(.75f);
+    innerColor->setPosition(outerColor->getContentSize() / 2);
+    innerColor->setColor({graphInfo.color.r, graphInfo.color.g, graphInfo.color.b});
+    innerColor->setOpacity(graphInfo.color.a);
+    outerColor->addChild(innerColor);
+
+    auto disabledCircle = CCSprite::create("circle.png");
+    disabledCircle->setColor({ 84, 43, 43 });
+
+    auto disabledCircleX = CCSprite::createWithSpriteFrameName("edit_delBtnSmall_001.png");
+    disabledCircleX->setPosition(disabledCircle->getContentSize() / 2);
+    disabledCircleX->setScale(.4f);
+    disabledCircle->addChild(disabledCircleX);
+
+    auto enableToggleBtn = SimpleToggler::create(
+        disabledCircle,
+        outerColor,
+        1.5f,
+        graphInfo.isEnabled
+    );
+    enableToggleBtn->setPosition(label->getPosition() + ccp(
+        enableToggleBtn->getContentWidth() / 2,
+        -label->getScaledContentHeight() - enableToggleBtn->getContentHeight() / 2 - 2
+    ));
+    enableToggleBtn->setZOrder(1);
+    enableToggleBtn->setCallback([&](auto state){
+        this->graphInfo.isEnabled = state;
+
+        onEnabledChanged(this);
+    });
+    this->addChild(enableToggleBtn);
+
+    auto bgCircle = CCSprite::create("circle.png");
+    bgCircle->setColor({0,0,0});
+    bgCircle->setPosition(enableToggleBtn->getPosition());
+    bgCircle->setScale(1.7f);
+    this->addChild(bgCircle);
+
+    this->setZOrder(graphInfo.orderPos);
+
+    auto arrowDownSpr = CCSprite::createWithSpriteFrameName("GJ_arrow_01_001.png");
+    arrowDownSpr->setScale(.2f);
+    arrowDownSpr->setRotation(-90);
+    auto arrowDown = CCMenuItemSpriteExtra::create(
+        arrowDownSpr,
+        this,
+        menu_selector(GraphCell::onArrowDown)
+    );
+    arrowDown->setPosition({
+        width - arrowDown->getContentWidth() / 2 - 4,
+        6
+    });
+    this->addChild(arrowDown);
+
+    auto arrowUpSpr = CCSprite::createWithSpriteFrameName("GJ_arrow_01_001.png");
+    arrowUpSpr->setScale(.2f);
+    arrowUpSpr->setRotation(90);
+    auto arrowUp = CCMenuItemSpriteExtra::create(
+        arrowUpSpr,
+        this,
+        menu_selector(GraphCell::onArrowUp)
+    );
+    arrowUp->setPosition({
+        arrowDown->getPositionX(),
+        arrowDown->getPositionY() + arrowUp->getContentHeight() / 2 + arrowDown->getContentHeight() / 2 + 1
+    });
+    this->addChild(arrowUp);
+
+    auto settingBtnSpr = CCSprite::createWithSpriteFrameName("GJ_optionsBtn_001.png");
+    settingBtnSpr->setScale(.275f);
+    auto settingBtn = CCMenuItemSpriteExtra::create(
+        settingBtnSpr,
+        this,
+        menu_selector(GraphCell::onOptions)
+    );
+    settingBtn->setPosition({width / 2, enableToggleBtn->getPositionY()});
+    this->addChild(settingBtn);
+
+    return true;
+}
+
+void GraphCell::onArrowUp(CCObject*){
+    if (onArrowCallback != NULL) onArrowCallback(this, true);
+}
+void GraphCell::onArrowDown(CCObject*){
+    if (onArrowCallback != NULL) onArrowCallback(this, false);
+}
+void GraphCell::onOptions(CCObject*){
+    if (onOptionsCallback != NULL) onOptionsCallback(this);
+}
+
+void GraphCell::setOrderPos(int pos){
+    graphInfo.orderPos = pos;
+    this->setZOrder(pos);
+}

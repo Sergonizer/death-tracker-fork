@@ -36,4 +36,7 @@ class Save {
 
         static stringCustomazations getSessionRunCustomazations();
         static void setSessionRunCustomazations(const stringCustomazations& sessionRunCustom);
+        
+        static std::vector<DTGraphInfo> getGraphs();
+        static void setGraphs(const std::vector<DTGraphInfo>& graphs);
 };

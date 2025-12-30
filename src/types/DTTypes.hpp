@@ -505,14 +505,20 @@ enum DTGraphType{
 };
 
 struct DTGraphInfo {
-    DTGraphCoverage coverage;
-    DTGraphType type;
+    bool isEnabled = true;
 
-    float thickness;
-    float outlineThickness;
+    DTGraphCoverage coverage = DTGraphCoverage::GeneralCover;
+    DTGraphType type = DTGraphType::Passrate;
 
-    ccColor4B color;
-    ccColor4B outlineColor;
+    int orderPos;
+
+    float thickness = 1.0f;
+    float outlineThickness = 0.75f;
+    float pointScale = 0.1f;
+
+    ccColor4B color = {255, 255, 255, 255};
+    ccColor4B outlineColor = { 113, 113, 113, 255 };
+    ccColor4B pointColor = { 113, 113, 113, 255 };
 
     std::string name;
 };

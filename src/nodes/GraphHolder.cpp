@@ -308,7 +308,7 @@ void GraphHolder::addGraph(const DTGraphInfo& graph){
     auto lowerCorner = this->convertToNodeSpace(scrollLayer->content->convertToWorldSpace({0, 0}));
     auto heigherCorner = this->convertToNodeSpace(scrollLayer->content->convertToWorldSpace(scrollLayer->content->getContentSize()));
 
-    CCSize size = (heigherCorner - lowerCorner);
+    CCSize size = (heigherCorner - lowerCorner - inGraphOffset);
 
     auto graphNode = DTGraphNode::create();
     graphNode->setInfo(graph);

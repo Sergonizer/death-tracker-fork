@@ -76,3 +76,10 @@ stringCustomazations Save::getSessionRunCustomazations(){
 void Save::setSessionRunCustomazations(const stringCustomazations& sessionRunCustom){
     Mod::get()->setSavedValue("SessionRunCustom", sessionRunCustom);
 }
+
+std::vector<DTGraphInfo> Save::getGraphs(){
+    return Mod::get()->getSavedValue<std::vector<DTGraphInfo>>("graphs");
+}
+void Save::setGraphs(const std::vector<DTGraphInfo>& graphs){
+    Mod::get()->setSavedValue("graphs", graphs);
+}

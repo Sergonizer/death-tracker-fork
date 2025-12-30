@@ -1,6 +1,6 @@
 #include <nodes/GraphPoint.hpp>
 
-GraphPoint* GraphPoint::create(const std::string& run, const float& passrate, const ccColor3B& color) {
+GraphPoint* GraphPoint::create(const std::string& run, const float& passrate, const ccColor4B& color) {
     auto ret = new GraphPoint();
     if (ret && ret->init(run, passrate, color)) {
         ret->autorelease();
@@ -11,13 +11,14 @@ GraphPoint* GraphPoint::create(const std::string& run, const float& passrate, co
     return ret;
 }
 
-bool GraphPoint::init(const std::string& run, const float& passrate, const ccColor3B& color){
+bool GraphPoint::init(const std::string& run, const float& passrate, const ccColor4B& color){
 
     m_Run = run;
     m_Passrate = passrate;
 
     c = CCSprite::createWithSpriteFrameName("d_circle_02_001.png");
-    c->setColor(color);
+    c->setColor({color.r, color.g, color.b});
+    c->setOpacity(color.a);
     c->setPosition(c->getContentSize());
     this->addChild(c);
 

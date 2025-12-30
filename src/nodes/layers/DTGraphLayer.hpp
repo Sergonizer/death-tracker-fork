@@ -1,9 +1,10 @@
 #pragma once
 
 #include <Geode/Geode.hpp>
-#include "../layers/DTLayer.hpp"
-#include "../GraphPoint.hpp"
-#include "../GraphHolder.hpp"
+#include <nodes/layers/DTLayer.hpp>
+#include <nodes/GraphPoint.hpp>
+#include <nodes/GraphHolder.hpp>
+#include <nodes/GraphCell.hpp>
 
 using namespace geode::prelude;
 
@@ -25,4 +26,24 @@ class DTGraphLayer : public Popup<>, public TextInputDelegate, public GraphPoint
 
         //handle the layer closing and refresh the text
         void onClose(cocos2d::CCObject*) override;
+
+        void update(float dt) override;
+
+        GraphHolder* graph;
+
+        ScrollLayer* graphsScroll;
+        TextInput* runSelectInput;
+
+        void onAddGraph(CCObject*);
+
+        void addGraph();
+        void addGraph(const DTGraphInfo& info);
+        void removeGraph(const std::string& graphName);
+
+        void openOptionsFor(GraphCell* cell);
+        CCMenu* graphsPage;
+        CCMenu* graphOptionsPage;
+
+        void onBaseColor(CCObject*);
+        void onOutlineColor(CCObject*);
 };

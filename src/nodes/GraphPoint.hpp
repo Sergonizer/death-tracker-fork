@@ -14,10 +14,10 @@ class GraphPointDelegate {
 
 class GraphPoint : public CCMenuItem {
     protected:
-        bool init(const std::string& run, const float& passrate, const ccColor3B& color);
+        bool init(const std::string& run, const float& passrate, const ccColor4B& color);
         
     public:
-        static GraphPoint* create(const std::string& run, const float& passrate, const ccColor3B& color);
+        static GraphPoint* create(const std::string& run, const float& passrate, const ccColor4B& color);
 
         //set the delegate for the point
         void setDelegate(GraphPointDelegate* Delegate);

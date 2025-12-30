@@ -53,6 +53,9 @@ void DTGraphNode::setInfo(const DTGraphInfo& info){
         }
     }
 
+    this->setZOrder(info.orderPos);
+    this->setVisible(info.isEnabled);
+
     updateGraphContent();
 }
 
@@ -206,16 +209,6 @@ void DTGraphNode::updateGraphContent(){
         
     }
 
-    //log::info("added lines");
-
-    ccColor3B colorOfPoints;
-
-    if ((info.value().color.r + info.value().color.g + info.value().color.b) / 3 > 200)
-        colorOfPoints = {255, 255, 255};
-    else
-        colorOfPoints = { 136, 136, 136};
-
-
     if (lineNode != nullptr) lineNode->clear();
     else{
         lineNode = CCDrawNode::create();
@@ -229,6 +222,8 @@ void DTGraphNode::updateGraphContent(){
     
     //log::info("{} | {}", myGraph.points.size(), deaths.size());
 
+    std::vector<CCPoint> segmentList{};
+
     bool isFirst = false;
     CCPoint prevPoint;
     for (const CCPoint& linePoint : points)
@@ -239,11 +234,10 @@ void DTGraphNode::updateGraphContent(){
             if (RunStartPercent != 0)
                 pointText.insert(0, fmt::format("{}% - ", RunStartPercent));
 
-            auto GP = GraphPoint::create(pointText, linePoint.y / scaling.height, colorOfPoints);
+            auto GP = GraphPoint::create(pointText, linePoint.y / scaling.height, info.value().pointColor);
             //GP->setDelegate(this);
             GP->setPosition(linePoint);
-            //GP->setScale(Settings::getGraphPointSize() / 20 + 0.01f);
-            GP->setScale(0.1f);
+            GP->setScale(info.value().pointScale);
             pointHolder->addChild(GP);
         }
 
@@ -253,11 +247,14 @@ void DTGraphNode::updateGraphContent(){
             continue;
         }
 
-        lineNode->drawSegment(prevPoint, linePoint, info.value().thickness + info.value().outlineThickness, ccc4FFromccc4B(info.value().outlineColor));
-        lineNode->drawSegment(prevPoint, linePoint, info.value().thickness, ccc4FFromccc4B(info.value().color));
+        segmentList.push_back(prevPoint);
+        segmentList.push_back(linePoint);
 
         prevPoint = linePoint;
     }
+
+    lineNode->drawLines(&segmentList[0], segmentList.size(), info.value().thickness + info.value().outlineThickness, ccc4FFromccc4B(info.value().outlineColor));
+    lineNode->drawLines(&segmentList[0], segmentList.size(), info.value().thickness, ccc4FFromccc4B(info.value().color));
 }
 
 void DTGraphNode::getGeneralDeaths(){
