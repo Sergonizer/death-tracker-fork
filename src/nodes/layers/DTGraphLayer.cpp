@@ -1,7 +1,6 @@
 #include <nodes/layers/DTGraphLayer.hpp>
 #include <utils/Settings.hpp>
 #include <utils/Save.hpp>
-#include <nodes/OptionSwitcher.hpp>
 
 DTGraphLayer* DTGraphLayer::create() {
     auto ret = new DTGraphLayer();
@@ -66,7 +65,7 @@ bool DTGraphLayer::setup() {
     SessionSelectionLabel->setPositionY(-graphsScroll->getContentHeight() - 5 - SessionSelectionLabel->getScaledContentHeight() / 2);
     graphsPage->addChild(SessionSelectionLabel);
 
-    auto sessionSelector = SessionSelector::create(DTLayer::get()->sessionsOrder.size());
+    sessionSelector = SessionSelector::create(DTLayer::get()->sessionsOrder.size());
     sessionSelector->setCurrentCount(DTLayer::get()->getCurrentSelectedSession());
     sessionSelector->setScale(0.45f);
     sessionSelector->setPositionY(SessionSelectionLabel->getPositionY() - SessionSelectionLabel->getScaledContentHeight() / 2 - sessionSelector->getScaledContentHeight() / 2);
@@ -115,10 +114,15 @@ bool DTGraphLayer::setup() {
     nameLabel->setScale(.3f);
     graphOptionsPage->addChild(nameLabel);
 
-    auto nameInput = TextInput::create(90, "Name", "bigFont.fnt");
+    nameInput = TextInput::create(90, "Name", "bigFont.fnt");
     nameInput->setAnchorPoint({.5f, 1});
     nameInput->setScale(.75f);
     nameInput->setPositionY(-nameLabel->getScaledContentHeight() / 2);
+    nameInput->setCallback([&](const auto& newStr){
+        if (!editedGraph.has_value()) return;
+
+        editedGraph.value()->setName(newStr);
+    });
     graphOptionsPage->addChild(nameInput);
 
     auto coverageLabel = CCLabelBMFont::create("Coverage", "bigFont.fnt");
@@ -127,7 +131,7 @@ bool DTGraphLayer::setup() {
     coverageLabel->setPositionY(nameInput->getPositionY() - nameInput->getScaledContentHeight() - 5);
     graphOptionsPage->addChild(coverageLabel);
 
-    auto coverageSwitcher = OptionSwitcher<DTGraphCoverage>::create(90, {
+    coverageSwitcher = OptionSwitcher<DTGraphCoverage>::create(90, {
         {DTGraphCoverage::GeneralCover, "General"},
         {DTGraphCoverage::GeneralRunsCover, "General Runs"},
         {DTGraphCoverage::SessionCover, "Session"},
@@ -138,7 +142,9 @@ bool DTGraphLayer::setup() {
     coverageSwitcher->setAnchorPoint({.5f, 1});
     coverageSwitcher->setPositionY(coverageLabel->getPositionY() - coverageLabel->getScaledContentHeight());
     coverageSwitcher->setCallback([&](auto value){
+        if (!editedGraph.has_value()) return;
 
+        editedGraph.value()->setCoverage(value);
     });
     graphOptionsPage->addChild(coverageSwitcher);
 
@@ -148,7 +154,7 @@ bool DTGraphLayer::setup() {
     typeLabel->setPositionY(coverageSwitcher->getPositionY() - coverageSwitcher->getScaledContentHeight() - 5);
     graphOptionsPage->addChild(typeLabel);
 
-    auto typeSwitcher = OptionSwitcher<DTGraphType>::create(90, {
+    typeSwitcher = OptionSwitcher<DTGraphType>::create(90, {
         {DTGraphType::Passrate, "Passrate"},
         {DTGraphType::Reachrate, "Reachrate"}
     });
@@ -156,7 +162,9 @@ bool DTGraphLayer::setup() {
     typeSwitcher->setAnchorPoint({.5f, 1});
     typeSwitcher->setPositionY(typeLabel->getPositionY() - typeLabel->getScaledContentHeight());
     typeSwitcher->setCallback([&](auto value){
+        if (!editedGraph.has_value()) return;
 
+        editedGraph.value()->setType(value);
     });
     graphOptionsPage->addChild(typeSwitcher);
 
@@ -180,23 +188,43 @@ bool DTGraphLayer::setup() {
     thicknessOutlineLabel->setPositionX(0);
     graphOptionsPage->addChild(thicknessOutlineLabel);
 
-    auto thicknessBaseInput = TextInput::create(40, "X", "bigFont.fnt");
+    thicknessBaseInput = TextInput::create(40, "X", "bigFont.fnt");
     thicknessBaseInput->setScale(.75f);
     thicknessBaseInput->setAnchorPoint({.5f, 1});
     thicknessBaseInput->setPositionY(thicknessBaseLabel->getPositionY() - thicknessBaseLabel->getScaledContentHeight());
     thicknessBaseInput->setPositionX(thicknessBaseLabel->getPositionX() - thicknessBaseLabel->getScaledContentWidth() / 2);
+    thicknessBaseInput->setCommonFilter(CommonFilter::Float);
     thicknessBaseInput->setCallback([&](auto value){
+        if (!editedGraph.has_value()) return;
 
+        auto numRes = utils::numFromString<float>(value);
+        if (numRes.isErr()) return;
+
+        float num = numRes.unwrap();
+
+        if (num < 0) num = 0;
+
+        editedGraph.value()->setThickness(num);
     });
     graphOptionsPage->addChild(thicknessBaseInput);
 
-    auto thicknessOutlineInput = TextInput::create(40, "X", "bigFont.fnt");
+    thicknessOutlineInput = TextInput::create(40, "X", "bigFont.fnt");
     thicknessOutlineInput->setScale(.75f);
     thicknessOutlineInput->setAnchorPoint({.5f, 1});
     thicknessOutlineInput->setPositionY(thicknessOutlineLabel->getPositionY() - thicknessOutlineLabel->getScaledContentHeight());
     thicknessOutlineInput->setPositionX(thicknessOutlineLabel->getPositionX() + thicknessOutlineLabel->getScaledContentWidth() / 2);
+    thicknessOutlineInput->setCommonFilter(CommonFilter::Float);
     thicknessOutlineInput->setCallback([&](auto value){
+        if (!editedGraph.has_value()) return;
 
+        auto numRes = utils::numFromString<float>(value);
+        if (numRes.isErr()) return;
+
+        float num = numRes.unwrap();
+
+        if (num < 0) num = 0;
+
+        editedGraph.value()->setOutlineThickness(num);
     });
     graphOptionsPage->addChild(thicknessOutlineInput);
 
@@ -220,35 +248,39 @@ bool DTGraphLayer::setup() {
     colorOutlineLabel->setPositionX(0);
     graphOptionsPage->addChild(colorOutlineLabel);
 
-    auto colorBaseBtnSpr = CCSprite::createWithSpriteFrameName("GJ_colorBtn_001.png");
-    colorBaseBtnSpr->setScale(.75f);
+    colorBaseBtnSpr = CCSprite::createWithSpriteFrameName("GJ_colorBtn_001.png");
+    colorBaseBtnSpr->setScale(.6f);
     auto colorBaseBtn = CCMenuItemSpriteExtra::create(
         colorBaseBtnSpr,
         this,
-        menu_selector(DTGraphLayer::onBaseColor)
+        menu_selector(DTGraphLayer::onColor)
     );
     colorBaseBtn->setPositionY(colorBaseLabel->getPositionY() - colorBaseLabel->getScaledContentHeight() - colorBaseBtn->getContentHeight() / 2);
     colorBaseBtn->setPositionX(colorBaseLabel->getPositionX() - colorBaseLabel->getScaledContentWidth() / 2);
+    colorBaseBtn->setID("line");
+    colorBaseBtn->setTag(1);
     graphOptionsPage->addChild(colorBaseBtn);
 
-    auto colorOutlineBtnSpr = CCSprite::createWithSpriteFrameName("GJ_colorBtn_001.png");
-    colorOutlineBtnSpr->setScale(.75f);
+    colorOutlineBtnSpr = CCSprite::createWithSpriteFrameName("GJ_colorBtn_001.png");
+    colorOutlineBtnSpr->setScale(.6f);
     auto colorOutlineBtn = CCMenuItemSpriteExtra::create(
         colorOutlineBtnSpr,
         this,
-        menu_selector(DTGraphLayer::onOutlineColor)
+        menu_selector(DTGraphLayer::onColor)
     );
     colorOutlineBtn->setPositionY(colorOutlineLabel->getPositionY() - colorOutlineLabel->getScaledContentHeight() - colorOutlineBtn->getContentHeight() / 2);
     colorOutlineBtn->setPositionX(colorOutlineLabel->getPositionX() + colorOutlineLabel->getScaledContentWidth() / 2);
+    colorOutlineBtn->setID("line");
+    colorOutlineBtn->setTag(2);
     graphOptionsPage->addChild(colorOutlineBtn);
 
     auto pointLabel = CCLabelBMFont::create("Point", "bigFont.fnt");
     pointLabel->setScale(.3f);
     pointLabel->setAnchorPoint({.5f, 1});
-    pointLabel->setPositionY(colorOutlineBtn->getPositionY() - colorOutlineBtn->getScaledContentHeight() - 5);
+    pointLabel->setPositionY(colorOutlineBtn->getPositionY() - colorOutlineBtn->getScaledContentHeight() / 2 - 5);
     graphOptionsPage->addChild(pointLabel);
 
-    auto pointColorLabel = CCLabelBMFont::create("Base", "bigFont.fnt");
+    auto pointColorLabel = CCLabelBMFont::create("Color", "bigFont.fnt");
     pointColorLabel->setScale(.25f);
     pointColorLabel->setAnchorPoint({1, 1});
     pointColorLabel->setPositionY(pointLabel->getPositionY() - pointLabel->getScaledContentHeight());
@@ -262,26 +294,43 @@ bool DTGraphLayer::setup() {
     pointScaleLabel->setPositionX(0);
     graphOptionsPage->addChild(pointScaleLabel);
 
-    auto pointScaleInput = TextInput::create(40, "X", "bigFont.fnt");
+    pointScaleInput = TextInput::create(40, "X", "bigFont.fnt");
     pointScaleInput->setScale(.75f);
     pointScaleInput->setAnchorPoint({.5f, 1});
     pointScaleInput->setPositionY(pointScaleLabel->getPositionY() - pointScaleLabel->getScaledContentHeight());
-    pointScaleInput->setPositionX(pointScaleLabel->getPositionX() - pointScaleLabel->getScaledContentWidth() / 2);
+    pointScaleInput->setPositionX(pointScaleLabel->getPositionX() + pointScaleLabel->getScaledContentWidth() / 2);
+    pointScaleInput->setCommonFilter(CommonFilter::Float);
     pointScaleInput->setCallback([&](auto value){
+        if (!editedGraph.has_value()) return;
 
+        auto numRes = utils::numFromString<float>(value);
+        if (numRes.isErr()) return;
+
+        float num = numRes.unwrap();
+
+        if (num < 0) num = 0;
+
+        editedGraph.value()->setPointSize(num);
     });
     graphOptionsPage->addChild(pointScaleInput);
 
-    auto pointColorBtnSpr = CCSprite::createWithSpriteFrameName("GJ_colorBtn_001.png");
-    pointColorBtnSpr->setScale(.75f);
+    pointColorBtnSpr = CCSprite::createWithSpriteFrameName("GJ_colorBtn_001.png");
+    pointColorBtnSpr->setScale(.6f);
     auto pointColorBtn = CCMenuItemSpriteExtra::create(
         pointColorBtnSpr,
         this,
-        menu_selector(DTGraphLayer::onOutlineColor)
+        menu_selector(DTGraphLayer::onColor)
     );
     pointColorBtn->setPositionY(pointColorLabel->getPositionY() - pointColorLabel->getScaledContentHeight() - pointColorBtn->getContentHeight() / 2);
-    pointColorBtn->setPositionX(pointColorLabel->getPositionX() + pointColorLabel->getScaledContentWidth() / 2);
+    pointColorBtn->setPositionX(pointColorLabel->getPositionX() - pointColorLabel->getScaledContentWidth() / 2);
+    pointColorBtn->setID("point");
     graphOptionsPage->addChild(pointColorBtn);
+
+    graphOptionsPage->setEnabled(false);
+    nameInput->setEnabled(false);
+    thicknessBaseInput->setEnabled(false);
+    thicknessOutlineInput->setEnabled(false);
+    pointScaleInput->setEnabled(false);
     
     scheduleUpdate();
 
@@ -402,12 +451,19 @@ void DTGraphLayer::addGraph(const DTGraphInfo& info){
         }
 
         graphsScroll->m_contentLayer->updateLayout();
+
+        saveAllGraphs();
     };
     graphCell->onOptionsCallback = [&](GraphCell* cell){
         openOptionsFor(cell);
     };
     graphCell->onEnabledChanged = [&](GraphCell* cell){
         graph->getGraphNode(cell->getinfo().name)->setInfo(cell->getinfo());
+        saveAllGraphs();
+    };
+    graphCell->onInfoChangedCallback = [&](GraphCell* cell){
+        graph->getGraphNode(cell->getinfo().name)->setInfo(cell->getinfo());
+        saveAllGraphs();
     };
 
     graphsScroll->m_contentLayer->addChild(graphCell);
@@ -415,6 +471,8 @@ void DTGraphLayer::addGraph(const DTGraphInfo& info){
     graph->addGraph(info);
     
     graphsScroll->m_contentLayer->updateLayout();
+
+    saveAllGraphs();
 }
 
 void DTGraphLayer::removeGraph(const std::string& graphName){
@@ -446,11 +504,126 @@ void DTGraphLayer::openOptionsFor(GraphCell* cell){
         exitEasing(true),
         nullptr
     ));
+
+    auto cellInfo = cell->getinfo();
+
+    nameInput->setString(cellInfo.name);
+    coverageSwitcher->setValue(cellInfo.coverage);
+    typeSwitcher->setValue(cellInfo.type);
+    thicknessBaseInput->setString(fmt::format("{:.2f}", cellInfo.thickness));
+    thicknessOutlineInput->setString(fmt::format("{:.2f}", cellInfo.outlineThickness));
+    colorBaseBtnSpr->setColor({cellInfo.color.r, cellInfo.color.g, cellInfo.color.b});
+    colorBaseBtnSpr->setOpacity(cellInfo.color.a);
+    colorOutlineBtnSpr->setColor({cellInfo.outlineColor.r, cellInfo.outlineColor.g, cellInfo.outlineColor.b});
+    colorOutlineBtnSpr->setOpacity(cellInfo.outlineColor.a);
+    pointScaleInput->setString(fmt::format("{:.2f}", cellInfo.pointScale));
+    pointColorBtnSpr->setColor({cellInfo.pointColor.r, cellInfo.pointColor.g, cellInfo.pointColor.b});
+    pointColorBtnSpr->setOpacity(cellInfo.pointColor.a);
+
+    editedGraph = cell;
+    graphsScroll->setTouchEnabled(false);
+    graphsScroll->setMouseEnabled(false);
+    sessionSelector->setEnabled(false);
+    runSelectInput->setEnabled(false);
+    for (const auto& child : CCArrayExt<GraphCell*>(graphsScroll->m_contentLayer->getChildren()))
+    {
+        child->setEnabled(false);
+    }
+    
+
+    graphOptionsPage->setEnabled(true);
+    nameInput->setEnabled(true);
+    thicknessBaseInput->setEnabled(true);
+    thicknessOutlineInput->setEnabled(true);
+    pointScaleInput->setEnabled(true);
 }
 
-void DTGraphLayer::onBaseColor(CCObject*){
 
+void DTGraphLayer::onColor(CCObject* sender){
+    auto nodeSender = static_cast<CCNode*>(sender);
+
+    ColorPickPopup* popup = nullptr;
+
+    if (nodeSender->getID() == "line"){
+        ccColor4B color;
+        
+
+        if (nodeSender->getTag() == 1){
+            color = {
+                colorBaseBtnSpr->getColor().r,
+                colorBaseBtnSpr->getColor().g,
+                colorBaseBtnSpr->getColor().b,
+                colorBaseBtnSpr->getOpacity(),
+            };
+        }
+        else{
+            color = {
+                colorOutlineBtnSpr->getColor().r,
+                colorOutlineBtnSpr->getColor().g,
+                colorOutlineBtnSpr->getColor().b,
+                colorOutlineBtnSpr->getOpacity(),
+            };
+        }
+
+        popup = ColorPickPopup::create(color);
+        popup->setColorTarget(nodeSender->getTag() == 1 ? colorBaseBtnSpr : colorOutlineBtnSpr);
+
+        if (nodeSender->getTag() == 1){
+            callbacksForColorPopups = [&](const auto& color){
+                colorBaseBtnSpr->setColor({color.r, color.g, color.b});
+                colorBaseBtnSpr->setOpacity(color.a);
+
+                if (!editedGraph.has_value()) return;
+
+                editedGraph.value()->setColor(color);
+            };
+        }
+        else{
+            callbacksForColorPopups = [&](const auto& color){
+                colorOutlineBtnSpr->setColor({color.r, color.g, color.b});
+                colorOutlineBtnSpr->setOpacity(color.a);
+
+                if (!editedGraph.has_value()) return;
+
+                editedGraph.value()->setOutlineColor(color);
+            };
+        }
+    }
+    else if (nodeSender->getID() == "point"){
+        popup = ColorPickPopup::create({
+            pointColorBtnSpr->getColor().r,
+            pointColorBtnSpr->getColor().g,
+            pointColorBtnSpr->getColor().b,
+            pointColorBtnSpr->getOpacity(),
+        });
+
+        popup->setColorTarget(pointColorBtnSpr);
+
+        callbacksForColorPopups = [&](const auto& color){
+            pointColorBtnSpr->setColor({color.r, color.g, color.b});
+            pointColorBtnSpr->setOpacity(color.a);
+
+            if (!editedGraph.has_value()) return;
+
+            editedGraph.value()->setPointColor(color);
+        };
+    }
+
+    if (popup != nullptr) {
+        popup->setDelegate(this);
+        popup->show();
+    }
 }
-void DTGraphLayer::onOutlineColor(CCObject*){
 
+void DTGraphLayer::updateColor(cocos2d::ccColor4B const& color){
+    if (callbacksForColorPopups.has_value())
+        callbacksForColorPopups.value()(color);
+}
+
+void DTGraphLayer::saveAllGraphs(){
+    for (const auto& graphCell : CCArrayExt<GraphCell*>())
+    {
+        /* code */
+    }
+    
 }

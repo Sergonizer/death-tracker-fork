@@ -16,6 +16,9 @@ class OptionSwitcher : public CCMenu {
 
         void setCallback(const std::function<void(E)>& callback);
 
+        void setValue(int index);
+        void setValue(E e);
+
     private:
         std::vector<CCLabelBMFont*> labels{};
         std::vector<E> values{};
@@ -109,4 +112,29 @@ void OptionSwitcher<E>::onLabelClicked(CCObject* sender) {
 template<typename E>
 void OptionSwitcher<E>::setCallback(const std::function<void(E)>& cb) {
     this->callback = cb;
+}
+
+template<typename E>
+void OptionSwitcher<E>::setValue(int index){
+    auto prevNode = labels[currentOption];
+
+    currentOption = std::clamp(index, 0, static_cast<int>(labels.size() - 1));
+
+    prevNode->setVisible(false);
+
+    auto currNode = labels[currentOption];
+    currNode->setVisible(true);
+
+    if (callback) callback(values[currentOption]);
+}
+
+template<typename E>
+void OptionSwitcher<E>::setValue(E e){
+    for (int i = 0; i < values.size(); i++)
+    {
+        if (values[i] != e) continue;
+        
+        setValue(i);
+        return;
+    }
 }

@@ -16,13 +16,29 @@ class GraphCell : public CCMenu {
         std::function<void(GraphCell* cell, bool up)> onArrowCallback = NULL;
         std::function<void(GraphCell* cell)> onOptionsCallback = NULL;
         std::function<void(GraphCell* cell)> onEnabledChanged = NULL;
+        std::function<void(GraphCell* cell)> onInfoChangedCallback = NULL;
 
+        void setName(const std::string name);
+        void setCoverage(DTGraphCoverage coverage);
+        void setType(DTGraphType type);
         void setOrderPos(int pos);
+        void setThickness(float thickness);
+        void setOutlineThickness(float outlineThickness);
+        void setPointSize(float pointSize);
+        void setColor(ccColor4B color);
+        void setOutlineColor(ccColor4B color);
+        void setPointColor(ccColor4B color);
+
+        void onInfoChanged(bool updateGraph);
 
     private:
         bool init(float width, const DTGraphInfo& graphInfo);
 
         DTGraphInfo graphInfo;
+
+        SimpleTextArea* label;
+        CCSprite* outerColor;
+        CCSprite* innerColor;
 
         void onArrowUp(CCObject*);
         void onArrowDown(CCObject*);

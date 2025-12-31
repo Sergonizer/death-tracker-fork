@@ -26,7 +26,7 @@ bool GraphCell::init(float width, const DTGraphInfo& graphInfo){
     bg->setContentSize((this->getContentSize() - ccp(0, 2.5f)) / bg->getScale());
     this->addChild(bg);
 
-    auto label = SimpleTextArea::create(graphInfo.name, "bigFont.fnt");
+    label = SimpleTextArea::create(graphInfo.name, "bigFont.fnt");
     label->setScale(.25f);
     label->setAnchorPoint({0, 1});
     label->setPosition(ccp(0 + 3, this->getContentHeight() - 5));
@@ -34,11 +34,11 @@ bool GraphCell::init(float width, const DTGraphInfo& graphInfo){
     label->setAlignment(CCTextAlignment::kCCTextAlignmentLeft);
     this->addChild(label);
 
-    auto outerColor = CCSprite::create("circle.png");
+    outerColor = CCSprite::create("circle.png");
     outerColor->setColor({graphInfo.outlineColor.r, graphInfo.outlineColor.g, graphInfo.outlineColor.b});
     outerColor->setOpacity(graphInfo.outlineColor.a);
 
-    auto innerColor = CCSprite::create("circle.png");
+    innerColor = CCSprite::create("circle.png");
     innerColor->setScale(.75f);
     innerColor->setPosition(outerColor->getContentSize() / 2);
     innerColor->setColor({graphInfo.color.r, graphInfo.color.g, graphInfo.color.b});
@@ -133,4 +133,53 @@ void GraphCell::onOptions(CCObject*){
 void GraphCell::setOrderPos(int pos){
     graphInfo.orderPos = pos;
     this->setZOrder(pos);
+    onInfoChanged(true);
+}
+
+void GraphCell::setName(const std::string name){
+    graphInfo.name = name;
+    label->setText(name);
+    onInfoChanged(false);
+}
+void GraphCell::setCoverage(DTGraphCoverage coverage){
+    graphInfo.coverage = coverage;
+    onInfoChanged(true);
+}
+void GraphCell::setType(DTGraphType type){
+    graphInfo.type = type;
+    onInfoChanged(true);
+}
+
+void GraphCell::setThickness(float thickness){
+    graphInfo.thickness = thickness;
+    onInfoChanged(true);
+}
+void GraphCell::setOutlineThickness(float outlineThickness){
+    graphInfo.outlineThickness = outlineThickness;
+    onInfoChanged(true);
+}
+void GraphCell::setPointSize(float pointSize){
+    graphInfo.pointScale = pointSize;
+    onInfoChanged(true);
+}
+void GraphCell::setColor(ccColor4B color){
+    graphInfo.color = color;
+    innerColor->setColor({graphInfo.color.r, graphInfo.color.g, graphInfo.color.b});
+    innerColor->setOpacity(graphInfo.color.a);
+    onInfoChanged(true);
+}
+void GraphCell::setOutlineColor(ccColor4B color){
+    graphInfo.outlineColor = color;
+    outerColor->setColor({graphInfo.outlineColor.r, graphInfo.outlineColor.g, graphInfo.outlineColor.b});
+    outerColor->setOpacity(graphInfo.outlineColor.a);
+    onInfoChanged(true);
+}
+void GraphCell::setPointColor(ccColor4B color){
+    graphInfo.pointColor = color;
+    onInfoChanged(true);
+}
+
+void GraphCell::onInfoChanged(bool updateGraph){
+    if (updateGraph && onInfoChangedCallback != NULL)
+        onInfoChangedCallback(this);
 }
