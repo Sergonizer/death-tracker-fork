@@ -328,3 +328,10 @@ void GraphHolder::removeGraph(const std::string& graphName){
     allGraphs.erase(graphName);
 }
 
+void GraphHolder::sendKeyStuff(bool up, enumKeyCodes key){
+    if (up)
+        scrollLayer->keyUp(key);
+    else
+        scrollLayer->keyDown(key);
+}
+

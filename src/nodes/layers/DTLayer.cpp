@@ -7,6 +7,8 @@
 #include <regex>
 #include <utils/CCResizeWidthTo.hpp>
 
+#include <nodes/TutorialButton.hpp>
+
 float DTLayer::transitionTime = .35f;
 
 bool ColumnComperator::operator()(LayoutColumn* a, LayoutColumn* b) const {
@@ -258,6 +260,13 @@ bool DTLayer::setup(GJGameLevel* const& level) {
     );
     discardChangesButton->setPosition({-191, -140});
     editLayoutMenu->addChild(discardChangesButton);
+
+    auto testInfo = TutorialButton::create(.5f, [graphBtn](DTTutorialLayer* tutorialLayer){
+        tutorialLayer->appendDialogue(DialogObject::create("The Shopkeeper", "meow", 1, 1, false, {255, 255, 255}), DialogChatPlacement::Top);
+        tutorialLayer->joinHighlight(graphBtn);
+        tutorialLayer->appendDialogue(DialogObject::create("The Shopkeeper", "haha", 1, 1, false, {255, 255, 255}), DialogChatPlacement::Center);
+    });
+    bottomMenu->addChild(testInfo);
 
     // tutorial test
     // auto dark = CCScale9Sprite::create("pixel.png");

@@ -25,6 +25,9 @@ class DTGraphLayer : public Popup<>, public TextInputDelegate, public GraphPoint
         //have no point displayed if the deselected point was the was selected prior
         void OnPointDeselected(cocos2d::CCNode* point) override;
 
+        void keyDown(enumKeyCodes key) override;
+        void keyUp(enumKeyCodes key) override;
+
         //handle the layer closing and refresh the text
         void onClose(cocos2d::CCObject*) override;
 
@@ -65,4 +68,6 @@ class DTGraphLayer : public Popup<>, public TextInputDelegate, public GraphPoint
         std::optional<std::function<void(const ccColor4B&)>> callbacksForColorPopups = std::nullopt;
 
         void saveAllGraphs();
+
+        bool holdingShift;
     };

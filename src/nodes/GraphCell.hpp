@@ -2,6 +2,8 @@
 
 #include <Geode/Geode.hpp>
 #include <types/DTTypes.hpp>
+#include <nodes/SimpleToggler.hpp>
+#include <nodes/OptionSwitcher.hpp>
 
 using namespace geode::prelude;
 
@@ -31,11 +33,15 @@ class GraphCell : public CCMenu {
 
         void onInfoChanged(bool updateGraph);
 
-    private:
+        void setEnabledInfo(bool b, bool changeToggler, bool callback);
+        
+        private:
         bool init(float width, const DTGraphInfo& graphInfo);
+        
+        DTGraphInfo graphInfo;        
 
-        DTGraphInfo graphInfo;
-
+        OptionSwitcher<DTGraphType>* typeSwitcher;
+        SimpleToggler* enableToggleBtn;
         SimpleTextArea* label;
         CCSprite* outerColor;
         CCSprite* innerColor;

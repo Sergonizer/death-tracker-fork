@@ -1,6 +1,5 @@
 #include "GraphCell.hpp"
 #include <managers/StatsManager.hpp>
-#include <nodes/SimpleToggler.hpp>
 
 GraphCell* GraphCell::create(float width, const DTGraphInfo& graphInfo){
     auto ret = new GraphCell();
@@ -16,7 +15,7 @@ GraphCell* GraphCell::create(float width, const DTGraphInfo& graphInfo){
 bool GraphCell::init(float width, const DTGraphInfo& graphInfo){
     if (!CCMenu::init()) return false;
 
-    this->setContentSize({width, 32});
+    this->setContentSize({width, 45});
 
     this->graphInfo = graphInfo;
 
@@ -53,7 +52,7 @@ bool GraphCell::init(float width, const DTGraphInfo& graphInfo){
     disabledCircleX->setScale(.4f);
     disabledCircle->addChild(disabledCircleX);
 
-    auto enableToggleBtn = SimpleToggler::create(
+    enableToggleBtn = SimpleToggler::create(
         disabledCircle,
         outerColor,
         1.5f,
@@ -65,9 +64,7 @@ bool GraphCell::init(float width, const DTGraphInfo& graphInfo){
     ));
     enableToggleBtn->setZOrder(1);
     enableToggleBtn->setCallback([&](auto state){
-        this->graphInfo.isEnabled = state;
-
-        onEnabledChanged(this);
+        setEnabledInfo(state, false, true);
     });
     this->addChild(enableToggleBtn);
 
@@ -89,7 +86,7 @@ bool GraphCell::init(float width, const DTGraphInfo& graphInfo){
     );
     arrowDown->setPosition({
         width - arrowDown->getContentWidth() / 2 - 4,
-        6
+        10
     });
     this->addChild(arrowDown);
 
@@ -108,14 +105,36 @@ bool GraphCell::init(float width, const DTGraphInfo& graphInfo){
     this->addChild(arrowUp);
 
     auto settingBtnSpr = CCSprite::createWithSpriteFrameName("GJ_optionsBtn_001.png");
-    settingBtnSpr->setScale(.275f);
+    settingBtnSpr->setScale(.25f);
     auto settingBtn = CCMenuItemSpriteExtra::create(
         settingBtnSpr,
         this,
         menu_selector(GraphCell::onOptions)
     );
-    settingBtn->setPosition({width / 2, enableToggleBtn->getPositionY()});
+    settingBtn->setPosition({enableToggleBtn->getPositionX(), enableToggleBtn->getPositionY() - enableToggleBtn->getContentHeight() / 2 - settingBtn->getContentHeight() / 2});
     this->addChild(settingBtn);
+
+    typeSwitcher = OptionSwitcher<DTGraphType>::create(90, {
+        {DTGraphType::Passrate, "Passrate"},
+        {DTGraphType::Reachrate, "Reachrate"}
+    });
+    typeSwitcher->setScale(.4f);
+    typeSwitcher->setAnchorPoint({.5f, 0});
+    typeSwitcher->setPositionX(width / 2 + 2);
+    typeSwitcher->setPositionY(6.5f);
+    typeSwitcher->setCallback([&](auto value){
+        setType(value);
+    });
+    typeSwitcher->setValue(graphInfo.type, false);
+    this->addChild(typeSwitcher);
+    
+    auto typeSwitcherLabel = CCLabelBMFont::create("Type:", "bigFont.fnt");
+    typeSwitcherLabel->setScale(.25f);
+    typeSwitcherLabel->setPosition(typeSwitcher->getPosition() + ccp(
+        0,
+        typeSwitcher->getScaledContentHeight() + typeSwitcherLabel->getScaledContentHeight() / 2
+    ));
+    this->addChild(typeSwitcherLabel); 
 
     return true;
 }
@@ -147,6 +166,7 @@ void GraphCell::setCoverage(DTGraphCoverage coverage){
 }
 void GraphCell::setType(DTGraphType type){
     graphInfo.type = type;
+    typeSwitcher->setValue(type, false);
     onInfoChanged(true);
 }
 
@@ -182,4 +202,12 @@ void GraphCell::setPointColor(ccColor4B color){
 void GraphCell::onInfoChanged(bool updateGraph){
     if (updateGraph && onInfoChangedCallback != NULL)
         onInfoChangedCallback(this);
+}
+
+void GraphCell::setEnabledInfo(bool b, bool changeToggler, bool callback){
+    this->graphInfo.isEnabled = b;
+    if (changeToggler)
+        enableToggleBtn->toggle(b);
+    if (callback)
+        onEnabledChanged(this);
 }

@@ -1,6 +1,7 @@
 #include <nodes/layers/DTGraphLayer.hpp>
 #include <utils/Settings.hpp>
 #include <utils/Save.hpp>
+#include <geode.custom-keybinds/include/Keybinds.hpp>
 
 DTGraphLayer* DTGraphLayer::create() {
     auto ret = new DTGraphLayer();
@@ -337,6 +338,24 @@ bool DTGraphLayer::setup() {
     return true;
 }
 
+void DTGraphLayer::keyDown(enumKeyCodes key){
+    if (key == enumKeyCodes::KEY_LeftShift){
+        holdingShift = true;
+    }
+
+    graph->sendKeyStuff(false, key);
+    
+    CCLayer::keyDown(key);
+}
+
+void DTGraphLayer::keyUp(enumKeyCodes key){
+    if (key == enumKeyCodes::KEY_LeftShift){
+        holdingShift = false;
+    }
+
+    graph->sendKeyStuff(true, key);
+}
+
 void DTGraphLayer::OnPointSelected(cocos2d::CCNode* point){
     // pointToDisplay = static_cast<GraphPoint*>(point);
 
@@ -459,6 +478,14 @@ void DTGraphLayer::addGraph(const DTGraphInfo& info){
     };
     graphCell->onEnabledChanged = [&](GraphCell* cell){
         graph->getGraphNode(cell->getinfo().name)->setInfo(cell->getinfo());
+
+        if (!holdingShift && cell->getinfo().isEnabled){
+            for (const auto& graphCell : CCArrayExt<GraphCell*>(graphsScroll->m_contentLayer->getChildren())){
+                if (graphCell == cell) continue;
+                graphCell->setEnabledInfo(false, true, false);
+            }
+        }
+
         saveAllGraphs();
     };
     graphCell->onInfoChangedCallback = [&](GraphCell* cell){
@@ -508,8 +535,8 @@ void DTGraphLayer::openOptionsFor(GraphCell* cell){
     auto cellInfo = cell->getinfo();
 
     nameInput->setString(cellInfo.name);
-    coverageSwitcher->setValue(cellInfo.coverage);
-    typeSwitcher->setValue(cellInfo.type);
+    coverageSwitcher->setValue(cellInfo.coverage, true);
+    typeSwitcher->setValue(cellInfo.type, true);
     thicknessBaseInput->setString(fmt::format("{:.2f}", cellInfo.thickness));
     thicknessOutlineInput->setString(fmt::format("{:.2f}", cellInfo.outlineThickness));
     colorBaseBtnSpr->setColor({cellInfo.color.r, cellInfo.color.g, cellInfo.color.b});

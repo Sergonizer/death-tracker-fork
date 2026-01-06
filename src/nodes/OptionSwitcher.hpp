@@ -1,23 +1,33 @@
 #pragma once
 
 #include <Geode/Geode.hpp>
+#include <type_traits>
 
 using namespace geode::prelude;
 
 template<typename E>
+struct NamedEnumValue{
+    E value;
+    std::string name;
+
+    NamedEnumValue(E value, std::string name)
+        : value(value), name(std::move(name)) {}
+};
+
+template<typename E>
 class OptionSwitcher : public CCMenu {
     protected:
-        bool init(float width, const std::vector<std::pair<E, std::string>>& options);
+        bool init(float width, const std::vector<NamedEnumValue<E>>& options);
 
     public:
-        static OptionSwitcher<E>* create(float width, const std::vector<std::pair<E, std::string>>& options);
+        static OptionSwitcher<E>* create(float width, const std::vector<NamedEnumValue<E>>& options);
 
         E getSelectedOption();
 
         void setCallback(const std::function<void(E)>& callback);
 
-        void setValue(int index);
-        void setValue(E e);
+        void setValue(int index, bool runCallback);
+        void setValue(E e, bool runCallback);
 
     private:
         std::vector<CCLabelBMFont*> labels{};
@@ -32,7 +42,7 @@ class OptionSwitcher : public CCMenu {
 
 
 template<typename E>
-OptionSwitcher<E>* OptionSwitcher<E>::create(float width, const std::vector<std::pair<E, std::string>>& options) {
+OptionSwitcher<E>* OptionSwitcher<E>::create(float width, const std::vector<NamedEnumValue<E>>& options) {
     auto ret = new OptionSwitcher<E>();
     if (ret && ret->init(width, options)) {
         ret->autorelease();
@@ -44,7 +54,7 @@ OptionSwitcher<E>* OptionSwitcher<E>::create(float width, const std::vector<std:
 }
 
 template<typename E>
-bool OptionSwitcher<E>::init(float width, const std::vector<std::pair<E, std::string>>& options) {
+bool OptionSwitcher<E>::init(float width, const std::vector<NamedEnumValue<E>>& options) {
     if (!CCMenu::init()) return false;
 
     this->setContentSize({ width, 30 });
@@ -61,8 +71,8 @@ bool OptionSwitcher<E>::init(float width, const std::vector<std::pair<E, std::st
     labelsHolder->setContentSize(this->getContentSize());
 
     int index = 0;
-    for (const auto& opt : options) {
-        auto label = CCLabelBMFont::create(opt.second.c_str(), "bigFont.fnt");
+    for (const NamedEnumValue<E>& opt : options) {
+        auto label = CCLabelBMFont::create(opt.name.c_str(), "bigFont.fnt");
         if (label->getContentWidth() > width)
             label->setScale(width / label->getContentWidth());
         label->setPosition(labelsHolder->getContentSize() / 2);
@@ -73,7 +83,7 @@ bool OptionSwitcher<E>::init(float width, const std::vector<std::pair<E, std::st
         }
 
         this->labels.push_back(label);
-        this->values.push_back(opt.first);
+        this->values.push_back(opt.value);
         index++;
     }
 
@@ -115,7 +125,7 @@ void OptionSwitcher<E>::setCallback(const std::function<void(E)>& cb) {
 }
 
 template<typename E>
-void OptionSwitcher<E>::setValue(int index){
+void OptionSwitcher<E>::setValue(int index, bool runCallback){
     auto prevNode = labels[currentOption];
 
     currentOption = std::clamp(index, 0, static_cast<int>(labels.size() - 1));
@@ -125,16 +135,16 @@ void OptionSwitcher<E>::setValue(int index){
     auto currNode = labels[currentOption];
     currNode->setVisible(true);
 
-    if (callback) callback(values[currentOption]);
+    if (callback && runCallback) callback(values[currentOption]);
 }
 
 template<typename E>
-void OptionSwitcher<E>::setValue(E e){
+void OptionSwitcher<E>::setValue(E e, bool runCallback){
     for (int i = 0; i < values.size(); i++)
     {
         if (values[i] != e) continue;
         
-        setValue(i);
+        setValue(i, runCallback);
         return;
     }
 }

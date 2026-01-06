@@ -21,6 +21,8 @@ class GraphHolder : public CCNode {
         DTGraphNode* getGraphNode(const std::string& graphName);
         void removeGraph(const std::string& graphName);
 
+        void sendKeyStuff(bool up, enumKeyCodes key);
+
     private:
         bool init(const CCSize& scaling);
 
