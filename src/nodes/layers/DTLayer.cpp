@@ -1773,8 +1773,8 @@ long long DTLayer::calcPlaytime(const Deaths& deaths){
         if (runSplitRes.isErr()) continue;
 
         int runLength = (runSplitRes.unwrap().end - runSplitRes.unwrap().start);
-        log::info("{} | {} | {}", runLength, runSplitRes.unwrap().end, runSplitRes.unwrap().start);
-        log::info("{}", death.second);
+        // log::info("{} | {} | {}", runLength, runSplitRes.unwrap().end, runSplitRes.unwrap().start);
+        // log::info("{}", death.second);
 
         long long runOverallPlaytime = 0;
 
