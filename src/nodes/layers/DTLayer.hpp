@@ -32,14 +32,11 @@ class DTLayer : public Popup<GJGameLevel* const&> {
 
         void UpdateSharedStats();
 
-        void updateRunsAllowed();
-
         GJGameLevel* m_Level;
 
         Result<LevelData> m_MyLevelStats = Err("");
         std::vector<LevelData> linkedLevelsData{};
         std::map<long long, std::string, std::greater<long long>> sessionsOrder{};
-        
 
         void show() override;
 
@@ -103,6 +100,8 @@ class DTLayer : public Popup<GJGameLevel* const&> {
 
         SessionSelector* sessionSelector = nullptr;
 
+        Result<Session> loadSessionFromSave(std::optional<int> sessionIndex = std::nullopt);
+
     private:
         
         LayoutOptionsLayer* layoutOptionsLayer;
@@ -164,4 +163,22 @@ class DTLayer : public Popup<GJGameLevel* const&> {
         void onDiscardLayoutChanges(CCObject*);
 
         void exitLayoutEditing();
+
+        UpdateTask onNLKey();
+        UpdateTask onATTKey();
+        UpdateTask onLVLNKey();
+        UpdateTask onGeneralKey();
+        UpdateTask onDTATTKey();
+        UpdateTask onRUNSKey();
+        UpdateTask onS0Key();
+        UpdateTask onSRUNSKey();
+        
+        long long calcPlaytime(const Deaths& deaths);
+        
+        UpdateTask onPTALLSKey();
+        UpdateTask onPTF0SKey();
+        UpdateTask onPTRUNSKey();
+        UpdateTask onPTSALLSKey();
+        UpdateTask onPTSF0Key();
+        UpdateTask onPTSRUNSKey();
 };

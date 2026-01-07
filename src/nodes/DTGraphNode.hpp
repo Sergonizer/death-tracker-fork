@@ -1,9 +1,10 @@
 #pragma once
 
 #include <Geode/Geode.hpp>
-#include "../managers/StatsManager.hpp"
-#include "../nodes/GraphPoint.hpp"
+#include <managers/StatsManager.hpp>
+#include <nodes/GraphPoint.hpp>
 #include <types/DTTypes.hpp>
+#include <nodes/SessionSelector.hpp>
 
 using namespace geode::prelude;
 
@@ -21,6 +22,14 @@ class DTGraphNode : public CCNode {
         std::optional<DTGraphInfo> getInfo() const{
             return info;
         };
+
+        SessionSelector* selector = nullptr;
+
+        int runPercent;
+
+        void updateDeaths();
+
+        GraphPointDelegate* delegate;
 
     private:
 

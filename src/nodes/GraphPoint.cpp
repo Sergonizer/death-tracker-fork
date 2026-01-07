@@ -1,8 +1,8 @@
 #include <nodes/GraphPoint.hpp>
 
-GraphPoint* GraphPoint::create(const std::string& run, const float& passrate, const ccColor4B& color) {
+GraphPoint* GraphPoint::create(const std::string& run, const float& rate, const ccColor4B& color) {
     auto ret = new GraphPoint();
-    if (ret && ret->init(run, passrate, color)) {
+    if (ret && ret->init(run, rate, color)) {
         ret->autorelease();
     } else {
         delete ret;
@@ -11,10 +11,10 @@ GraphPoint* GraphPoint::create(const std::string& run, const float& passrate, co
     return ret;
 }
 
-bool GraphPoint::init(const std::string& run, const float& passrate, const ccColor4B& color){
+bool GraphPoint::init(const std::string& run, const float& rate, const ccColor4B& color){
 
     m_Run = run;
-    m_Passrate = passrate;
+    m_Rate = rate;
 
     c = CCSprite::createWithSpriteFrameName("d_circle_02_001.png");
     c->setColor({color.r, color.g, color.b});
@@ -33,11 +33,24 @@ bool GraphPoint::init(const std::string& run, const float& passrate, const ccCol
 }
 
 void GraphPoint::update(float delta){
-    if (m_bSelected){
+
+    bool isHovered = false;
+
+    #if defined(GEODE_IS_ANDROID) || defined(GEODE_IS_IOS)
+    isHovered = m_bSelected;
+    #else
+
+    auto mousePos = this->getParent()->convertToNodeSpace(getMousePos());
+    isHovered = this->boundingBox().containsPoint(mousePos);
+    
+    #endif
+
+
+    if (isHovered && geode::cocos::nodeIsVisible(this)){
         c->setScale(2);
         if (!m_oneTimeCall){
             m_oneTimeCall = true;
-            if (!m_Delegate) return;
+            if (m_Delegate == nullptr) return;
             m_Delegate->OnPointSelected(this);
         }
     }
@@ -45,7 +58,7 @@ void GraphPoint::update(float delta){
         c->setScale(1);
         if (m_oneTimeCall){
             m_oneTimeCall = false;
-            if (!m_Delegate) return;
+            if (m_Delegate == nullptr) return;
             m_Delegate->OnPointDeselected(this);
         }
     }
@@ -53,4 +66,12 @@ void GraphPoint::update(float delta){
 
 void GraphPoint::setDelegate(GraphPointDelegate* Delegate){
     m_Delegate = Delegate;
+}
+
+GraphPoint::~GraphPoint(){
+    if (m_oneTimeCall){
+        m_oneTimeCall = false;
+        if (m_Delegate == nullptr) return;
+        m_Delegate->OnPointDeselected(this);
+    }
 }

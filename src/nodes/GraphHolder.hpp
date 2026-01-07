@@ -4,6 +4,7 @@
 #include <types/DTTypes.hpp>
 #include <nodes/DTGraphNode.hpp>
 #include <nodes/layers/AdvancedScrollLayer.hpp>
+#include <nodes/GraphPoint.hpp>
 
 class GraphHolder : public CCNode {
     public:
@@ -20,6 +21,15 @@ class GraphHolder : public CCNode {
         void addGraph(const DTGraphInfo& graph);
         DTGraphNode* getGraphNode(const std::string& graphName);
         void removeGraph(const std::string& graphName);
+        void changeGraphName(const std::string& oldName, const std::string& newName);
+
+        void setToAllGraphs(const std::function<void(DTGraphNode*)>& graphSetFunction);
+
+        SessionSelector* sessionSelector;
+
+        void sendUpdateToGraphOfType(DTGraphCoverage coverage);
+
+        GraphPointDelegate* delegate;
 
         void sendKeyStuff(bool up, enumKeyCodes key);
 

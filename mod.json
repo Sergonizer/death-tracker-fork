@@ -6,12 +6,19 @@
 		"mac": "2.2074",
 		"ios": "2.2074"
     },
-	"version": "v2.4.6",
 	"id": "elohmrow.death_tracker",
 	"name": "Death Tracker",
+	"version": "v3.0.0-beta.1",
 	"developer": "abb2k",
 	"description": "Tracks your deaths at every percentage",
-	"repository": "https://github.com/eloh-mrow/death-tracker",
+	"links": {
+		"source": "https://github.com/abb2k/death-tracker",
+		"community": "https://discord.gg/8VTdWXghA6"
+	},
+	"issues": {
+		"info": "Feel free to send eny issues on the \"feedback\" channel on the discord server!",
+		"url": "https://discord.gg/8VTdWXghA6"
+	},
 	"resources": {
 		"spritesheets": {
 			"dt-sheet": [
@@ -63,35 +70,15 @@
 			"type": "bool",
 			"default": true
 		},
-		"graph-point-size": {
-			"name": "Graph point size",
-			"description": "determines the size of the points on the graph (this setting will layer be moved to the graph layer)",
-			"type": "float",
-			"default": 1,
-			"min": 0.5,
-			"max": 2
-		},
 		"save-path-new": {
 			"type": "folder",
 			"name": "Save Path",
 			"default": "{mod_save_dir}/levels"
 		}
 	},
-	"dependencies": [
-		{
-		"id": "geode.custom-keybinds",
-		"version": ">=v1.10.3",
-		"importance": "required"
-		},
-		{
-			"id": "geode.node-ids",
-			"version": ">=1.12.0-beta.1",
-			"importance": "required"
-		},
-		{
-            "id": "cvolton.level-id-api",
-            "version": "v1.0.1",
-            "importance": "required"
-        }
-	]
+	"dependencies": {
+		"geode.custom-keybinds": ">=v1.10.3",
+		"geode.node-ids": ">=v1.10.0",
+		"cvolton.level-id-api": "v1.0.1"
+	}
 }

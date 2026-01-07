@@ -536,11 +536,17 @@ struct matjson::Serialize<DTGraphInfo> {
         
         GEODE_UNWRAP_INTO(info.thickness, value["thickness"].asDouble());
         GEODE_UNWRAP_INTO(info.outlineThickness, value["outlineThickness"].asDouble());
-
+        
         GEODE_UNWRAP_INTO(info.color, value["color"].as<ccColor4B>());
         GEODE_UNWRAP_INTO(info.outlineColor, value["outlineColor"].as<ccColor4B>());
+        
+        GEODE_UNWRAP_INTO(info.pointColor, value["pointColor"].as<ccColor4B>());
+        GEODE_UNWRAP_INTO(info.pointScale, value["pointScale"].asDouble());
 
         GEODE_UNWRAP_INTO(info.name, value["name"].asString());
+
+        GEODE_UNWRAP_INTO(info.orderPos, value["orderPos"].asInt());
+        GEODE_UNWRAP_INTO(info.isEnabled, value["isEnabled"].asBool());
 
         return Ok(info);
     }
@@ -551,9 +557,13 @@ struct matjson::Serialize<DTGraphInfo> {
             { "type", static_cast<int>(value.type) },
             { "thickness", value.thickness },
             { "outlineThickness", value.outlineThickness },
-            { "color", value.color },
             { "outlineColor", value.outlineColor },
-            { "name", value.name }
+            { "color", value.color },
+            { "pointScale", value.pointScale },
+            { "pointColor", value.pointColor },
+            { "name", value.name },
+            { "orderPos", value.orderPos },
+            { "isEnabled", value.isEnabled }
         });
         return obj;
     }

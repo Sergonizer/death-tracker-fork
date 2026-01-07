@@ -6,35 +6,36 @@ void DTDialogLayer::displayDialogObject(DialogObject* dialogue){
     if (m_fields->callback != NULL)
         m_fields->callback(dialogue);
 
-    std::string cacDialogSpr = "";
-    std::tuple<std::string, int, float> cacDialogSprinfo;
+    std::string dtDialogSpr = "";
+    std::tuple<std::string, int, float> dtDialogSprinfo;
 
     for (const auto& existingIcons : m_fields->icons)
     {
-        if (std::get<1>(existingIcons) == dialogue->m_characterFrame){
-            cacDialogSpr = std::get<0>(existingIcons);
-            cacDialogSprinfo = existingIcons;
+        log::info("{} | {}", dialogue->getTag(), std::get<1>(existingIcons));
+        if (std::get<1>(existingIcons) == dialogue->getTag()){
+            dtDialogSpr = std::get<0>(existingIcons);
+            dtDialogSprinfo = existingIcons;
             break;
         }
     }
 
-    if (cacDialogSpr != "") {
+    if (dtDialogSpr != "" && m_characterSprite != nullptr) {
         m_characterSprite->setVisible(false);
 
-        auto icon = m_mainLayer->getChildByID("cac_portrait"_spr);
+        auto icon = m_mainLayer->getChildByID("dt_portrait"_spr);
         if (icon != nullptr) icon->removeMeAndCleanup();
 
-        auto newIcon = CCSprite::createWithSpriteFrameName(cacDialogSpr.c_str());
-        if (newIcon == nullptr) newIcon = CCSprite::create(cacDialogSpr.c_str());
+        auto newIcon = CCSprite::createWithSpriteFrameName(dtDialogSpr.c_str());
+        if (newIcon == nullptr) newIcon = CCSprite::create(dtDialogSpr.c_str());
         if (newIcon == nullptr) return;
-        newIcon->setID("cac_portrait"_spr);
+        newIcon->setID("dt_portrait"_spr);
         newIcon->setPosition(m_characterSprite->getPosition());
         newIcon->setZOrder(4);
-        newIcon->setScale(std::get<2>(cacDialogSprinfo));
+        newIcon->setScale(std::get<2>(dtDialogSprinfo));
         m_mainLayer->addChild(newIcon);
     }
     else{
-        auto icon = m_mainLayer->getChildByID("cac_portrait"_spr);
+        auto icon = m_mainLayer->getChildByID("dt_portrait"_spr);
         if (icon != nullptr) icon->setVisible(false);
     }
 }
@@ -46,8 +47,9 @@ void DTDialogLayer::useTaggedSprites(const std::vector<std::tuple<std::string, i
 DialogLayer* DTDialogLayer::createWithTaggedSprites(CCArray* objects, int bg, const std::vector<std::tuple<std::string, int, float>>& icons){
     objects->insertObject(DialogObject::create("", "", 0, 1, true, {0,0,0}), 0);
     auto ret = DialogLayer::createWithObjects(objects, bg);
-    // static_cast<CACDialogLayer*>(ret)->useTaggedSprites(icons);
-    // ret->displayNextObject();
+    static_cast<DTDialogLayer*>(ret)->m_fields->doCallCreationCallback = true;
+    static_cast<DTDialogLayer*>(ret)->useTaggedSprites(icons);
+    ret->displayNextObject();
 
     return ret;
 }

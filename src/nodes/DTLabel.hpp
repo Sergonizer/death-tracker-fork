@@ -127,4 +127,7 @@ class DTLabel : public CCMenu {
         CCSprite* glow;
 
         std::string modifyStrRecursive(const std::string& str);
+
+        bool isBeingEdited = false;
+        bool isHovering;
 };

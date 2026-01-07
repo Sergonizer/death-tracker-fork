@@ -232,6 +232,35 @@ void DTLabel::update(float dt){
 
     if (isMovingLabel)
         onMoveUpdate(dt);
+
+    auto mousePos = this->convertToNodeSpace(getMousePos());
+
+    if (isEditable && !isBeingEdited && labelTitleBG->boundingBox().containsPoint(mousePos) && !isHovering){
+        isHovering = true;
+        glow->stopAllActions();
+        glow->runAction(CCTintTo::create(.1f, 20, 20, 20));
+    }
+    else if (isHovering && !labelTitleBG->boundingBox().containsPoint(mousePos) && !isBeingEdited){
+        isHovering = false;
+        glow->stopAllActions();
+        glow->runAction(CCTintTo::create(.1f, 0, 0, 0));
+    }
+
+    if (leftExpandLine->boundingBox().containsPoint(mousePos) && !currentlyExpandingLeft){
+        leftExpandLine->setVisible(true);
+        leftExpandLine->setOpacity(150);
+    }
+    else if (!currentlyExpandingLeft){
+        leftExpandLine->setVisible(false);
+    }
+
+    if (rightExpandLine->boundingBox().containsPoint(mousePos) && !currentlyExpandingRight){
+        rightExpandLine->setVisible(true);
+        rightExpandLine->setOpacity(150);
+    }
+    else if (!currentlyExpandingRight){
+        rightExpandLine->setVisible(false);
+    }
 }
 
 
@@ -285,24 +314,20 @@ void DTLabel::toggleExpand(CCObject*){
         DTLayer::get()->saveCurrentLayout();
 }
 
-// void DTLabel::registerWithTouchDispatcher() {
-//     //CCDirector::sharedDirector()->getTouchDispatcher()->addTargetedDelegate(this, -500, true);
-//     //if (auto handler = CCTouchDispatcher::get()->findHandler(this))
-//     //    CCTouchDispatcher::get()->setPriority(-500, handler->getDelegate());
-// }
-
 bool DTLabel::ccTouchBegan(CCTouch* touch, CCEvent* event) {
     if (!isEditable) return false;
     auto touchInSpace = this->convertTouchToNodeSpace(touch);
 
     if (leftExpandLine->boundingBox().containsPoint(touchInSpace)){
         leftExpandLine->setVisible(true);
+        leftExpandLine->setOpacity(255);
         currentlyExpandingLeft = true;
 
         return true;
     }
     else if (rightExpandLine->boundingBox().containsPoint(touchInSpace)){
         rightExpandLine->setVisible(true);
+        rightExpandLine->setOpacity(255);
         currentlyExpandingRight = true;
 
         return true;
@@ -626,10 +651,12 @@ void DTLabel::setTextWrapping(WrappingMode wrapMode){
 void DTLabel::onBeingEdited(){
     glow->stopAllActions();
     glow->runAction(CCTintTo::create(.1f, 35, 35, 35));
+    isBeingEdited = true;
 }
 void DTLabel::onBeingEditedEnded(){
     glow->stopAllActions();
     glow->runAction(CCTintTo::create(.1f, 0, 0, 0));
+    isBeingEdited = false;
 }
 
 void DTLabel::setEditable(bool editable){

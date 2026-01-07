@@ -6,10 +6,11 @@
 #include <nodes/GraphHolder.hpp>
 #include <nodes/GraphCell.hpp>
 #include <nodes/OptionSwitcher.hpp>
+#include <nodes/GraphPointDisplay.hpp>
 
 using namespace geode::prelude;
 
-class DTGraphLayer : public Popup<>, public TextInputDelegate, public GraphPointDelegate, public ColorPickPopupDelegate {
+class DTGraphLayer : public Popup<>, public TextInputDelegate, public GraphPointDelegate, public ColorPickPopupDelegate, public FLAlertLayerProtocol {
     protected:
         bool setup() override;
     public:
@@ -21,9 +22,9 @@ class DTGraphLayer : public Popup<>, public TextInputDelegate, public GraphPoint
         CCLabelBMFont* noGraphLabel;
 
         //change the displayed point
-        void OnPointSelected(cocos2d::CCNode* point) override;
+        void OnPointSelected(GraphPoint* point) override;
         //have no point displayed if the deselected point was the was selected prior
-        void OnPointDeselected(cocos2d::CCNode* point) override;
+        void OnPointDeselected(GraphPoint* point) override;
 
         void keyDown(enumKeyCodes key) override;
         void keyUp(enumKeyCodes key) override;
@@ -68,6 +69,17 @@ class DTGraphLayer : public Popup<>, public TextInputDelegate, public GraphPoint
         std::optional<std::function<void(const ccColor4B&)>> callbacksForColorPopups = std::nullopt;
 
         void saveAllGraphs();
+
+        void onOk(CCObject*);
+        void onDelete(CCObject*);
+
+        void closeOptionsTab();
+
+        FLAlertLayer* deleteNotification;
+
+        void FLAlert_Clicked(FLAlertLayer* layer, bool btn2) override;
+
+        std::map<GraphPoint*, GraphPointDisplay*> displaysForPoints{};
 
         bool holdingShift;
     };

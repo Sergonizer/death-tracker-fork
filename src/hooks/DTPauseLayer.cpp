@@ -26,7 +26,7 @@ void DTPauseLayer::customSetup(){
 
 void DTPauseLayer::onDTMiniMenuOpened(CCObject*){
     auto dtLayer = DTLayer::create(StatsManager::getCurrentLevel());
-    this->addChild(dtLayer);
+    dtLayer->show();
 }
 
 #if defined(GEODE_IS_MACOS)

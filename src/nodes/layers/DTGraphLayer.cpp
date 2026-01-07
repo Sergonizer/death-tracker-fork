@@ -22,19 +22,20 @@ bool DTGraphLayer::setup() {
     noGraphLabel->setPosition({46, 3});
     m_mainLayer->addChild(noGraphLabel);
 
-    graph = GraphHolder::create(ccp(m_size.height - 30, m_size.height - 50));
+    graph = GraphHolder::create(ccp(m_size.width - 140, m_size.height - 50));
     graph->setPosition({m_size.width - graph->getContentWidth() / 2 - 20, m_size.height / 2 + 5});
+    graph->delegate = this;
     this->m_mainLayer->addChild(graph);
 
     graphsPage = CCMenu::create();
-    graphsPage->setPositionX(52.5f);
+    graphsPage->setPositionX(55);
     graphsPage->setPositionY(m_size.height - 20);
     graphsPage->ignoreAnchorPointForPosition(false);
     graphsPage->setContentSize({0,0});
     m_mainLayer->addChild(graphsPage);
 
     graphOptionsPage = CCMenu::create();
-    graphOptionsPage->setPositionX(52.5f);
+    graphOptionsPage->setPositionX(55);
     graphOptionsPage->setPositionY(m_size.height - 20);
     graphOptionsPage->ignoreAnchorPointForPosition(false);
     graphOptionsPage->setContentSize({0,0});
@@ -70,7 +71,13 @@ bool DTGraphLayer::setup() {
     sessionSelector->setCurrentCount(DTLayer::get()->getCurrentSelectedSession());
     sessionSelector->setScale(0.45f);
     sessionSelector->setPositionY(SessionSelectionLabel->getPositionY() - SessionSelectionLabel->getScaledContentHeight() / 2 - sessionSelector->getScaledContentHeight() / 2);
+    sessionSelector->setCallback([&](auto _){
+        graph->sendUpdateToGraphOfType(DTGraphCoverage::SessionCover);
+        graph->sendUpdateToGraphOfType(DTGraphCoverage::SessionRunsCover);
+    });
     graphsPage->addChild(sessionSelector);
+
+    graph->sessionSelector = sessionSelector;
 
     auto runSelectInputLabel = CCLabelBMFont::create("Run Percent", "bigFont.fnt");
     runSelectInputLabel->setScale(0.3f);
@@ -90,6 +97,13 @@ bool DTGraphLayer::setup() {
             runSelectInput->setString("100");
             num = 100;
         }
+
+        graph->setToAllGraphs([num](DTGraphNode* node){
+            node->runPercent = num;
+        });
+
+        graph->sendUpdateToGraphOfType(DTGraphCoverage::GeneralRunsCover);
+        graph->sendUpdateToGraphOfType(DTGraphCoverage::SessionRunsCover);
     });
     graphsPage->addChild(runSelectInput);
 
@@ -119,7 +133,7 @@ bool DTGraphLayer::setup() {
     nameInput->setAnchorPoint({.5f, 1});
     nameInput->setScale(.75f);
     nameInput->setPositionY(-nameLabel->getScaledContentHeight() / 2);
-    nameInput->setCallback([&](const auto& newStr){
+    nameInput->setCallback([&](const std::string& newStr){
         if (!editedGraph.has_value()) return;
 
         editedGraph.value()->setName(newStr);
@@ -327,6 +341,28 @@ bool DTGraphLayer::setup() {
     pointColorBtn->setID("point");
     graphOptionsPage->addChild(pointColorBtn);
 
+    auto okBtnSpr = ButtonSprite::create("OK");
+    okBtnSpr->setScale(.6f);
+    auto okBtn = CCMenuItemSpriteExtra::create(
+        okBtnSpr,
+        this,
+        menu_selector(DTGraphLayer::onOk)
+    );
+    okBtn->setPositionY(pointColorBtn->getPositionY() - pointColorBtn->getScaledContentHeight() / 2 - okBtn->getContentHeight() / 2 - 5);
+    okBtn->setPositionX(pointColorBtn->getPositionX());
+    graphOptionsPage->addChild(okBtn);
+
+    auto DeleteBtnSpr = CCSprite::createWithSpriteFrameName("GJ_trashBtn_001.png");
+    DeleteBtnSpr->setScale(.6f);
+    auto DeleteBtn = CCMenuItemSpriteExtra::create(
+        DeleteBtnSpr,
+        this,
+        menu_selector(DTGraphLayer::onDelete)
+    );
+    DeleteBtn->setPositionY(pointScaleInput->getPositionY() - pointScaleInput->getScaledContentHeight() - DeleteBtn->getContentHeight() / 4 - 10);
+    DeleteBtn->setPositionX(pointScaleInput->getPositionX());
+    graphOptionsPage->addChild(DeleteBtn);
+
     graphOptionsPage->setEnabled(false);
     nameInput->setEnabled(false);
     thicknessBaseInput->setEnabled(false);
@@ -356,25 +392,32 @@ void DTGraphLayer::keyUp(enumKeyCodes key){
     graph->sendKeyStuff(true, key);
 }
 
-void DTGraphLayer::OnPointSelected(cocos2d::CCNode* point){
-    // pointToDisplay = static_cast<GraphPoint*>(point);
+void DTGraphLayer::OnPointSelected(GraphPoint* point){
+    if (displaysForPoints.contains(point)) return;
 
-    // PointInfoLabel->setVisible(true);
-    // npsLabel->setVisible(false);
-    // std::string typeText = "Passrate";
+    auto display = GraphPointDisplay::create();
 
-    // PointInfoLabel->setText(fmt::format("Run:\n{}\n \n{}:\n{:.2f}%", pointToDisplay->m_Run, typeText, pointToDisplay->m_Passrate));
+    auto pointPosConverted = m_mainLayer->convertToNodeSpace(point->convertToWorldSpace({point->getContentWidth() / 2, 0}));
+
+    display->setPosition(pointPosConverted - ccp(display->getContentWidth() / 2, display->getContentHeight()));
+    display->setContent(point->m_Run, point->m_Rate, point->relatedGraph->getInfo().value().type);
+    m_mainLayer->addChild(display);
+
+    displaysForPoints.insert({point, display});
 }
 
-void DTGraphLayer::OnPointDeselected(cocos2d::CCNode* point){
-    // if (pointToDisplay != point)
-    //     return;
+void DTGraphLayer::OnPointDeselected(GraphPoint* point){
+    if (!displaysForPoints.contains(point)) return;
 
-    // npsLabel->setVisible(true);
-    // PointInfoLabel->setVisible(false);
+    displaysForPoints[point]->removeMeAndCleanup();
+    displaysForPoints.erase(point);
 }
 
 void DTGraphLayer::onClose(cocos2d::CCObject*) {
+    if (editedGraph.has_value()){
+        onOk(nullptr);
+        return;
+    }
     this->setKeypadEnabled(false);
     this->setTouchEnabled(false);
     this->removeFromParentAndCleanup(true);
@@ -489,7 +532,50 @@ void DTGraphLayer::addGraph(const DTGraphInfo& info){
         saveAllGraphs();
     };
     graphCell->onInfoChangedCallback = [&](GraphCell* cell){
-        graph->getGraphNode(cell->getinfo().name)->setInfo(cell->getinfo());
+        auto graphNode = graph->getGraphNode(cell->getinfo().name);
+        bool changeName = false;
+
+        if (graphNode == nullptr){
+            graphNode = graph->getGraphNode(cell->oldName);
+            changeName = true;
+            
+        }
+
+        if (graphNode == nullptr) return;
+
+        if (changeName)
+            graph->changeGraphName(cell->oldName, cell->getinfo().name);
+
+        graphNode->setInfo(cell->getinfo());
+        saveAllGraphs();
+    };
+
+    graphCell->canChangeNameTo = [&](const std::string& to, GraphCell* cell) -> bool {
+        GraphCell* cellWithName = nullptr;
+
+        for (const auto& child : CCArrayExt<GraphCell*>(graphsScroll->m_contentLayer->getChildren()))
+        {
+            if (child->getinfo().name == to){
+                cellWithName = child;
+                break;
+            }
+        }
+        
+        return cellWithName == nullptr || cellWithName == cell;
+    };
+
+    graphCell->onDeleted = [&](DTGraphInfo info){
+        int indexZ = 0;
+        for (const auto& child : CCArrayExt<GraphCell*>(graphsScroll->m_contentLayer->getChildren()))
+        {
+            child->setOrderPos(indexZ);
+            indexZ++;
+        }
+
+        graphsScroll->m_contentLayer->updateLayout();
+
+        graph->removeGraph(info.name);
+        
         saveAllGraphs();
     };
 
@@ -514,8 +600,8 @@ void DTGraphLayer::removeGraph(const std::string& graphName){
 }
 
 void DTGraphLayer::openOptionsFor(GraphCell* cell){
-    auto exitEasing = [](bool open) -> CCEaseExponentialOut* {
-        return CCEaseExponentialOut::create(CCScaleTo::create(.2f, 1, open ? 1 : 0));
+    auto exitEasing = [](bool open, float finalSize = 1) -> CCEaseExponentialOut* {
+        return CCEaseExponentialOut::create(CCScaleTo::create(.2f, finalSize, open ? finalSize : 0));
     };
 
     graphsPage->stopAllActions();
@@ -528,9 +614,12 @@ void DTGraphLayer::openOptionsFor(GraphCell* cell){
     graphOptionsPage->runAction(CCSequence::create(
         exitEasing(false),
         CCDelayTime::create(.1f),
-        exitEasing(true),
+        exitEasing(true, .97f),
         nullptr
     ));
+
+    m_closeBtn->setEnabled(false);
+    m_closeBtn->runAction(CCFadeTo::create(.2f, 0));
 
     auto cellInfo = cell->getinfo();
 
@@ -648,9 +737,75 @@ void DTGraphLayer::updateColor(cocos2d::ccColor4B const& color){
 }
 
 void DTGraphLayer::saveAllGraphs(){
-    for (const auto& graphCell : CCArrayExt<GraphCell*>())
+    std::vector<DTGraphInfo> allInfos{};
+
+    for (const auto& graphCell : CCArrayExt<GraphCell*>(graphsScroll->m_contentLayer->getChildren()))
     {
-        /* code */
+        allInfos.push_back(graphCell->getinfo());
     }
     
+    Save::setGraphs(allInfos);
+}
+
+void DTGraphLayer::onOk(CCObject*){
+    if (!editedGraph.has_value()) return;
+
+    if (!editedGraph.value()->setName(nameInput->getString())){
+        FLAlertLayer::create("Cant save graph!", "A graph with this name already exists! please change the name you selected!", "OK")->show();
+        return;
+    }
+
+    closeOptionsTab();
+}
+void DTGraphLayer::onDelete(CCObject*){
+    if (!editedGraph.has_value()) return;
+    deleteNotification = FLAlertLayer::create(this, "WARNING!", "This action will delete the selected graph! are you sure you want to do this?", "CANCEL", "DELETE");
+    deleteNotification->show();
+}
+
+void DTGraphLayer::closeOptionsTab(){
+    auto exitEasing = [](bool open, float finalSize = 1) -> CCEaseExponentialOut* {
+        return CCEaseExponentialOut::create(CCScaleTo::create(.2f, finalSize, open ? finalSize : 0));
+    };
+
+    graphOptionsPage->stopAllActions();
+    graphOptionsPage->runAction(CCSequence::create(
+        exitEasing(false),
+        nullptr
+    ));
+
+    graphsPage->stopAllActions();
+    graphsPage->runAction(CCSequence::create(
+        exitEasing(false),
+        CCDelayTime::create(.1f),
+        exitEasing(true, .97f),
+        nullptr
+    ));
+
+    graphsScroll->setTouchEnabled(true);
+    sessionSelector->setEnabled(true);
+    runSelectInput->setEnabled(true);
+    for (const auto& child : CCArrayExt<GraphCell*>(graphsScroll->m_contentLayer->getChildren()))
+    {
+        child->setEnabled(true);
+    }
+    
+    m_closeBtn->setEnabled(true);
+    m_closeBtn->runAction(CCFadeTo::create(.2f, 255));
+    editedGraph = std::nullopt;
+
+    graphOptionsPage->setEnabled(false);
+    nameInput->setEnabled(false);
+    thicknessBaseInput->setEnabled(false);
+    thicknessOutlineInput->setEnabled(false);
+    pointScaleInput->setEnabled(false);
+}
+
+void DTGraphLayer::FLAlert_Clicked(FLAlertLayer* layer, bool btn2){
+    if (layer == deleteNotification && btn2){
+        editedGraph.value()->deleteMe();
+        editedGraph = std::nullopt;
+
+        closeOptionsTab();
+    }
 }

@@ -39,6 +39,6 @@ bool DTEditLevelLayer::init(GJGameLevel* level){
 
 void DTEditLevelLayer::openDTLayer(CCObject*){
     auto dtLayer = DTLayer::create(this->m_level);
-    this->addChild(dtLayer);
+    dtLayer->show();
 }
 

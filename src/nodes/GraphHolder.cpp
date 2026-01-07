@@ -311,7 +311,9 @@ void GraphHolder::addGraph(const DTGraphInfo& graph){
     CCSize size = (heigherCorner - lowerCorner - inGraphOffset);
 
     auto graphNode = DTGraphNode::create();
+    graphNode->selector = sessionSelector;
     graphNode->setInfo(graph);
+    graphNode->delegate = delegate;
     graphNode->setScaling(size);
     graphContainer->addChild(graphNode);
     allGraphs.insert({graph.name, graphNode});
@@ -335,3 +337,25 @@ void GraphHolder::sendKeyStuff(bool up, enumKeyCodes key){
         scrollLayer->keyDown(key);
 }
 
+void GraphHolder::changeGraphName(const std::string& oldName, const std::string& newName){
+    if (!allGraphs.contains(oldName) || allGraphs.contains(newName)) return;
+
+    auto saveTemp = allGraphs[oldName];
+    allGraphs.erase(oldName);
+    allGraphs.insert({newName, saveTemp});
+}
+
+void GraphHolder::setToAllGraphs(const std::function<void(DTGraphNode*)>& graphSetFunction){
+    for (const auto& [name, graph] : allGraphs){
+        graphSetFunction(graph);
+    }
+}
+
+void GraphHolder::sendUpdateToGraphOfType(DTGraphCoverage coverage){
+    for (const auto& [name, graph] : allGraphs)
+    {
+        if (graph->getInfo().has_value() && graph->getInfo().value().coverage == coverage){
+            graph->updateDeaths();
+        }
+    }
+}

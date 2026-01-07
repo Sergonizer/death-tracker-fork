@@ -198,7 +198,7 @@ bool ModifyOptions::setup(){
 
         Save::setFrom0Customazations(curr);
 
-        DTLayer::get()->specialStrings["f0"]->updateContent();
+        DTLayer::get()->specialStrings["general"]->updateContent();
         DTLayer::get()->specialStrings["s0"]->updateContent();
     });
     f0SeperatorInput->setCommonFilter(CommonFilter::Any);
@@ -219,7 +219,7 @@ bool ModifyOptions::setup(){
         Save::setFrom0Customazations(currF0);
         Save::setRunCustomazations(currRuns);
 
-        DTLayer::get()->specialStrings["f0"]->updateContent();
+        DTLayer::get()->specialStrings["general"]->updateContent();
         DTLayer::get()->specialStrings["s0"]->updateContent();
         DTLayer::get()->specialStrings["runs"]->updateContent();
         DTLayer::get()->specialStrings["sruns"]->updateContent();
@@ -298,7 +298,7 @@ bool ModifyOptions::setup(){
 
         DTLayer::get()->modifyRun(addPer, amount * (isPlus ? 1 : -1), sessionNum);
         
-        if (sessionNum == std::nullopt) DTLayer::get()->specialStrings["f0"]->updateContent();
+        if (sessionNum == std::nullopt) DTLayer::get()->specialStrings["general"]->updateContent();
         else DTLayer::get()->specialStrings["s0"]->updateContent();
     }, .9f);
 
@@ -465,7 +465,7 @@ bool ModifyOptions::setup(){
 
         DTLayer::get()->modifyNewBest(nbPercent, isPlus, sessionNum);
 
-        if (sessionNum == std::nullopt) DTLayer::get()->specialStrings["f0"]->updateContent();
+        if (sessionNum == std::nullopt) DTLayer::get()->specialStrings["general"]->updateContent();
         else DTLayer::get()->specialStrings["s0"]->updateContent();
     }, .9f);
 
@@ -625,7 +625,7 @@ void ModifyOptions::updatePreviewName(bool categotyIsSession){
     std::string text;
 
     if (!categotyIsSession){
-        if (!from0ViewBtn->isEnabled()) text = "f0";
+        if (!from0ViewBtn->isEnabled()) text = "general";
         else text = "runs";
     }
     else{

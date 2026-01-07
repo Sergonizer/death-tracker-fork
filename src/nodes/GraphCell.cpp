@@ -155,10 +155,16 @@ void GraphCell::setOrderPos(int pos){
     onInfoChanged(true);
 }
 
-void GraphCell::setName(const std::string name){
+bool GraphCell::setName(const std::string& name){
+    if (!canChangeNameTo(name, this)) return false;
+
+    oldName = graphInfo.name;
+
     graphInfo.name = name;
     label->setText(name);
-    onInfoChanged(false);
+    onInfoChanged(true);
+
+    return true;
 }
 void GraphCell::setCoverage(DTGraphCoverage coverage){
     graphInfo.coverage = coverage;
@@ -210,4 +216,12 @@ void GraphCell::setEnabledInfo(bool b, bool changeToggler, bool callback){
         enableToggleBtn->toggle(b);
     if (callback)
         onEnabledChanged(this);
+
+    onInfoChanged(true);
+}
+
+void GraphCell::deleteMe(){
+    this->removeMeAndCleanup();
+    
+    onDeleted(graphInfo);
 }

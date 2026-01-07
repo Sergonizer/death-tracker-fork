@@ -20,7 +20,13 @@ class GraphCell : public CCMenu {
         std::function<void(GraphCell* cell)> onEnabledChanged = NULL;
         std::function<void(GraphCell* cell)> onInfoChangedCallback = NULL;
 
-        void setName(const std::string name);
+        std::function<bool(const std::string&, GraphCell*)> canChangeNameTo;
+
+        std::function<void(DTGraphInfo)> onDeleted;
+
+        std::string oldName;
+
+        bool setName(const std::string& name);
         void setCoverage(DTGraphCoverage coverage);
         void setType(DTGraphType type);
         void setOrderPos(int pos);
@@ -35,7 +41,9 @@ class GraphCell : public CCMenu {
 
         void setEnabledInfo(bool b, bool changeToggler, bool callback);
         
-        private:
+            void deleteMe();
+
+    private:
         bool init(float width, const DTGraphInfo& graphInfo);
         
         DTGraphInfo graphInfo;        

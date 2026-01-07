@@ -14,8 +14,11 @@ DTGraphNode* DTGraphNode::create() {
 
 bool DTGraphNode::init(){
 
-    pointHolder = CCNode::create();
+    pointHolder = CCMenu::create();
     pointHolder->setZOrder(1);
+    pointHolder->ignoreAnchorPointForPosition(false);
+    pointHolder->setPosition({0,0});
+    pointHolder->setContentSize({0,0});
     this->addChild(pointHolder);
 
     return true;
@@ -53,24 +56,57 @@ void DTGraphNode::setInfo(const DTGraphInfo& info){
         }
     }
 
-    this->setZOrder(info.orderPos);
+    this->setZOrder(std::numeric_limits<int>::max() - info.orderPos);
     this->setVisible(info.isEnabled);
 
     updateGraphContent();
 }
 
-void DTGraphNode::updateGraphContent(){
-    if (!this->info.has_value() || !deaths.size()) return;
+void DTGraphNode::updateDeaths(){
+    if (!this->info.has_value()) return;
+
+
+    switch (this->info.value().coverage)
+    {
+    case DTGraphCoverage::GeneralCover :
+        getGeneralDeaths();
+        break;
+    case DTGraphCoverage::GeneralRunsCover :
+        getGeneralRuns();
+        break;
+    case DTGraphCoverage::SessionCover :
+        getSessionDeaths();
+        break;
+    case DTGraphCoverage::SessionRunsCover :
+        getSessionRuns();
+        break;
     
-    if (!deaths.size()) return;
+    default:
+        break;
+    }
+
+    updateGraphContent();
+}
+
+void DTGraphNode::updateGraphContent(){
+    if (!this->info.has_value()) return;
+    
+    if (!deaths.size()){
+        if (lineNode != nullptr) lineNode->clear();
+
+        pointHolder->removeAllChildrenWithCleanup(true);
+        return;
+    }
 
     auto runStartRes = StatsManager::splitRunKey(deaths.begin()->first);
     if (runStartRes.isErr()) return;
-    float RunStartPercent = runStartRes.unwrap().start;
+    float RunStartPercent = 0;
+    if (runStartRes.unwrap().start != -1)
+        RunStartPercent = runStartRes.unwrap().start;
 
     points.clear();
 
-    struct NumericStringComparator {
+    struct Sorterrator {
         bool operator()(const Run& a, const Run& b) const {
             if (a.start != b.start)
                 return a.start < b.start;
@@ -78,13 +114,18 @@ void DTGraphNode::updateGraphContent(){
         }
     };
 
-    std::map<Run, int, NumericStringComparator> sortedDeaths{};
+    std::map<Run, int, Sorterrator> sortedDeaths{};
 
     for (const auto& death : deaths){
         auto runRes = StatsManager::splitRunKey(death.first);
         if (runRes.isErr()) continue;
 
-        sortedDeaths.insert({runRes.unwrap(), death.second});
+        if (runRes.unwrap().start != -1){
+            if (runRes.unwrap().start == runPercent)
+                sortedDeaths.insert({runRes.unwrap(), death.second});
+        }
+        else
+            sortedDeaths.insert({runRes.unwrap(), death.second});
     }
 
     if (info.value().type == DTGraphType::Passrate){
@@ -94,9 +135,9 @@ void DTGraphNode::updateGraphContent(){
 
         //<run, <passes, reaches>>
         
-        std::map<Run, std::pair<int, int>, NumericStringComparator> deathsWithPassCount{};
+        std::map<Run, std::pair<int, int>, Sorterrator> deathsWithPassCount{};
 
-        for (std::map<Run, int, NumericStringComparator>::reverse_iterator it = sortedDeaths.rbegin(); it != sortedDeaths.rend(); ++it)
+        for (std::map<Run, int, Sorterrator>::reverse_iterator it = sortedDeaths.rbegin(); it != sortedDeaths.rend(); ++it)
         {
             //log::info("r: ({}, {}), d: {} | O: {}", it->first.start, it->first.end, it->second, overallDeaths);
 
@@ -184,14 +225,16 @@ void DTGraphNode::updateGraphContent(){
 
         int overallCount = 0;
         std::vector<std::pair<int, int>> percentageDeaths{};
-        for (std::map<Run, int, NumericStringComparator>::reverse_iterator it = sortedDeaths.rbegin(); it != sortedDeaths.rend(); ++it)
+        for (std::map<Run, int, Sorterrator>::reverse_iterator it = sortedDeaths.rbegin(); it != sortedDeaths.rend(); ++it)
         {
             overallCount += it->second;
             percentageDeaths.emplace(percentageDeaths.begin(), it->first.end, overallCount);
         }
 
-        if (percentageDeaths[0].first > RunStartPercent)
-            percentageDeaths.emplace(percentageDeaths.begin(), RunStartPercent, overallCount);
+        if (percentageDeaths[0].first > RunStartPercent){
+            int RunStartPercentTemp = RunStartPercent == -1 ? RunStartPercent + 1 : RunStartPercent;
+            percentageDeaths.emplace(percentageDeaths.begin(), RunStartPercentTemp, overallCount);
+        }
         
         if (percentageDeaths[percentageDeaths.size() - 1].first < 100){
             percentageDeaths.emplace_back(percentageDeaths[percentageDeaths.size() - 1].first + 1, 0);
@@ -230,12 +273,14 @@ void DTGraphNode::updateGraphContent(){
     {
         if (linePoint.x >= 0 && linePoint.x <= 100 * scaling.width && linePoint.y >= 0 && linePoint.y <= 100 * scaling.height)
         {
-            auto pointText = fmt::format("{}%", linePoint.x / scaling.width);
+            int percent = linePoint.x / scaling.width;
+            auto pointText = fmt::format("{}", percent);
             if (RunStartPercent != 0)
-                pointText.insert(0, fmt::format("{}% - ", RunStartPercent));
+                pointText = fmt::format("{}-{}", RunStartPercent, percent);
 
             auto GP = GraphPoint::create(pointText, linePoint.y / scaling.height, info.value().pointColor);
-            //GP->setDelegate(this);
+            GP->relatedGraph = this;
+            GP->setDelegate(delegate);
             GP->setPosition(linePoint);
             GP->setScale(info.value().pointScale);
             pointHolder->addChild(GP);
@@ -296,35 +341,23 @@ void DTGraphNode::getGeneralRuns(){
 }
 
 void DTGraphNode::getSessionDeaths(){
-    auto i = DTLayer::get()->getCurrentSelectedSession();
+    auto sessionRes = DTLayer::get()->loadSessionFromSave(selector->getCurrentCount());
 
-    if (i == 0 || i > DTLayer::get()->sessionsOrder.size())
+    if (sessionRes.isErr()){
+        this->deaths.clear();
         return;
-
-    auto it = DTLayer::get()->sessionsOrder.begin();
-    std::advance(it, i - 1);
-    
-    auto levelKey = it->second;
-
-    Result<Session> sessionRes = StatsManager::getSession(levelKey, it->first);
-    if (sessionRes.isErr()) return;
+    }
 
     this->deaths = sessionRes.unwrap().deaths;
 }
 
 void DTGraphNode::getSessionRuns(){
-    auto i = DTLayer::get()->getCurrentSelectedSession();
+    auto sessionRes = DTLayer::get()->loadSessionFromSave(selector->getCurrentCount());
 
-    if (i == 0 || i > DTLayer::get()->sessionsOrder.size())
+    if (sessionRes.isErr()){
+        this->deaths.clear();
         return;
-
-    auto it = DTLayer::get()->sessionsOrder.begin();
-    std::advance(it, i - 1);
-    
-    auto levelKey = it->second;
-
-    Result<Session> sessionRes = StatsManager::getSession(levelKey, it->first);
-    if (sessionRes.isErr()) return;
+    }
 
     this->deaths = sessionRes.unwrap().runs;
 }

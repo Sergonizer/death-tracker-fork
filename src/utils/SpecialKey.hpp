@@ -4,6 +4,10 @@ using namespace geode::prelude;
 
 using UpdateTask = geode::Task<Result<std::string>, int>;
 
+#ifndef BIND_UPDATE_FUNC
+#define BIND_UPDATE_FUNC(METHOD) std::bind(&std::remove_reference<decltype(*this)>::type::METHOD, this)
+#endif
+
 class SpecialKey : public CCObject, public std::enable_shared_from_this<SpecialKey> {
     private:
         std::string currentContent;

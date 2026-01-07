@@ -22,5 +22,6 @@ class $modify(DTDialogLayer, DialogLayer) {
         std::vector<std::tuple<std::string, int, float>> icons;
         std::function<void(DialogObject*)> callback = NULL;
         DialogObject* firstDialogue = nullptr;
+        bool doCallCreationCallback = false;
     };
 };

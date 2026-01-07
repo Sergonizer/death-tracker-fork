@@ -261,50 +261,32 @@ bool DTLayer::setup(GJGameLevel* const& level) {
     discardChangesButton->setPosition({-191, -140});
     editLayoutMenu->addChild(discardChangesButton);
 
-    auto testInfo = TutorialButton::create(.5f, [graphBtn](DTTutorialLayer* tutorialLayer){
-        tutorialLayer->appendDialogue(DialogObject::create("The Shopkeeper", "meow", 1, 1, false, {255, 255, 255}), DialogChatPlacement::Top);
+    auto testInfo = TutorialButton::create(1, [&, levelSpecificOptionsBtn, graphBtn, editLayoutBtn, settingsBtn](DTTutorialLayer* tutorialLayer){
+        tutorialLayer->appendDialogue("Welcome to the <cy>main death tracker page!</c>", TutorialCharacterFace::TCFNormal, 1, {255, 255, 255}, 1, DialogChatPlacement::Center);
+        tutorialLayer->appendDialogue("This is the <cy>main view</c> where you can view <cg>all your data!</c>", TutorialCharacterFace::TCFNormal, 1, {255, 255, 255}, .75f, DialogChatPlacement::Bottom);
+        tutorialLayer->joinHighlight(scrollLayer);
+        tutorialLayer->appendDialogue("You can hold <cg>control</c> and <cp>scroll</c> to zoom in! and <cc>shift</c> and <cp>scroll</c> to move side to side.", TutorialCharacterFace::TCFNormal, 1, {255, 255, 255}, .75f, DialogChatPlacement::Bottom);
+        tutorialLayer->joinHighlight(scrollLayer);
+        tutorialLayer->appendDialogue("Of course you can also scroll normally :D", TutorialCharacterFace::TCFNormal, 1, {255, 255, 255}, 1, DialogChatPlacement::Center);
+        tutorialLayer->appendDialogue("You also have many options <cy>at the bottom</c> here!", TutorialCharacterFace::TCFNormal, 1, {255, 255, 255}, .75f, DialogChatPlacement::Top);
+        tutorialLayer->joinHighlight(bottomMenu);
+        tutorialLayer->appendDialogue("There's the <cy>level options</c> which allow you to change may things about how you <cr>track/display your data</c>", TutorialCharacterFace::TCFNormal, 1, {255, 255, 255}, .75f, DialogChatPlacement::Top);
+        tutorialLayer->joinHighlight(levelSpecificOptionsBtn);
+        tutorialLayer->appendDialogue("You have the <cg>graphs</c> which allow you to visually see your consistancy and other aspects of your data", TutorialCharacterFace::TCFNormal, 1, {255, 255, 255}, .75f, DialogChatPlacement::Top);
         tutorialLayer->joinHighlight(graphBtn);
-        tutorialLayer->appendDialogue(DialogObject::create("The Shopkeeper", "haha", 1, 1, false, {255, 255, 255}), DialogChatPlacement::Center);
+        tutorialLayer->appendDialogue("You have the <co>session selector</c>, allowing you to choose which session to view", TutorialCharacterFace::TCFNormal, 1, {255, 255, 255}, .75f, DialogChatPlacement::Top);
+        tutorialLayer->joinHighlight(sessionSelector);
+        tutorialLayer->appendDialogue("The <cy>higher</c> the number, the <cr>older</c> the session! so <co>session 1</c> is the most recent and <co>the last</c> is the oldest!", TutorialCharacterFace::TCFNormal, 1, {255, 255, 255}, .75f, DialogChatPlacement::Top);
+        tutorialLayer->joinHighlight(sessionSelector);
+        tutorialLayer->appendDialogue("You also have the option to <cy>edit how your data is layed out</c> using this button!", TutorialCharacterFace::TCFNormal, 1, {255, 255, 255}, .75f, DialogChatPlacement::Top);
+        tutorialLayer->joinHighlight(editLayoutBtn);
+        tutorialLayer->appendDialogue("And lastly you have quick access to the mod settings for death tracker right here!", TutorialCharacterFace::TCFNormal, 1, {255, 255, 255}, .75f, DialogChatPlacement::Top);
+        tutorialLayer->joinHighlight(settingsBtn);
+        tutorialLayer->appendDialogue("Have fun playing around with the features!", TutorialCharacterFace::TCFNormal, 1, {255, 255, 255}, 1, DialogChatPlacement::Center);
     });
-    bottomMenu->addChild(testInfo);
+    testInfo->setPosition(m_size);
+    m_buttonMenu->addChild(testInfo);
 
-    // tutorial test
-    // auto dark = CCScale9Sprite::create("pixel.png");
-    // dark->setOpacity(180);
-    // dark->setPosition(ccp(winSize.width/2, winSize.height/2));
-    // dark->setContentSize(winSize);
-    // dark->setColor({0,0,0});
-    // this->addChild(dark, 100);
-
-    // ccBlendFunc bf = { GL_ONE, GL_ONE };
-
-    // auto glowNode = CCMenu::create();
-    // this->addChild(glowNode, 101);
-
-    // auto lightSprite1 = CCSprite::createWithSpriteFrameName("d_gradient_c_02_001.png");
-    // lightSprite1->setBlendFunc(bf);
-    // lightSprite1->setAnchorPoint({1, 0});
-    // glowNode->addChild(lightSprite1);
-
-    // auto lightSprite2 = CCSprite::createWithSpriteFrameName("d_gradient_c_02_001.png");
-    // lightSprite2->setBlendFunc(bf);
-    // lightSprite2->setRotation(90);
-    // lightSprite2->setAnchorPoint({1, 0});
-    // glowNode->addChild(lightSprite2);
-
-    // auto lightSprite3 = CCSprite::createWithSpriteFrameName("d_gradient_c_02_001.png");
-    // lightSprite3->setBlendFunc(bf);
-    // lightSprite3->setRotation(180);
-    // lightSprite3->setAnchorPoint({1, 0});
-    // glowNode->addChild(lightSprite3);
-
-    // auto lightSprite4 = CCSprite::createWithSpriteFrameName("d_gradient_c_02_001.png");
-    // lightSprite4->setBlendFunc(bf);
-    // lightSprite4->setRotation(270);
-    // lightSprite4->setAnchorPoint({1, 0});
-    // glowNode->addChild(lightSprite4);
-
-    
     return true;
 }
 
@@ -379,12 +361,6 @@ void DTLayer::ccTouchesMoved(CCSet* touches, CCEvent* event){
         scrollLayer->ccTouchesMoved(touches, event);
 }
 
-void DTLayer::updateRunsAllowed(){
-    // if (m_MyLevelStats.currentBest != -1)
-    //     StatsManager::setLevelStats(m_MyLevelStats, m_Level, false);
-    //DTLayer::refreshAll();
-}
-
 void DTLayer::graphBtnClicked(CCObject*){
     DTGraphLayer::create()->show();
 }
@@ -398,148 +374,60 @@ void DTLayer::addSpecialString(const std::shared_ptr<SpecialKey>& key){
 
 void DTLayer::populateSpecialStrings(){
     auto nlKey = std::make_shared<SpecialKey>("nl", "Adds a new line");
-    nlKey->setUpdateFunction([&](){ return UpdateTask::immediate(Ok("\n"));});
+    nlKey->setUpdateFunction(BIND_UPDATE_FUNC(DTLayer::onNLKey));
     addSpecialString(nlKey);
 
     auto attemptsKey = std::make_shared<SpecialKey>("att", "Adds your geometry dash attempt count (shared with linked levels)");
-    attemptsKey->setUpdateFunction([&](){ return UpdateTask::immediate(Ok(std::to_string(m_Level->m_attempts.value())));});
+    attemptsKey->setUpdateFunction(BIND_UPDATE_FUNC(DTLayer::onATTKey));
     addSpecialString(attemptsKey);
 
     auto levelNameKey = std::make_shared<SpecialKey>("lvln", "Adds the current levels name");
-    levelNameKey->setUpdateFunction([&](){ return UpdateTask::immediate(Ok(std::string(m_Level->m_levelName)));});
+    levelNameKey->setUpdateFunction(BIND_UPDATE_FUNC(DTLayer::onLVLNKey));
     addSpecialString(levelNameKey);
 
-    //f0
-    auto from0Key = std::make_shared<SpecialKey>("f0", "Adds all your runs from 0% (shared with linked levels)");
-    from0Key->setUpdateFunction([&](){ return UpdateTask::run([&](auto progress, auto hasBeenCancelled) -> UpdateTask::Result {
-        if (m_MyLevelStats.isErr()) return Err("Failed to create from0 deaths string");
-        auto& myStats = m_MyLevelStats.unwrap();
-        if (myStats.from0.isErr()) return Err("Failed to create from0 deaths string");
-        auto& myFrom0Stats = myStats.from0.unwrap();
+    auto generalKey = std::make_shared<SpecialKey>("general", "Adds all your runs from 0% (shared with linked levels)");
+    generalKey->setUpdateFunction(BIND_UPDATE_FUNC(DTLayer::onGeneralKey));
+    addSpecialString(generalKey);
 
-        Deaths sharedDeaths = myFrom0Stats.deaths;
-        NewBests sharedNBs = myFrom0Stats.newBests;
-
-        for (const auto& levelData : linkedLevelsData)
-        {
-            if (levelData.from0.isErr()) continue;
-            auto& levelFrom0Stats = levelData.from0.unwrap();
-
-            sharedDeaths.insert(levelFrom0Stats.deaths.begin(), levelFrom0Stats.deaths.end());
-            sharedNBs.insert(levelFrom0Stats.newBests.begin(), levelFrom0Stats.newBests.end());
-        }
-
-        std::string out;
-
-        if (!createDeathsString(sharedDeaths, Save::getFrom0Customazations(), out, &sharedNBs, "{nbc}")) return Err("Failed to create from0 deaths string");
-
-        return Ok(out);
-    }, "Creating from0 deaths string");});
-    addSpecialString(from0Key);
-
-    //dtatt
     auto dtattKey = std::make_shared<SpecialKey>("dtatt", "Adds your death tracker attempt count (shared with linked levels)");
-    dtattKey->setUpdateFunction([&](){ return UpdateTask::run([&](auto progress, auto hasBeenCancelled) -> UpdateTask::Result {
-        if (m_MyLevelStats.isErr()) return Err("Failed to create death tracker attempts string");
-        auto& myStats = m_MyLevelStats.unwrap();
-        if (myStats.from0.isErr()) return Err("Failed to create death tracker attempts string");
-        auto& myFrom0Stats = myStats.from0.unwrap();
-
-        unsigned long long attempts = 0;
-
-        auto deaths = [&attempts](const Deaths& deaths){
-            for (const auto& [_, count] : deaths)
-                attempts += count;
-        };
-
-        deaths(myFrom0Stats.deaths);
-
-        for (const auto& levelData : linkedLevelsData)
-        {
-            if (levelData.from0.isErr()) continue;
-            auto& levelFrom0Stats = levelData.from0.unwrap();
-
-            deaths(levelFrom0Stats.deaths);
-        }
-
-        return Ok(std::to_string(attempts));
-    }, "Creating death tracker attempts string");});
+    dtattKey->setUpdateFunction(BIND_UPDATE_FUNC(DTLayer::onDTATTKey));
     addSpecialString(dtattKey);
 
     auto runsKey = std::make_shared<SpecialKey>("runs", "Adds all your runs from practice mode/start positions (shared with linked levels)");
-    runsKey->setUpdateFunction([&](){ return UpdateTask::run([&](auto progress, auto hasBeenCancelled) -> UpdateTask::Result {
-        if (m_MyLevelStats.isErr()) return Err("Failed to create run deaths string");
-        auto& myStats = m_MyLevelStats.unwrap();
-        if (myStats.from0.isErr()) return Err("Failed to create run deaths string");
-        auto& myFrom0Stats = myStats.from0.unwrap();
-
-        Deaths sharedRuns = myFrom0Stats.runs;
-
-        for (const auto& levelData : linkedLevelsData)
-        {
-            if (levelData.from0.isErr()) continue;
-            auto& levelFrom0Stats = levelData.from0.unwrap();
-            
-            sharedRuns.insert(levelFrom0Stats.runs.begin(), levelFrom0Stats.runs.end());
-        }
-
-        std::string out;
-
-        if (!createDeathsString(sharedRuns, Save::getRunsCustomazations(), out)) return Err("Failed to create run deaths string");
-
-        return Ok(out);
-    }, "Creating runs deaths string");});
+    runsKey->setUpdateFunction(BIND_UPDATE_FUNC(DTLayer::onRUNSKey));
     addSpecialString(runsKey);
 
     auto sessionFrom0Key = std::make_shared<SpecialKey>("s0", "Adds all your runs on the selected session from 0");
-    sessionFrom0Key->setUpdateFunction([&](){ return UpdateTask::run([&](auto progress, auto hasBeenCancelled) -> UpdateTask::Result {
-        auto i = sessionSelector->getCurrentCount();
-
-        if (i == 0 || i > sessionsOrder.size())
-            return Err("Failed to create session from 0 deaths string");
-
-        auto it = sessionsOrder.begin();
-        std::advance(it, i - 1);
-        
-        auto levelKey = it->second;
-
-        Result<Session> sessionRes = StatsManager::getSession(levelKey, it->first);
-        if (sessionRes.isErr()) return Err("Failed to get session from0 deaths");
-
-        std::string out;
-
-        auto session = sessionRes.unwrap();
-
-        if (!createDeathsString(session.deaths, Save::getSessionF0Customazations(), out, &session.newBests, "{sbc}")) return Err("Failed to create session from0 deaths string");
-
-        return Ok(out);
-    }, "Creating session from0 deaths string");});
+    sessionFrom0Key->setUpdateFunction(BIND_UPDATE_FUNC(DTLayer::onS0Key));
     addSpecialString(sessionFrom0Key);
 
     auto sessionRuns0Key = std::make_shared<SpecialKey>("sruns", "Adds all your runs on the selected session");
-    sessionRuns0Key->setUpdateFunction([&](){ return UpdateTask::run([&](auto progress, auto hasBeenCancelled) -> UpdateTask::Result {
-        auto i = sessionSelector->getCurrentCount();
-
-        if (i == 0 || i > sessionsOrder.size())
-            return Err("Failed to create session run deaths string");
-
-        auto it = sessionsOrder.begin();
-        std::advance(it, i - 1);
-        
-        auto levelKey = it->second;
-
-        Result<Session> sessionRes = StatsManager::getSession(levelKey, it->first);
-        if (sessionRes.isErr()) return Err("Failed to get session run deaths");
-
-        std::string out;
-
-        auto session = sessionRes.unwrap();
-        
-        if (!createDeathsString(session.runs, Save::getRunsCustomazations(), out)) return Err("Failed to create session run deaths string");
-
-        return Ok(out);
-    }, "Creating session run deaths string");});
+    sessionRuns0Key->setUpdateFunction(BIND_UPDATE_FUNC(DTLayer::onSRUNSKey));
     addSpecialString(sessionRuns0Key);
+
+    auto ptallKey = std::make_shared<SpecialKey>("ptgen", "Adds your total estimated calculated platime (shared with linked levels)");
+    ptallKey->setUpdateFunction(BIND_UPDATE_FUNC(DTLayer::onPTALLSKey));
+    addSpecialString(ptallKey);
+
+    auto ptf0Key = std::make_shared<SpecialKey>("ptf0", "Adds your total estimated calculated platime from 0 (shared with linked levels)");
+    ptf0Key->setUpdateFunction(BIND_UPDATE_FUNC(DTLayer::onPTF0SKey));
+    addSpecialString(ptf0Key);
+
+    auto ptrunKey = std::make_shared<SpecialKey>("ptruns", "Adds your total estimated calculated platime in runs (shared with linked levels)");
+    ptrunKey->setUpdateFunction(BIND_UPDATE_FUNC(DTLayer::onPTRUNSKey));
+    addSpecialString(ptrunKey);
+
+    auto ptsallKey = std::make_shared<SpecialKey>("ptsgen", "Adds your total estimated calculated session platime");
+    ptsallKey->setUpdateFunction(BIND_UPDATE_FUNC(DTLayer::onPTSALLSKey));
+    addSpecialString(ptsallKey);
+
+    auto ptsf0Key = std::make_shared<SpecialKey>("ptsf0", "Adds your total estimated calculated session platime from 0");
+    ptsf0Key->setUpdateFunction(BIND_UPDATE_FUNC(DTLayer::onPTSF0Key));
+    addSpecialString(ptsf0Key);
+
+    auto ptsrunKey = std::make_shared<SpecialKey>("ptsruns", "Adds your total estimated calculated session platime in runs");
+    ptsrunKey->setUpdateFunction(BIND_UPDATE_FUNC(DTLayer::onPTSRUNSKey));
+    addSpecialString(ptsrunKey);
 }
 
 void DTLayer::UpdateSharedStats(){
@@ -645,7 +533,7 @@ void DTLayer::UpdateDeathRelatedStrings(){
 
     for (const auto& [_, key] : specialStrings)
     {
-        if (key->getKey() == "f0" || key->getKey() == "s0" || key->getKey() == "runs" || key->getKey() == "sruns")
+        if (key->getKey() == "general" || key->getKey() == "s0" || key->getKey() == "runs" || key->getKey() == "sruns")
             key->updateContent();
     }
 }
@@ -1406,8 +1294,22 @@ void DTLayer::specialKeyUpdateStarted(const std::shared_ptr<SpecialKey>& key){
 }
 
 void DTLayer::specialKeyUpdateCompleted(const std::shared_ptr<SpecialKey>& key){
-    if (key->getKey() == "f0"){
+    if (key->getKey() == "general"){
         specialStrings["dtatt"]->updateContent();
+        specialStrings["ptf0"]->updateContent();
+        specialStrings["ptgen"]->updateContent();
+    }
+    else if (key->getKey() == "runs"){
+        specialStrings["ptruns"]->updateContent();
+        specialStrings["ptgen"]->updateContent();
+    }
+    else if (key->getKey() == "s0"){
+        specialStrings["ptsf0"]->updateContent();
+        specialStrings["ptsgen"]->updateContent();
+    }
+    else if (key->getKey() == "sruns"){
+        specialStrings["ptsruns"]->updateContent();
+        specialStrings["ptsgen"]->updateContent();
     }
 
     for (const auto& label : keyListeners)
@@ -1741,4 +1643,226 @@ bool DTLayer::DeleteSave(){
 
     onClose(nullptr);
     return true;
+}
+
+UpdateTask DTLayer::onNLKey(){
+    return UpdateTask::immediate(Ok(std::string("\n")));
+}
+UpdateTask DTLayer::onATTKey(){
+    return UpdateTask::immediate(Ok(std::to_string(m_Level->m_attempts.value())));
+}
+UpdateTask DTLayer::onLVLNKey(){
+    return UpdateTask::immediate(Ok(std::string(m_Level->m_levelName)));
+}
+UpdateTask DTLayer::onGeneralKey(){
+    return UpdateTask::run([&](auto progress, auto hasBeenCancelled) -> UpdateTask::Result {
+        if (m_MyLevelStats.isErr()) return Err("Failed to create from0 deaths string");
+        auto& myStats = m_MyLevelStats.unwrap();
+        if (myStats.from0.isErr()) return Err("Failed to create from0 deaths string");
+        auto& myFrom0Stats = myStats.from0.unwrap();
+
+        Deaths sharedDeaths = myFrom0Stats.deaths;
+        NewBests sharedNBs = myFrom0Stats.newBests;
+
+        for (const auto& levelData : linkedLevelsData)
+        {
+            if (levelData.from0.isErr()) continue;
+            auto& levelFrom0Stats = levelData.from0.unwrap();
+
+            sharedDeaths.insert(levelFrom0Stats.deaths.begin(), levelFrom0Stats.deaths.end());
+            sharedNBs.insert(levelFrom0Stats.newBests.begin(), levelFrom0Stats.newBests.end());
+        }
+
+        std::string out;
+
+        if (!createDeathsString(sharedDeaths, Save::getFrom0Customazations(), out, &sharedNBs, "{nbc}")) return Err("Failed to create from0 deaths string");
+
+        return Ok(out);
+    }, "Creating general deaths string");
+}
+UpdateTask DTLayer::onDTATTKey(){
+    return UpdateTask::run([&](auto progress, auto hasBeenCancelled) -> UpdateTask::Result {
+        if (m_MyLevelStats.isErr()) return Err("Failed to create death tracker attempts string");
+        auto& myStats = m_MyLevelStats.unwrap();
+        if (myStats.from0.isErr()) return Err("Failed to create death tracker attempts string");
+        auto& myFrom0Stats = myStats.from0.unwrap();
+
+        unsigned long long attempts = 0;
+
+        auto deaths = [&attempts](const Deaths& deaths){
+            for (const auto& [_, count] : deaths)
+                attempts += count;
+        };
+
+        deaths(myFrom0Stats.deaths);
+
+        for (const auto& levelData : linkedLevelsData)
+        {
+            if (levelData.from0.isErr()) continue;
+            auto& levelFrom0Stats = levelData.from0.unwrap();
+
+            deaths(levelFrom0Stats.deaths);
+        }
+
+        return Ok(std::to_string(attempts));
+    }, "Creating death tracker attempts string");
+}
+UpdateTask DTLayer::onRUNSKey(){
+    return UpdateTask::run([&](auto progress, auto hasBeenCancelled) -> UpdateTask::Result {
+        if (m_MyLevelStats.isErr()) return Err("Failed to create run deaths string");
+        auto& myStats = m_MyLevelStats.unwrap();
+        if (myStats.from0.isErr()) return Err("Failed to create run deaths string");
+        auto& myFrom0Stats = myStats.from0.unwrap();
+
+        Deaths sharedRuns = myFrom0Stats.runs;
+
+        for (const auto& levelData : linkedLevelsData)
+        {
+            if (levelData.from0.isErr()) continue;
+            auto& levelFrom0Stats = levelData.from0.unwrap();
+            
+            sharedRuns.insert(levelFrom0Stats.runs.begin(), levelFrom0Stats.runs.end());
+        }
+
+        std::string out;
+
+        if (!createDeathsString(sharedRuns, Save::getRunsCustomazations(), out)) return Err("Failed to create run deaths string");
+
+        return Ok(out);
+    }, "Creating runs deaths string");
+}
+UpdateTask DTLayer::onS0Key(){
+    return UpdateTask::run([&](auto progress, auto hasBeenCancelled) -> UpdateTask::Result {
+        auto sessionRes = loadSessionFromSave();
+        if (sessionRes.isErr()) return Err("{}", sessionRes.unwrapErr());
+
+        std::string out;
+
+        auto session = sessionRes.unwrap();
+
+        if (!createDeathsString(session.deaths, Save::getSessionF0Customazations(), out, &session.newBests, "{sbc}")) return Err("Failed to create session from0 deaths string");
+
+        return Ok(out);
+    }, "Creating session from0 deaths string");
+}
+UpdateTask DTLayer::onSRUNSKey(){
+    return UpdateTask::run([&](auto progress, auto hasBeenCancelled) -> UpdateTask::Result {
+        auto sessionRes = loadSessionFromSave();
+        if (sessionRes.isErr()) return Err("{}", sessionRes.unwrapErr());
+
+        std::string out;
+
+        auto session = sessionRes.unwrap();
+        
+        if (!createDeathsString(session.runs, Save::getRunsCustomazations(), out)) return Err("Failed to create session run deaths string");
+
+        return Ok(out);
+    }, "Creating session run deaths string");
+}
+
+long long DTLayer::calcPlaytime(const Deaths& deaths){
+    long long playtime = 0;
+
+    auto wt = m_Level->m_timestamp
+        ? m_Level->m_timestamp / 240
+        : std::ceil(timeForLevelString(m_Level->m_levelString));
+
+    for (const auto& death : deaths)
+    {
+        auto runSplitRes = StatsManager::splitRunKey(death.first);
+        if (runSplitRes.isErr()) continue;
+
+        int runLength = (runSplitRes.unwrap().end - runSplitRes.unwrap().start);
+        log::info("{} | {} | {}", runLength, runSplitRes.unwrap().end, runSplitRes.unwrap().start);
+        log::info("{}", death.second);
+
+        long long runOverallPlaytime = 0;
+
+        if (runLength == 0)
+            runOverallPlaytime = wt * 0.005f * death.second;
+        else
+            runOverallPlaytime = wt * (runLength / 100.0f) * death.second;
+
+        playtime += runOverallPlaytime;
+    }
+
+    return playtime;
+}
+
+UpdateTask DTLayer::onPTALLSKey(){
+    return UpdateTask::run([&](auto progress, auto hasBeenCancelled) -> UpdateTask::Result {
+        if (m_MyLevelStats.isErr()) return Err("Failed to calculate playtime");
+        auto& myStats = m_MyLevelStats.unwrap();
+        if (myStats.from0.isErr()) return Err("Failed to calculate playtime");
+        auto& myFrom0Stats = myStats.from0.unwrap();
+
+        auto deaths = myFrom0Stats.deaths;
+        deaths.insert(myFrom0Stats.runs.begin(), myFrom0Stats.runs.end());
+
+        return Ok(StatsManager::workingTime(calcPlaytime(deaths)));
+    }, "Creating calculated playtime string");
+}
+
+UpdateTask DTLayer::onPTF0SKey(){
+    return UpdateTask::run([&](auto progress, auto hasBeenCancelled) -> UpdateTask::Result {
+        if (m_MyLevelStats.isErr()) return Err("Failed to calculate from 0 playtime");
+        auto& myStats = m_MyLevelStats.unwrap();
+        if (myStats.from0.isErr()) return Err("Failed to calculate from 0 playtime");
+        auto& myFrom0Stats = myStats.from0.unwrap();
+
+        return Ok(StatsManager::workingTime(calcPlaytime(myFrom0Stats.deaths)));
+    }, "Creating from 0 calculated playtime string");
+}
+UpdateTask DTLayer::onPTRUNSKey(){
+    return UpdateTask::run([&](auto progress, auto hasBeenCancelled) -> UpdateTask::Result {
+        if (m_MyLevelStats.isErr()) return Err("Failed to calculate runs playtime");
+        auto& myStats = m_MyLevelStats.unwrap();
+        if (myStats.from0.isErr()) return Err("Failed to calculate runs playtime");
+        auto& myFrom0Stats = myStats.from0.unwrap();
+
+        return Ok(StatsManager::workingTime(calcPlaytime(myFrom0Stats.runs)));
+    }, "Creating runs calculated playtime string");
+}
+
+UpdateTask DTLayer::onPTSALLSKey(){
+    return UpdateTask::run([&](auto progress, auto hasBeenCancelled) -> UpdateTask::Result {
+        auto sessionRes = loadSessionFromSave();
+        if (sessionRes.isErr()) return Err("{}", sessionRes.unwrapErr());
+        auto session = sessionRes.unwrap();
+
+        auto deaths = session.deaths;
+        deaths.insert(session.runs.begin(), session.runs.end());
+
+        return Ok(StatsManager::workingTime(calcPlaytime(sessionRes.unwrap().deaths)));
+    }, "Creating calculated session from 0 playtime string");
+}
+UpdateTask DTLayer::onPTSF0Key(){
+    return UpdateTask::run([&](auto progress, auto hasBeenCancelled) -> UpdateTask::Result {
+        auto sessionRes = loadSessionFromSave();
+        if (sessionRes.isErr()) return Err("{}", sessionRes.unwrapErr());
+
+        return Ok(StatsManager::workingTime(calcPlaytime(sessionRes.unwrap().deaths)));
+    }, "Creating calculated session from 0 playtime string");
+}
+UpdateTask DTLayer::onPTSRUNSKey(){
+    return UpdateTask::run([&](auto progress, auto hasBeenCancelled) -> UpdateTask::Result {
+        auto sessionRes = loadSessionFromSave();
+        if (sessionRes.isErr()) return Err("{}", sessionRes.unwrapErr());
+
+        return Ok(StatsManager::workingTime(calcPlaytime(sessionRes.unwrap().runs)));
+    }, "Creating calculated session runs playtime string");
+}
+
+Result<Session> DTLayer::loadSessionFromSave(std::optional<int> sessionIndex){
+    int i = sessionIndex.has_value() ? sessionIndex.value() : sessionSelector->getCurrentCount();
+
+    if (i == 0 || i > sessionsOrder.size())
+        return Err("Failed to create session run deaths string");
+
+    auto it = sessionsOrder.begin();
+    std::advance(it, i - 1);
+    
+    auto levelKey = it->second;
+
+    return  StatsManager::getSession(levelKey, it->first);
 }

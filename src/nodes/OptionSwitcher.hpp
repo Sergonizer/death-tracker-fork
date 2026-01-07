@@ -26,8 +26,8 @@ class OptionSwitcher : public CCMenu {
 
         void setCallback(const std::function<void(E)>& callback);
 
-        void setValue(int index, bool runCallback);
-        void setValue(E e, bool runCallback);
+        void setValue(int index, bool runCallback = false);
+        void setValue(E e, bool runCallback = false);
 
     private:
         std::vector<CCLabelBMFont*> labels{};
