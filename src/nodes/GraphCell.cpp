@@ -63,6 +63,7 @@ bool GraphCell::init(float width, const DTGraphInfo& graphInfo){
         -label->getScaledContentHeight() - enableToggleBtn->getContentHeight() / 2 - 2
     ));
     enableToggleBtn->setZOrder(1);
+    enableToggleBtn->setID("toggle-btn");
     enableToggleBtn->setCallback([&](auto state){
         setEnabledInfo(state, false, true);
     });
@@ -84,6 +85,7 @@ bool GraphCell::init(float width, const DTGraphInfo& graphInfo){
         this,
         menu_selector(GraphCell::onArrowDown)
     );
+    arrowDown->setID("down-arrow");
     arrowDown->setPosition({
         width - arrowDown->getContentWidth() / 2 - 4,
         10
@@ -98,6 +100,7 @@ bool GraphCell::init(float width, const DTGraphInfo& graphInfo){
         this,
         menu_selector(GraphCell::onArrowUp)
     );
+    arrowUp->setID("up-arrow");
     arrowUp->setPosition({
         arrowDown->getPositionX(),
         arrowDown->getPositionY() + arrowUp->getContentHeight() / 2 + arrowDown->getContentHeight() / 2 + 1
@@ -111,6 +114,7 @@ bool GraphCell::init(float width, const DTGraphInfo& graphInfo){
         this,
         menu_selector(GraphCell::onOptions)
     );
+    settingBtn->setID("settings-btn");
     settingBtn->setPosition({enableToggleBtn->getPositionX(), enableToggleBtn->getPositionY() - enableToggleBtn->getContentHeight() / 2 - settingBtn->getContentHeight() / 2});
     this->addChild(settingBtn);
 
@@ -118,6 +122,7 @@ bool GraphCell::init(float width, const DTGraphInfo& graphInfo){
         {DTGraphType::Passrate, "Passrate"},
         {DTGraphType::Reachrate, "Reachrate"}
     });
+    typeSwitcher->setID("type-switcher");
     typeSwitcher->setScale(.4f);
     typeSwitcher->setAnchorPoint({.5f, 0});
     typeSwitcher->setPositionX(width / 2 + 2);
@@ -134,6 +139,7 @@ bool GraphCell::init(float width, const DTGraphInfo& graphInfo){
         0,
         typeSwitcher->getScaledContentHeight() + typeSwitcherLabel->getScaledContentHeight() / 2
     ));
+    typeSwitcherLabel->setID("type-label");
     this->addChild(typeSwitcherLabel); 
 
     return true;

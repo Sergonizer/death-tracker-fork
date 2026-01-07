@@ -262,27 +262,40 @@ bool DTLayer::setup(GJGameLevel* const& level) {
     editLayoutMenu->addChild(discardChangesButton);
 
     auto testInfo = TutorialButton::create(1, [&, levelSpecificOptionsBtn, graphBtn, editLayoutBtn, settingsBtn](DTTutorialLayer* tutorialLayer){
-        tutorialLayer->appendDialogue("Welcome to the <cy>main death tracker page!</c>", TutorialCharacterFace::TCFNormal, 1, {255, 255, 255}, 1, DialogChatPlacement::Center);
-        tutorialLayer->appendDialogue("This is the <cy>main view</c> where you can view <cg>all your data!</c>", TutorialCharacterFace::TCFNormal, 1, {255, 255, 255}, .75f, DialogChatPlacement::Bottom);
-        tutorialLayer->joinHighlight(scrollLayer);
-        tutorialLayer->appendDialogue("You can hold <cg>control</c> and <cp>scroll</c> to zoom in! and <cc>shift</c> and <cp>scroll</c> to move side to side.", TutorialCharacterFace::TCFNormal, 1, {255, 255, 255}, .75f, DialogChatPlacement::Bottom);
-        tutorialLayer->joinHighlight(scrollLayer);
-        tutorialLayer->appendDialogue("Of course you can also scroll normally :D", TutorialCharacterFace::TCFNormal, 1, {255, 255, 255}, 1, DialogChatPlacement::Center);
-        tutorialLayer->appendDialogue("You also have many options <cy>at the bottom</c> here!", TutorialCharacterFace::TCFNormal, 1, {255, 255, 255}, .75f, DialogChatPlacement::Top);
-        tutorialLayer->joinHighlight(bottomMenu);
-        tutorialLayer->appendDialogue("There's the <cy>level options</c> which allow you to change may things about how you <cr>track/display your data</c>", TutorialCharacterFace::TCFNormal, 1, {255, 255, 255}, .75f, DialogChatPlacement::Top);
-        tutorialLayer->joinHighlight(levelSpecificOptionsBtn);
-        tutorialLayer->appendDialogue("You have the <cg>graphs</c> which allow you to visually see your consistancy and other aspects of your data", TutorialCharacterFace::TCFNormal, 1, {255, 255, 255}, .75f, DialogChatPlacement::Top);
-        tutorialLayer->joinHighlight(graphBtn);
-        tutorialLayer->appendDialogue("You have the <co>session selector</c>, allowing you to choose which session to view", TutorialCharacterFace::TCFNormal, 1, {255, 255, 255}, .75f, DialogChatPlacement::Top);
-        tutorialLayer->joinHighlight(sessionSelector);
-        tutorialLayer->appendDialogue("The <cy>higher</c> the number, the <cr>older</c> the session! so <co>session 1</c> is the most recent and <co>the last</c> is the oldest!", TutorialCharacterFace::TCFNormal, 1, {255, 255, 255}, .75f, DialogChatPlacement::Top);
-        tutorialLayer->joinHighlight(sessionSelector);
-        tutorialLayer->appendDialogue("You also have the option to <cy>edit how your data is layed out</c> using this button!", TutorialCharacterFace::TCFNormal, 1, {255, 255, 255}, .75f, DialogChatPlacement::Top);
-        tutorialLayer->joinHighlight(editLayoutBtn);
-        tutorialLayer->appendDialogue("And lastly you have quick access to the mod settings for death tracker right here!", TutorialCharacterFace::TCFNormal, 1, {255, 255, 255}, .75f, DialogChatPlacement::Top);
-        tutorialLayer->joinHighlight(settingsBtn);
-        tutorialLayer->appendDialogue("Have fun playing around with the features!", TutorialCharacterFace::TCFNormal, 1, {255, 255, 255}, 1, DialogChatPlacement::Center);
+        tutorialLayer->appendDialogue("Welcome to the <cy>main death tracker page!</c>", TutorialCharacterFace::TCFNormal)
+            ->appendDialogue("This is the <cy>main view</c> where you can view <cg>all your data!</c>", TutorialCharacterFace::TCFNormal)
+            ->joinTransform(TutorialBoxPlacement::TBPBottom, .75f)
+            ->joinHighlight(scrollLayer)
+            ->joinTextToHighlight("Main Scroll View", .5f, TutorialTextPlacement::TTTop)
+            ->appendDialogue("You can hold <cg>control</c> and <cp>scroll</c> to zoom in! and <cc>shift</c> and <cp>scroll</c> to move side to side.", TutorialCharacterFace::TCFNormal)
+            ->joinHighlight(scrollLayer)
+            ->appendDialogue("Of course you can also scroll normally :D", TutorialCharacterFace::TCFNormal)
+            ->joinTransform(TutorialBoxPlacement::TBPCenter)
+            ->appendDialogue("You also have many options <cy>at the bottom</c> here!", TutorialCharacterFace::TCFNormal)
+            ->joinTransform(TutorialBoxPlacement::TBPCenter, .75f)
+            ->joinHighlight(bottomMenu)
+            ->appendDialogue("There's the <cy>level options</c> which allow you to change may things about how you <cr>track/display your data</c>", TutorialCharacterFace::TCFNormal)
+            ->joinHighlight(levelSpecificOptionsBtn)
+            ->joinTransform(TutorialBoxPlacement::TBPLeft, .75f)
+            ->joinTextToHighlight("level options", .3f, TutorialTextPlacement::TTTop)
+            ->appendDialogue("You have the <cg>graphs</c> which allow you to visually see your consistancy and other aspects of your data", TutorialCharacterFace::TCFNormal)
+            ->joinHighlight(graphBtn)
+            ->joinTextToHighlight("graphs", .3f, TutorialTextPlacement::TTTop)
+            ->appendDialogue("You have the <co>session selector</c>, allowing you to choose which session to view", TutorialCharacterFace::TCFNormal)
+            ->joinHighlight(sessionSelector)
+            ->joinTransform(TutorialBoxPlacement::TBPCenter, .75f)
+            ->joinTextToHighlight("Session Selector", .3f, TutorialTextPlacement::TTTop)
+            ->appendDialogue("The <cy>higher</c> the number, the <cr>older</c> the session! so <co>session 1</c> is the most recent and <co>the last</c> is the oldest!", TutorialCharacterFace::TCFNormal)
+            ->joinHighlight(sessionSelector)
+            ->appendDialogue("You also have the option to <cy>edit how your data is layed out</c> using this button!", TutorialCharacterFace::TCFNormal)
+            ->joinHighlight(editLayoutBtn)
+            ->joinTextToHighlight("Layout Editor", .3f, TutorialTextPlacement::TTTop)
+            ->joinTransform(TutorialBoxPlacement::TBPRight, .75f)
+            ->appendDialogue("And lastly you have quick access to the mod settings for death tracker right here!", TutorialCharacterFace::TCFNormal)
+            ->joinHighlight(settingsBtn)
+            ->joinTextToHighlight("Mod Options", .3f, TutorialTextPlacement::TTTop)
+            ->appendDialogue("Have fun playing around with the features!", TutorialCharacterFace::TCFNormal)
+            ->joinTransform(TutorialBoxPlacement::TBPCenter);
     });
     testInfo->setPosition(m_size);
     m_buttonMenu->addChild(testInfo);

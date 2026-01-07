@@ -41,7 +41,7 @@ class GraphCell : public CCMenu {
 
         void setEnabledInfo(bool b, bool changeToggler, bool callback);
         
-            void deleteMe();
+        void deleteMe();
 
     private:
         bool init(float width, const DTGraphInfo& graphInfo);

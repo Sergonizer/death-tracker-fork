@@ -245,8 +245,8 @@ void DTLabel::update(float dt){
         glow->stopAllActions();
         glow->runAction(CCTintTo::create(.1f, 0, 0, 0));
     }
-
-    if (leftExpandLine->boundingBox().containsPoint(mousePos) && !currentlyExpandingLeft){
+    
+    if (leftExpandLine->boundingBox().containsPoint(mousePos) && !currentlyExpandingLeft && isEditable){
         leftExpandLine->setVisible(true);
         leftExpandLine->setOpacity(150);
     }
@@ -254,7 +254,7 @@ void DTLabel::update(float dt){
         leftExpandLine->setVisible(false);
     }
 
-    if (rightExpandLine->boundingBox().containsPoint(mousePos) && !currentlyExpandingRight){
+    if (rightExpandLine->boundingBox().containsPoint(mousePos) && !currentlyExpandingRight && isEditable){
         rightExpandLine->setVisible(true);
         rightExpandLine->setOpacity(150);
     }
@@ -590,14 +590,6 @@ void DTLabel::completeLoading(const std::shared_ptr<SpecialKey>& key){
         modifyKeys();
     }
 }
-
-/*
-- when a specialKey is being updated, all labels using that key will load until finished and update their text accordingly
-- when text is changed update the text with the specialKeys values if not in loading mode
-
-
-
-*/
 
 void DTLabel::setFontSize(float newSize){
     newSize = std::clamp(newSize, DTLabelInfo::MIN_MAX_SCALE.x, DTLabelInfo::MIN_MAX_SCALE.y);

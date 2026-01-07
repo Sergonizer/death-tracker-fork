@@ -33,6 +33,14 @@ class GraphHolder : public CCNode {
 
         void sendKeyStuff(bool up, enumKeyCodes key);
 
+        std::vector<DTGraphNode*> getAllGraphNodes() const{
+            std::vector<DTGraphNode*> toReturn{};
+            for (const auto& [_, graph] : allGraphs)
+                toReturn.push_back(graph);
+
+            return toReturn;
+        }
+
     private:
         bool init(const CCSize& scaling);
 

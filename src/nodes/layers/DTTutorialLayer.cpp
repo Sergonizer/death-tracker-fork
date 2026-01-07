@@ -21,13 +21,12 @@ bool DTTutorialLayer::init() {
     lightRT->getSprite()->setOpacity(0);
     this->addChild(lightRT);
 
-    highlightsHolder = CCNode::create();
-    this->addChild(highlightsHolder);
+    scheduleUpdate();
 
     return true;
 }
 
-DTTutorialLayer* DTTutorialLayer::appendDialogue(const std::string& text, TutorialCharacterFace face, float textSize, const ccColor3B& textColor, float boxScale, DialogChatPlacement alignment){
+DTTutorialLayer* DTTutorialLayer::appendDialogue(const std::string& text, TutorialCharacterFace face, const ccColor3B& textColor, float textSize){
     int idOfFace = 0;
 
     switch (face)
@@ -43,29 +42,55 @@ DTTutorialLayer* DTTutorialLayer::appendDialogue(const std::string& text, Tutori
     auto dObj = DialogObject::create("abb2k", text, 1, textSize, false, textColor);
     dObj->setTag(idOfFace);
 
-    return appendDialogue(dObj, boxScale, alignment);
+    return appendDialogue(dObj);
 }
 
-DTTutorialLayer* DTTutorialLayer::appendDialogue(DialogObject* dialogue, float boxScale, DialogChatPlacement alignment){
+DTTutorialLayer* DTTutorialLayer::appendDialogue(DialogObject* dialogue){
     TutorialSegment segment{
-        .dialogue = dialogue,
-        .alignment = alignment,
-        .boxScale = boxScale
+        .dialogue = dialogue
     };
     
     allSegments.push_back(segment);
 
     return this;
 }
-DTTutorialLayer* DTTutorialLayer::joinHighlight(CCNode* targetObject){
+
+DTTutorialLayer* DTTutorialLayer::joinTransform(TutorialBoxPlacement alignment, float boxScale){
     if (!allSegments.size()) return this;
 
-    allSegments[allSegments.size() - 1].targetObjects.insert(targetObject);
+    allSegments[allSegments.size() - 1].alignment = alignment;
+    allSegments[allSegments.size() - 1].boxScale = boxScale;
+
+    return this;
+}
+
+DTTutorialLayer* DTTutorialLayer::joinHighlight(CCNode* targetObject, float delayTime){
+    if (targetObject == nullptr) return this;
+    if (!allSegments.size()) return this;
+
+    allSegments[allSegments.size() - 1].targetObjects.insert({targetObject, delayTime});
+
+    allSegments[allSegments.size() - 1].lastAddedHighlight = targetObject;
+
+    return this;
+}
+
+DTTutorialLayer* DTTutorialLayer::joinTextToHighlight(const std::string& text, float size, TutorialTextPlacement alignment){
+    if (!allSegments.size()) return this;
+    auto& targetObjects = allSegments[allSegments.size() - 1].targetObjects;
+    if (!targetObjects.size()) return this;
+
+    allSegments[allSegments.size() - 1].textForTargets[allSegments[allSegments.size() - 1].lastAddedHighlight] = HighlightText{
+        .text = text,
+        .placement = alignment,
+        .size = size
+    };
 
     return this;
 }
 
 void DTTutorialLayer::show(){
+    if (!allSegments.size()) return;
     auto highestZ = CCScene::get()->getHighestChildZ();
 
     this->setZOrder(highestZ + 1);
@@ -97,77 +122,164 @@ void DTTutorialLayer::onProgress(DialogObject* dObject){
 
     float time = segmentIndex == 0.1f ? 0 : 0.5f;
 
-    dialogueLayer->m_mainLayer->stopActionByTag(10);
-    dialogueLayer->m_mainLayer->stopActionByTag(11);
-
-    CCPoint toMoveTo;
-
-    switch (allSegments[segmentIndex].alignment) {
-        case DialogChatPlacement::Center:
-            toMoveTo = CCPoint{winSize.width * 0.5F, winSize.height * 0.5F};
-        break;
-    case DialogChatPlacement::Top:
-            toMoveTo = CCPoint{winSize.width * 0.5F, (winSize.height - 50.F) - 20.F};
-        break;
-    case DialogChatPlacement::Bottom:
-            toMoveTo = CCPoint{winSize.width * 0.5F, 70.F};
-        break;
-    }
+    bool firstRN = false;
 
     if (!firstDialogue){
         firstDialogue = true;
-        dialogueLayer->m_mainLayer->setScale(allSegments[segmentIndex].boxScale);
-
-        dialogueLayer->m_mainLayer->setPosition(toMoveTo);
-
+        firstRN = true;
         lightRT->getSprite()->runAction(CCEaseInOut::create(CCFadeTo::create(.25f, 255), 2));
     }
-    else{
-        auto scaleEase = CCEaseInOut::create(CCScaleTo::create(time, allSegments[segmentIndex].boxScale), 2);
-        scaleEase->setTag(11);
-        dialogueLayer->m_mainLayer->runAction(scaleEase);
+    
+    if (allSegments[segmentIndex].alignment.has_value()){
+        dialogueLayer->m_mainLayer->stopActionByTag(10);
+        CCPoint toMoveTo;
 
-        auto movement = CCEaseInOut::create(CCMoveTo::create(time, toMoveTo), 2);
-        movement->setTag(10);
-        dialogueLayer->m_mainLayer->runAction(movement);
-    }   
+        auto bg = static_cast<CCScale9Sprite*>(dialogueLayer->m_mainLayer->getChildren()->objectAtIndex(0));
 
-    for (const auto& glow : CCArrayExt<CCScale9Sprite*>(highlightsHolder->getChildren())){
-        glow->runAction(CCFadeTo::create(.25f, 0));
+        switch (allSegments[segmentIndex].alignment.value()) {
+            case TutorialBoxPlacement::TBPCenter:
+                toMoveTo = CCPoint{winSize.width * 0.5F, winSize.height * 0.5F};
+            break;
+        case TutorialBoxPlacement::TBPTop:
+                toMoveTo = CCPoint{winSize.width * 0.5F, (winSize.height - 50.F) - 20.F};
+            break;
+        case TutorialBoxPlacement::TBPBottom:
+                toMoveTo = CCPoint{winSize.width * 0.5F, 70.F};
+            break;
+        case TutorialBoxPlacement::TBPLeft:
+                toMoveTo = CCPoint{bg->getContentWidth() / 2, winSize.height * 0.5F};
+            break;
+        case TutorialBoxPlacement::TBPRight:
+                toMoveTo = CCPoint{winSize.width - bg->getContentWidth() / 2, winSize.height * 0.5F};
+            break;
+        case TutorialBoxPlacement::TBPTopRight:
+                toMoveTo = CCPoint{winSize.width - bg->getContentWidth() / 2, (winSize.height - 50.F) - 20.F};
+            break;
+        case TutorialBoxPlacement::TBPTopLeft:
+                toMoveTo = CCPoint{bg->getContentWidth() / 2, (winSize.height - 50.F) - 20.F};
+            break;
+        case TutorialBoxPlacement::TBPBottomLeft:
+                toMoveTo = CCPoint{bg->getContentWidth() / 2, 70.F};
+            break;
+        case TutorialBoxPlacement::TBPBottomRight:
+                toMoveTo = CCPoint{winSize.width - bg->getContentWidth() / 2, 70.F};
+            break;
+        }
+
+        if (firstRN){
+            dialogueLayer->m_mainLayer->setPosition(toMoveTo);
+        }
+        else{
+            auto movement = CCEaseInOut::create(CCMoveTo::create(time, toMoveTo), 2);
+            movement->setTag(10);
+            dialogueLayer->m_mainLayer->runAction(movement);
+        }
     }
 
-    lightRT->beginWithClear(0, 0, 0, 0.85f);
+    if (allSegments[segmentIndex].boxScale.has_value()){
+        dialogueLayer->m_mainLayer->stopActionByTag(11);
+        
+        if (firstRN){
+            dialogueLayer->m_mainLayer->setScale(allSegments[segmentIndex].boxScale.value());
+        }
+        else{
+            auto scaleEase = CCEaseInOut::create(CCScaleTo::create(time, allSegments[segmentIndex].boxScale.value()), 2);
+            scaleEase->setTag(11);
+            dialogueLayer->m_mainLayer->runAction(scaleEase);
+        }   
+    }
 
-    for (const auto& highlightTarget : allSegments[segmentIndex].targetObjects)
+    for (const auto& glow : retainedSprites){
+        if (prevHighlights.contains(glow) && allSegments[segmentIndex].targetObjects.contains(prevHighlights[glow])) continue;
+        glow->stopActionByTag(14);
+        glow->runAction(CCFadeTo::create(.25f, 0));
+
+        if (textsForHighlights.contains(glow)){
+            textsForHighlights[glow]->stopActionByTag(14);
+            textsForHighlights[glow]->runAction(CCFadeTo::create(.25f, 0));
+        }
+    }
+
+    prevHighlights.clear();
+
+    for (const auto& [highlightTarget, delayTime] : allSegments[segmentIndex].targetObjects)
     {
         auto glow = CCScale9Sprite::createWithSpriteFrameName("squareGlow.png"_spr);
 
-        auto cornerMin = highlightsHolder->convertToNodeSpace(highlightTarget->convertToWorldSpace({0, 0}));
-        auto cornerMax = highlightsHolder->convertToNodeSpace(highlightTarget->convertToWorldSpace(highlightTarget->getContentSize()));
+        auto cornerMin = this->convertToNodeSpace(highlightTarget->convertToWorldSpace({0, 0}));
+        auto cornerMax = this->convertToNodeSpace(highlightTarget->convertToWorldSpace(highlightTarget->getContentSize()));
 
         auto realContentSize = CCSize{
             std::abs(cornerMax.x - cornerMin.x),
             std::abs(cornerMax.y - cornerMin.y)
         };
 
-        glow->setContentSize(realContentSize + ccp(25, 25));
+        glow->setContentSize(realContentSize + ccp(15, 15));
         glow->setPosition(
-            highlightsHolder->convertToNodeSpace(
-                highlightTarget->getParent()->convertToWorldSpace(
-                    highlightTarget->getPosition()
+            this->convertToNodeSpace(
+                highlightTarget->convertToWorldSpace(
+                    {0, 0}
                 )
-            ) + (highlightTarget->isIgnoreAnchorPointForPosition() ? (realContentSize * highlightTarget->getAnchorPoint()) : CCSize{0,0})
+            ) + realContentSize / 2
         );
 
         glow->_scale9Image->setBlendFunc({GL_ZERO, GL_ONE_MINUS_SRC_ALPHA});
-        glow->visit();
+        glow->retain();
+        glow->onEnter();
+        retainedSprites.insert(glow);
+
+        glow->setOpacity(0);
+        auto fadeSeq = CCSequence::create(
+            CCDelayTime::create(delayTime),
+            CCFadeTo::create(.5f, 255),
+            nullptr
+        );
+        fadeSeq->setTag(14);
+        glow->runAction(fadeSeq);
+
+        prevHighlights.insert({glow, highlightTarget});
+
+        if (!allSegments[segmentIndex].textForTargets.contains(highlightTarget)) continue;
+
+        auto& textInfo = allSegments[segmentIndex].textForTargets[highlightTarget];
+
+        auto label = CCLabelBMFont::create(textInfo.text.c_str(), "bigFont.fnt");
+        label->setAlignment(textInfo.placement == TutorialTextPlacement::TTLeft ? 
+            CCTextAlignment::kCCTextAlignmentLeft :
+            (textInfo.placement == TutorialTextPlacement::TTRight ? 
+                CCTextAlignment::kCCTextAlignmentRight : 
+                CCTextAlignment::kCCTextAlignmentCenter
+            ) 
+        );
+        auto anchotPoint = CCPoint{.5f, .5f};
+        if (textInfo.placement == TutorialTextPlacement::TTRight) anchotPoint.x = 0;
+        if (textInfo.placement == TutorialTextPlacement::TTLeft) anchotPoint.x = 1;
+        if (textInfo.placement == TutorialTextPlacement::TTTop) anchotPoint.y = 0;
+        if (textInfo.placement == TutorialTextPlacement::TTBottom) anchotPoint.y = 1;
+        label->setAnchorPoint(anchotPoint);
+        label->setPosition(this->convertToNodeSpace(
+                highlightTarget->convertToWorldSpace(
+                    {0, 0}
+                )
+            ) + realContentSize * ccp(std::abs(anchotPoint.x - 1), std::abs(anchotPoint.y - 1))
+        );
+        label->setScale(textInfo.size);
+        label->setOpacity(0);
+        fadeSeq = CCSequence::create(
+            CCDelayTime::create(delayTime),
+            CCFadeTo::create(.5f, 255),
+            nullptr
+        );
+        fadeSeq->setTag(14);
+        label->runAction(fadeSeq);
+        this->addChild(label);
+
+        textsForHighlights.insert({glow, label});
     }
 
-    lightRT->end();
 }
 
 void DTTutorialLayer::dialogClosed(DialogLayer* layer){
-
     lightRT->getSprite()->runAction(CCSequence::create(
         CCEaseInOut::create(CCFadeTo::create(.25f, 0), 2),
         CCCallFunc::create(this, callfunc_selector(DTTutorialLayer::close)),
@@ -177,4 +289,21 @@ void DTTutorialLayer::dialogClosed(DialogLayer* layer){
 
 void DTTutorialLayer::close(){
     this->removeMeAndCleanup();
+}
+
+void DTTutorialLayer::update(float dt){
+    lightRT->beginWithClear(0, 0, 0, 0.85f);
+
+    for (const auto& glow : retainedSprites)
+    {
+        glow->visit();
+    }
+    
+    lightRT->end();
+}
+
+DTTutorialLayer::~DTTutorialLayer(){
+    for (const auto& glow : retainedSprites){
+        glow->release();
+    }
 }

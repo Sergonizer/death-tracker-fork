@@ -31,6 +31,8 @@ class DTGraphNode : public CCNode {
 
         GraphPointDelegate* delegate;
 
+        CCNode* pointHolder;
+
     private:
 
         void updateGraphContent();
@@ -48,6 +50,4 @@ class DTGraphNode : public CCNode {
         CCDrawNode* lineNode = nullptr;
 
         std::vector<CCPoint> points{};
-
-        CCNode* pointHolder;
 };

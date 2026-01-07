@@ -115,7 +115,7 @@ void BackupCell::onBackupLoaded(GetBackupTask::Event* event){
         backupData = value->backup.unwrap();
 
         struct tm timeInfo = {};
-        #ifdef GEODE_IS_WINDOWS
+        #if defined(_WIN32)
         gmtime_s(&timeInfo, &backupData->backupDate);
         #else
         gmtime_r(&backupData->backupDate, &timeInfo);
