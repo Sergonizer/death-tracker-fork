@@ -41,6 +41,8 @@ class GraphHolder : public CCNode {
             return toReturn;
         }
 
+        AdvancedScrollLayer* scrollLayer;
+
     private:
         bool init(const CCSize& scaling);
 
@@ -51,8 +53,6 @@ class GraphHolder : public CCNode {
         void updateLabels();
 
         void update(float dt);
-
-        AdvancedScrollLayer* scrollLayer;
 
         ccColor4B fillColor = {0, 0, 0, 120};
         float outlineThickness = 0.2f;

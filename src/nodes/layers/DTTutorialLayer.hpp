@@ -34,13 +34,16 @@ struct HighlightText{
 };
 
 struct TutorialSegment{
+    std::function<void()> beforeCallback = NULL;
+    std::function<void()> afterCallback = NULL;
+
     DialogObject* dialogue = nullptr;
     std::optional<TutorialBoxPlacement> alignment = std::nullopt;
     std::optional<float> boxScale = std::nullopt;
 
     CCNode* lastAddedHighlight;
 
-    std::map<CCNode*, float> targetObjects{};
+    std::map<CCNode*, std::pair<float, bool>> targetObjects{};
     std::map<CCNode*, HighlightText> textForTargets{};
 };
 
@@ -56,15 +59,19 @@ class DTTutorialLayer : public CCLayer, public DialogDelegate {
         );
         DTTutorialLayer* appendDialogue(DialogObject* dialogue);
         DTTutorialLayer* joinTransform(TutorialBoxPlacement alignment, float boxScale = 1);
-        DTTutorialLayer* joinHighlight(CCNode* targetObject, float delayTime = 0);
+        DTTutorialLayer* joinHighlight(CCNode* targetObject, float delayTime = 0, bool allowTouches = false);
         DTTutorialLayer* joinTextToHighlight(const std::string& text, float size = 1, TutorialTextPlacement alignment = TutorialTextPlacement::TTTop);
+        DTTutorialLayer* joinCallback(const std::function<void()>& callback, bool beforeDialogue);
 
+        DTTutorialLayer* insertHighlight(int dialogueIndex, CCNode* targetObject, float delayTime = 0, bool allowTouches = false);
+        DTTutorialLayer* insertJoinTextToHighlight(int dialogueIndex, const std::string& text, float size = 1, TutorialTextPlacement alignment = TutorialTextPlacement::TTTop);
+        
         void show();
 
         ~DTTutorialLayer();
         
     private:
-        bool init();
+        bool init() override;
         
         std::vector<TutorialSegment> allSegments{};
         std::map<DialogObject*, int> dialogueSegmentIndexes{};
@@ -76,7 +83,7 @@ class DTTutorialLayer : public CCLayer, public DialogDelegate {
 
         DialogLayer* dialogueLayer;
 
-        void dialogClosed(DialogLayer* layer);
+        void dialogClosed(DialogLayer* layer) override;
 
         void close();
 
@@ -84,7 +91,29 @@ class DTTutorialLayer : public CCLayer, public DialogDelegate {
 
         std::set<CCScale9Sprite*> retainedSprites{};
 
-        void update(float dt);
+        void update(float dt) override;
         std::map<CCScale9Sprite*, CCNode*> prevHighlights{};
         std::map<CCScale9Sprite*, CCLabelBMFont*> textsForHighlights{};
+
+        std::map<CCScale9Sprite*, CCNode*> touchAllowedNodes{};
+
+        bool ccTouchBegan(CCTouch *pTouch, CCEvent *pEvent) override;
+        void ccTouchMoved(CCTouch *pTouch, CCEvent *pEvent) override;
+        void ccTouchEnded(CCTouch *pTouch, CCEvent *pEvent) override;
+        void ccTouchCancelled(CCTouch *pTouch, CCEvent *pEvent) override;
+
+        void keyBackClicked() override;
+
+        CCTouchDelegate* touchedHighlight = nullptr;
+
+        void keyDown(enumKeyCodes key) override;
+        void keyUp(enumKeyCodes key) override;
+
+        void rightKeyDown() override;
+
+	    void rightKeyUp() override;
+
+	    void scrollWheel(float x, float y) override;
+
+        DialogObject* prevDialogue = nullptr;
 };

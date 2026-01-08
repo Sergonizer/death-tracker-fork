@@ -11,7 +11,7 @@ void DTDialogLayer::displayDialogObject(DialogObject* dialogue){
 
     for (const auto& existingIcons : m_fields->icons)
     {
-        log::info("{} | {}", dialogue->getTag(), std::get<1>(existingIcons));
+        // log::info("{} | {}", dialogue->getTag(), std::get<1>(existingIcons));
         if (std::get<1>(existingIcons) == dialogue->getTag()){
             dtDialogSpr = std::get<0>(existingIcons);
             dtDialogSprinfo = existingIcons;

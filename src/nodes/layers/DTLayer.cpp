@@ -73,11 +73,11 @@ bool DTLayer::setup(GJGameLevel* const& level) {
     this->setID("dt-layer");
 
     if (Save::getLastOpenedVersion() != Mod::get()->getVersion().toNonVString()){
-        Save::setLastOpenedVersion(Mod::get()->getVersion().toNonVString());
-        FLAlertLayer::create(nullptr, fmt::format("Death Tracker {} Changelog", Mod::get()->getVersion().toVString()).c_str(), fmt::format(
-            "{}",
-            "- <cg>iOS support</c>"
-        ), "OK", nullptr, 415, false, 200, 0.75f)->show();
+        //Save::setLastOpenedVersion(Mod::get()->getVersion().toNonVString());
+        // FLAlertLayer::create(nullptr, fmt::format("Death Tracker {} Changelog", Mod::get()->getVersion().toVString()).c_str(), fmt::format(
+        //     "{}",
+        //     "- <cg>iOS support</c>"
+        // ), "OK", nullptr, 415, false, 200, 0.75f)->show();
     }
 
     float height = 60;
@@ -265,10 +265,10 @@ bool DTLayer::setup(GJGameLevel* const& level) {
         tutorialLayer->appendDialogue("Welcome to the <cy>main death tracker page!</c>", TutorialCharacterFace::TCFNormal)
             ->appendDialogue("This is the <cy>main view</c> where you can view <cg>all your data!</c>", TutorialCharacterFace::TCFNormal)
             ->joinTransform(TutorialBoxPlacement::TBPBottom, .75f)
-            ->joinHighlight(scrollLayer)
+            ->joinHighlight(scrollLayer, 0, true)
             ->joinTextToHighlight("Main Scroll View", .5f, TutorialTextPlacement::TTTop)
             ->appendDialogue("You can hold <cg>control</c> and <cp>scroll</c> to zoom in! and <cc>shift</c> and <cp>scroll</c> to move side to side.", TutorialCharacterFace::TCFNormal)
-            ->joinHighlight(scrollLayer)
+            ->joinHighlight(scrollLayer, 0, true)
             ->appendDialogue("Of course you can also scroll normally :D", TutorialCharacterFace::TCFNormal)
             ->joinTransform(TutorialBoxPlacement::TBPCenter)
             ->appendDialogue("You also have many options <cy>at the bottom</c> here!", TutorialCharacterFace::TCFNormal)
@@ -797,8 +797,8 @@ void DTLayer::organizeLayout(){
             
             delta = oldHeightLimits - scrollLayer->content->getContentHeight();
 
-            log::info("delta {}", delta);
-            log::info("{} | {}", oldHeightLimits, scrollLayer->content->getContentHeight());
+            // log::info("delta {}", delta);
+            // log::info("{} | {}", oldHeightLimits, scrollLayer->content->getContentHeight());
             scrollLayer->moveBy(ccp(0, delta / 2));
             
             for (const auto& [label, newPos, newWidth] : result->labelData)
@@ -1662,7 +1662,11 @@ UpdateTask DTLayer::onNLKey(){
     return UpdateTask::immediate(Ok(std::string("\n")));
 }
 UpdateTask DTLayer::onATTKey(){
-    return UpdateTask::immediate(Ok(std::to_string(m_Level->m_attempts.value())));
+    long long totalAttempts = 0;
+    for (const auto& lebel : linkedLevelsData)
+        totalAttempts += lebel.metadata.attempts;
+    
+    return UpdateTask::immediate(Ok(std::to_string(totalAttempts)));
 }
 UpdateTask DTLayer::onLVLNKey(){
     return UpdateTask::immediate(Ok(std::string(m_Level->m_levelName)));
@@ -1877,5 +1881,5 @@ Result<Session> DTLayer::loadSessionFromSave(std::optional<int> sessionIndex){
     
     auto levelKey = it->second;
 
-    return  StatsManager::getSession(levelKey, it->first);
+    return StatsManager::getSession(levelKey, it->first);
 }

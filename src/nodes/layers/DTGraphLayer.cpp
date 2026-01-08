@@ -31,21 +31,23 @@ bool DTGraphLayer::setup() {
     auto graphTutorial = TutorialButton::create(.6f, [&](DTTutorialLayer* tl){
         tl->appendDialogue("Welcome to the graph view!", TutorialCharacterFace::TCFNormal)
             ->appendDialogue("This is the main graphs view", TutorialCharacterFace::TCFNormal)
-            ->joinHighlight(graph)
+            ->joinHighlight(graph->scrollLayer, 0, true)
             ->joinTransform(TutorialBoxPlacement::TBPBottomLeft, .5f)
             ->appendDialogue("You can hold <cg>control</c> and <cp>scroll</c> to zoom in! and <cc>shift</c> and <cp>scroll</c> to move side to side.", TutorialCharacterFace::TCFNormal)
-            ->joinHighlight(graph)
-            ->appendDialogue("You can also hover on any of the points in the graph to see their details!", TutorialCharacterFace::TCFNormal);
-        for (const auto& graphNode : graph->getAllGraphNodes())
-        {
-            if (!graphNode->isVisible()) continue;
+            ->joinHighlight(graph->scrollLayer, 0, true)
+            ->appendDialogue("You can also hover on any of the points in the graph to see their details!", TutorialCharacterFace::TCFNormal)
+            ->joinCallback([&, tl](){
+                for (const auto& graphNode : graph->getAllGraphNodes())
+                {
+                    if (!graphNode->isVisible()) continue;
 
-            for (const auto& child : CCArrayExt<CCNode*>(graphNode->pointHolder->getChildren())){
-                tl->joinHighlight(child)
-                    ->joinTextToHighlight("V", .5f);
-            }
-        }
-        tl->appendDialogue("Feel free to check out how to customize graphs on the left menu!", TutorialCharacterFace::TCFNormal)
+                    for (const auto& child : CCArrayExt<CCNode*>(graphNode->pointHolder->getChildren())){
+                        tl->insertHighlight(3, child)
+                            ->insertJoinTextToHighlight(3, "V", .25f);
+                    }
+                }
+            }, true)
+            ->appendDialogue("Feel free to check out how to customize graphs on the left menu!", TutorialCharacterFace::TCFNormal)
             ->joinTransform(TutorialBoxPlacement::TBPCenter);
     });
     graphTutorial->setPosition(graph->getPosition() + graph->getContentSize() / 2 + ccp(10, 10));

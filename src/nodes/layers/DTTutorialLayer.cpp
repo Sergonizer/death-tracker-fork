@@ -1,5 +1,6 @@
 #include "DTTutorialLayer.hpp"
 #include <hooks/DTDialogLayer.hpp>
+#include <nodes/TouchSender.hpp>
 
 DTTutorialLayer* DTTutorialLayer::create() {
     auto ret = new DTTutorialLayer();
@@ -12,6 +13,7 @@ DTTutorialLayer* DTTutorialLayer::create() {
 }
 
 bool DTTutorialLayer::init() {
+    CCTouchDispatcher::get()->addPrioTargetedDelegate(this, 1000, true);
     if (!CCLayer::init()) return false;
 
     auto winSize = CCDirector::get()->getWinSize();
@@ -22,6 +24,10 @@ bool DTTutorialLayer::init() {
     this->addChild(lightRT);
 
     scheduleUpdate();
+    this->setMouseEnabled(true);
+    this->setKeyboardEnabled(true);
+    this->setTouchEnabled(true);
+    this->setKeypadEnabled(true);
 
     return true;
 }
@@ -64,23 +70,43 @@ DTTutorialLayer* DTTutorialLayer::joinTransform(TutorialBoxPlacement alignment, 
     return this;
 }
 
-DTTutorialLayer* DTTutorialLayer::joinHighlight(CCNode* targetObject, float delayTime){
-    if (targetObject == nullptr) return this;
+DTTutorialLayer* DTTutorialLayer::joinHighlight(CCNode* targetObject, float delayTime, bool allowTouches){
+    return insertHighlight(allSegments.size() - 1, targetObject, delayTime, allowTouches);
+}
+
+DTTutorialLayer* DTTutorialLayer::joinTextToHighlight(const std::string& text, float size, TutorialTextPlacement alignment){
+    return insertJoinTextToHighlight(allSegments.size() - 1, text, size, alignment);
+}
+
+DTTutorialLayer* DTTutorialLayer::joinCallback(const std::function<void()>& callback, bool beforeDialogue){
     if (!allSegments.size()) return this;
 
-    allSegments[allSegments.size() - 1].targetObjects.insert({targetObject, delayTime});
-
-    allSegments[allSegments.size() - 1].lastAddedHighlight = targetObject;
+    if (beforeDialogue)
+        allSegments[allSegments.size() - 1].beforeCallback = callback;
+    else
+        allSegments[allSegments.size() - 1].afterCallback = callback;
 
     return this;
 }
 
-DTTutorialLayer* DTTutorialLayer::joinTextToHighlight(const std::string& text, float size, TutorialTextPlacement alignment){
-    if (!allSegments.size()) return this;
-    auto& targetObjects = allSegments[allSegments.size() - 1].targetObjects;
+DTTutorialLayer* DTTutorialLayer::insertHighlight(int dialogueIndex, CCNode* targetObject, float delayTime, bool allowTouches){
+    if (targetObject == nullptr) return this;
+    if (!allSegments.size() || allSegments.size() <= dialogueIndex) return this;
+    
+    allSegments[dialogueIndex].targetObjects.insert({targetObject, {delayTime, allowTouches}});
+
+    allSegments[dialogueIndex].lastAddedHighlight = targetObject;
+
+    return this;
+}
+
+DTTutorialLayer* DTTutorialLayer::insertJoinTextToHighlight(int dialogueIndex, const std::string& text, float size, TutorialTextPlacement alignment){
+    if (!allSegments.size() || allSegments.size() <= dialogueIndex) return this;
+
+    auto& targetObjects = allSegments[dialogueIndex].targetObjects;
     if (!targetObjects.size()) return this;
 
-    allSegments[allSegments.size() - 1].textForTargets[allSegments[allSegments.size() - 1].lastAddedHighlight] = HighlightText{
+    allSegments[dialogueIndex].textForTargets[allSegments[dialogueIndex].lastAddedHighlight] = HighlightText{
         .text = text,
         .placement = alignment,
         .size = size
@@ -112,11 +138,23 @@ void DTTutorialLayer::show(){
     static_cast<DTDialogLayer*>(dialogueLayer)->setProgressCallback(std::bind(&DTTutorialLayer::onProgress, this, std::placeholders::_1));
     dialogueLayer->addToMainScene();
     dialogueLayer->m_delegate = this;
+    dialogueLayer->setTouchEnabled(false);
+    dialogueLayer->setKeypadEnabled(false);
     dialogueLayer->setOpacity(0);
 }
 
 void DTTutorialLayer::onProgress(DialogObject* dObject){
+    if (prevDialogue != nullptr && dialogueSegmentIndexes.contains(dObject) && allSegments[dialogueSegmentIndexes[dObject]].afterCallback != NULL){
+        auto& objToRunOn = allSegments[dialogueSegmentIndexes[dObject]];
+        objToRunOn.afterCallback();
+    }
+    
     auto segmentIndex = dialogueSegmentIndexes[dObject];
+
+    if (allSegments[segmentIndex].beforeCallback != NULL){
+        auto& objToRunOn = allSegments[segmentIndex];
+        objToRunOn.beforeCallback();
+    }
 
     auto winSize = cocos2d::CCDirector::sharedDirector()->getWinSize();
 
@@ -193,6 +231,7 @@ void DTTutorialLayer::onProgress(DialogObject* dObject){
         if (prevHighlights.contains(glow) && allSegments[segmentIndex].targetObjects.contains(prevHighlights[glow])) continue;
         glow->stopActionByTag(14);
         glow->runAction(CCFadeTo::create(.25f, 0));
+        glow->setTag(1);
 
         if (textsForHighlights.contains(glow)){
             textsForHighlights[glow]->stopActionByTag(14);
@@ -202,8 +241,10 @@ void DTTutorialLayer::onProgress(DialogObject* dObject){
 
     prevHighlights.clear();
 
-    for (const auto& [highlightTarget, delayTime] : allSegments[segmentIndex].targetObjects)
+    for (const auto& [highlightTarget, dataPair] : allSegments[segmentIndex].targetObjects)
     {
+        auto& [delayTime, touchesAllowed] = dataPair;
+
         auto glow = CCScale9Sprite::createWithSpriteFrameName("squareGlow.png"_spr);
 
         auto cornerMin = this->convertToNodeSpace(highlightTarget->convertToWorldSpace({0, 0}));
@@ -236,8 +277,13 @@ void DTTutorialLayer::onProgress(DialogObject* dObject){
         );
         fadeSeq->setTag(14);
         glow->runAction(fadeSeq);
+        glow->setTag(2);
 
         prevHighlights.insert({glow, highlightTarget});
+        if (touchesAllowed)
+            touchAllowedNodes.insert({glow, highlightTarget});
+
+        prevDialogue = dObject;
 
         if (!allSegments[segmentIndex].textForTargets.contains(highlightTarget)) continue;
 
@@ -285,6 +331,8 @@ void DTTutorialLayer::dialogClosed(DialogLayer* layer){
         CCCallFunc::create(this, callfunc_selector(DTTutorialLayer::close)),
         nullptr
     ));
+
+    dialogueLayer = nullptr;
 }
 
 void DTTutorialLayer::close(){
@@ -295,9 +343,7 @@ void DTTutorialLayer::update(float dt){
     lightRT->beginWithClear(0, 0, 0, 0.85f);
 
     for (const auto& glow : retainedSprites)
-    {
         glow->visit();
-    }
     
     lightRT->end();
 }
@@ -305,5 +351,134 @@ void DTTutorialLayer::update(float dt){
 DTTutorialLayer::~DTTutorialLayer(){
     for (const auto& glow : retainedSprites){
         glow->release();
+    }
+    
+    CCTouchDispatcher::get()->removeDelegate(this);
+}
+
+bool DTTutorialLayer::ccTouchBegan(CCTouch *pTouch, CCEvent *pEvent){
+    if (dialogueLayer == nullptr) return false;
+    if (static_cast<CCScale9Sprite*>(dialogueLayer->m_mainLayer->getChildren()->objectAtIndex(0))->boundingBox().containsPoint(
+        dialogueLayer->m_mainLayer->convertTouchToNodeSpace(pTouch)))
+        return dialogueLayer->ccTouchBegan(pTouch, pEvent);
+
+    for (const auto& glow : retainedSprites){
+        if (!touchAllowedNodes.contains(glow)) continue;
+        if (glow->getTag() != 2) continue;
+
+        auto touchDelegate = dynamic_cast<CCTouchDelegate*>(touchAllowedNodes[glow]);
+        if (touchDelegate != nullptr && touchDelegate->ccTouchBegan(pTouch, pEvent)){
+            touchedHighlight = touchDelegate;
+            return true;
+        }
+    }
+
+    return dialogueLayer->ccTouchBegan(pTouch, pEvent);
+}
+void DTTutorialLayer::ccTouchMoved(CCTouch *pTouch, CCEvent *pEvent){
+    if (dialogueLayer == nullptr) return;
+
+    if (touchedHighlight != nullptr){
+        touchedHighlight->ccTouchMoved(pTouch, pEvent);
+        return;
+    }
+    dialogueLayer->ccTouchMoved(pTouch, pEvent);
+}
+void DTTutorialLayer::ccTouchEnded(CCTouch *pTouch, CCEvent *pEvent){
+    if (dialogueLayer == nullptr) return;
+
+    if (touchedHighlight != nullptr){
+        touchedHighlight->ccTouchEnded(pTouch, pEvent);
+        touchedHighlight = nullptr;
+        return;
+    }
+    dialogueLayer->ccTouchEnded(pTouch, pEvent);
+}
+void DTTutorialLayer::ccTouchCancelled(CCTouch *pTouch, CCEvent *pEvent){
+    if (dialogueLayer == nullptr) return;
+
+    if (touchedHighlight != nullptr){
+        touchedHighlight->ccTouchCancelled(pTouch, pEvent);
+        touchedHighlight = nullptr;
+        return;
+    }
+    dialogueLayer->ccTouchCancelled(pTouch, pEvent);
+}
+
+void DTTutorialLayer::keyBackClicked(){
+    if (dialogueLayer == nullptr) return;
+    dialogueLayer->handleDialogTap();
+}
+
+void DTTutorialLayer::keyDown(enumKeyCodes key){
+    if (dialogueLayer == nullptr) return;
+    for (const auto& glow : retainedSprites){
+        if (!touchAllowedNodes.contains(glow)) continue;
+        if (glow->getTag() != 2) continue;
+
+        auto keyDel = dynamic_cast<CCKeyboardDelegate*>(touchAllowedNodes[glow]);
+        if (keyDel != nullptr){
+            keyDel->keyDown(key);
+            return;
+        }
+    }
+
+    CCLayer::keyDown(key);
+}
+void DTTutorialLayer::keyUp(enumKeyCodes key){
+    if (dialogueLayer == nullptr) return;
+    for (const auto& glow : retainedSprites){
+        if (!touchAllowedNodes.contains(glow)) continue;
+        if (glow->getTag() != 2) continue;
+
+        auto keyDel = dynamic_cast<CCKeyboardDelegate*>(touchAllowedNodes[glow]);
+        if (keyDel != nullptr){
+            keyDel->keyUp(key);
+            return;
+        }
+    }
+
+    CCLayer::keyUp(key);
+}
+
+void DTTutorialLayer::rightKeyDown(){
+    if (dialogueLayer == nullptr) return;
+    for (const auto& glow : retainedSprites){
+        if (!touchAllowedNodes.contains(glow)) continue;
+        if (glow->getTag() != 2) continue;
+
+        auto mDel = dynamic_cast<CCMouseDelegate*>(touchAllowedNodes[glow]);
+        if (mDel != nullptr){
+            mDel->rightKeyDown();
+            return;
+        }
+    }
+}
+
+void DTTutorialLayer::rightKeyUp(){
+    if (dialogueLayer == nullptr) return;
+    for (const auto& glow : retainedSprites){
+        if (!touchAllowedNodes.contains(glow)) continue;
+        if (glow->getTag() != 2) continue;
+
+        auto mDel = dynamic_cast<CCMouseDelegate*>(touchAllowedNodes[glow]);
+        if (mDel != nullptr){
+            mDel->rightKeyUp();
+            return;
+        }
+    }
+}
+
+void DTTutorialLayer::scrollWheel(float x, float y){
+    if (dialogueLayer == nullptr) return;
+    for (const auto& glow : retainedSprites){
+        if (!touchAllowedNodes.contains(glow)) continue;
+        if (glow->getTag() != 2) continue;
+
+        auto mDel = dynamic_cast<CCMouseDelegate*>(touchAllowedNodes[glow]);
+        if (mDel != nullptr){
+            mDel->scrollWheel(x, y);
+            return;
+        }
     }
 }
