@@ -512,8 +512,22 @@ void DTLayer::keyBackClicked(){
 }
 
 void DTLayer::onClose(CCObject* sender){
-    Popup<GJGameLevel* const&>::onClose(sender);
+    organizationListener.getFilter().cancel();
+
+    for (auto& [_, key] : specialStrings) {
+        if (key)
+        {
+            key->setUpdateCompletedCallback(nullptr);
+            key->setUpdateStartedCallback(nullptr);
+            key->cancel();
+        }
+    }
+
+    keyListeners.clear();
+
     instance = nullptr;
+
+    Popup<GJGameLevel* const&>::onClose(sender);
 }
 
 void DTLayer::show(){
@@ -930,6 +944,8 @@ organizationTask DTLayer::organizeLayoutTask(){
             }
         }
 
+        if (hasBeenCancelled()) return organizationResult{};
+
         for (const auto& [label, data] : labelSnapshots)
         {
             labelHolders[label] = data.holders;
@@ -940,6 +956,8 @@ organizationTask DTLayer::organizeLayoutTask(){
         std::set<DTLabel*> processedLabels{};
 
         auto UpdateTempPos = [&](LayoutColumn* column, DTLabel* label, DTLabel* prevLabel){
+            if (column == nullptr || label == nullptr || label->getParent() == nullptr) return;
+            if (hasBeenCancelled()) return;
             auto startPosInLabelSpace = label->getParent()->convertToNodeSpace(column->convertToWorldSpace(column->bgSpr->getPosition()));
 
             float prevHeight = startPosInLabelSpace.y;
@@ -962,6 +980,8 @@ organizationTask DTLayer::organizeLayoutTask(){
         };
 
         while (true){
+            if (hasBeenCancelled()) return organizationResult{};
+
             for (const auto& colData : columnSnapshots)
             {
                 const auto& column = colData.column;
@@ -972,6 +992,8 @@ organizationTask DTLayer::organizeLayoutTask(){
 
                 for (const auto& [labelLayer, label] : colData.labels)
                 {
+                    if (hasBeenCancelled()) return organizationResult{};
+
                     // log::info("going through label");
                     if (!lastVisitedLabelForColumn.contains(column)){
                         lastVisitedLabelForColumn.insert({column, label});
@@ -1074,14 +1096,20 @@ organizationTask DTLayer::organizeLayoutTask(){
         }
 
         for (const auto& colData : columnSnapshots){
+            if (hasBeenCancelled()) return organizationResult{};
+
             colData.column->refreshAllLabelsLayer();
         }
 
         float heighestHeight = 0;
         
         for (const auto& colData : columnSnapshots){
+            if (hasBeenCancelled()) return organizationResult{};
+
             for (const auto& [_, label] : colData.labels)
             {
+                if (hasBeenCancelled()) return organizationResult{};
+
                 auto height = std::abs(label->tempPos.y) + label->getContentHeight() + LayoutColumn::addNewBtnOffset * 2;
                 if (heighestHeight < height) heighestHeight = height;
             }
@@ -1092,6 +1120,8 @@ organizationTask DTLayer::organizeLayoutTask(){
 
         for (const auto& label : allLabels)
         {
+            if (hasBeenCancelled()) return organizationResult{};
+
             auto targetPosition = label->tempPos;
             auto targetWidth = label->tempWidth - LayoutColumn::borderWidth;
 
@@ -1887,7 +1917,7 @@ UpdateTask DTLayer::onPTSALLSKey(){
         StatsManager::mergeMapsAdd(deaths, session.runs);
 
         return Ok(StatsManager::workingTime(calcPlaytime(deaths)));
-    }, "Creating calculated session from 0 playtime string");
+    }, "Creating calculated session all playtime string");
 }
 UpdateTask DTLayer::onPTSF0Key(){
     return UpdateTask::run([&](auto progress, auto hasBeenCancelled) -> UpdateTask::Result {
@@ -1910,7 +1940,7 @@ Result<Session> DTLayer::loadSessionFromSave(std::optional<int> sessionIndex){
     int i = sessionIndex.has_value() ? sessionIndex.value() : sessionSelector->getCurrentCount();
 
     if (i == 0 || i > sessionsOrder.size())
-        return Err("Failed to create session run deaths string");
+        return Err("Failed to get session, not in range");
 
     auto it = sessionsOrder.begin();
     std::advance(it, i - 1);

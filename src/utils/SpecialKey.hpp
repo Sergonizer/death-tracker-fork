@@ -30,6 +30,7 @@ class SpecialKey : public CCObject, public std::enable_shared_from_this<SpecialK
         SpecialKey(const std::string& key, const std::string& description);
         ~SpecialKey(){
             //log::info("destroyed special key {}", key);
+            cancel();
         }
 
         bool compareToKey(const std::string& otherKey);
@@ -50,4 +51,6 @@ class SpecialKey : public CCObject, public std::enable_shared_from_this<SpecialK
 
         void setUpdateCompletedCallback(const std::function<void(const std::shared_ptr<SpecialKey>&)>& callback);
         void setUpdateStartedCallback(const std::function<void(const std::shared_ptr<SpecialKey>&)>& callback);
+
+        void cancel();
 };

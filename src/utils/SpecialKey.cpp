@@ -53,3 +53,7 @@ void SpecialKey::onUpdateCompleted(UpdateTask::Event* e){
         updateOngoing = false;
     }
 }
+
+void SpecialKey::cancel(){
+    updateListener.getFilter().cancel();
+}
