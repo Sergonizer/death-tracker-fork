@@ -33,7 +33,7 @@ bool DTPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
     }
     else if (metaRes.isErr()){
         geode::Notification::create(fmt::format("Failed to load DT level data! {}", metaRes.unwrapErr()), NotificationIcon::Error)->show();
-        log::info("{}", metaRes.unwrapErr());
+        //log::info("{}", metaRes.unwrapErr());
     }
 
     if (metaRes.isOk()){
@@ -42,8 +42,8 @@ bool DTPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
         metadata.attempts = level->m_attempts;
         metadata.difficulty = StatsManager::getDifficulty(level);
         auto _ = StatsManager::setMetadata(metadata, level);
-        if (_.isErr())
-            log::info("set meta res {}", _.unwrapErr());
+        // if (_.isErr())
+        //     log::info("set meta res {}", _.unwrapErr());
         metaRes = Ok(metadata);
     }
 

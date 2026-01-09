@@ -122,10 +122,10 @@ void DTGraphNode::updateGraphContent(){
 
         if (runRes.unwrap().start != -1){
             if (runRes.unwrap().start == runPercent)
-                sortedDeaths.insert({runRes.unwrap(), death.second});
+                sortedDeaths[runRes.unwrap()] += death.second;
         }
         else
-            sortedDeaths.insert({runRes.unwrap(), death.second});
+            sortedDeaths[runRes.unwrap()] += death.second;
     }
 
     if (info.value().type == DTGraphType::Passrate){
@@ -141,7 +141,7 @@ void DTGraphNode::updateGraphContent(){
         {
             //log::info("r: ({}, {}), d: {} | O: {}", it->first.start, it->first.end, it->second, overallDeaths);
 
-            deathsWithPassCount.insert({it->first, {overallDeaths, overallDeaths + it->second}});
+            deathsWithPassCount[it->first] = {overallDeaths, overallDeaths + it->second};
             overallDeaths += it->second;
 
             if (it->first.end > bestRun) bestRun = it->first.end;
@@ -308,14 +308,15 @@ void DTGraphNode::getGeneralDeaths(){
     if (myStats.from0.isErr()) return;
     auto& myFrom0Stats = myStats.from0.unwrap();
 
-    Deaths sharedDeaths = myFrom0Stats.deaths;
+    Deaths sharedDeaths;
+    StatsManager::mergeMapsAdd(sharedDeaths, myFrom0Stats.deaths);
 
     for (const auto& levelData : DTLayer::get()->linkedLevelsData)
     {
         if (levelData.from0.isErr()) continue;
         auto& levelFrom0Stats = levelData.from0.unwrap();
 
-        sharedDeaths.insert(levelFrom0Stats.deaths.begin(), levelFrom0Stats.deaths.end());
+        StatsManager::mergeMapsAdd(sharedDeaths, levelFrom0Stats.deaths);
     }
 
     this->deaths = sharedDeaths;
@@ -327,14 +328,15 @@ void DTGraphNode::getGeneralRuns(){
     if (myStats.from0.isErr()) return;
     auto& myFrom0Stats = myStats.from0.unwrap();
 
-    Deaths sharedDeaths = myFrom0Stats.runs;
+    Deaths sharedDeaths;
+    StatsManager::mergeMapsAdd(sharedDeaths, myFrom0Stats.runs);
 
     for (const auto& levelData : DTLayer::get()->linkedLevelsData)
     {
         if (levelData.from0.isErr()) continue;
         auto& levelFrom0Stats = levelData.from0.unwrap();
 
-        sharedDeaths.insert(levelFrom0Stats.runs.begin(), levelFrom0Stats.runs.end());
+        StatsManager::mergeMapsAdd(sharedDeaths, levelFrom0Stats.runs);
     }
 
     this->deaths = sharedDeaths;

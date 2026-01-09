@@ -18,7 +18,7 @@ void SpecialKey::setUpdateFunction(const std::function<UpdateTask()>& task){
 void SpecialKey::updateContent(){
     if (!this->updateFunction.has_value()) return;
 
-    log::info("Starting update for special key {}, {}", this->key, updateOngoing);
+    // log::info("Starting update for special key {}, {}", this->key, updateOngoing);
 
     if (!updateOngoing){
         updateOngoing = true;

@@ -151,4 +151,16 @@ public:
     //better info calc :)
     //converts time to a working time string
     static std::string workingTime(long long value);
+
+    template<typename K, typename V>
+    static void mergeMapsAdd(std::map<K, V>& target, const std::map<K, V>& source);
 };
+
+template<typename K, typename V>
+void StatsManager::mergeMapsAdd(std::map<K, V>& target, const std::map<K, V>& source)
+{
+    for (const auto& [key, value] : source)
+    {
+        target[key] += value;
+    }
+}

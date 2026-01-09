@@ -1311,6 +1311,7 @@ void DTLayer::specialKeyUpdateCompleted(const std::shared_ptr<SpecialKey>& key){
         specialStrings["dtatt"]->updateContent();
         specialStrings["ptf0"]->updateContent();
         specialStrings["ptgen"]->updateContent();
+        log::info("updated general key");
     }
     else if (key->getKey() == "runs"){
         specialStrings["ptruns"]->updateContent();
@@ -1678,15 +1679,16 @@ UpdateTask DTLayer::onGeneralKey(){
         if (myStats.from0.isErr()) return Err("Failed to create from0 deaths string");
         auto& myFrom0Stats = myStats.from0.unwrap();
 
-        Deaths sharedDeaths = myFrom0Stats.deaths;
+        Deaths sharedDeaths;
+        StatsManager::mergeMapsAdd(sharedDeaths, myFrom0Stats.deaths);
         NewBests sharedNBs = myFrom0Stats.newBests;
 
         for (const auto& levelData : linkedLevelsData)
         {
-            if (levelData.from0.isErr()) continue;
+            if (levelData.from0.isErr() || levelData.levelKey == myStats.levelKey) continue;
             auto& levelFrom0Stats = levelData.from0.unwrap();
 
-            sharedDeaths.insert(levelFrom0Stats.deaths.begin(), levelFrom0Stats.deaths.end());
+            StatsManager::mergeMapsAdd(sharedDeaths, levelFrom0Stats.deaths);
             sharedNBs.insert(levelFrom0Stats.newBests.begin(), levelFrom0Stats.newBests.end());
         }
 
@@ -1715,7 +1717,7 @@ UpdateTask DTLayer::onDTATTKey(){
 
         for (const auto& levelData : linkedLevelsData)
         {
-            if (levelData.from0.isErr()) continue;
+            if (levelData.from0.isErr() || levelData.levelKey == myStats.levelKey) continue;
             auto& levelFrom0Stats = levelData.from0.unwrap();
 
             deaths(levelFrom0Stats.deaths);
@@ -1731,14 +1733,15 @@ UpdateTask DTLayer::onRUNSKey(){
         if (myStats.from0.isErr()) return Err("Failed to create run deaths string");
         auto& myFrom0Stats = myStats.from0.unwrap();
 
-        Deaths sharedRuns = myFrom0Stats.runs;
+        Deaths sharedRuns;
+        StatsManager::mergeMapsAdd(sharedRuns, myFrom0Stats.runs);
 
         for (const auto& levelData : linkedLevelsData)
         {
-            if (levelData.from0.isErr()) continue;
+            if (levelData.from0.isErr() || levelData.levelKey == myStats.levelKey) continue;
             auto& levelFrom0Stats = levelData.from0.unwrap();
             
-            sharedRuns.insert(levelFrom0Stats.runs.begin(), levelFrom0Stats.runs.end());
+            StatsManager::mergeMapsAdd(sharedRuns, levelFrom0Stats.runs);
         }
 
         std::string out;
@@ -1778,7 +1781,7 @@ UpdateTask DTLayer::onSRUNSKey(){
 }
 
 long long DTLayer::calcPlaytime(const Deaths& deaths){
-    long long playtime = 0;
+    long double playtime = 0;
 
     auto wt = m_Level->m_timestamp
         ? m_Level->m_timestamp / 240
@@ -1789,16 +1792,16 @@ long long DTLayer::calcPlaytime(const Deaths& deaths){
         auto runSplitRes = StatsManager::splitRunKey(death.first);
         if (runSplitRes.isErr()) continue;
 
-        int runLength = (runSplitRes.unwrap().end - runSplitRes.unwrap().start);
+        float runLength = (runSplitRes.unwrap().end - runSplitRes.unwrap().start);
         // log::info("{} | {} | {}", runLength, runSplitRes.unwrap().end, runSplitRes.unwrap().start);
         // log::info("{}", death.second);
 
-        long long runOverallPlaytime = 0;
+        long double runOverallPlaytime = 0;
 
-        if (runLength == 0)
-            runOverallPlaytime = wt * 0.005f * death.second;
-        else
-            runOverallPlaytime = wt * (runLength / 100.0f) * death.second;
+        if (runLength != 100)
+            runLength += 0.5f;
+
+        runOverallPlaytime = wt * (runLength / 100.0f) * death.second;
 
         playtime += runOverallPlaytime;
     }
@@ -1812,10 +1815,20 @@ UpdateTask DTLayer::onPTALLSKey(){
         auto& myStats = m_MyLevelStats.unwrap();
         if (myStats.from0.isErr()) return Err("Failed to calculate playtime");
         auto& myFrom0Stats = myStats.from0.unwrap();
+        Deaths deaths{};
 
-        auto deaths = myFrom0Stats.deaths;
-        deaths.insert(myFrom0Stats.runs.begin(), myFrom0Stats.runs.end());
+        StatsManager::mergeMapsAdd(deaths, myFrom0Stats.deaths);
+        StatsManager::mergeMapsAdd(deaths, myFrom0Stats.runs);
 
+        for (const auto& levelData : linkedLevelsData)
+        {
+            if (levelData.from0.isErr() || levelData.levelKey == myStats.levelKey) continue;
+            auto& levelFrom0Stats = levelData.from0.unwrap();
+            
+            StatsManager::mergeMapsAdd(deaths, levelFrom0Stats.deaths);
+            StatsManager::mergeMapsAdd(deaths, levelFrom0Stats.runs);
+        }
+        
         return Ok(StatsManager::workingTime(calcPlaytime(deaths)));
     }, "Creating calculated playtime string");
 }
@@ -1826,8 +1839,19 @@ UpdateTask DTLayer::onPTF0SKey(){
         auto& myStats = m_MyLevelStats.unwrap();
         if (myStats.from0.isErr()) return Err("Failed to calculate from 0 playtime");
         auto& myFrom0Stats = myStats.from0.unwrap();
+        Deaths deaths{};
 
-        return Ok(StatsManager::workingTime(calcPlaytime(myFrom0Stats.deaths)));
+        StatsManager::mergeMapsAdd(deaths, myFrom0Stats.deaths);
+
+        for (const auto& levelData : linkedLevelsData)
+        {
+            if (levelData.from0.isErr() || levelData.levelKey == myStats.levelKey) continue;
+            auto& levelFrom0Stats = levelData.from0.unwrap();
+            
+            StatsManager::mergeMapsAdd(deaths, levelFrom0Stats.deaths);
+        }
+
+        return Ok(StatsManager::workingTime(calcPlaytime(deaths)));
     }, "Creating from 0 calculated playtime string");
 }
 UpdateTask DTLayer::onPTRUNSKey(){
@@ -1836,8 +1860,19 @@ UpdateTask DTLayer::onPTRUNSKey(){
         auto& myStats = m_MyLevelStats.unwrap();
         if (myStats.from0.isErr()) return Err("Failed to calculate runs playtime");
         auto& myFrom0Stats = myStats.from0.unwrap();
+        Deaths deaths{};
 
-        return Ok(StatsManager::workingTime(calcPlaytime(myFrom0Stats.runs)));
+        StatsManager::mergeMapsAdd(deaths, myFrom0Stats.runs);
+
+        for (const auto& levelData : linkedLevelsData)
+        {
+            if (levelData.from0.isErr() || levelData.levelKey == myStats.levelKey) continue;
+            auto& levelFrom0Stats = levelData.from0.unwrap();
+            
+            StatsManager::mergeMapsAdd(deaths, levelFrom0Stats.runs);
+        }
+
+        return Ok(StatsManager::workingTime(calcPlaytime(deaths)));
     }, "Creating runs calculated playtime string");
 }
 
@@ -1847,10 +1882,11 @@ UpdateTask DTLayer::onPTSALLSKey(){
         if (sessionRes.isErr()) return Err("{}", sessionRes.unwrapErr());
         auto session = sessionRes.unwrap();
 
-        auto deaths = session.deaths;
-        deaths.insert(session.runs.begin(), session.runs.end());
+        Deaths deaths;
+        StatsManager::mergeMapsAdd(deaths, session.deaths);
+        StatsManager::mergeMapsAdd(deaths, session.runs);
 
-        return Ok(StatsManager::workingTime(calcPlaytime(sessionRes.unwrap().deaths)));
+        return Ok(StatsManager::workingTime(calcPlaytime(deaths)));
     }, "Creating calculated session from 0 playtime string");
 }
 UpdateTask DTLayer::onPTSF0Key(){
