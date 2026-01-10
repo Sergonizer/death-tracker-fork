@@ -185,5 +185,9 @@ class DTLayer : public Popup<GJGameLevel* const&> {
         UpdateTask onPTSF0Key();
         UpdateTask onPTSRUNSKey();
 
+        UpdateTask onRunsTo100Key();
+        UpdateTask onBestRunsKey();
+        UpdateTask onSAttKey();
+
         std::optional<float> cachedLevelLength;
 };

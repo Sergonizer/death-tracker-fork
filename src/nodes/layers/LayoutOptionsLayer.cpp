@@ -1,6 +1,8 @@
 #include "LayoutOptionsLayer.hpp"
 #include <nodes/layers/DTLayer.hpp>
+#if !defined(GEODE_IS_IOS)
 #include <geode.custom-keybinds/include/Keybinds.hpp>
+#endif
 #include <nodes/SpecialKeyCell.hpp>
 
 /*
@@ -308,6 +310,7 @@ bool LayoutOptionsLayer::init(const CCSize& size) {
     fontSelectionBtnLabel->setPosition(fontSelectedIndicatorLabel->getPosition() + ccp(0, fontSelectedIndicatorLabel->getScaledContentHeight() / 2 + fontSelectionBtnLabel->getScaledContentHeight() / 2));
     labelSettingsNode->addChild(fontSelectionBtnLabel);
 
+    #if !defined(GEODE_IS_IOS)
     addEventListener<keybinds::InvokeBindFilter>([&](keybinds::InvokeBindEvent* event) {
         if (event->isDown() && editedLabel.has_value()) {
             TextInput* toEdit = nullptr;
@@ -329,6 +332,7 @@ bool LayoutOptionsLayer::init(const CCSize& size) {
         }
         return ListenerResult::Propagate;
     }, "enter-new-line"_spr);
+    #endif
 
     fontSelectionNode->setScaleY(0);
     labelSettingsNode->setScaleY(0);

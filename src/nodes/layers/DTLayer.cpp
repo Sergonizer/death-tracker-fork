@@ -441,6 +441,18 @@ void DTLayer::populateSpecialStrings(){
     auto ptsrunKey = std::make_shared<SpecialKey>("ptsruns", "Adds your total estimated calculated session platime in runs");
     ptsrunKey->setUpdateFunction(BIND_UPDATE_FUNC(DTLayer::onPTSRUNSKey));
     addSpecialString(ptsrunKey);
+
+    auto runsTo100Key = std::make_shared<SpecialKey>("rt100", "Adds all your runs to 100");
+    runsTo100Key->setUpdateFunction(BIND_UPDATE_FUNC(DTLayer::onRunsTo100Key));
+    addSpecialString(runsTo100Key);
+
+    auto bRunsKey = std::make_shared<SpecialKey>("bruns", "Adds all your best runs from each percent");
+    bRunsKey->setUpdateFunction(BIND_UPDATE_FUNC(DTLayer::onBestRunsKey));
+    addSpecialString(bRunsKey);
+
+    auto sAttKey = std::make_shared<SpecialKey>("satt", "Adds your attempt count for the selected session");
+    sAttKey->setUpdateFunction(BIND_UPDATE_FUNC(DTLayer::onSAttKey));
+    addSpecialString(sAttKey);
 }
 
 void DTLayer::UpdateSharedStats(){
@@ -1390,11 +1402,12 @@ void DTLayer::specialKeyUpdateCompleted(const std::shared_ptr<SpecialKey>& key){
         specialStrings["dtatt"]->updateContent();
         specialStrings["ptf0"]->updateContent();
         specialStrings["ptgen"]->updateContent();
-        log::info("updated general key");
+        specialStrings["rt100"]->updateContent();
     }
     else if (key->getKey() == "runs"){
         specialStrings["ptruns"]->updateContent();
         specialStrings["ptgen"]->updateContent();
+        specialStrings["rt100"]->updateContent();
     }
     else if (key->getKey() == "s0"){
         specialStrings["ptsf0"]->updateContent();
@@ -2159,4 +2172,152 @@ Result<Session> DTLayer::loadSessionFromSave(std::optional<int> sessionIndex){
     auto levelKey = it->second;
 
     return StatsManager::getSession(levelKey, it->first);
+}
+
+UpdateTask DTLayer::onRunsTo100Key(){
+    return UpdateTask::run([selfref = WeakRef(this)](auto progress, auto hasBeenCancelled) mutable -> UpdateTask::Result {
+        if (hasBeenCancelled()) return Err("cancled");
+
+        auto self = selfref.lock();
+        if (!self) return Err("cancled");
+
+        if (self->m_MyLevelStats.isErr()) return Err("Failed to calculate runs playtime");
+        auto myStats = self->m_MyLevelStats.unwrap();
+        if (myStats.from0.isErr()) return Err("No deaths saved!");
+        auto myFrom0Stats = myStats.from0.unwrap();
+
+        auto linkedLevelsCopy = self->linkedLevelsData;
+        self = nullptr;
+
+        Deaths deaths{};
+        StatsManager::mergeMapsAdd(deaths, myFrom0Stats.runs);
+        StatsManager::mergeMapsAdd(deaths, myFrom0Stats.deaths);
+
+        for (const auto& levelData : linkedLevelsCopy)
+        {
+            if (hasBeenCancelled()) return Err("cancled");
+
+            if (levelData.from0.isErr() || levelData.levelKey == myStats.levelKey) continue;
+            auto levelFrom0Stats = levelData.from0.unwrap();
+            
+            StatsManager::mergeMapsAdd(deaths, levelFrom0Stats.runs);
+            StatsManager::mergeMapsAdd(deaths, levelFrom0Stats.deaths);
+        }
+
+        Deaths to100Deaths{};
+
+        for (const auto& death : deaths)
+        {
+            auto splitRunRes = StatsManager::splitRunKey(death.first);
+            if (splitRunRes.isErr()) continue;
+            auto splitRun = splitRunRes.unwrap();
+
+            if (splitRun.end != 100) continue;
+
+            to100Deaths.insert(death);
+        }
+
+        if (hasBeenCancelled()) return Err("cancled");
+
+        auto self2 = selfref.lock();
+        if (!self2) return Err("cancled");
+        
+        std::string out;
+        if (!self2->createDeathsString(to100Deaths, Save::getRunsCustomazations(), out)) return Err("Failed to create runs to 100 string");
+
+        return Ok(out);
+    }, "Creating runs to 100 string");
+}
+
+UpdateTask DTLayer::onBestRunsKey(){
+    return UpdateTask::run([selfref = WeakRef(this)](auto progress, auto hasBeenCancelled) mutable -> UpdateTask::Result {
+        if (hasBeenCancelled()) return Err("cancled");
+
+        auto self = selfref.lock();
+        if (!self) return Err("cancled");
+
+        if (self->m_MyLevelStats.isErr()) return Err("Failed to calculate runs playtime");
+        auto myStats = self->m_MyLevelStats.unwrap();
+        if (myStats.from0.isErr()) return Err("No deaths saved!");
+        auto myFrom0Stats = myStats.from0.unwrap();
+
+        auto linkedLevelsCopy = self->linkedLevelsData;
+        self = nullptr;
+
+        Deaths deaths{};
+        StatsManager::mergeMapsAdd(deaths, myFrom0Stats.runs);
+        StatsManager::mergeMapsAdd(deaths, myFrom0Stats.deaths);
+
+        for (const auto& levelData : linkedLevelsCopy)
+        {
+            if (hasBeenCancelled()) return Err("cancled");
+
+            if (levelData.from0.isErr() || levelData.levelKey == myStats.levelKey) continue;
+            auto levelFrom0Stats = levelData.from0.unwrap();
+            
+            StatsManager::mergeMapsAdd(deaths, levelFrom0Stats.runs);
+            StatsManager::mergeMapsAdd(deaths, levelFrom0Stats.deaths);
+        }
+
+        std::map<int, int> bestRuns{};
+
+        for (const auto& death : deaths)
+        {
+            auto splitRunRes = StatsManager::splitRunKey(death.first);
+            if (splitRunRes.isErr()) continue;
+            auto splitRun = splitRunRes.unwrap();
+
+            if (!bestRuns.contains(splitRun.start))
+                bestRuns.insert({splitRun.start, splitRun.end});
+            else if (bestRuns[splitRun.start] < splitRun.end){
+                bestRuns[splitRun.start] = splitRun.end;
+            }
+        }
+
+        Deaths bestRunDeaths{};
+
+        for (const auto& [bestRunStart, bestRunEnd] : bestRuns)
+        {
+            auto runStringRes = StatsManager::createRunKey(Run{bestRunStart, bestRunEnd});
+            if (runStringRes.isErr()) continue;
+            auto runString = runStringRes.unwrap();
+            if (!deaths.contains(runString)) continue;
+
+            bestRunDeaths.insert({runString, deaths[runString]});
+        }
+
+        if (hasBeenCancelled()) return Err("cancled");
+
+        auto self2 = selfref.lock();
+        if (!self2) return Err("cancled");
+        
+        std::string out;
+        if (!self2->createDeathsString(bestRunDeaths, Save::getRunsCustomazations(), out)) return Err("Failed best runs string");
+
+        return Ok(out);
+    }, "Creating best runs string");
+}
+
+UpdateTask DTLayer::onSAttKey(){
+    return UpdateTask::run([selfref = WeakRef(this)](auto progress, auto hasBeenCancelled) mutable -> UpdateTask::Result {
+        if (hasBeenCancelled()) return Err("cancled");
+
+        auto self = selfref.lock();
+        if (!self) return Err("cancled");
+
+        auto sessionRes = self->loadSessionFromSave();
+        if (sessionRes.isErr()) return Err("{}", sessionRes.unwrapErr());
+        auto session = sessionRes.unwrap();
+        self = nullptr;
+
+        int attempts;
+
+        for (const auto& death : session.deaths)
+            attempts += death.second;
+
+        for (const auto& death : session.runs)
+            attempts += death.second;
+        
+        return Ok(std::to_string(attempts));
+    }, "Creating session attepmts string");
 }

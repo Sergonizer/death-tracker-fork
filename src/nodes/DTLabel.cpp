@@ -631,6 +631,7 @@ void DTLabel::setTextAlignment(CCTextAlignment alignment){
     info.horizontalAlignment = alignment;
 
     labelText->setAlignment(alignment);
+    labelTitleArea->setAlignment(alignment);
 }
 
 void DTLabel::setTextWrapping(WrappingMode wrapMode){

@@ -3,10 +3,13 @@ using namespace geode::prelude;
 #include "utils/Save.hpp"
 #include "managers/StatsManager.hpp"
 #include "utils/Settings.hpp"
+#if !defined(GEODE_IS_IOS)
 #include <geode.custom-keybinds/include/Keybinds.hpp>
 using namespace keybinds;
+#endif
 
 $execute {
+    #if !defined(GEODE_IS_IOS)
     BindManager::get()->registerBindable({ "enter-new-line"_spr, "Enter new line",
         "Enters a new line when editing a labels text",
         { 
@@ -31,6 +34,7 @@ $execute {
             Keybind::create(KEY_Enter, Modifier::Shift)
         }
     });
+    #endif
 
     auto _ = file::createDirectory(Mod::get()->getSaveDir() / "levels");
 

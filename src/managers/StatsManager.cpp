@@ -587,6 +587,17 @@ Result<Run> StatsManager::splitRunKey(const std::string& runKey) {
     return Ok(r);
 }
 
+Result<std::string> StatsManager::createRunKey(const Run& runKey){
+    if (runKey.start == -1){
+        return Ok(std::to_string(runKey.end));
+    }
+    else if (runKey.start >= 0){
+        return Ok(fmt::format("{}-{}", runKey.start, runKey.end));
+    }
+
+    return Err("Bad percentages");
+}
+
 Session* StatsManager::getCurrentSession() {
     if (currentLevel == nullptr) {
         log::error("Failed to get session");

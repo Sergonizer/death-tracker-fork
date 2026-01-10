@@ -1,7 +1,9 @@
 #include <nodes/optionNodes/ModifyOptions.hpp>
 #include <nodes/layers/DTLayer.hpp>
 #include <utils/Dev.hpp>
+#if !defined(GEODE_IS_IOS)
 #include <geode.custom-keybinds/include/Keybinds.hpp>
+#endif
 #include <hooks/DTCCTextInputNode.hpp>
 
 ModifyOptions* ModifyOptions::create(const CCSize& size) {
@@ -494,6 +496,7 @@ bool ModifyOptions::setup(){
 
     sessionSelector->setEnabled(false);
 
+    #if !defined(GEODE_IS_IOS)
     addEventListener<keybinds::InvokeBindFilter>([&, addNewBestInput, addRunOverallNode, addRunStartInput, addRunEndInput, addPercentInput](keybinds::InvokeBindEvent* event) {
         if (event->isDown()) {
             if (addNewBestInput->getInputNode()->m_selected) {
@@ -523,6 +526,7 @@ bool ModifyOptions::setup(){
         }
         return ListenerResult::Propagate;
     }, "remove-deaths"_spr);
+    #endif
 
     return true;
 }

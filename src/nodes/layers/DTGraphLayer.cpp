@@ -1,7 +1,9 @@
 #include <nodes/layers/DTGraphLayer.hpp>
 #include <utils/Settings.hpp>
 #include <utils/Save.hpp>
+#if !defined(GEODE_IS_IOS)
 #include <geode.custom-keybinds/include/Keybinds.hpp>
+#endif
 #include <nodes/TutorialButton.hpp>
 
 DTGraphLayer* DTGraphLayer::create() {

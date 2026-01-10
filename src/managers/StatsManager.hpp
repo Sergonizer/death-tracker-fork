@@ -110,6 +110,7 @@ public:
     static Result<std::string> getLevelKey(GJGameLevel* const& level);
     //convert a run string into a run struct
     static Result<Run> splitRunKey(const std::string& runKey);
+    static Result<std::string> createRunKey(const Run& runKey);
     //get the current ongoing session
     static Session* getCurrentSession();
     //schedule the creation of a new session
