@@ -10,6 +10,17 @@
 
 using namespace geode::prelude;
 
+struct GraphPointDisplayPtrCompare {
+    bool operator()(GraphPointDisplay const* a, GraphPointDisplay const* b) const {
+        if (a == b) return false;
+        if (!a) return true;
+        if (!b) return false;
+        if (a->positionReal > b->positionReal) return true;
+        if (a->positionReal < b->positionReal) return false;
+        return a < b;
+    }
+};
+
 class DTGraphLayer : public Popup<>, public TextInputDelegate, public GraphPointDelegate, public ColorPickPopupDelegate, public FLAlertLayerProtocol {
     protected:
         bool setup() override;
@@ -80,6 +91,8 @@ class DTGraphLayer : public Popup<>, public TextInputDelegate, public GraphPoint
         void FLAlert_Clicked(FLAlertLayer* layer, bool btn2) override;
 
         std::map<GraphPoint*, GraphPointDisplay*> displaysForPoints{};
+
+        std::set<GraphPointDisplay*, GraphPointDisplayPtrCompare> displays{};
 
         bool holdingShift;
     };

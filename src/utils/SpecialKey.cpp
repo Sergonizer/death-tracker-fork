@@ -25,6 +25,9 @@ void SpecialKey::updateContent(){
         if (this->updateStartedCallback)
             this->updateStartedCallback(this->shared_from_this());
     }
+    else{
+        cancel();
+    }
 
     this->updateListener.bind(this, &SpecialKey::onUpdateCompleted);
     this->updateListener.setFilter(this->updateFunction.value()());

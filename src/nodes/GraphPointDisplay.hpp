@@ -12,7 +12,9 @@ class GraphPointDisplay : public CCNode {
     public:
         static GraphPointDisplay* create();
 
-        void setContent(std::string run, float ratePercent, DTGraphType type);
+        void setContent(std::string run, float ratePercent, DTGraphType type, ccColor3B graphInner, ccColor3B graphOuter);
+
+        float positionReal;
     
     private:
 

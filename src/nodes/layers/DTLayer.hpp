@@ -144,6 +144,9 @@ class DTLayer : public Popup<GJGameLevel* const&> {
         uint64_t timeInMs();
         std::string decodeBase64Gzip(const std::string& input);
         float timeForLevelString(const std::string& levelString);
+        int stoi(std::string_view str);
+        float stof(std::string_view str);
+        std::string workingTime(int value);
 
         LayoutColumn* addColumn(std::optional<DTColumnInfo> info = std::nullopt);
         void addColumnBtnClicked(CCObject*);
@@ -181,4 +184,6 @@ class DTLayer : public Popup<GJGameLevel* const&> {
         UpdateTask onPTSALLSKey();
         UpdateTask onPTSF0Key();
         UpdateTask onPTSRUNSKey();
+
+        std::optional<float> cachedLevelLength;
 };

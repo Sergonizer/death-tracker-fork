@@ -568,7 +568,7 @@ void DTLayer::UpdateDeathRelatedStrings(){
 bool DTLayer::createDeathsString(const Deaths& deaths, const stringCustomazations& custom, std::string& out, NewBests* const newBests, const std::string& newBestColoring){
     out = "";
     if (m_MyLevelStats.isErr()) return false;
-    auto& myStats = m_MyLevelStats.unwrap();
+    auto myMetadata = m_MyLevelStats.unwrap().metadata;
 
     std::vector<std::pair<std::string, int>> deathVec(deaths.begin(), deaths.end());
     std::sort(deathVec.begin(), deathVec.end(), [](const auto& a, const auto& b){
@@ -604,11 +604,11 @@ bool DTLayer::createDeathsString(const Deaths& deaths, const stringCustomazation
         std::string nbColor = "";
 
         if (includeRunStart){
-            if (myStats.metadata.hideRunLength > runSplit.end - runSplit.start)
+            if (myMetadata.hideRunLength > runSplit.end - runSplit.start)
                 continue;
         }
         else{
-            if (myStats.metadata.hideUpto > runSplit.end)
+            if (myMetadata.hideUpto > runSplit.end)
                 continue;
 
             if (newBests != nullptr && newBests->contains(runSplit.end)){
@@ -721,7 +721,38 @@ inline float travelForPortalId(int speed) {
     }
 }
 
+int DTLayer::stoi(std::string_view str) {
+    int result = 0;
+    std::from_chars(str.data(), str.data() + str.size(), result);
+    return result;
+}
+float DTLayer::stof(std::string_view str) {
+    return utils::numFromString<float>(str).unwrapOr(0);
+}
+
+std::string DTLayer::workingTime(int value){
+    if(value < 0) return fmt::format("NA ({})", value);
+    if(value == 0) return "NA";
+
+    int hours = value / 3600;
+    int minutes = (value % 3600) / 60;
+    int seconds = value % 60;
+
+    std::string res;
+    if(hours > 0) res += fmt::format("{}h ", hours);
+    if(hours > 0 || minutes > 0) res += fmt::format("{}m ", minutes);
+    res += fmt::format("{}s", seconds);
+
+    return res;
+}
+
 float DTLayer::timeForLevelString(const std::string& levelString) {
+    struct SpeedPortalObject {
+        int id;
+        float xPos;
+        bool checked;
+    };
+
     try {
         auto a = timeInMs();
 
@@ -731,7 +762,9 @@ float DTLayer::timeForLevelString(const std::string& levelString) {
         std::string currentObject;
         std::string currentKey;
         std::string keyID;
+        std::vector<SpeedPortalObject> speedPortals;
 
+        //std::stringstream objectStream;
         float prevPortalX = 0;
         int prevPortalId = 0;
 
@@ -744,14 +777,19 @@ float DTLayer::timeForLevelString(const std::string& levelString) {
             float xPos = 0;
             bool checked = false;
 
+            /*objectStream.str("");
+            objectStream.clear();
+            objectStream << currentObject;
+            objectStream.seekp(0);
+            objectStream.seekg(0);*/
             std::stringstream objectStream(currentObject);
             while(getline(objectStream, currentKey, ',')) {
                 if(i % 2 == 0) keyID = currentKey;
                 else {
-                    if(keyID == "1") objID = geode::utils::numFromString<int>(currentKey).unwrapOr(0);
-                    else if(keyID == "2") xPos = geode::utils::numFromString<float>(currentKey).unwrapOr(0);
-                    else if(keyID == "13") checked = geode::utils::numFromString<int>(currentKey).unwrapOr(0);
-                    else if(keyID == "kA4") prevPortalId = speedToPortalId(geode::utils::numFromString<int>(currentKey).unwrapOr(0));
+                    if(keyID == "1") objID = DTLayer::stoi(currentKey);
+                    else if(keyID == "2") xPos = DTLayer::stof(currentKey);
+                    else if(keyID == "13") checked = DTLayer::stoi(currentKey);
+                    else if(keyID == "kA4") prevPortalId = speedToPortalId(DTLayer::stoi(currentKey));
                 }
                 i++;
 
@@ -761,13 +799,24 @@ float DTLayer::timeForLevelString(const std::string& levelString) {
             if(maxPos < xPos) maxPos = xPos;
             if(!checked || !objectIDIsSpeedPortal(objID)) continue;
 
-            timeFull += (xPos - prevPortalX) / travelForPortalId(prevPortalId);
-            prevPortalId = objID;
-            prevPortalX = xPos;
+            speedPortals.push_back({objID, xPos, checked});
         }
 
+        std::sort(speedPortals.begin(), speedPortals.end(), [](const SpeedPortalObject& a, const SpeedPortalObject& b) {
+            return a.xPos < b.xPos;
+        });
+
+        for(const auto& portal : speedPortals) {
+            //log::info("Object ID: {}, X Position: {}, Portal ID: {}", portal.id, portal.xPos, prevPortalId);
+            timeFull += (portal.xPos - prevPortalX) / travelForPortalId(prevPortalId);
+            prevPortalId = portal.id;
+            prevPortalX = portal.xPos;
+        }
+
+        //log::info("Last portal ID: {}, Last X Position: {}", prevPortalId, prevPortalX);
         timeFull += (maxPos - prevPortalX) / travelForPortalId(prevPortalId);
         auto b = timeInMs() - a;
+        //log::info("Time for levelString: {}ms, decompress: {}ms, parse: {}ms, maxPos {}", b, c - a, timeInMs() - c, maxPos);
         return timeFull;
     } catch(std::exception e) {
         log::error("An exception has occured while calculating time for levelString: {}", e.what());
@@ -1703,52 +1752,84 @@ UpdateTask DTLayer::onLVLNKey(){
     return UpdateTask::immediate(Ok(std::string(m_Level->m_levelName)));
 }
 UpdateTask DTLayer::onGeneralKey(){
-    return UpdateTask::run([&](auto progress, auto hasBeenCancelled) -> UpdateTask::Result {
-        if (m_MyLevelStats.isErr()) return Err("Failed to create from0 deaths string");
-        auto& myStats = m_MyLevelStats.unwrap();
-        if (myStats.from0.isErr()) return Err("Failed to create from0 deaths string");
-        auto& myFrom0Stats = myStats.from0.unwrap();
+    return UpdateTask::run([selfref = WeakRef(this)](auto progress, auto hasBeenCancelled) mutable -> UpdateTask::Result {
+        if (hasBeenCancelled()) return Err("cancled");
+
+        // Lock briefly to copy the data we need so we don't access `this` after it may be destroyed
+        auto self = selfref.lock();
+        if (!self) return Err("cancled");
+
+        if (self->m_MyLevelStats.isErr()) return Err("Failed to create from0 deaths string (no save)");
+        auto myStats = self->m_MyLevelStats.unwrap();
+        if (myStats.from0.isErr()) return Err("No deaths saved!");
+        auto myFrom0Stats = myStats.from0.unwrap();
+
+        // copy linked levels while we still hold the lock
+        auto linkedLevelsCopy = self->linkedLevelsData;
+
+        // release strong reference (go out of scope) so we don't keep object alive for the whole task
+        self = nullptr;
+
+        if (hasBeenCancelled()) return Err("cancled");
 
         Deaths sharedDeaths;
         StatsManager::mergeMapsAdd(sharedDeaths, myFrom0Stats.deaths);
         NewBests sharedNBs = myFrom0Stats.newBests;
 
-        for (const auto& levelData : linkedLevelsData)
+        for (const auto& levelData : linkedLevelsCopy)
         {
+            if (hasBeenCancelled()) return Err("cancled");
+
             if (levelData.from0.isErr() || levelData.levelKey == myStats.levelKey) continue;
-            auto& levelFrom0Stats = levelData.from0.unwrap();
+            auto levelFrom0Stats = levelData.from0.unwrap();
 
             StatsManager::mergeMapsAdd(sharedDeaths, levelFrom0Stats.deaths);
             sharedNBs.insert(levelFrom0Stats.newBests.begin(), levelFrom0Stats.newBests.end());
         }
 
-        std::string out;
+        // Re-lock briefly to call the instance method which may access UI/state
+        auto self2 = selfref.lock();
+        if (!self2) return Err("cancled");
 
-        if (!createDeathsString(sharedDeaths, Save::getFrom0Customazations(), out, &sharedNBs, "{nbc}")) return Err("Failed to create from0 deaths string");
+        std::string out;
+        if (!self2->createDeathsString(sharedDeaths, Save::getFrom0Customazations(), out, &sharedNBs, "{nbc}")) return Err("Failed to create from0 deaths string");
 
         return Ok(out);
     }, "Creating general deaths string");
 }
 UpdateTask DTLayer::onDTATTKey(){
-    return UpdateTask::run([&](auto progress, auto hasBeenCancelled) -> UpdateTask::Result {
-        if (m_MyLevelStats.isErr()) return Err("Failed to create death tracker attempts string");
-        auto& myStats = m_MyLevelStats.unwrap();
-        if (myStats.from0.isErr()) return Err("Failed to create death tracker attempts string");
-        auto& myFrom0Stats = myStats.from0.unwrap();
+    return UpdateTask::run([selfref = WeakRef(this)](auto progress, auto hasBeenCancelled) mutable -> UpdateTask::Result {
+        if (hasBeenCancelled()) return Err("cancled");
+
+        auto self = selfref.lock();
+        if (!self) return Err("cancled");
+
+        if (self->m_MyLevelStats.isErr()) return Err("Failed to create death tracker attempts string");
+        auto myStats = self->m_MyLevelStats.unwrap();
+        if (myStats.from0.isErr()) return Err("No deaths saved!");
+        auto myFrom0Stats = myStats.from0.unwrap();
+
+        // copy linked levels while locked
+        auto linkedLevelsCopy = self->linkedLevelsData;
+        self = nullptr;
+
+        if (hasBeenCancelled()) return Err("cancled");
 
         unsigned long long attempts = 0;
 
-        auto deaths = [&attempts](const Deaths& deaths){
-            for (const auto& [_, count] : deaths)
+        auto deaths = [&attempts](const Deaths& d){
+            for (const auto& [_, count] : d)
                 attempts += count;
         };
 
         deaths(myFrom0Stats.deaths);
 
-        for (const auto& levelData : linkedLevelsData)
+        for (const auto& levelData : linkedLevelsCopy)
         {
+            if (hasBeenCancelled()) return Err("cancled");
+
             if (levelData.from0.isErr() || levelData.levelKey == myStats.levelKey) continue;
-            auto& levelFrom0Stats = levelData.from0.unwrap();
+            auto levelFrom0Stats = levelData.from0.unwrap();
 
             deaths(levelFrom0Stats.deaths);
         }
@@ -1757,54 +1838,89 @@ UpdateTask DTLayer::onDTATTKey(){
     }, "Creating death tracker attempts string");
 }
 UpdateTask DTLayer::onRUNSKey(){
-    return UpdateTask::run([&](auto progress, auto hasBeenCancelled) -> UpdateTask::Result {
-        if (m_MyLevelStats.isErr()) return Err("Failed to create run deaths string");
-        auto& myStats = m_MyLevelStats.unwrap();
-        if (myStats.from0.isErr()) return Err("Failed to create run deaths string");
-        auto& myFrom0Stats = myStats.from0.unwrap();
+    return UpdateTask::run([selfref = WeakRef(this)](auto progress, auto hasBeenCancelled) mutable -> UpdateTask::Result {
+        if (hasBeenCancelled()) return Err("cancled");
+
+        auto self = selfref.lock();
+        if (!self) return Err("cancled");
+
+        if (self->m_MyLevelStats.isErr()) return Err("Failed to create run deaths string");
+        auto myStats = self->m_MyLevelStats.unwrap();
+        if (myStats.from0.isErr()) return Err("No deaths saved!");
+        auto myFrom0Stats = myStats.from0.unwrap();
+
+        auto linkedLevelsCopy = self->linkedLevelsData;
+        self = nullptr;
+
+        if (hasBeenCancelled()) return Err("cancled");
 
         Deaths sharedRuns;
         StatsManager::mergeMapsAdd(sharedRuns, myFrom0Stats.runs);
 
-        for (const auto& levelData : linkedLevelsData)
+        for (const auto& levelData : linkedLevelsCopy)
         {
+            if (hasBeenCancelled()) return Err("cancled");
+
             if (levelData.from0.isErr() || levelData.levelKey == myStats.levelKey) continue;
-            auto& levelFrom0Stats = levelData.from0.unwrap();
-            
+            auto levelFrom0Stats = levelData.from0.unwrap();
             StatsManager::mergeMapsAdd(sharedRuns, levelFrom0Stats.runs);
         }
 
-        std::string out;
+        // re-lock to call instance method
+        auto self2 = selfref.lock();
+        if (!self2) return Err("cancled");
 
-        if (!createDeathsString(sharedRuns, Save::getRunsCustomazations(), out)) return Err("Failed to create run deaths string");
+        std::string out;
+        if (!self2->createDeathsString(sharedRuns, Save::getRunsCustomazations(), out)) return Err("Failed to create run deaths string");
 
         return Ok(out);
     }, "Creating runs deaths string");
 }
 UpdateTask DTLayer::onS0Key(){
-    return UpdateTask::run([&](auto progress, auto hasBeenCancelled) -> UpdateTask::Result {
-        auto sessionRes = loadSessionFromSave();
+    return UpdateTask::run([selfref = WeakRef(this)](auto progress, auto hasBeenCancelled) mutable -> UpdateTask::Result {
+        if (hasBeenCancelled()) return Err("cancled");
+
+        auto self = selfref.lock();
+        if (!self) return Err("cancled");
+
+        auto sessionRes = self->loadSessionFromSave();
         if (sessionRes.isErr()) return Err("{}", sessionRes.unwrapErr());
 
-        std::string out;
-
         auto session = sessionRes.unwrap();
+        self = nullptr;
 
-        if (!createDeathsString(session.deaths, Save::getSessionF0Customazations(), out, &session.newBests, "{sbc}")) return Err("Failed to create session from0 deaths string");
+        if (hasBeenCancelled()) return Err("cancled");
+
+        // re-lock only to call the instance method
+        auto self2 = selfref.lock();
+        if (!self2) return Err("cancled");
+
+        std::string out;
+        if (!self2->createDeathsString(session.deaths, Save::getSessionF0Customazations(), out, &session.newBests, "{sbc}")) return Err("Failed to create session from0 deaths string");
 
         return Ok(out);
     }, "Creating session from0 deaths string");
 }
 UpdateTask DTLayer::onSRUNSKey(){
-    return UpdateTask::run([&](auto progress, auto hasBeenCancelled) -> UpdateTask::Result {
-        auto sessionRes = loadSessionFromSave();
+    return UpdateTask::run([selfref = WeakRef(this)](auto progress, auto hasBeenCancelled) mutable -> UpdateTask::Result {
+        if (hasBeenCancelled()) return Err("cancled");
+
+        auto self = selfref.lock();
+        if (!self) return Err("cancled");
+
+        auto sessionRes = self->loadSessionFromSave();
         if (sessionRes.isErr()) return Err("{}", sessionRes.unwrapErr());
 
-        std::string out;
-
         auto session = sessionRes.unwrap();
-        
-        if (!createDeathsString(session.runs, Save::getRunsCustomazations(), out)) return Err("Failed to create session run deaths string");
+        self = nullptr;
+
+        if (hasBeenCancelled()) return Err("cancled");
+
+        auto self2 = selfref.lock();
+        if (!self2) return Err("cancled");
+
+        std::string out;
+        if (!self2->createDeathsString(session.runs, Save::getRunsCustomazations(), out)) return Err("Failed to create session run deaths string");
 
         return Ok(out);
     }, "Creating session run deaths string");
@@ -1813,16 +1929,30 @@ UpdateTask DTLayer::onSRUNSKey(){
 long long DTLayer::calcPlaytime(const Deaths& deaths){
     long double playtime = 0;
 
-    auto wt = m_Level->m_timestamp
-        ? m_Level->m_timestamp / 240
-        : std::ceil(timeForLevelString(m_Level->m_levelString));
+    // auto __calc_start_ms = timeInMs();
+
+    float wt;
+    if (!cachedLevelLength.has_value()){
+        wt = m_Level->m_timestamp
+            ? m_Level->m_timestamp / 240
+            : m_Level->isPlatformer() ? 0 : std::ceil(timeForLevelString(m_Level->m_levelString));
+
+        cachedLevelLength = wt;
+    }
+    else{
+        wt = cachedLevelLength.value();
+    }
 
     for (const auto& death : deaths)
     {
         auto runSplitRes = StatsManager::splitRunKey(death.first);
         if (runSplitRes.isErr()) continue;
 
-        float runLength = (runSplitRes.unwrap().end - runSplitRes.unwrap().start);
+        float runLength;
+        if (runSplitRes.unwrap().start == -1)
+            runLength = runSplitRes.unwrap().end;
+        else
+            runLength = (runSplitRes.unwrap().end - runSplitRes.unwrap().start);
         // log::info("{} | {} | {}", runLength, runSplitRes.unwrap().end, runSplitRes.unwrap().start);
         // log::info("{}", death.second);
 
@@ -1836,107 +1966,188 @@ long long DTLayer::calcPlaytime(const Deaths& deaths){
         playtime += runOverallPlaytime;
     }
 
+    // auto __calc_elapsed_ms = timeInMs() - __calc_start_ms;
+    // log::info("calcPlaytime took {} ms", __calc_elapsed_ms);
+
     return playtime;
 }
 
 UpdateTask DTLayer::onPTALLSKey(){
-    return UpdateTask::run([&](auto progress, auto hasBeenCancelled) -> UpdateTask::Result {
-        if (m_MyLevelStats.isErr()) return Err("Failed to calculate playtime");
-        auto& myStats = m_MyLevelStats.unwrap();
-        if (myStats.from0.isErr()) return Err("Failed to calculate playtime");
-        auto& myFrom0Stats = myStats.from0.unwrap();
-        Deaths deaths{};
+    return UpdateTask::run([selfref = WeakRef(this)](auto progress, auto hasBeenCancelled) mutable -> UpdateTask::Result {
+        if (hasBeenCancelled()) return Err("cancled");
 
+        auto self = selfref.lock();
+        if (!self) return Err("cancled");
+
+        if (self->m_MyLevelStats.isErr()) return Err("Failed to calculate playtime");
+        auto myStats = self->m_MyLevelStats.unwrap();
+        if (myStats.from0.isErr()) return Err("No deaths saved!");
+        auto myFrom0Stats = myStats.from0.unwrap();
+
+        auto linkedLevelsCopy = self->linkedLevelsData;
+        self = nullptr;
+
+        if (hasBeenCancelled()) return Err("cancled");
+
+        Deaths deaths{};
         StatsManager::mergeMapsAdd(deaths, myFrom0Stats.deaths);
         StatsManager::mergeMapsAdd(deaths, myFrom0Stats.runs);
 
-        for (const auto& levelData : linkedLevelsData)
+        for (const auto& levelData : linkedLevelsCopy)
         {
+            if (hasBeenCancelled()) return Err("cancled");
+
             if (levelData.from0.isErr() || levelData.levelKey == myStats.levelKey) continue;
-            auto& levelFrom0Stats = levelData.from0.unwrap();
-            
+            auto levelFrom0Stats = levelData.from0.unwrap();
             StatsManager::mergeMapsAdd(deaths, levelFrom0Stats.deaths);
             StatsManager::mergeMapsAdd(deaths, levelFrom0Stats.runs);
         }
-        
-        return Ok(StatsManager::workingTime(calcPlaytime(deaths)));
+
+        auto self2 = selfref.lock();
+        if (!self2) return Err("cancled");
+
+        return Ok(StatsManager::workingTime(self2->calcPlaytime(deaths)));
     }, "Creating calculated playtime string");
 }
 
 UpdateTask DTLayer::onPTF0SKey(){
-    return UpdateTask::run([&](auto progress, auto hasBeenCancelled) -> UpdateTask::Result {
-        if (m_MyLevelStats.isErr()) return Err("Failed to calculate from 0 playtime");
-        auto& myStats = m_MyLevelStats.unwrap();
-        if (myStats.from0.isErr()) return Err("Failed to calculate from 0 playtime");
-        auto& myFrom0Stats = myStats.from0.unwrap();
-        Deaths deaths{};
+    return UpdateTask::run([selfref = WeakRef(this)](auto progress, auto hasBeenCancelled) mutable -> UpdateTask::Result {
+        if (hasBeenCancelled()) return Err("cancled");
 
+        auto self = selfref.lock();
+        if (!self) return Err("cancled");
+
+        if (self->m_MyLevelStats.isErr()) return Err("Failed to calculate from 0 playtime");
+        auto myStats = self->m_MyLevelStats.unwrap();
+        if (myStats.from0.isErr()) return Err("No deaths saved!");
+        auto myFrom0Stats = myStats.from0.unwrap();
+
+        auto linkedLevelsCopy = self->linkedLevelsData;
+        self = nullptr;
+
+        if (hasBeenCancelled()) return Err("cancled");
+
+        Deaths deaths{};
         StatsManager::mergeMapsAdd(deaths, myFrom0Stats.deaths);
 
-        for (const auto& levelData : linkedLevelsData)
+        for (const auto& levelData : linkedLevelsCopy)
         {
+            if (hasBeenCancelled()) return Err("cancled");
+
             if (levelData.from0.isErr() || levelData.levelKey == myStats.levelKey) continue;
-            auto& levelFrom0Stats = levelData.from0.unwrap();
-            
+            auto levelFrom0Stats = levelData.from0.unwrap();
             StatsManager::mergeMapsAdd(deaths, levelFrom0Stats.deaths);
         }
 
-        return Ok(StatsManager::workingTime(calcPlaytime(deaths)));
+        auto self2 = selfref.lock();
+        if (!self2) return Err("cancled");
+
+        return Ok(StatsManager::workingTime(self2->calcPlaytime(deaths)));
     }, "Creating from 0 calculated playtime string");
 }
 UpdateTask DTLayer::onPTRUNSKey(){
-    return UpdateTask::run([&](auto progress, auto hasBeenCancelled) -> UpdateTask::Result {
-        if (m_MyLevelStats.isErr()) return Err("Failed to calculate runs playtime");
-        auto& myStats = m_MyLevelStats.unwrap();
-        if (myStats.from0.isErr()) return Err("Failed to calculate runs playtime");
-        auto& myFrom0Stats = myStats.from0.unwrap();
-        Deaths deaths{};
+    return UpdateTask::run([selfref = WeakRef(this)](auto progress, auto hasBeenCancelled) mutable -> UpdateTask::Result {
+        if (hasBeenCancelled()) return Err("cancled");
 
+        auto self = selfref.lock();
+        if (!self) return Err("cancled");
+
+        if (self->m_MyLevelStats.isErr()) return Err("Failed to calculate runs playtime");
+        auto myStats = self->m_MyLevelStats.unwrap();
+        if (myStats.from0.isErr()) return Err("No deaths saved!");
+        auto myFrom0Stats = myStats.from0.unwrap();
+
+        auto linkedLevelsCopy = self->linkedLevelsData;
+        self = nullptr;
+
+        if (hasBeenCancelled()) return Err("cancled");
+
+        Deaths deaths{};
         StatsManager::mergeMapsAdd(deaths, myFrom0Stats.runs);
 
-        for (const auto& levelData : linkedLevelsData)
+        for (const auto& levelData : linkedLevelsCopy)
         {
+            if (hasBeenCancelled()) return Err("cancled");
+
             if (levelData.from0.isErr() || levelData.levelKey == myStats.levelKey) continue;
-            auto& levelFrom0Stats = levelData.from0.unwrap();
-            
+            auto levelFrom0Stats = levelData.from0.unwrap();
             StatsManager::mergeMapsAdd(deaths, levelFrom0Stats.runs);
         }
 
-        return Ok(StatsManager::workingTime(calcPlaytime(deaths)));
+        auto self2 = selfref.lock();
+        if (!self2) return Err("cancled");
+
+        return Ok(StatsManager::workingTime(self2->calcPlaytime(deaths)));
     }, "Creating runs calculated playtime string");
 }
 
 UpdateTask DTLayer::onPTSALLSKey(){
-    return UpdateTask::run([&](auto progress, auto hasBeenCancelled) -> UpdateTask::Result {
-        auto sessionRes = loadSessionFromSave();
+    return UpdateTask::run([selfref = WeakRef(this)](auto progress, auto hasBeenCancelled) mutable -> UpdateTask::Result {
+        if (hasBeenCancelled()) return Err("cancled");
+
+        auto self = selfref.lock();
+        if (!self) return Err("cancled");
+
+        auto sessionRes = self->loadSessionFromSave();
         if (sessionRes.isErr()) return Err("{}", sessionRes.unwrapErr());
         auto session = sessionRes.unwrap();
+        self = nullptr;
+
+        if (hasBeenCancelled()) return Err("cancled");
 
         Deaths deaths;
         StatsManager::mergeMapsAdd(deaths, session.deaths);
         StatsManager::mergeMapsAdd(deaths, session.runs);
 
-        return Ok(StatsManager::workingTime(calcPlaytime(deaths)));
+        auto self2 = selfref.lock();
+        if (!self2) return Err("cancled");
+
+        return Ok(StatsManager::workingTime(self2->calcPlaytime(deaths)));
     }, "Creating calculated session all playtime string");
 }
 UpdateTask DTLayer::onPTSF0Key(){
-    return UpdateTask::run([&](auto progress, auto hasBeenCancelled) -> UpdateTask::Result {
-        auto sessionRes = loadSessionFromSave();
-        if (sessionRes.isErr()) return Err("{}", sessionRes.unwrapErr());
+    return UpdateTask::run([selfref = WeakRef(this)](auto progress, auto hasBeenCancelled) mutable -> UpdateTask::Result {
+        if (hasBeenCancelled()) return Err("cancled");
 
-        return Ok(StatsManager::workingTime(calcPlaytime(sessionRes.unwrap().deaths)));
+        auto self = selfref.lock();
+        if (!self) return Err("cancled");
+
+        auto sessionRes = self->loadSessionFromSave();
+        if (sessionRes.isErr()) return Err("{}", sessionRes.unwrapErr());
+        auto session = sessionRes.unwrap();
+        self = nullptr;
+
+        if (hasBeenCancelled()) return Err("cancled");
+
+        auto self2 = selfref.lock();
+        if (!self2) return Err("cancled");
+
+        return Ok(StatsManager::workingTime(self2->calcPlaytime(session.deaths)));
     }, "Creating calculated session from 0 playtime string");
 }
 UpdateTask DTLayer::onPTSRUNSKey(){
-    return UpdateTask::run([&](auto progress, auto hasBeenCancelled) -> UpdateTask::Result {
-        auto sessionRes = loadSessionFromSave();
-        if (sessionRes.isErr()) return Err("{}", sessionRes.unwrapErr());
+    return UpdateTask::run([selfref = WeakRef(this)](auto progress, auto hasBeenCancelled) mutable -> UpdateTask::Result {
+        if (hasBeenCancelled()) return Err("cancled");
 
-        return Ok(StatsManager::workingTime(calcPlaytime(sessionRes.unwrap().runs)));
+        auto self = selfref.lock();
+        if (!self) return Err("cancled");
+
+        auto sessionRes = self->loadSessionFromSave();
+        if (sessionRes.isErr()) return Err("{}", sessionRes.unwrapErr());
+        auto session = sessionRes.unwrap();
+        self = nullptr;
+
+        if (hasBeenCancelled()) return Err("cancled");
+
+        auto self2 = selfref.lock();
+        if (!self2) return Err("cancled");
+
+        return Ok(StatsManager::workingTime(self2->calcPlaytime(session.runs)));
     }, "Creating calculated session runs playtime string");
 }
 
 Result<Session> DTLayer::loadSessionFromSave(std::optional<int> sessionIndex){
+    if (!sessionsOrder.size()) return Err("No sessions saved!");
     int i = sessionIndex.has_value() ? sessionIndex.value() : sessionSelector->getCurrentCount();
 
     if (i == 0 || i > sessionsOrder.size())

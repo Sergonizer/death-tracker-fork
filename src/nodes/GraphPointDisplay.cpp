@@ -24,20 +24,20 @@ bool GraphPointDisplay::init(){
 
     percentLabel = CCLabelBMFont::create("", "bigFont.fnt");
     percentLabel->setScale(.4f);
-    percentLabel->setPosition({this->getContentWidth() / 2, this->getContentHeight() - 5});
+    percentLabel->setPosition({this->getContentWidth() / 2, this->getContentHeight() - 6.5f});
     percentLabel->setAnchorPoint({.5f, 1});
     this->addChild(percentLabel);
     
     rateLabel = CCLabelBMFont::create("", "bigFont.fnt");
     rateLabel->setScale(.25f);
-    rateLabel->setPosition({this->getContentWidth() / 2, 5});
+    rateLabel->setPosition({this->getContentWidth() / 2, 6});
     rateLabel->setAnchorPoint({.5f, 0});
     this->addChild(rateLabel);
 
     return true;
 }
 
-void GraphPointDisplay::setContent(std::string run, float ratePercent, DTGraphType type){
+void GraphPointDisplay::setContent(std::string run, float ratePercent, DTGraphType type, ccColor3B graphInner, ccColor3B graphOuter){
     auto runInfo = StatsManager::splitRunKey(run).unwrapOr(Run{-1, -1});
 
     std::string runSprFormatted;
@@ -49,6 +49,7 @@ void GraphPointDisplay::setContent(std::string run, float ratePercent, DTGraphTy
         runSprFormatted = fmt::format("{}%-{}%", runInfo.start, runInfo.end);
 
     percentLabel->setString(runSprFormatted.c_str());
+    percentLabel->setColor(graphOuter);
 
     std::string rateType;
 
@@ -66,5 +67,6 @@ void GraphPointDisplay::setContent(std::string run, float ratePercent, DTGraphTy
         break;
     }
 
-    rateLabel->setString(fmt::format("{}: {}%", rateType, ratePercent).c_str());
+    rateLabel->setString(fmt::format("{}: {:.4f}%", rateType, ratePercent).c_str());
+    rateLabel->setColor(graphInner);
 }

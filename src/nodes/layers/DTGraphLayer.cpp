@@ -463,7 +463,7 @@ void DTGraphLayer::keyDown(enumKeyCodes key){
 
     graph->sendKeyStuff(false, key);
     
-    CCLayer::keyDown(key);
+    Popup<>::keyDown(key);
 }
 
 void DTGraphLayer::keyUp(enumKeyCodes key){
@@ -479,30 +479,90 @@ void DTGraphLayer::OnPointSelected(GraphPoint* point){
 
     auto display = GraphPointDisplay::create();
 
-    auto pointPosConverted = m_mainLayer->convertToNodeSpace(point->convertToWorldSpace({point->getContentWidth() / 2, 0}));
+    CCPoint position;
 
-    display->setPosition(pointPosConverted - ccp(display->getContentWidth() / 2, display->getContentHeight()));
-    display->setContent(point->m_Run, point->m_Rate, point->relatedGraph->getInfo().value().type);
+    if (!displaysForPoints.size()){
+        auto pointPosConverted = m_mainLayer->convertToNodeSpace(point->convertToWorldSpace({point->getContentWidth() / 2, 0}));
+
+        position = pointPosConverted - ccp(display->getContentWidth() / 2, display->getContentHeight());
+    }
+    else{
+        GraphPointDisplay* lowestOther = *displays.rbegin();
+        position = ccp(lowestOther->getPositionX(), lowestOther->positionReal) + ccp(0, -lowestOther->getScaledContentHeight() / 2 - display->getScaledContentHeight() / 2);
+    }
+
+    auto innerColor = point->relatedGraph->getInfo().value().color;
+    auto outerColor = point->relatedGraph->getInfo().value().outlineColor;
+
+    display->positionReal = position.y;
+    display->setPosition(position);
+    display->setContent(
+        point->m_Run, 
+        point->m_Rate, 
+        point->relatedGraph->getInfo().value().type, 
+        {innerColor.r, innerColor.g, innerColor.b},
+        {outerColor.r, outerColor.g, outerColor.b}
+    );
     m_mainLayer->addChild(display);
 
     displaysForPoints.insert({point, display});
+    displays.insert(display);
+
+    auto lowestDisplay = *displays.rbegin();
+
+    auto gloablPos = lowestDisplay->getParent()->convertToWorldSpace({lowestDisplay->getPositionX(), lowestDisplay->positionReal});
+    if (gloablPos.y < 0){
+        float overallHeight = point->getScaledContentHeight();
+        for (const auto& otherDisplay : displays){
+            otherDisplay->setPositionY(otherDisplay->positionReal + otherDisplay->getScaledContentHeight() + overallHeight);
+            overallHeight += otherDisplay->getScaledContentHeight() * 2;
+        }
+    }
 }
 
 void DTGraphLayer::OnPointDeselected(GraphPoint* point){
     if (!displaysForPoints.contains(point)) return;
 
-    displaysForPoints[point]->removeMeAndCleanup();
+    auto display = displaysForPoints[point];
+
+    displays.erase(display);
+
+    for (const auto& otherDisplay : displays)
+    {
+        if (otherDisplay->positionReal < display->positionReal){
+            otherDisplay->positionReal += display->getScaledContentHeight();
+        }
+    }
+    
+    display->removeMeAndCleanup();
     displaysForPoints.erase(point);
+
+    if (!displays.size()) return;
+
+    auto lowestDisplay = *displays.rbegin();
+
+    auto gloablPos = lowestDisplay->getParent()->convertToWorldSpace({lowestDisplay->getPositionX(), lowestDisplay->positionReal});
+    if (gloablPos.y < 0){
+        float overallHeight = point->getScaledContentHeight();
+        for (const auto& otherDisplay : displays){
+            otherDisplay->setPositionY(otherDisplay->positionReal + otherDisplay->getScaledContentHeight() + overallHeight);
+            overallHeight += otherDisplay->getScaledContentHeight() * 2;
+        }
+    }
+    else{
+        for (const auto& displayToSetYOf : displays){
+            displayToSetYOf->setPositionY(displayToSetYOf->positionReal);
+        }
+    }
 }
 
-void DTGraphLayer::onClose(cocos2d::CCObject*) {
+void DTGraphLayer::onClose(cocos2d::CCObject* sender) {
     if (editedGraph.has_value()){
         onOk(nullptr);
         return;
     }
-    this->setKeypadEnabled(false);
-    this->setTouchEnabled(false);
-    this->removeFromParentAndCleanup(true);
+    displaysForPoints.clear();
+    Popup<>::onClose(sender);
 }
 
 void DTGraphLayer::update(float dt){
