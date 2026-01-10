@@ -114,12 +114,14 @@ void BackupCell::onBackupLoaded(GetBackupTask::Event* event){
 
         backupData = value->backup.unwrap();
 
-        struct tm timeInfo = {};
-        #if defined(_WIN32)
-        gmtime_s(&timeInfo, &backupData->backupDate);
-        #else
-        gmtime_r(&backupData->backupDate, &timeInfo);
-        #endif
+        auto timeTDate = static_cast<time_t>(backupData.value().backupDate);
+
+        tm timeInfo = {};
+    #if defined(_WIN32)
+        gmtime_s(&timeInfo, &timeTDate);
+    #else
+        gmtime_r(&timeTDate, &timeInfo);
+    #endif
 
         titleLabel->setString(fmt::format("{:%Y-%m-%d %H:%M:%S}", timeInfo).c_str());
         descriptionLabel->setString(
