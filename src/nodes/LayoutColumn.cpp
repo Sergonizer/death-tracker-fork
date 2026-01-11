@@ -169,7 +169,8 @@ void LayoutColumn::updateSizesByContent(){
 void LayoutColumn::update(float dt){
     DTLabel* lowestLabel = nullptr;
 
-    for (const auto& [labelLayer, label] : labels){
+    auto labelsTemp = labels;
+    for (const auto& [labelLayer, label] : labelsTemp){
         if (lowestLabel == nullptr){
             lowestLabel = label;
             continue;
