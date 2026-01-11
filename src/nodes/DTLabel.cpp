@@ -507,7 +507,8 @@ void DTLabel::onMoveEnded(){
 }
 
 void DTLabel::removeFromColumns(){
-    for (const auto& container : holders){
+    auto holdersTemp = holders;
+    for (const auto& container : holdersTemp){
         container->removeLabel(this);
     }
 }
