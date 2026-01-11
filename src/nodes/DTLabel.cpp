@@ -190,8 +190,8 @@ void DTLabel::update(float dt){
         labelText->setWidth(labelText->getWidth());
     }
 
-    glow->setScaleX(this->getContentWidth() * 2);
-    glow->setScaleY(this->getContentHeight() * 2);
+    glow->setScaleX(this->getScaledContentWidth() / glow->getContentWidth());
+    glow->setScaleY(this->getScaledContentHeight() / glow->getContentHeight());
 
     auto textHeight = 0.0f;
     if (!info.isExpanded) textHeight = 0;

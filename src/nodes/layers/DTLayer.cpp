@@ -652,6 +652,8 @@ bool DTLayer::createDeathsString(const Deaths& deaths, const stringCustomazation
 
     if (out == "")
         out = "No Deaths Found!";
+    else if (out[out.length() - 1] == '\n')
+        out.erase(out.end());
 
     return true;
 }
