@@ -66,7 +66,7 @@ class DTLayer : public Popup<GJGameLevel* const&> {
         std::pair<LayoutColumn*, int> getColumnLayerFromPosition(CCPoint posInWorldSpace);
 
         //points should be in world space!
-        std::multiset<LayoutColumn*, ColumnComperator> getColumnsBetween(CCPoint a, CCPoint b);
+        std::set<LayoutColumn*, ColumnComperator> getColumnsBetween(CCPoint a, CCPoint b);
 
         DTLabel* createNewLabel(DTLabelInfo info = DTLabelInfo{});
 

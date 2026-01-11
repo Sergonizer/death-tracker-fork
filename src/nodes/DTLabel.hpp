@@ -36,7 +36,7 @@ class DTLabel : public CCMenu {
             bool operator() (LayoutColumn* a, LayoutColumn* b) const;
         };
 
-        std::multiset<LayoutColumn*, ColumnComperator> getHolders();
+        std::set<LayoutColumn*, ColumnComperator> getHolders();
 
         void setLabelName(const std::string& newName);
         void setFontSize(float newSize);
@@ -81,7 +81,7 @@ class DTLabel : public CCMenu {
 
         std::set<std::shared_ptr<SpecialKey>> currentlyLoadingFor{};
         
-        std::multiset<LayoutColumn*, ColumnComperator> holders{};
+        std::set<LayoutColumn*, ColumnComperator> holders{};
 
         CCScale9Sprite* bg;
         CCScale9Sprite* labelTitleBG;
@@ -110,7 +110,7 @@ class DTLabel : public CCMenu {
 
         CCPoint currentTouchPosition;
 
-        std::multiset<LayoutColumn*, ColumnComperator> holdersSave{};
+        std::set<LayoutColumn*, ColumnComperator> holdersSave{};
 
         void onSettings();
         void onMoveBegan();

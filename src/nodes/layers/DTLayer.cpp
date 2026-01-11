@@ -1231,9 +1231,9 @@ std::pair<LayoutColumn*, int> DTLayer::getColumnLayerFromPosition(CCPoint posInW
     return {columnFound, highestLayerFound + 1};
 }
 
-std::multiset<LayoutColumn*, ColumnComperator> DTLayer::getColumnsBetween(CCPoint a, CCPoint b){
+std::set<LayoutColumn*, ColumnComperator> DTLayer::getColumnsBetween(CCPoint a, CCPoint b){
 
-    std::multiset<LayoutColumn*, ColumnComperator> toReturn{};
+    std::set<LayoutColumn*, ColumnComperator> toReturn{};
 
     a = columnHolder->convertToNodeSpace(a);
     b = columnHolder->convertToNodeSpace(b);

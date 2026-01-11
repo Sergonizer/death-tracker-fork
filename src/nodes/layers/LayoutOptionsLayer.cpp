@@ -743,12 +743,14 @@ void LayoutOptionsLayer::onDelete(CCObject*){
         editedLabel.value()->removeFromColumns();
         editedLabel.value()->removeFromParentAndCleanup(true);
         DTLayer::get()->organizeLayout();
-        onBackedOut();
+        if (onBackedOut != NULL)
+            onBackedOut();
     }
     else if (editedColumn.has_value()){
         editedColumn.value()->destroyColumnAndCleanup();
         DTLayer::get()->organizeLayout();
-        onBackedOut();
+        if (onBackedOut != NULL)
+            onBackedOut();
     }
 }
 
@@ -834,7 +836,9 @@ void LayoutOptionsLayer::onSpecialKeyAdded(const std::string& str){
     }
 
     labelTextSpecialKeysInput->setString(toEditStr, true);
+    #if !defined(GEODE_IS_MOBILE)
     labelTextSpecialKeysInput->focus();
+    #endif
 }
 
 void LayoutOptionsLayer::keyBackClicked(){

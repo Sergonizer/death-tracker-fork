@@ -545,7 +545,7 @@ void DTLabel::updateInfoWithColumnData(){
     info.maxPlacementRange = max;
 }
 
-std::multiset<LayoutColumn*, DTLabel::ColumnComperator> DTLabel::getHolders(){
+std::set<LayoutColumn*, DTLabel::ColumnComperator> DTLabel::getHolders(){
     return holders;
 }
 
