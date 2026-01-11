@@ -81,6 +81,8 @@ class LayoutOptionsLayer : public CCLayer, public geode::ColorPickPopupDelegate 
 
         void onSpecialKeyAdded(const std::string& str);
 
+        void setAllInputs(CCNode* node, bool enabled);
+
         TextInput* columnWidthInput;
         bool ignoreNextOrganization;
     };

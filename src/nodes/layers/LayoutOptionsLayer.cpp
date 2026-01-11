@@ -487,6 +487,11 @@ bool LayoutOptionsLayer::init(const CCSize& size) {
         columnWidthInput->setString(widthText);
     });
 
+    setAllInputs(labelSettingsNode, false);
+    setAllInputs(columnSettingsNode, false);
+    setAllInputs(fontSelectionNode, false);
+    setAllInputs(specialKeysNode, false);
+
     return true;
 }
 
@@ -664,15 +669,6 @@ void LayoutOptionsLayer::switchToMenu(uint8_t menuID){
         return CCEaseExponentialOut::create(CCScaleTo::create(.2f, 1, open ? 1 : 0));
     };
 
-    auto setAllInputs = [](CCNode* node, bool enabled){
-        for (const auto& child : CCArrayExt<CCNode*>(node->getChildren()))
-        {
-            if (auto text = typeinfo_cast<TextInput*>(child))
-                text->setEnabled(enabled);
-        }
-        
-    };
-
     labelSettingsNode->runAction(exitEasing(false));
     columnSettingsNode->runAction(exitEasing(false));
     fontSelectionNode->runAction(exitEasing(false));
@@ -843,4 +839,12 @@ void LayoutOptionsLayer::onSpecialKeyAdded(const std::string& str){
 
 void LayoutOptionsLayer::keyBackClicked(){
     onBack(nullptr);
+}
+
+void LayoutOptionsLayer::setAllInputs(CCNode* node, bool enabled){
+    for (const auto& child : CCArrayExt<CCNode*>(node->getChildren()))
+    {
+        if (auto text = typeinfo_cast<TextInput*>(child))
+            text->setEnabled(enabled);
+    }
 }
