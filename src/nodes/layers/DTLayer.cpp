@@ -652,8 +652,7 @@ bool DTLayer::createDeathsString(const Deaths& deaths, const stringCustomazation
 
     if (out == "")
         out = "No Deaths Found!";
-    else if (out[out.length() - 1] == '\n')
-        out.erase(out.end());
+    else out.erase(out.length() - custom.seperator.length());
 
     return true;
 }
@@ -1415,10 +1414,12 @@ void DTLayer::specialKeyUpdateCompleted(const std::shared_ptr<SpecialKey>& key){
     else if (key->getKey() == "s0"){
         specialStrings["ptsf0"]->updateContent();
         specialStrings["ptsgen"]->updateContent();
+        specialStrings["satt"]->updateContent();
     }
     else if (key->getKey() == "sruns"){
         specialStrings["ptsruns"]->updateContent();
         specialStrings["ptsgen"]->updateContent();
+        specialStrings["satt"]->updateContent();
     }
 
     for (const auto& label : keyListeners)
@@ -1839,6 +1840,7 @@ UpdateTask DTLayer::onDTATTKey(){
         };
 
         deaths(myFrom0Stats.deaths);
+        deaths(myFrom0Stats.runs);
 
         for (const auto& levelData : linkedLevelsCopy)
         {
@@ -1848,6 +1850,7 @@ UpdateTask DTLayer::onDTATTKey(){
             auto levelFrom0Stats = levelData.from0.unwrap();
 
             deaths(levelFrom0Stats.deaths);
+            deaths(levelFrom0Stats.runs);
         }
 
         return Ok(std::to_string(attempts));
@@ -2313,13 +2316,15 @@ UpdateTask DTLayer::onSAttKey(){
         auto session = sessionRes.unwrap();
         self = nullptr;
 
-        int attempts;
+        unsigned long long attempts = 0;
 
-        for (const auto& death : session.deaths)
-            attempts += death.second;
+        auto deathsCalc = [&attempts](const Deaths& d){
+            for (const auto& [_, count] : d)
+                attempts += count;
+        };
 
-        for (const auto& death : session.runs)
-            attempts += death.second;
+        deathsCalc(session.deaths);
+        deathsCalc(session.runs);
         
         return Ok(std::to_string(attempts));
     }, "Creating session attepmts string");

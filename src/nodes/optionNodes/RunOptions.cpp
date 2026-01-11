@@ -18,7 +18,6 @@ RunOptions* RunOptions::create(const CCSize& size) {
 }
 
 bool RunOptions::setup(){
-
     auto TARLabel = CCLabelBMFont::create("Track any run", "gjFont17.fnt");
     TARLabel->setAlignment(CCTextAlignment::kCCTextAlignmentLeft);
     TARLabel->setAnchorPoint({.5f, .5f});
