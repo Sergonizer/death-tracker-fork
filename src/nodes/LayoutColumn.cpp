@@ -311,7 +311,8 @@ void LayoutColumn::onOrganized(float deltaMove){
 }
 
 void LayoutColumn::destroyColumnAndCleanup(){
-    for (const auto& [labelLayer, label] : labels)
+    auto labelsTemp = labels;
+    for (const auto& [labelLayer, label] : labelsTemp)
     {
         removeLabel(label);
 
