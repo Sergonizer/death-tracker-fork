@@ -38,6 +38,10 @@ class AdvancedScrollLayer : public CCLayer {
         bool holdingShift;
 
         CCSet* allTouches = nullptr;
+        float initialDistance;
+        CCPoint m_touchMidPoint;
+        float m_initialScale;
+        float m_initialDistance;
     public:
         static AdvancedScrollLayer* create(CCSize size, CCSize limits);
 
@@ -77,7 +81,7 @@ class AdvancedScrollLayer : public CCLayer {
         void moveToCorner(bool left, bool bottom);
 
         void zoomBy(float zoomAmount);
-        void zoomByAndMove(float zoomAmount);
+        void zoomToAndMove(float zoomAmount, float betweenDelta = .5f);
         void zoomTo(float zoomAmount);
 
         void zoomToMinimum();

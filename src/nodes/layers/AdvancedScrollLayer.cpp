@@ -138,6 +138,17 @@ bool AdvancedScrollLayer::ccTouchBegan(CCTouch* touch, CCEvent* event) {
 
     touchDown = true;
 
+    if (allTouches->count() == 1){
+        auto firstLoc = static_cast<CCTouch*>(allTouches->anyObject())->getLocation();
+        auto secondLoc = touch->getLocation();
+
+        m_touchMidPoint = (firstLoc + secondLoc) / 2.f;
+        // save current zoom level
+        m_initialScale = zoomParent->getScale();
+        // distance between the two touches
+        m_initialDistance = firstLoc.getDistance(secondLoc);
+    }
+
     if (!allTouches->containsObject(touch))
         allTouches->addObject(touch);
 
@@ -189,21 +200,27 @@ void AdvancedScrollLayer::ccTouchesMoved(CCSet* touches, CCEvent* event){
 
     if (!this->boundingBox().containsPoint(this->getParent()->convertToNodeSpace(touch1->getLocation()))) return;
 
-    float distance = touch1->getLocation().getDistance(touch2->getLocation());
+    auto firstLoc = touch1->getLocation();
+    auto secondLoc = touch2->getLocation();
 
-    zoomByAndMove((prevTouchDelta - distance) * zoomSensetivity);
+    auto center = (firstLoc + secondLoc) / 2.f;
+    auto distNow = firstLoc.getDistance(secondLoc);
+    
+    auto const mult = initialDistance / distNow;
 
-    prevTouchDelta = distance;
+    zoomToAndMove(mult * zoomSensetivity);
+
+    //prevTouchDelta = distance;
 }
 
 void AdvancedScrollLayer::scrollWheel(float y, float x) {
     if (!isEnabled) return;
 
     if (!scrollMovement)
-        zoomByAndMove(-y * zoomSensetivity);
+        zoomToAndMove(zoomParent->getScale() + -y * zoomSensetivity);
     else{
         if (CCKeyboardDispatcher::get()->getControlKeyPressed()){
-            zoomByAndMove(-y * zoomSensetivity);
+            zoomToAndMove(zoomParent->getScale() + y * zoomSensetivity);
         }
         else if (!holdingShift)
             moveBy(ccp(x, y) * scrollSense);
@@ -353,7 +370,7 @@ void AdvancedScrollLayer::zoomBy(float zoomAmount){
     zoomTo(zoomParent->getScale() + zoomAmount);
 }
 
-void AdvancedScrollLayer::zoomByAndMove(float zoomAmount){
+void AdvancedScrollLayer::zoomToAndMove(float zoomAmount, float betweenDelta){
     auto touchPos = getMousePos();
 
     if (allTouches->count() == 2){
@@ -361,11 +378,11 @@ void AdvancedScrollLayer::zoomByAndMove(float zoomAmount){
         CCTouch* touch1 = static_cast<CCTouch*>(*it);
         ++it;
         CCTouch* touch2 = static_cast<CCTouch*>(*it);
-        touchPos = touch1->getLocation().lerp(touch2->getLocation(), .5f);
+        touchPos = touch1->getLocation().lerp(touch2->getLocation(), betweenDelta);
     }
 
     auto posBeforeZoom = zoomParent->convertToNodeSpace(touchPos);
-    zoomBy(zoomAmount);
+    zoomTo(zoomAmount);
     auto posAfterZoom = zoomParent->convertToNodeSpace(touchPos);
     moveBy(posAfterZoom - posBeforeZoom);
 }
