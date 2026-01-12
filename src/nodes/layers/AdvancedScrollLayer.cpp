@@ -215,7 +215,7 @@ void AdvancedScrollLayer::ccTouchesMoved(CCSet* touches, CCEvent* event){
     if (d1 + d2 == 0.0f)
         result = 0.5f;
     else
-        result = d2 / (d1 + d2);
+        result = d1 / (d1 + d2);
 
     zoomToAndMove(initialScale / mult, result);
 }
