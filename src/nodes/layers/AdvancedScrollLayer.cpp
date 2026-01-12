@@ -191,7 +191,7 @@ void AdvancedScrollLayer::ccTouchesMoved(CCSet* touches, CCEvent* event){
 
     float distance = touch1->getLocation().getDistance(touch2->getLocation());
 
-    zoomBy(prevTouchDelta - distance);
+    zoomByAndMove(prevTouchDelta - distance);
 
     prevTouchDelta = distance;
 }
@@ -200,11 +200,10 @@ void AdvancedScrollLayer::scrollWheel(float y, float x) {
     if (!isEnabled) return;
 
     if (!scrollMovement)
-        zoomBy(-y * 0.01f);
+        zoomByAndMove(-y * 0.01f);
     else{
         if (CCKeyboardDispatcher::get()->getControlKeyPressed()){
-            
-            zoomBy(-y * 0.01f);
+            zoomByAndMove(-y * 0.01f);
         }
         else if (!holdingShift)
             moveBy(ccp(x, y) * scrollSense);
@@ -352,6 +351,23 @@ void AdvancedScrollLayer::moveToCorner(bool left, bool bottom){
 
 void AdvancedScrollLayer::zoomBy(float zoomAmount){
     zoomTo(zoomParent->getScale() + zoomAmount);
+}
+
+void AdvancedScrollLayer::zoomByAndMove(float zoomAmount){
+    auto touchPos = getMousePos();
+
+    if (allTouches->count() == 2){
+        CCSetIterator it = allTouches->begin();
+        CCTouch* touch1 = static_cast<CCTouch*>(*it);
+        ++it;
+        CCTouch* touch2 = static_cast<CCTouch*>(*it);
+        touchPos = touch1->getLocation().lerp(touch2->getLocation(), .5f);
+    }
+
+    auto posBeforeZoom = zoomParent->convertToNodeSpace(touchPos);
+    zoomBy(zoomAmount);
+    auto posAfterZoom = zoomParent->convertToNodeSpace(touchPos);
+    moveBy(posAfterZoom - posBeforeZoom);
 }
 
 void AdvancedScrollLayer::zoomTo(float zoomAmount){

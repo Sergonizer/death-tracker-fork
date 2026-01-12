@@ -77,6 +77,7 @@ class AdvancedScrollLayer : public CCLayer {
         void moveToCorner(bool left, bool bottom);
 
         void zoomBy(float zoomAmount);
+        void zoomByAndMove(float zoomAmount);
         void zoomTo(float zoomAmount);
 
         void zoomToMinimum();
