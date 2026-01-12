@@ -80,6 +80,9 @@ bool AdvancedScrollLayer::init(CCSize size, CCSize limits){
     this->setMouseEnabled(true);
     this->setTouchEnabled(true);
     
+    allTouches = CCSet::create();
+    allTouches->retain();
+
     return true;
 }
 
@@ -135,8 +138,8 @@ bool AdvancedScrollLayer::ccTouchBegan(CCTouch* touch, CCEvent* event) {
 
     touchDown = true;
 
-    if (!touches.contains(touch))
-        touches.insert(touch);
+    if (!allTouches->containsObject(touch))
+        allTouches->addObject(touch);
 
     return true;
 }
@@ -144,26 +147,22 @@ bool AdvancedScrollLayer::ccTouchBegan(CCTouch* touch, CCEvent* event) {
 void AdvancedScrollLayer::ccTouchEnded(CCTouch* touch, CCEvent*) {
     touchDown = false;
 
-    if (touches.contains(touch))
-        touches.insert(touch);
+    if (allTouches->containsObject(touch))
+        allTouches->removeObject(touch);
 }
 
 void AdvancedScrollLayer::ccTouchCancelled(CCTouch* touch, CCEvent*) {
     touchDown = false;
 
-    if (touches.contains(touch))
-        touches.insert(touch);
+    if (allTouches->containsObject(touch))
+        allTouches->removeObject(touch);
 }
 
 void AdvancedScrollLayer::ccTouchMoved(CCTouch* touch, CCEvent*){
     if (!isEnabled || touch == nullptr) return;
 
-    if (touches.size() > 1){
-        auto ccset = CCSet::create();
-        for (const auto& touch : touches)
-            ccset->addObject(touch);
-
-        ccTouchesMoved(ccset, nullptr);
+    if (allTouches->count() > 1){
+        ccTouchesMoved(allTouches, nullptr);
         return;
     }
 
@@ -203,8 +202,10 @@ void AdvancedScrollLayer::scrollWheel(float y, float x) {
     if (!scrollMovement)
         zoomBy(-y * 0.01f);
     else{
-        if (CCKeyboardDispatcher::get()->getControlKeyPressed())
+        if (CCKeyboardDispatcher::get()->getControlKeyPressed()){
+            
             zoomBy(-y * 0.01f);
+        }
         else if (!holdingShift)
             moveBy(ccp(x, y) * scrollSense);
         else
@@ -384,4 +385,9 @@ float AdvancedScrollLayer::getCurrentZoom(){
 
 void AdvancedScrollLayer::setEnabled(bool b){
     isEnabled = b;
+}
+
+AdvancedScrollLayer::~AdvancedScrollLayer(){
+    if (allTouches != nullptr)
+        allTouches->release();
 }

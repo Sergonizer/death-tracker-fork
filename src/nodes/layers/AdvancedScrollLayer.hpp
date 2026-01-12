@@ -36,6 +36,8 @@ class AdvancedScrollLayer : public CCLayer {
         ccColor4B gridColor;
 
         bool holdingShift;
+
+        CCSet* allTouches = nullptr;
     public:
         static AdvancedScrollLayer* create(CCSize size, CCSize limits);
 
@@ -90,5 +92,5 @@ class AdvancedScrollLayer : public CCLayer {
         float minZoom = 2;
         float maxZoom = .5f;
 
-        std::set<CCTouch*> touches;
+        ~AdvancedScrollLayer();
 };
