@@ -209,7 +209,7 @@ void AdvancedScrollLayer::ccTouchesMoved(CCSet* touches, CCEvent* event){
     auto const mult = initialDistance / distNow;
 
     zoomTo(initialScale / mult);
-    moveBy(-initialMinPoint - center);
+    moveBy(-(initialMinPoint - center));
     //prevTouchDelta = distance;
 }
 
