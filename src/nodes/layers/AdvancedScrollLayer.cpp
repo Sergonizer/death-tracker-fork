@@ -191,7 +191,7 @@ void AdvancedScrollLayer::ccTouchesMoved(CCSet* touches, CCEvent* event){
 
     float distance = touch1->getLocation().getDistance(touch2->getLocation());
 
-    zoomByAndMove(prevTouchDelta - distance);
+    zoomByAndMove((prevTouchDelta - distance) * zoomSensetivity);
 
     prevTouchDelta = distance;
 }
@@ -200,10 +200,10 @@ void AdvancedScrollLayer::scrollWheel(float y, float x) {
     if (!isEnabled) return;
 
     if (!scrollMovement)
-        zoomByAndMove(-y * 0.01f);
+        zoomByAndMove(-y * zoomSensetivity);
     else{
         if (CCKeyboardDispatcher::get()->getControlKeyPressed()){
-            zoomByAndMove(-y * 0.01f);
+            zoomByAndMove(-y * zoomSensetivity);
         }
         else if (!holdingShift)
             moveBy(ccp(x, y) * scrollSense);
