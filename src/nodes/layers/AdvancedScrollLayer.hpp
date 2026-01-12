@@ -13,8 +13,6 @@ class AdvancedScrollLayer : public CCLayer {
 
         float scrollSense = 1;
 
-        float prevTouchDelta = -1;
-
         bool isEnabled = true;
 
         CCScrollLayerExt* widthScrollExt;
