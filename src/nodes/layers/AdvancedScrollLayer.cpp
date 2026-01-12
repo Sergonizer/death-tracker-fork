@@ -142,10 +142,10 @@ bool AdvancedScrollLayer::ccTouchBegan(CCTouch* touch, CCEvent* event) {
         auto firstLoc = static_cast<CCTouch*>(allTouches->anyObject())->getLocation();
         auto secondLoc = touch->getLocation();
 
-        m_touchMidPoint = (firstLoc + secondLoc) / 2.f;
-        // save current zoom level
-        m_initialScale = zoomParent->getScale();
-        // distance between the two touches
+        //super special thanks for the better edit pinch to zoom functionallity :) it much good :thumbsup:
+
+        initialMinPoint = (firstLoc + secondLoc) / 2.f;
+        initialScale = zoomParent->getScale();
         initialDistance = firstLoc.getDistance(secondLoc);
     }
 
@@ -208,7 +208,11 @@ void AdvancedScrollLayer::ccTouchesMoved(CCSet* touches, CCEvent* event){
     
     auto const mult = initialDistance / distNow;
 
-    zoomToAndMove(m_initialScale / mult);
+    float off = initialMinPoint.getLength() - center.getLength();
+
+    log::info("{} {} | {}", initialMinPoint.getLength(), center.getLength(), off);
+
+    zoomToAndMove(initialScale / mult, off);
 
     //prevTouchDelta = distance;
 }
