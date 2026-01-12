@@ -147,6 +147,9 @@ bool AdvancedScrollLayer::ccTouchBegan(CCTouch* touch, CCEvent* event) {
         initialMinPoint = (firstLoc + secondLoc) / 2.f;
         initialScale = zoomParent->getScale();
         initialDistance = firstLoc.getDistance(secondLoc);
+        // record each touch's initial position for deciding which finger to move toward
+        initialPoint1 = firstLoc;
+        initialPoint2 = secondLoc;
     }
 
     if (!allTouches->containsObject(touch))
@@ -208,8 +211,31 @@ void AdvancedScrollLayer::ccTouchesMoved(CCSet* touches, CCEvent* event){
     
     auto const mult = initialDistance / distNow;
 
-    zoomTo(initialScale / mult);
-    moveBy(-(initialMinPoint - center));
+    // compute a betweenDelta in [0,1] that indicates which finger we should move toward
+    // 0 => toward finger 1, 1 => toward finger 2, 0.5 => midpoint
+    float betweenDelta = 0.5f;
+    // initial positions captured on pinch start
+    CCPoint init1 = initialPoint1;
+    CCPoint init2 = initialPoint2;
+    CCPoint curr1 = touch1->getLocation();
+    CCPoint curr2 = touch2->getLocation();
+
+    CCPoint v0 = {init2.x - init1.x, init2.y - init1.y};
+    float len = sqrtf(v0.x * v0.x + v0.y * v0.y);
+    if (len > 0.0001f) {
+        CCPoint dir = {v0.x / len, v0.y / len};
+        // projection of each finger's movement onto the initial line between them
+        float proj1 = (curr1.x - init1.x) * dir.x + (curr1.y - init1.y) * dir.y;
+        float proj2 = -((curr2.x - init2.x) * dir.x + (curr2.y - init2.y) * dir.y);
+
+        float p1 = std::max(proj1, 0.0f);
+        float p2 = std::max(proj2, 0.0f);
+
+        if (p1 + p2 > 0.0001f)
+            betweenDelta = p2 / (p1 + p2);
+    }
+
+    zoomToAndMove(initialScale / mult, betweenDelta);
     //prevTouchDelta = distance;
 }
 
