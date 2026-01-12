@@ -41,7 +41,6 @@ class AdvancedScrollLayer : public CCLayer {
         float initialDistance;
         CCPoint m_touchMidPoint;
         float m_initialScale;
-        float m_initialDistance;
     public:
         static AdvancedScrollLayer* create(CCSize size, CCSize limits);
 
