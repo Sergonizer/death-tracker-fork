@@ -135,19 +135,37 @@ bool AdvancedScrollLayer::ccTouchBegan(CCTouch* touch, CCEvent* event) {
 
     touchDown = true;
 
+    if (!touches.contains(touch))
+        touches.insert(touch);
+
     return true;
 }
 
-void AdvancedScrollLayer::ccTouchEnded(CCTouch*, CCEvent*) {
+void AdvancedScrollLayer::ccTouchEnded(CCTouch* touch, CCEvent*) {
     touchDown = false;
+
+    if (touches.contains(touch))
+        touches.insert(touch);
 }
 
-void AdvancedScrollLayer::ccTouchCancelled(CCTouch*, CCEvent*) {
+void AdvancedScrollLayer::ccTouchCancelled(CCTouch* touch, CCEvent*) {
     touchDown = false;
+
+    if (touches.contains(touch))
+        touches.insert(touch);
 }
 
 void AdvancedScrollLayer::ccTouchMoved(CCTouch* touch, CCEvent*){
     if (!isEnabled || touch == nullptr) return;
+
+    if (touches.size() > 1){
+        auto ccset = CCSet::create();
+        for (const auto& touch : touches)
+            ccset->addObject(touch);
+
+        ccTouchesMoved(ccset, nullptr);
+        return;
+    }
 
     if (!this->boundingBox().containsPoint(this->getParent()->convertToNodeSpace(touch->getLocation()))) return;
 

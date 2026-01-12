@@ -89,4 +89,6 @@ class AdvancedScrollLayer : public CCLayer {
 
         float minZoom = 2;
         float maxZoom = .5f;
+
+        std::set<CCTouch*> touches;
 };
