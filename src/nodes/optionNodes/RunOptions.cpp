@@ -37,6 +37,12 @@ bool RunOptions::setup(){
 
         auto& stats = dtlayer->m_MyLevelStats.unwrap();
         stats.metadata.trackAnyRun = isToggled;
+        auto _ = StatsManager::setMetadata(stats.metadata, stats.levelKey);
+
+        dtlayer->foreachLinkedLevel([&isToggled](auto& lvlData){
+            lvlData.metadata.trackAnyRun = isToggled;
+            auto _ = StatsManager::setMetadata(lvlData.metadata, lvlData.levelKey);
+        });
     });
     float offset = TARToggler->getContentWidth() / 4 + 5;
     TARToggler->setPosition(TARLabel->getPosition() - ccp(TARLabel->getScaledContentWidth() / 2 + offset, 0));

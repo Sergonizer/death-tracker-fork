@@ -2330,3 +2330,14 @@ UpdateTask DTLayer::onSAttKey(){
         return Ok(std::to_string(attempts));
     }, "Creating session attepmts string");
 }
+
+void DTLayer::foreachLinkedLevel(const std::function<void(LevelData&)>& onLevelVisit){
+    if (m_MyLevelStats.isErr()) return;
+    auto& myStats = m_MyLevelStats.unwrap();
+
+    for (auto& levelData : linkedLevelsData)
+    {
+        if (levelData.levelKey == myStats.levelKey) continue;
+        onLevelVisit(levelData);
+    }
+}

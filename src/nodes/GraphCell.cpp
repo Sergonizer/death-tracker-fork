@@ -115,6 +115,7 @@ bool GraphCell::init(float width, const DTGraphInfo& graphInfo){
         menu_selector(GraphCell::onOptions)
     );
     settingBtn->setID("settings-btn");
+    settingBtn->setScale(12 / settingBtn->getContentHeight());
     settingBtn->setPosition({enableToggleBtn->getPositionX(), enableToggleBtn->getPositionY() - enableToggleBtn->getContentHeight() / 2 - settingBtn->getContentHeight() / 2});
     this->addChild(settingBtn);
 

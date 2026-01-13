@@ -102,6 +102,8 @@ class DTLayer : public Popup<GJGameLevel* const&> {
 
         Result<Session> loadSessionFromSave(std::optional<int> sessionIndex = std::nullopt);
 
+        void foreachLinkedLevel(const std::function<void(LevelData&)>& onLevelVisit);
+
     private:
         
         LayoutOptionsLayer* layoutOptionsLayer;

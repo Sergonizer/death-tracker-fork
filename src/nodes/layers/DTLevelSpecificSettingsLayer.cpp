@@ -39,6 +39,7 @@ bool DTLevelSpecificSettingsLayer::setup() {
 
     auto seperator = CCScale9Sprite::create("square.png");
     seperator->setContentSize({pages->getContentWidth(), 1});
+    seperator->setScaleY(8 / pages->getContentHeight());
     seperator->setPosition({pages->getPositionX(), pages->getPositionY() - pages->getScaledContentHeight() / 2 - 5});
     seperator->setAnchorPoint({.5f, 1});
     m_mainLayer->addChild(seperator);
