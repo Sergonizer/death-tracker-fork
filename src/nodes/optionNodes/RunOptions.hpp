@@ -11,6 +11,7 @@ using namespace geode::prelude;
 class RunOptions : public OptionsNode {
     public:
         static RunOptions* create(const CCSize& size);
+
     private:
         virtual bool setup();
 
@@ -21,9 +22,12 @@ class RunOptions : public OptionsNode {
         TextInput* RealEndPerInput;
         TextInput* HidUpToInput;
 
-        CCMenu* runsMenu;
+        ScrollLayer* runsScrollLayer;
 
         void PercentCellClicked(PercentCell* cell);
+        void PercentMaxHideValChanged(PercentCell* cell);
+
+        void createRunCell(int percent, int maxToHide);
 
     public:
         virtual void onOpened();

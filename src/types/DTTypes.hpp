@@ -87,8 +87,8 @@ struct matjson::Serialize<GeneralData> {
 };
 
 typedef struct LevelMetadeta {
-    std::set<int> RunsToSave{};
-    bool trackAnyRun = true;
+    std::map<int, int> RunsToShow{};
+    bool showAnyRun = true;
     std::set<std::string> LinkedLevels{};
     std::string levelName = "Unknown name";
     int attempts = 0;
@@ -104,18 +104,56 @@ typedef struct LevelMetadeta {
 } LevelMetadeta;
 
 template <>
+struct matjson::Serialize<std::map<int, int>> {
+    static Result<std::map<int, int>> fromJson(const matjson::Value& value) {
+
+        std::map<int, int> resMap;
+        auto objRes = value.as<std::map<std::string, int>>().unwrapOr(std::map<std::string, int>{});
+        for (auto const& [strFirst, second] : objRes) {
+            auto res = geode::utils::numFromString<int>(strFirst);
+            if (res.isErr()) continue;
+            resMap.insert({res.unwrap(), second});
+        }
+
+        return Ok(resMap);
+    }
+
+    static matjson::Value toJson(const std::map<int, int>& value) {
+        std::map<std::string, int> obj;
+        for (auto const& kv : value) {
+            obj[std::to_string(kv.first)] = kv.second;
+        }
+        return matjson::Value(obj);
+    }
+};
+
+template <>
 struct matjson::Serialize<LevelMetadeta> {
     static Result<LevelMetadeta> fromJson(const matjson::Value& value) {
 
         LevelMetadeta stats;
-        GEODE_UNWRAP_INTO(stats.RunsToSave, value["RunsToSave"].as<std::set<int>>());
+        if (value.contains("RunsToSave")){
+            auto oldRunsToSave = value["RunsToSave"].as<std::set<int>>().unwrapOr(std::set<int>{});
+
+            for (const auto& runToSave : oldRunsToSave)
+                stats.RunsToShow.insert({runToSave, runToSave});
+        }
+        else {
+            GEODE_UNWRAP_INTO(stats.RunsToShow, value["RunsToShow"].as<std::map<int, int>>());
+        }
+        if (value.contains("trackAnyRun")){
+            GEODE_UNWRAP_INTO(stats.showAnyRun, value["trackAnyRun"].asBool());
+        }
+        else{
+            GEODE_UNWRAP_INTO(stats.showAnyRun, value["showAnyRun"].asBool());
+        }
+
         GEODE_UNWRAP_INTO(stats.LinkedLevels, value["LinkedLevels"].as<std::set<std::string>>());
         GEODE_UNWRAP_INTO(stats.levelName, value["levelName"].asString());
         GEODE_UNWRAP_INTO(stats.attempts, value["attempts"].asInt());
         GEODE_UNWRAP_INTO(stats.difficulty, value["difficulty"].asInt());
         GEODE_UNWRAP_INTO(stats.hideRunLength, value["hideRunLength"].asInt());
         GEODE_UNWRAP_INTO(stats.hideUpto, value["hideUpto"].asInt());
-        GEODE_UNWRAP_INTO(stats.trackAnyRun, value["trackAnyRun"].asBool());
         GEODE_UNWRAP_INTO(stats.realEndPercent, value["realEndPercent"].asInt());
         GEODE_UNWRAP_INTO(stats.resetAsDeath, value["resetAsDeath"].asBool());
         if (value.contains("maxBackupsAmount")){
@@ -138,8 +176,8 @@ struct matjson::Serialize<LevelMetadeta> {
 
     static matjson::Value toJson(const LevelMetadeta& value) {
         matjson::Value obj = matjson::makeObject({
-            { "RunsToSave", value.RunsToSave },
-            { "trackAnyRun", value.trackAnyRun },
+            { "RunsToShow", value.RunsToShow },
+            { "showAnyRun", value.showAnyRun },
             { "LinkedLevels", value.LinkedLevels },
             { "levelName", value.levelName },
             { "attempts", value.attempts },

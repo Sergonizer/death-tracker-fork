@@ -27,3 +27,20 @@ void Dev::fadeTextInput(TextInput* const input, bool fadeIn, float time, bool ch
     }
     
 }
+
+void Dev::fadeSlider(Slider* const slider, bool fadeIn, float time, bool changeEnabled){
+    slider->m_enabled = false;
+
+    if (changeEnabled)
+        slider->m_touchLogic->setTouchEnabled(fadeIn);
+
+    auto createAction = [&fadeIn, &time]() -> CCAction* {return fadeIn ? static_cast<CCAction*>(CCFadeTo::create(time, 255)) : static_cast<CCAction*>(CCFadeTo::create(time, 0));};
+
+    slider->m_sliderBar->runAction(createAction());
+
+    slider->m_groove->runAction(createAction());
+
+    if (auto normalImage = static_cast<cocos2d::CCSprite*>(slider->m_touchLogic->m_thumb->getNormalImage())) {
+        normalImage->runAction(createAction());
+    }
+}

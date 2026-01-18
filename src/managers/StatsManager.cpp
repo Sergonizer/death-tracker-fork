@@ -482,16 +482,6 @@ void StatsManager::logRun(const Run& run, bool instantSave) {
         return;
     }
 
-    bool TrackRun = false;
-    if (currentMetadata.trackAnyRun){
-        TrackRun = true;
-    }
-    else if (currentMetadata.RunsToSave.contains(run.start)){
-        TrackRun = true;
-    }
-
-    if (!TrackRun) return;
-
     auto session = StatsManager::getCurrentSession();
     if (!session) return;
 
@@ -984,14 +974,19 @@ Result<> StatsManager::convertV2SaveToV3(const std::string& levelKey){
     auto stats = statsRes.unwrap();
 
     auto v3Meta = LevelMetadeta{};
-    std::set<int> runsSet(stats.RunsToSave.begin(), stats.RunsToSave.end());
-    bool trackAnyRun = false;
-    if (runsSet.contains(-1)){
-        trackAnyRun = true;
-        runsSet.erase(-1);
+    std::map<int, int> runsMap{};
+    bool showAnyRun = false;
+    for (const auto& percent : stats.RunsToSave)
+    {
+        if (percent == -1){
+            showAnyRun = true;
+            continue;
+        }
+
+        runsMap.insert({percent, percent});
     }
-    v3Meta.RunsToSave = runsSet;
-    v3Meta.trackAnyRun = trackAnyRun;
+    v3Meta.RunsToShow = runsMap;
+    v3Meta.showAnyRun = showAnyRun;
     std::set<std::string> linkedLevelsSet(stats.LinkedLevels.begin(), stats.LinkedLevels.end());
     v3Meta.LinkedLevels = linkedLevelsSet;
     v3Meta.levelName = stats.levelName;

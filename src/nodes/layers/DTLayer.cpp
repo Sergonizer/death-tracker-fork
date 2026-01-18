@@ -578,7 +578,7 @@ void DTLayer::UpdateDeathRelatedStrings(){
     }
 }
 
-bool DTLayer::createDeathsString(const Deaths& deaths, const stringCustomazations& custom, std::string& out, NewBests* const newBests, const std::string& newBestColoring){
+bool DTLayer::createDeathsString(const Deaths& deaths, const stringCustomazations& custom, std::string& out, NewBests* const newBests, const std::string& newBestColoring, bool ignoreExtraSettings){
     out = "";
     if (m_MyLevelStats.isErr()) return false;
     auto myMetadata = m_MyLevelStats.unwrap().metadata;
@@ -612,6 +612,16 @@ bool DTLayer::createDeathsString(const Deaths& deaths, const stringCustomazation
         auto& runSplit = runSplitRes.unwrap();
 
         bool includeRunStart = runSplit.start != -1;
+
+        if (includeRunStart && !ignoreExtraSettings && !myMetadata.showAnyRun){
+            if (myMetadata.RunsToShow.contains(runSplit.start)){
+                if (myMetadata.RunsToShow[runSplit.start] > runSplit.end)
+                    continue;
+            }
+            else{
+                continue;
+            }
+        }
 
         std::string nbDeColor = "";
         std::string nbColor = "";

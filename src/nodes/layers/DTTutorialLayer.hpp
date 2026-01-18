@@ -102,6 +102,11 @@ class DTTutorialLayer : public CCLayer, public DialogDelegate {
         void ccTouchEnded(CCTouch *pTouch, CCEvent *pEvent) override;
         void ccTouchCancelled(CCTouch *pTouch, CCEvent *pEvent) override;
 
+        void ccTouchesBegan(CCSet *pTouches, CCEvent *pEvent) override;
+        void ccTouchesMoved(CCSet *pTouches, CCEvent *pEvent) override;
+        void ccTouchesEnded(CCSet *pTouches, CCEvent *pEvent) override;
+        void ccTouchesCancelled(CCSet *pTouches, CCEvent *pEvent) override;
+
         void keyBackClicked() override;
 
         CCTouchDelegate* touchedHighlight = nullptr;

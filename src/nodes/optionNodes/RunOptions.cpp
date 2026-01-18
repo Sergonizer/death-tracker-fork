@@ -18,10 +18,10 @@ RunOptions* RunOptions::create(const CCSize& size) {
 }
 
 bool RunOptions::setup(){
-    auto TARLabel = CCLabelBMFont::create("Track any run", "gjFont17.fnt");
+    auto TARLabel = CCLabelBMFont::create("Show any run", "gjFont17.fnt");
     TARLabel->setAlignment(CCTextAlignment::kCCTextAlignmentLeft);
     TARLabel->setAnchorPoint({.5f, .5f});
-    TARLabel->setScale(.65f);
+    TARLabel->setScale(.6f);
     TARLabel->setPosition({size.width / 4, size.height - TARLabel->getScaledContentHeight() / 2});
     this->addChild(TARLabel);
 
@@ -29,20 +29,23 @@ bool RunOptions::setup(){
 
     auto TARToggler = SimpleToggler::createWithDefaults(
         .75f,
-        dtlayer == nullptr ? false : (dtlayer->m_MyLevelStats.isOk() ? dtlayer->m_MyLevelStats.unwrap().metadata.trackAnyRun : false)
+        dtlayer == nullptr ? false : (dtlayer->m_MyLevelStats.isOk() ? dtlayer->m_MyLevelStats.unwrap().metadata.showAnyRun : false)
     );
     TARToggler->setCallback([&](bool isToggled){
         auto dtlayer = DTLayer::get();
         if (dtlayer == nullptr || dtlayer->m_MyLevelStats.isErr()) return;
 
         auto& stats = dtlayer->m_MyLevelStats.unwrap();
-        stats.metadata.trackAnyRun = isToggled;
+        stats.metadata.showAnyRun = isToggled;
         auto _ = StatsManager::setMetadata(stats.metadata, stats.levelKey);
 
         dtlayer->foreachLinkedLevel([&isToggled](auto& lvlData){
-            lvlData.metadata.trackAnyRun = isToggled;
+            lvlData.metadata.showAnyRun = isToggled;
             auto _ = StatsManager::setMetadata(lvlData.metadata, lvlData.levelKey);
         });
+
+        DTLayer::get()->specialStrings["runs"]->updateContent();
+        DTLayer::get()->specialStrings["sruns"]->updateContent();
     });
     float offset = TARToggler->getContentWidth() / 4 + 5;
     TARToggler->setPosition(TARLabel->getPosition() - ccp(TARLabel->getScaledContentWidth() / 2 + offset, 0));
@@ -80,34 +83,26 @@ bool RunOptions::setup(){
     runsMenuBG->setOpacity(100);
     this->addChild(runsMenuBG);
 
-    runsMenu = CCMenu::create();
-    auto runsMenuOffset = ccp(15, 15);
-    runsMenu->setPosition(runsMenuBG->getPosition() + runsMenuOffset / 2);
-    runsMenu->setContentSize(runsMenuBG->getContentSize() - runsMenuOffset);
-    runsMenu->setAnchorPoint(runsMenuBG->getAnchorPoint());
-    this->addChild(runsMenu);
-    runsMenu->setLayout(RowLayout::create()
-        ->setCrossAxisOverflow(false)
+    runsScrollLayer = ScrollLayer::create(runsMenuBG->getContentSize() - ccp(10, 10));
+    runsScrollLayer->setAnchorPoint({0, 0});
+    runsScrollLayer->setPosition(runsMenuBG->getPosition());
+    runsScrollLayer->setPosition(runsScrollLayer->getPosition() + ccp(5, 5));
+    runsScrollLayer->m_contentLayer->setLayout(ColumnLayout::create()
         ->setGrowCrossAxis(true)
-        ->setAxisAlignment(AxisAlignment::Start)
-        ->setCrossAxisAlignment(AxisAlignment::End)
+        ->setCrossAxisOverflow(false)
+        ->setAutoGrowAxis(runsScrollLayer->getContentHeight())
+        ->setAxisAlignment(AxisAlignment::End)
+        ->setAxisReverse(true)
     );
+    this->addChild(runsScrollLayer);
 
     if (dtlayer != nullptr && dtlayer->m_MyLevelStats.isOk()){
         auto& stats = dtlayer->m_MyLevelStats.unwrap();
-        for (const auto& startPercent : stats.metadata.RunsToSave)
+        for (const auto& [startPercent, maxToShow] : stats.metadata.RunsToShow)
         {
-            auto percentCell = PercentCell::create(
-                runsMenu->getContentWidth() / 2,
-                startPercent,
-                CCSprite::createWithSpriteFrameName("minus_button.png"_spr),
-                [&](PercentCell* cell){ RunOptions::PercentCellClicked(cell); }
-            );
-            runsMenu->addChild(percentCell);
+            createRunCell(startPercent, maxToShow);
         }
     }
-
-    runsMenu->updateLayout();
 
     auto seperator = CCScale9Sprite::create("square.png");
     seperator->setScale(.5f);
@@ -243,8 +238,8 @@ void RunOptions::onOpened(){
     HidUpToInput->getInputNode()->m_textLabel->setOpacity(0);
     Dev::fadeTextInput(HidUpToInput, true, fadeTime);
 
-    for (const auto& child : CCArrayExt<CCMenu*>(runsMenu->getChildren())){
-        child->setEnabled(true);
+    for (const auto& child : CCArrayExt<PercentCell*>(runsScrollLayer->m_contentLayer->getChildren())){
+        child->show();
     }
 
     this->setEnabled(true);
@@ -258,8 +253,8 @@ void RunOptions::onClosed(){
     Dev::fadeTextInput(RealEndPerInput, false, fadeTime);
     Dev::fadeTextInput(HidUpToInput, false, fadeTime);
 
-    for (const auto& child : CCArrayExt<CCMenu*>(runsMenu->getChildren())){
-        child->setEnabled(false);
+    for (const auto& child : CCArrayExt<PercentCell*>(runsScrollLayer->m_contentLayer->getChildren())){
+        child->hide();
     }
 
     this->setEnabled(false);
@@ -275,19 +270,16 @@ void RunOptions::addNewRun(CCObject*){
     int num = numRes.unwrap();
 
     auto& stats = dtlayer->m_MyLevelStats.unwrap();
-    if (stats.metadata.RunsToSave.contains(num)) return;
+    if (stats.metadata.RunsToShow.contains(num)) return;
     
-    stats.metadata.RunsToSave.insert(num);
+    stats.metadata.RunsToShow.insert({num, num});
 
-    auto percentCell = PercentCell::create(
-        runsMenu->getContentWidth() / 2,
-        num,
-        CCSprite::createWithSpriteFrameName("minus_button.png"_spr),
-        [&](PercentCell* cell){ RunOptions::PercentCellClicked(cell); }
-    );
-    runsMenu->addChild(percentCell);
+    auto _ = StatsManager::setMetadata(stats.metadata, stats.levelKey);
 
-    runsMenu->updateLayout();
+    DTLayer::get()->specialStrings["runs"]->updateContent();
+    DTLayer::get()->specialStrings["sruns"]->updateContent();
+
+    createRunCell(num, num);
 }
 
 void RunOptions::PercentCellClicked(PercentCell* cell){
@@ -296,12 +288,47 @@ void RunOptions::PercentCellClicked(PercentCell* cell){
     if (dtlayer != nullptr){
         int percent = cell->getPercent();
 
-        // dtlayer->UpdateOnAllShared([&, percent](LevelStats& stats){
-        //     if (stats.RunsToSave.contains(percent))
-        //         stats.RunsToSave.erase(percent);
-        // });
+        auto& stats = dtlayer->m_MyLevelStats.unwrap();
+        if (stats.metadata.RunsToShow.contains(percent)){
+            stats.metadata.RunsToShow.erase(percent);
+            auto _ = StatsManager::setMetadata(stats.metadata, stats.levelKey);
+
+            DTLayer::get()->specialStrings["runs"]->updateContent();
+            DTLayer::get()->specialStrings["sruns"]->updateContent();
+        }
     }
 
     cell->removeMeAndCleanup();
-    runsMenu->updateLayout();
+    runsScrollLayer->m_contentLayer->updateLayout();
+}
+
+void RunOptions::PercentMaxHideValChanged(PercentCell* cell){
+    auto dtlayer = DTLayer::get();
+
+    if (dtlayer != nullptr){
+        int percent = cell->getPercent();
+
+        auto& stats = dtlayer->m_MyLevelStats.unwrap();
+        if (stats.metadata.RunsToShow.contains(percent)){
+            stats.metadata.RunsToShow[percent] = cell->getMaxToHide();
+            auto _ = StatsManager::setMetadata(stats.metadata, stats.levelKey);
+
+            DTLayer::get()->specialStrings["runs"]->updateContent();
+            DTLayer::get()->specialStrings["sruns"]->updateContent();
+        }
+    }
+}
+
+void RunOptions::createRunCell(int percent, int maxToHide){
+    auto percentCell = PercentCell::create(
+        runsScrollLayer->m_contentLayer->getContentWidth(),
+        percent,
+        maxToHide,
+        CCSprite::createWithSpriteFrameName("minus_button.png"_spr),
+        [&](PercentCell* cell){ RunOptions::PercentCellClicked(cell); }
+    );
+    percentCell->onMaxToHideChanged = [&](PercentCell* cell){ RunOptions::PercentMaxHideValChanged(cell); };
+    runsScrollLayer->m_contentLayer->addChild(percentCell);
+
+    runsScrollLayer->m_contentLayer->updateLayout();
 }

@@ -405,6 +405,43 @@ void DTTutorialLayer::ccTouchCancelled(CCTouch *pTouch, CCEvent *pEvent){
     dialogueLayer->ccTouchCancelled(pTouch, pEvent);
 }
 
+void DTTutorialLayer::ccTouchesBegan(CCSet *pTouches, CCEvent *pEvent){
+    if (dialogueLayer == nullptr) return;
+
+    if (touchedHighlight != nullptr){
+        touchedHighlight->ccTouchesBegan(pTouches, pEvent);
+        return;
+    }
+    dialogueLayer->ccTouchesBegan(pTouches, pEvent);
+}
+void DTTutorialLayer::ccTouchesMoved(CCSet *pTouches, CCEvent *pEvent){
+    if (dialogueLayer == nullptr) return;
+
+    if (touchedHighlight != nullptr){
+        touchedHighlight->ccTouchesMoved(pTouches, pEvent);
+        return;
+    }
+    dialogueLayer->ccTouchesMoved(pTouches, pEvent);
+}
+void DTTutorialLayer::ccTouchesEnded(CCSet *pTouches, CCEvent *pEvent){
+    if (dialogueLayer == nullptr) return;
+
+    if (touchedHighlight != nullptr){
+        touchedHighlight->ccTouchesEnded(pTouches, pEvent);
+        return;
+    }
+    dialogueLayer->ccTouchesEnded(pTouches, pEvent);
+}
+void DTTutorialLayer::ccTouchesCancelled(CCSet *pTouches, CCEvent *pEvent){
+    if (dialogueLayer == nullptr) return;
+
+    if (touchedHighlight != nullptr){
+        touchedHighlight->ccTouchesCancelled(pTouches, pEvent);
+        return;
+    }
+    dialogueLayer->ccTouchesCancelled(pTouches, pEvent);
+}
+
 void DTTutorialLayer::keyBackClicked(){
     if (dialogueLayer == nullptr) return;
     dialogueLayer->handleDialogTap();

@@ -5,19 +5,35 @@
 using namespace geode::prelude;
 
 
-class PercentCell : public CCMenu {
+class PercentCell : public CCMenu, public SliderDelegate {
     protected:
-        bool init(float width, int Percent, CCNode* sideButtonSprite, const std::function<void(PercentCell*)>& callback);
+        bool init(float width, int Percent, int maxToHide, CCNode* sideButtonSprite, const std::function<void(PercentCell*)>& callback);
     public:
-        static PercentCell* create(float width, int Percent, CCNode* sideButtonSprite, const std::function<void(PercentCell*)>& callback = NULL);
+        static PercentCell* create(float width, int Percent, int maxToHide, CCNode* sideButtonSprite, const std::function<void(PercentCell*)>& callback = NULL);
         
-        int getPercent();
+        int getPercent() const {
+            return percent;
+        }
+        int getMaxToHide() const {
+            return maxToHide;
+        }
 
         CCScale9Sprite* BGSprite;
+        std::function<void(PercentCell*)> onMaxToHideChanged = NULL;
 
+        void hide();
+        void show();
+        
     private:
         void RunCallback(CCObject*);
+        void mthScroll(CCObject*);
 
-        int m_Percent;
-        std::function<void(PercentCell*)> m_Callback;
+        Slider* MTHScroll;
+        TextInput* MTHInput;
+
+        int percent;
+        int maxToHide;
+        std::function<void(PercentCell*)> callback;
+
+        void sliderEnded(Slider* slider);
 };

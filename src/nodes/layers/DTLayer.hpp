@@ -114,7 +114,7 @@ class DTLayer : public Popup<GJGameLevel* const&> {
 
         std::set<DTLabel*> keyListeners{};
 
-        bool createDeathsString(const Deaths& deaths, const stringCustomazations& custom, std::string& out, NewBests* const newBests = nullptr, const std::string& newBestColoring = "");
+        bool createDeathsString(const Deaths& deaths, const stringCustomazations& custom, std::string& out, NewBests* const newBests = nullptr, const std::string& newBestColoring = "", bool ignoreExtraSettings = false);
 
         int currentSession;
 
