@@ -18,10 +18,19 @@ class PercentCell : public CCMenu, public SliderDelegate {
             return maxToHide;
         }
 
+        CCSprite* getSilderBG() const {
+            return MTHScroll->m_sliderBar;
+        }
+
+        CCSprite* getSilderHandle() const {
+            return MTHScroll->m_groove;
+        }
+
         CCScale9Sprite* BGSprite;
         std::function<void(PercentCell*)> onMaxToHideChanged = NULL;
 
         void hide();
+        void hideInstant();
         void show();
         
     private:

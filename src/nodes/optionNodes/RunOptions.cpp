@@ -188,15 +188,20 @@ bool RunOptions::setup(){
 
     auto runsHidingTutorial = TutorialButton::create(.75f, [&, TARToggler, TARLabel, plusBtn](DTTutorialLayer* tutorial){
         int randomPer = 7 + CCRANDOM_0_1() * (95 - 7);
-        int randomMaxToHide = 12 + CCRANDOM_0_1() * (91 - 12);
+        int randomMaxToHide = (randomPer + 2) + CCRANDOM_0_1() * (93 - (randomPer + 2));
 
-        PercentCell::create(
+        auto emptyPer = PercentCell::create(
             runsScrollLayer->m_contentLayer->getContentWidth(), 
             randomPer, 
             randomMaxToHide, 
             CCSprite::createWithSpriteFrameName("minus_button.png"_spr),
             [](PercentCell* _){}
         );
+        emptyPer->setPositionX(this->getContentWidth() / 2);
+        emptyPer->setAnchorPoint({.5f, 0});
+        emptyPer->hideInstant();
+        emptyPer->setScale(1.5f);
+        this->addChild(emptyPer);
 
         tutorial->appendDialogue("In here you can manage which runs you want to see! to clear up clutter!", TutorialCharacterFace::TCFNormal)
             ->appendDialogue("First you have \"Show any run\", this will tell death tracker to display all the runs you have done", TutorialCharacterFace::TCFNormal)
@@ -219,11 +224,32 @@ bool RunOptions::setup(){
             ->joinHighlight(runsScrollLayer)
             ->appendDialogue("In this list you have a few options per percent", TutorialCharacterFace::TCFNormal)
             ->joinHighlight(runsScrollLayer)
-            ->appendDialogue("", TutorialCharacterFace::TCFNormal)
+            ->appendDialogue("You can remove the percent from the list", TutorialCharacterFace::TCFNormal)
             ->joinTransform(TutorialBoxPlacement::TBPTop, .75f)
-            ->
+            ->joinHighlight(emptyPer->getChildByID("btn"))
+            ->joinCallback([emptyPer](){emptyPer->show();}, true)
+            ->appendDialogue("And you can edit the \"Max to Hide\" percent.", TutorialCharacterFace::TCFNormal)
+            ->joinHighlight(emptyPer->getSilderBG())
+            ->joinHighlight(emptyPer->getSilderHandle())
+            ->joinHighlight(emptyPer->getChildByID("mth-label"))
+            ->joinHighlight(emptyPer->getChildByID("mth-input"))
+            ->appendDialogue("The number you input here will hide any run thats between that number and the original percentage.", TutorialCharacterFace::TCFNormal)
+            ->joinHighlight(emptyPer->getSilderBG())
+            ->joinHighlight(emptyPer->getSilderHandle())
+            ->joinHighlight(emptyPer->getChildByID("mth-label"))
+            ->joinHighlight(emptyPer->getChildByID("mth-input"))
+            ->appendDialogue(fmt::format("For example, in this case it will hide all runs starting from {} and ending below {}", randomPer, randomMaxToHide), TutorialCharacterFace::TCFNormal)
+            ->joinHighlight(emptyPer->getChildByID("percent-label"))
+            ->joinHighlight(emptyPer->getChildByID("mth-input"), 1.5f)
+            ->appendDialogue(fmt::format("So {}-{} wont be seen but {}-{} will be!", randomPer, randomMaxToHide - 2, randomPer, randomMaxToHide), TutorialCharacterFace::TCFNormal)
+            ->joinHighlight(emptyPer->getChildByID("percent-label"))
+            ->joinHighlight(emptyPer->getChildByID("mth-input"))
+            ->appendDialogue("Hope this feature helps you improve clutter in your death tracker! :D", TutorialCharacterFace::TCFNormal)
+            ->joinTransform(TutorialBoxPlacement::TBPCenter, 1)
+            ->joinCallback([emptyPer](){emptyPer->hide();}, true)
+            ->joinCallback([emptyPer](){emptyPer->removeMeAndCleanup();}, false);
     });
-    runsHidingTutorial->setPosition(TARLabel->getPosition() + TARLabel->getScaledContentSize() / 2 + ccp(15, 0));
+    runsHidingTutorial->setPosition(TARLabel->getPosition() + ccp(15 + TARLabel->getScaledContentWidth() / 2, 0));
     this->addChild(runsHidingTutorial);
 
     this->setOpacity(0);

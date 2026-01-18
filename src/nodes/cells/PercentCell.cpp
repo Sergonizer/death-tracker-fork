@@ -18,6 +18,8 @@ bool PercentCell::init(float width, int percent, int maxToHide, CCNode* sideButt
     this->maxToHide = maxToHide;
 
     this->setContentSize({width, 40});
+    this->ignoreAnchorPointForPosition(false);
+    this->setPosition({0,0});
 
     BGSprite = CCScale9Sprite::create("GJ_squareB_01.png");
     BGSprite->setScale(.25f);
@@ -31,6 +33,7 @@ bool PercentCell::init(float width, int percent, int maxToHide, CCNode* sideButt
         menu_selector(PercentCell::RunCallback)
     );
     button->setPosition({width - button->getContentWidth() / 2 - 5, this->getContentHeight() / 2});
+    button->setID("btn");
     this->addChild(button);
 
     auto label = CCLabelBMFont::create(fmt::format("{}%", percent).c_str(), "gjFont17.fnt");
@@ -39,6 +42,7 @@ bool PercentCell::init(float width, int percent, int maxToHide, CCNode* sideButt
     label->setAlignment(CCTextAlignment::kCCTextAlignmentLeft);
     label->setAnchorPoint({0, .5f});
     label->setPosition({5, this->getContentHeight() / 2});
+    label->setID("percent-label");
     this->addChild(label);
 
     this->percent = percent;
@@ -51,6 +55,7 @@ bool PercentCell::init(float width, int percent, int maxToHide, CCNode* sideButt
     MTHScroll->setScale(1 - MTHScroll->m_sliderBar->getContentWidth() / (width - 140));
     MTHScroll->setValue((maxToHide - percent) / (100.0f - percent));
     MTHScroll->m_delegate = this;
+    MTHScroll->setID("mth-slider");
     this->addChild(MTHScroll);
 
     auto MTHLabel = CCLabelBMFont::create("Max to\nHide:", "bigFont.fnt");
@@ -58,6 +63,7 @@ bool PercentCell::init(float width, int percent, int maxToHide, CCNode* sideButt
     MTHLabel->setAnchorPoint({1, 1});
     MTHLabel->setScale(.3f);
     MTHLabel->setAlignment(CCTextAlignment::kCCTextAlignmentRight);
+    MTHLabel->setID("mth-label");
     this->addChild(MTHLabel);
 
     MTHInput = TextInput::create(60, "MTH");
@@ -66,6 +72,7 @@ bool PercentCell::init(float width, int percent, int maxToHide, CCNode* sideButt
     MTHInput->setScale(.6f);
     MTHInput->setString(std::to_string(maxToHide));
     MTHInput->setCommonFilter(CommonFilter::Uint);
+    MTHInput->setID("mth-input");
     MTHInput->setCallback([&](const auto& newStr){
         auto numRes = utils::numFromString<int>(newStr);
         if (numRes.isErr()) return;
@@ -105,14 +112,19 @@ void PercentCell::RunCallback(CCObject*){
 
 void PercentCell::hide(){
     this->runAction(CCFadeTo::create(0.2f, 0));
-    MTHScroll->disableSlider();
     Dev::fadeTextInput(MTHInput, false, .2f);
     Dev::fadeSlider(MTHScroll, false, .2f);
     this->setEnabled(false);
 }
+void PercentCell::hideInstant(){
+    this->setOpacity(0);
+    this->setEnabled(false);
+    Dev::fadeTextInput(MTHInput, false, 0);
+    Dev::fadeSlider(MTHScroll, false, 0);
+}
+
 void PercentCell::show(){
     this->runAction(CCFadeTo::create(0.2f, 255));
-    MTHScroll->enableSlider();
     Dev::fadeTextInput(MTHInput, true, .2f);
     Dev::fadeSlider(MTHScroll, true, .2f);
     this->setEnabled(true);
