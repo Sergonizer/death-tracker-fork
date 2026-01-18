@@ -444,7 +444,7 @@ void LinkOptions::onLinkCellClicked(const std::string& levelKey, bool isLeftAlig
 
     // log::info("[LinkOptions] onLinkCellClicked: {} (isLeftAligned: {})", levelKey, isLeftAligned);
 
-    if (!isLeftAligned){
+    if (!isLeftAligned){ // link
         auto& myData = DTLayer::get()->m_MyLevelStats.unwrap();
         myData.metadata.LinkedLevels.insert(levelKey);
         
@@ -473,8 +473,15 @@ void LinkOptions::onLinkCellClicked(const std::string& levelKey, bool isLeftAlig
                 auto _ = StatsManager::setMetadata(other.metadata, other.levelKey);
             }
         }
+
+        DTLayer::get()->foreachLinkedLevel([&myData](LevelData& linkedLevel){
+            linkedLevel.metadata.showAnyRun = myData.metadata.showAnyRun;
+            linkedLevel.metadata.RunsToShow = myData.metadata.RunsToShow;
+
+            auto _ = StatsManager::setMetadata(linkedLevel.metadata, linkedLevel.levelKey);
+        });
     }
-    else{
+    else{ // unlink
         auto& myData = DTLayer::get()->m_MyLevelStats.unwrap();
         myData.metadata.LinkedLevels.erase(levelKey);
 
@@ -505,7 +512,6 @@ void LinkOptions::onLinkCellClicked(const std::string& levelKey, bool isLeftAlig
             auto _ = StatsManager::setMetadata(targetToRemove->metadata, targetToRemove->levelKey);
         }
 
-        
         DTLayer::get()->UpdateSharedStats();
 
         auto _ = StatsManager::setMetadata(myData.metadata, myData.levelKey);

@@ -5,6 +5,7 @@
 #if !defined(GEODE_IS_IOS)
 #include <geode.custom-keybinds/include/Keybinds.hpp>
 #endif
+#include <nodes/TutorialButton.hpp>
 
 RunOptions* RunOptions::create(const CCSize& size) {
     auto ret = new RunOptions();
@@ -112,32 +113,6 @@ bool RunOptions::setup(){
 
     float rightOffset = 5;
 
-    HideByLenInput = TextInput::create(45, "Len");
-    HideByLenInput->setPosition({size.width - HideByLenInput->getContentWidth() / 2 - rightOffset, size.height / 8 * 7});
-    HideByLenInput->setString(dtlayer == nullptr ? "" : (dtlayer->m_MyLevelStats.isOk() ? std::to_string(dtlayer->m_MyLevelStats.unwrap().metadata.hideRunLength) : ""));
-    HideByLenInput->setCommonFilter(CommonFilter::Uint);
-    HideByLenInput->setCallback([&](const std::string& newText){
-        auto dtlayer = DTLayer::get();
-        auto numRes = geode::utils::numFromString<int>(newText);
-
-        if (dtlayer == nullptr || dtlayer->m_MyLevelStats.isErr() || numRes.isErr()) return;
-
-        int num = numRes.unwrap();
-        num = std::min(num, 100);
-        HideByLenInput->setString(std::to_string(num));
-
-        auto& stats = dtlayer->m_MyLevelStats.unwrap();
-        stats.metadata.hideRunLength = num;
-    });
-    this->addChild(HideByLenInput);
-
-    auto HideByLenLabel = CCLabelBMFont::create("Hide by Length", "gjFont17.fnt");
-    HideByLenLabel->setScale(.65f);
-    HideByLenLabel->setWidth(size.width / 2 - HideByLenInput->getContentWidth() - rightOffset);
-    HideByLenLabel->setPosition(HideByLenInput->getPosition() - ccp(HideByLenInput->getContentWidth() / 2 + rightOffset, 0));
-    HideByLenLabel->setAnchorPoint({1, .5f});
-    this->addChild(HideByLenLabel);
-
     HidUpToInput = TextInput::create(45, "%");
     HidUpToInput->setPosition({size.width - HidUpToInput->getContentWidth() / 2 - rightOffset, size.height / 8 * 5});
     HidUpToInput->setString(dtlayer == nullptr ? "" : (dtlayer->m_MyLevelStats.isOk() ? std::to_string(dtlayer->m_MyLevelStats.unwrap().metadata.hideUpto) : ""));
@@ -211,6 +186,46 @@ bool RunOptions::setup(){
     ResetAsDeathLabel->setAnchorPoint({1, .5f});
     this->addChild(ResetAsDeathLabel);
 
+    auto runsHidingTutorial = TutorialButton::create(.75f, [&, TARToggler, TARLabel, plusBtn](DTTutorialLayer* tutorial){
+        int randomPer = 7 + CCRANDOM_0_1() * (95 - 7);
+        int randomMaxToHide = 12 + CCRANDOM_0_1() * (91 - 12);
+
+        PercentCell::create(
+            runsScrollLayer->m_contentLayer->getContentWidth(), 
+            randomPer, 
+            randomMaxToHide, 
+            CCSprite::createWithSpriteFrameName("minus_button.png"_spr),
+            [](PercentCell* _){}
+        );
+
+        tutorial->appendDialogue("In here you can manage which runs you want to see! to clear up clutter!", TutorialCharacterFace::TCFNormal)
+            ->appendDialogue("First you have \"Show any run\", this will tell death tracker to display all the runs you have done", TutorialCharacterFace::TCFNormal)
+            ->joinTransform(TutorialBoxPlacement::TBPRight, .75f)
+            ->joinHighlight(TARToggler)
+            ->joinHighlight(TARLabel)
+            ->appendDialogue("if this is enabled, the runs you pick below will not effect anything.", TutorialCharacterFace::TCFNormal)
+            ->joinHighlight(TARToggler)
+            ->joinHighlight(TARLabel)
+            ->appendDialogue("Now for addding runs you have this text input and button", TutorialCharacterFace::TCFNormal)
+            ->joinTransform(TutorialBoxPlacement::TBPBottomRight, .75f)
+            ->joinHighlight(runAdditionInput)
+            ->joinHighlight(plusBtn)
+            ->appendDialogue("You write the percentage you wanna see into the text input", TutorialCharacterFace::TCFNormal)
+            ->joinHighlight(runAdditionInput)
+            ->appendDialogue("And click the plus button to confirm and add that percent to your list of showen percentages!", TutorialCharacterFace::TCFNormal)
+            ->joinHighlight(plusBtn)
+            ->appendDialogue("If you have \"Show any run\" disabled, you will only see the runs that start from any percentage on this list!", TutorialCharacterFace::TCFNormal)
+            ->joinTransform(TutorialBoxPlacement::TBPTopRight, .75f)
+            ->joinHighlight(runsScrollLayer)
+            ->appendDialogue("In this list you have a few options per percent", TutorialCharacterFace::TCFNormal)
+            ->joinHighlight(runsScrollLayer)
+            ->appendDialogue("", TutorialCharacterFace::TCFNormal)
+            ->joinTransform(TutorialBoxPlacement::TBPTop, .75f)
+            ->
+    });
+    runsHidingTutorial->setPosition(TARLabel->getPosition() + TARLabel->getScaledContentSize() / 2 + ccp(15, 0));
+    this->addChild(runsHidingTutorial);
+
     this->setOpacity(0);
 
     #if !defined(GEODE_IS_IOS)
@@ -231,8 +246,6 @@ void RunOptions::onOpened(){
 
     runAdditionInput->getInputNode()->m_textLabel->setOpacity(0);
     Dev::fadeTextInput(runAdditionInput, true, fadeTime);
-    HideByLenInput->getInputNode()->m_textLabel->setOpacity(0);
-    Dev::fadeTextInput(HideByLenInput, true, fadeTime);
     RealEndPerInput->getInputNode()->m_textLabel->setOpacity(0);
     Dev::fadeTextInput(RealEndPerInput, true, fadeTime);
     HidUpToInput->getInputNode()->m_textLabel->setOpacity(0);
@@ -249,7 +262,6 @@ void RunOptions::onClosed(){
     this->runAction(CCFadeOut::create(fadeTime));
 
     Dev::fadeTextInput(runAdditionInput, false, fadeTime);
-    Dev::fadeTextInput(HideByLenInput, false, fadeTime);
     Dev::fadeTextInput(RealEndPerInput, false, fadeTime);
     Dev::fadeTextInput(HidUpToInput, false, fadeTime);
 
@@ -279,6 +291,13 @@ void RunOptions::addNewRun(CCObject*){
     DTLayer::get()->specialStrings["runs"]->updateContent();
     DTLayer::get()->specialStrings["sruns"]->updateContent();
 
+    dtlayer->foreachLinkedLevel([&](auto& lvlData){
+        if (lvlData.metadata.RunsToShow.contains(num)) return;
+
+        lvlData.metadata.RunsToShow.insert({num, num});
+        auto _ = StatsManager::setMetadata(lvlData.metadata, lvlData.levelKey);
+    });
+
     createRunCell(num, num);
 }
 
@@ -296,6 +315,13 @@ void RunOptions::PercentCellClicked(PercentCell* cell){
             DTLayer::get()->specialStrings["runs"]->updateContent();
             DTLayer::get()->specialStrings["sruns"]->updateContent();
         }
+
+        dtlayer->foreachLinkedLevel([&](auto& lvlData){
+            if (!lvlData.metadata.RunsToShow.contains(percent)) return;
+
+            lvlData.metadata.RunsToShow.erase(percent);
+            auto _ = StatsManager::setMetadata(lvlData.metadata, lvlData.levelKey);
+        });
     }
 
     cell->removeMeAndCleanup();
@@ -316,6 +342,11 @@ void RunOptions::PercentMaxHideValChanged(PercentCell* cell){
             DTLayer::get()->specialStrings["runs"]->updateContent();
             DTLayer::get()->specialStrings["sruns"]->updateContent();
         }
+
+        dtlayer->foreachLinkedLevel([&](auto& lvlData){
+            lvlData.metadata.RunsToShow[percent] = cell->getMaxToHide();
+            auto _ = StatsManager::setMetadata(lvlData.metadata, lvlData.levelKey);
+        });
     }
 }
 

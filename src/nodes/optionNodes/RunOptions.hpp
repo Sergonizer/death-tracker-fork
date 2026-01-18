@@ -18,7 +18,6 @@ class RunOptions : public OptionsNode {
         void addNewRun(CCObject*);
 
         TextInput* runAdditionInput;
-        TextInput* HideByLenInput;
         TextInput* RealEndPerInput;
         TextInput* HidUpToInput;
 
