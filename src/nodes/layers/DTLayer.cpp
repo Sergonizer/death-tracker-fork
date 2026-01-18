@@ -601,6 +601,8 @@ bool DTLayer::createDeathsString(const Deaths& deaths, const stringCustomazation
         return runA.start < runB.start;
     });
 
+    int prevStart = -2;
+
     for (const auto& [run, amount] : deathVec)
     {
         auto runSplitRes = StatsManager::splitRunKey(run);
@@ -621,6 +623,13 @@ bool DTLayer::createDeathsString(const Deaths& deaths, const stringCustomazation
             else{
                 continue;
             }
+        }
+
+        if (prevStart != runSplit.start){
+            if (prevStart != -2){
+                out += "----------{nl}";
+            }
+            prevStart = runSplit.start;
         }
 
         std::string nbDeColor = "";
@@ -663,7 +672,9 @@ bool DTLayer::createDeathsString(const Deaths& deaths, const stringCustomazation
 
     if (out == "")
         out = "No Deaths Found!";
-    else out.erase(out.length() - custom.seperator.length());
+    else {
+        out.erase(out.length() - custom.seperator.length());
+    }
 
     return true;
 }
