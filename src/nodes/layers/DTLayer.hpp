@@ -169,27 +169,27 @@ class DTLayer : public Popup<GJGameLevel* const&> {
 
         void exitLayoutEditing();
 
-        UpdateTask onNLKey();
-        UpdateTask onATTKey();
-        UpdateTask onLVLNKey();
-        UpdateTask onGeneralKey();
-        UpdateTask onDTATTKey();
-        UpdateTask onRUNSKey();
-        UpdateTask onS0Key();
-        UpdateTask onSRUNSKey();
+        UpdateResult onNLKey();
+        UpdateResult onATTKey();
+        UpdateResult onLVLNKey();
+        UpdateResult onGeneralKey();
+        UpdateResult onDTATTKey();
+        UpdateResult onRUNSKey();
+        UpdateResult onS0Key();
+        UpdateResult onSRUNSKey();
         
         long long calcPlaytime(const Deaths& deaths);
         
-        UpdateTask onPTALLSKey();
-        UpdateTask onPTF0SKey();
-        UpdateTask onPTRUNSKey();
-        UpdateTask onPTSALLSKey();
-        UpdateTask onPTSF0Key();
-        UpdateTask onPTSRUNSKey();
+        UpdateResult onPTALLSKey();
+        UpdateResult onPTF0SKey();
+        UpdateResult onPTRUNSKey();
+        UpdateResult onPTSALLSKey();
+        UpdateResult onPTSF0Key();
+        UpdateResult onPTSRUNSKey();
 
-        UpdateTask onRunsTo100Key();
-        UpdateTask onBestRunsKey();
-        UpdateTask onSAttKey();
+        UpdateResult onRunsTo100Key();
+        UpdateResult onBestRunsKey();
+        UpdateResult onSAttKey();
 
         std::optional<float> cachedLevelLength;
 };

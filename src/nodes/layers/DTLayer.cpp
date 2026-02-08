@@ -1777,21 +1777,21 @@ bool DTLayer::DeleteSave(){
     return true;
 }
 
-UpdateTask DTLayer::onNLKey(){
-    return UpdateTask::immediate(Ok(std::string("\n")));
+UpdateResult DTLayer::onNLKey(){
+    return UpdateResult::immediate(Ok(std::string("\n")));
 }
-UpdateTask DTLayer::onATTKey(){
+UpdateResult DTLayer::onATTKey(){
     long long totalAttempts = 0;
     for (const auto& lebel : linkedLevelsData)
         totalAttempts += lebel.metadata.attempts;
     
-    return UpdateTask::immediate(Ok(std::to_string(totalAttempts)));
+    return UpdateResult::immediate(Ok(std::to_string(totalAttempts)));
 }
-UpdateTask DTLayer::onLVLNKey(){
-    return UpdateTask::immediate(Ok(std::string(m_Level->m_levelName)));
+UpdateResult DTLayer::onLVLNKey(){
+    return UpdateResult::immediate(Ok(std::string(m_Level->m_levelName)));
 }
-UpdateTask DTLayer::onGeneralKey(){
-    return UpdateTask::run([selfref = WeakRef(this)](auto progress, auto hasBeenCancelled) mutable -> UpdateTask::Result {
+UpdateResult DTLayer::onGeneralKey(){
+    return UpdateResult::run([selfref = WeakRef(this)](auto progress, auto hasBeenCancelled) mutable -> UpdateResult::Result {
         if (hasBeenCancelled()) return Err("cancled");
 
         // Lock briefly to copy the data we need so we don't access `this` after it may be destroyed
@@ -1836,8 +1836,8 @@ UpdateTask DTLayer::onGeneralKey(){
         return Ok(out);
     }, "Creating general deaths string");
 }
-UpdateTask DTLayer::onDTATTKey(){
-    return UpdateTask::run([selfref = WeakRef(this)](auto progress, auto hasBeenCancelled) mutable -> UpdateTask::Result {
+UpdateResult DTLayer::onDTATTKey(){
+    return UpdateResult::run([selfref = WeakRef(this)](auto progress, auto hasBeenCancelled) mutable -> UpdateResult::Result {
         if (hasBeenCancelled()) return Err("cancled");
 
         auto self = selfref.lock();
@@ -1878,8 +1878,8 @@ UpdateTask DTLayer::onDTATTKey(){
         return Ok(std::to_string(attempts));
     }, "Creating death tracker attempts string");
 }
-UpdateTask DTLayer::onRUNSKey(){
-    return UpdateTask::run([selfref = WeakRef(this)](auto progress, auto hasBeenCancelled) mutable -> UpdateTask::Result {
+UpdateResult DTLayer::onRUNSKey(){
+    return UpdateResult::run([selfref = WeakRef(this)](auto progress, auto hasBeenCancelled) mutable -> UpdateResult::Result {
         if (hasBeenCancelled()) return Err("cancled");
 
         auto self = selfref.lock();
@@ -1917,8 +1917,8 @@ UpdateTask DTLayer::onRUNSKey(){
         return Ok(out);
     }, "Creating runs deaths string");
 }
-UpdateTask DTLayer::onS0Key(){
-    return UpdateTask::run([selfref = WeakRef(this)](auto progress, auto hasBeenCancelled) mutable -> UpdateTask::Result {
+UpdateResult DTLayer::onS0Key(){
+    return UpdateResult::run([selfref = WeakRef(this)](auto progress, auto hasBeenCancelled) mutable -> UpdateResult::Result {
         if (hasBeenCancelled()) return Err("cancled");
 
         auto self = selfref.lock();
@@ -1942,8 +1942,8 @@ UpdateTask DTLayer::onS0Key(){
         return Ok(out);
     }, "Creating session from0 deaths string");
 }
-UpdateTask DTLayer::onSRUNSKey(){
-    return UpdateTask::run([selfref = WeakRef(this)](auto progress, auto hasBeenCancelled) mutable -> UpdateTask::Result {
+UpdateResult DTLayer::onSRUNSKey(){
+    return UpdateResult::run([selfref = WeakRef(this)](auto progress, auto hasBeenCancelled) mutable -> UpdateResult::Result {
         if (hasBeenCancelled()) return Err("cancled");
 
         auto self = selfref.lock();
@@ -2013,8 +2013,8 @@ long long DTLayer::calcPlaytime(const Deaths& deaths){
     return playtime;
 }
 
-UpdateTask DTLayer::onPTALLSKey(){
-    return UpdateTask::run([selfref = WeakRef(this)](auto progress, auto hasBeenCancelled) mutable -> UpdateTask::Result {
+UpdateResult DTLayer::onPTALLSKey(){
+    return UpdateResult::run([selfref = WeakRef(this)](auto progress, auto hasBeenCancelled) mutable -> UpdateResult::Result {
         if (hasBeenCancelled()) return Err("cancled");
 
         auto self = selfref.lock();
@@ -2051,8 +2051,8 @@ UpdateTask DTLayer::onPTALLSKey(){
     }, "Creating calculated playtime string");
 }
 
-UpdateTask DTLayer::onPTF0SKey(){
-    return UpdateTask::run([selfref = WeakRef(this)](auto progress, auto hasBeenCancelled) mutable -> UpdateTask::Result {
+UpdateResult DTLayer::onPTF0SKey(){
+    return UpdateResult::run([selfref = WeakRef(this)](auto progress, auto hasBeenCancelled) mutable -> UpdateResult::Result {
         if (hasBeenCancelled()) return Err("cancled");
 
         auto self = selfref.lock();
@@ -2086,8 +2086,8 @@ UpdateTask DTLayer::onPTF0SKey(){
         return Ok(StatsManager::workingTime(self2->calcPlaytime(deaths)));
     }, "Creating from 0 calculated playtime string");
 }
-UpdateTask DTLayer::onPTRUNSKey(){
-    return UpdateTask::run([selfref = WeakRef(this)](auto progress, auto hasBeenCancelled) mutable -> UpdateTask::Result {
+UpdateResult DTLayer::onPTRUNSKey(){
+    return UpdateResult::run([selfref = WeakRef(this)](auto progress, auto hasBeenCancelled) mutable -> UpdateResult::Result {
         if (hasBeenCancelled()) return Err("cancled");
 
         auto self = selfref.lock();
@@ -2122,8 +2122,8 @@ UpdateTask DTLayer::onPTRUNSKey(){
     }, "Creating runs calculated playtime string");
 }
 
-UpdateTask DTLayer::onPTSALLSKey(){
-    return UpdateTask::run([selfref = WeakRef(this)](auto progress, auto hasBeenCancelled) mutable -> UpdateTask::Result {
+UpdateResult DTLayer::onPTSALLSKey(){
+    return UpdateResult::run([selfref = WeakRef(this)](auto progress, auto hasBeenCancelled) mutable -> UpdateResult::Result {
         if (hasBeenCancelled()) return Err("cancled");
 
         auto self = selfref.lock();
@@ -2146,8 +2146,8 @@ UpdateTask DTLayer::onPTSALLSKey(){
         return Ok(StatsManager::workingTime(self2->calcPlaytime(deaths)));
     }, "Creating calculated session all playtime string");
 }
-UpdateTask DTLayer::onPTSF0Key(){
-    return UpdateTask::run([selfref = WeakRef(this)](auto progress, auto hasBeenCancelled) mutable -> UpdateTask::Result {
+UpdateResult DTLayer::onPTSF0Key(){
+    return UpdateResult::run([selfref = WeakRef(this)](auto progress, auto hasBeenCancelled) mutable -> UpdateResult::Result {
         if (hasBeenCancelled()) return Err("cancled");
 
         auto self = selfref.lock();
@@ -2166,8 +2166,8 @@ UpdateTask DTLayer::onPTSF0Key(){
         return Ok(StatsManager::workingTime(self2->calcPlaytime(session.deaths)));
     }, "Creating calculated session from 0 playtime string");
 }
-UpdateTask DTLayer::onPTSRUNSKey(){
-    return UpdateTask::run([selfref = WeakRef(this)](auto progress, auto hasBeenCancelled) mutable -> UpdateTask::Result {
+UpdateResult DTLayer::onPTSRUNSKey(){
+    return UpdateResult::run([selfref = WeakRef(this)](auto progress, auto hasBeenCancelled) mutable -> UpdateResult::Result {
         if (hasBeenCancelled()) return Err("cancled");
 
         auto self = selfref.lock();
@@ -2202,8 +2202,8 @@ Result<Session> DTLayer::loadSessionFromSave(std::optional<int> sessionIndex){
     return StatsManager::getSession(levelKey, it->first);
 }
 
-UpdateTask DTLayer::onRunsTo100Key(){
-    return UpdateTask::run([selfref = WeakRef(this)](auto progress, auto hasBeenCancelled) mutable -> UpdateTask::Result {
+UpdateResult DTLayer::onRunsTo100Key(){
+    return UpdateResult::run([selfref = WeakRef(this)](auto progress, auto hasBeenCancelled) mutable -> UpdateResult::Result {
         if (hasBeenCancelled()) return Err("cancled");
 
         auto self = selfref.lock();
@@ -2257,8 +2257,8 @@ UpdateTask DTLayer::onRunsTo100Key(){
     }, "Creating runs to 100 string");
 }
 
-UpdateTask DTLayer::onBestRunsKey(){
-    return UpdateTask::run([selfref = WeakRef(this)](auto progress, auto hasBeenCancelled) mutable -> UpdateTask::Result {
+UpdateResult DTLayer::onBestRunsKey(){
+    return UpdateResult::run([selfref = WeakRef(this)](auto progress, auto hasBeenCancelled) mutable -> UpdateResult::Result {
         if (hasBeenCancelled()) return Err("cancled");
 
         auto self = selfref.lock();
@@ -2326,8 +2326,8 @@ UpdateTask DTLayer::onBestRunsKey(){
     }, "Creating best runs string");
 }
 
-UpdateTask DTLayer::onSAttKey(){
-    return UpdateTask::run([selfref = WeakRef(this)](auto progress, auto hasBeenCancelled) mutable -> UpdateTask::Result {
+UpdateResult DTLayer::onSAttKey(){
+    return UpdateResult::run([selfref = WeakRef(this)](auto progress, auto hasBeenCancelled) mutable -> UpdateResult::Result {
         if (hasBeenCancelled()) return Err("cancled");
 
         auto self = selfref.lock();

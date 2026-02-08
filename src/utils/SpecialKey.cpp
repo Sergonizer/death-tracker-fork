@@ -3,15 +3,13 @@
 SpecialKey::SpecialKey(const std::string& key, const std::string& description){
     this->key = key;
     this->description = description;
-
-    //this->autorelease();
 }
 
 bool SpecialKey::compareToKey(const std::string& otherKey){
     return this->key == otherKey;
 }
 
-void SpecialKey::setUpdateFunction(const std::function<UpdateTask()>& task){
+void SpecialKey::setUpdateFunction(const std::function<UpdateResult()>& task){
     this->updateFunction = task;
 }
 
@@ -29,8 +27,7 @@ void SpecialKey::updateContent(){
         cancel();
     }
 
-    this->updateListener.bind(this, &SpecialKey::onUpdateCompleted);
-    this->updateListener.setFilter(this->updateFunction.value()());
+    updateListener.spawn(this->updateFunction.value()(), std::bind(this, &SpecialKey::onUpdateCompleted));
 }
 
 void SpecialKey::setUpdateCompletedCallback(const std::function<void(const std::shared_ptr<SpecialKey>&)>& callback){
@@ -41,22 +38,19 @@ void SpecialKey::setUpdateStartedCallback(const std::function<void(const std::sh
     this->updateStartedCallback = callback;
 }
 
-void SpecialKey::onUpdateCompleted(UpdateTask::Event* e){
-    if (auto* val = e->getValue()){
-        if (val == nullptr) return;
+void SpecialKey::onUpdateCompleted(UpdateResult* val){
+    if (val == nullptr) return;
+    if (val->isErr())
+        this->currentContent = fmt::format("Error: {}", val->unwrapErr());
+    else
+        this->currentContent = val->unwrap();
 
-        if (val->isErr())
-            this->currentContent = fmt::format("Error: {}", val->unwrapErr());
-        else
-            this->currentContent = val->unwrap();
+    if (this->updateCompletedCallback)
+        this->updateCompletedCallback(this->shared_from_this());
 
-        if (this->updateCompletedCallback)
-            this->updateCompletedCallback(this->shared_from_this());
-
-        updateOngoing = false;
-    }
+    updateOngoing = false;
 }
 
 void SpecialKey::cancel(){
-    updateListener.getFilter().cancel();
+    updateListener.cancel();
 }

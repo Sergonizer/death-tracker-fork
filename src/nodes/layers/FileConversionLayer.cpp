@@ -2,18 +2,18 @@
 #include <managers/StatsManager.hpp>
 
 FileConversionLayer* FileConversionLayer::create() {
-    auto ret = new FileConversionLayer();
-    auto winSize = CCDirector::sharedDirector()->getWinSize();
-    // @geode-ignore(unknown-resource)
-    if (ret && ret->initAnchored(250, 150, "geode.loader/GE_square01.png")) {
-        ret->autorelease();
-        return ret;
+    auto popup = new FileConversionLayer;
+    if (popup->init()) {
+        popup->autorelease();
+        return popup;
     }
-    CC_SAFE_DELETE(ret);
+    delete popup;
     return nullptr;
 }
 
-bool FileConversionLayer::setup() {
+bool FileConversionLayer::init() {
+    if (!Popup::init({250.f, 150.f}, "geode.loader/GE_square01.png"))
+        return false;
     auto winSize = CCDirector::sharedDirector()->getWinSize();
 
     this->setTitle("Conversion Layer");
@@ -35,119 +35,117 @@ bool FileConversionLayer::setup() {
     this->setKeyboardEnabled(false);
     this->m_closeBtn->setVisible(false);
 
-    lookupListener.bind(this, &FileConversionLayer::lookupComplete);
-    lookupListener.setFilter(FileConversionLayer::lookupStage());
+    lookupListener.spawn(LookupTask{
+        [](const LookupTask::ProgressFunc& progress) -> LookupTask::InnerFuture {
+            progress(1);
+            co_return StatsManager::allV2FileLevelKeys();
+        },
+        [&](std::weak_ptr<LookupTask::Progress> progress){
+            if (auto strongRef = progress.lock()){
+                if (*strongRef == 1){
+                    this->setTitle("Working...");
+                    textArea->setText("Looking for old save files...");
+                }
+            }
+        }},
+        std::bind(this, &FileConversionLayer::lookupComplete, std::placeholders::_1)
+    );
 
     return true;
 }
 
 void FileConversionLayer::setTitle(const std::string& text){
-    geode::Popup<>::setTitle(text, "goldFont.fnt", .8f, 15);
+    //geode::Popup<>::setTitle(text, "goldFont.fnt", .8f, 15);
 }
 
-LookupTask FileConversionLayer::lookupStage(){
-    return LookupTask::run([](auto progress, auto hasBeenCancelled) -> LookupTask::Result {
-        progress(1);
-        return StatsManager::allV2FileLevelKeys();
-    }, "death tracker looking up old files task yay");
-}
-
-void FileConversionLayer::lookupComplete(LookupTask::Event* event){
-    if (LookupTask::Value* result = event->getValue()) {
-        if (!result->size()){
-            this->setTitle("No old files found!");
-            textArea->setText("It looks like you're all set! No old files were found!");
-            return;
-        }
-
-        this->setTitle("Files found!");
-        textArea->setText(fmt::format("<cy>{}</c> old files were found! Conversion will start right away!", result->size()));
-
-        conversionListener.bind(this, &FileConversionLayer::conversionComplete);
-        conversionListener.setFilter(FileConversionLayer::conversionStage(*result));
+void FileConversionLayer::lookupComplete(LookupTask::Result* result){
+    if (!result->size()){
+        this->setTitle("No old files found!");
+        textArea->setText("It looks like you're all set! No old files were found!");
+        return;
     }
-    else if (int* progressPtr = event->getProgress()) {
-        int progress = *progressPtr;
-        if (progress == 1){
-            this->setTitle("Working...");
-            textArea->setText("Looking for old save files...");
-        }
-    }
-}
 
-ConversionTask FileConversionLayer::conversionStage(const std::vector<std::string>& levelsToConvert){
-    return ConversionTask::run([levelsToConvert](auto progress, auto hasBeenCancelled) -> ConversionTask::Result {
-        int filesWentOverAmount = 0;
-        int successfulConversionAmount = 0;
-        std::vector<std::string> failedConversions{};
+    this->setTitle("Files found!");
+    textArea->setText(fmt::format("<cy>{}</c> old files were found! Conversion will start right away!", result->size()));
 
-        for (const auto& levelKey : levelsToConvert)
-        {
-            auto progressObj = ConversionProgress{};
-            progressObj.filesWentOverAmount = filesWentOverAmount;
-            progressObj.convertedAmount = successfulConversionAmount;
-            progressObj.maxAmount = levelsToConvert.size();
-            progressObj.currentConvertingFile = levelKey;
+    conversionListener.spawn(ConversionTask{
+        [&, result](const ConversionTask::ProgressFunc& progress) -> ConversionTask::InnerFuture {
+            int filesWentOverAmount = 0;
+            int successfulConversionAmount = 0;
+            std::vector<std::string> failedConversions{};
 
-            progress(progressObj);
+            for (const auto& levelKey : *result)
+            {
+                auto progressObj = ConversionProgress{};
+                progressObj.filesWentOverAmount = filesWentOverAmount;
+                progressObj.convertedAmount = successfulConversionAmount;
+                progressObj.maxAmount = result->size();
+                progressObj.currentConvertingFile = levelKey;
 
-            auto conversionRes = StatsManager::convertV2SaveToV3(levelKey);
+                progress(progressObj);
 
-            if (conversionRes.isOk())
-                successfulConversionAmount++;
-            else if (conversionRes.isErr()){
-                failedConversions.push_back(levelKey);
+                auto conversionRes = StatsManager::convertV2SaveToV3(levelKey);
+
+                if (conversionRes.isOk())
+                    successfulConversionAmount++;
+                else if (conversionRes.isErr()){
+                    failedConversions.push_back(levelKey);
+                }
+
+                filesWentOverAmount++;
             }
 
-            filesWentOverAmount++;
-        }
+            auto conversionRes = ConversionResult{};
+            conversionRes.convertedAmount = successfulConversionAmount;
+            conversionRes.maxAmount = result->size();
+            conversionRes.failedConversions = failedConversions;
 
-        auto conversionRes = ConversionResult{};
-        conversionRes.convertedAmount = successfulConversionAmount;
-        conversionRes.maxAmount = levelsToConvert.size();
-        conversionRes.failedConversions = failedConversions;
+            co_return conversionRes;
+        },
+        [&](std::weak_ptr<ConversionTask::Progress> progress){
+            if (auto progressRes = progress.lock()){
+                progressBar->setVisible(true);
+                float dev = static_cast<float>(progressRes->filesWentOverAmount) / static_cast<float>(progressRes->maxAmount);
+                progressBar->setValue(dev);
+                progressBar->updateBar();
 
-        return conversionRes;
-    }, "death tracker converting old files task!");
+                this->setTitle("Working...");
+                textArea->setText(fmt::format(
+                    "Converting files ({}/{})\nCurrently working on\n'{}'",
+                    progressRes->convertedAmount,
+                    progressRes->maxAmount,
+                    progressRes->currentConvertingFile
+                ));
+            }
+        }},
+        std::bind(this, &FileConversionLayer::lookupComplete, std::placeholders::_1)
+    );
+    // conversionListener.bind(this, &FileConversionLayer::conversionComplete);
+    // conversionListener.setFilter(FileConversionLayer::conversionStage(*result));
 }
-void FileConversionLayer::conversionComplete(ConversionTask::Event* event){
-    if (auto* resultRes = event->getValue()){
-        this->setTitle("Conversion complete!");
-        textArea->setText(fmt::format(
-            "Converted {}/{} files!\n{} files failed to convert.",
-            resultRes->convertedAmount,
-            resultRes->maxAmount,
-            resultRes->failedConversions.size()
-        ));
 
-        progressBar->setVisible(true);
-        progressBar->setValue(1);
+void FileConversionLayer::conversionComplete(ConversionTask::Result* resultRes){
+    this->setTitle("Conversion complete!");
+    textArea->setText(fmt::format(
+        "Converted {}/{} files!\n{} files failed to convert.",
+        resultRes->convertedAmount,
+        resultRes->maxAmount,
+        resultRes->failedConversions.size()
+    ));
 
-        for (const auto& level : resultRes->failedConversions) log::error("Failed to convert level: {}", level);
+    progressBar->setVisible(true);
+    progressBar->setValue(1);
 
-        this->setKeypadEnabled(true);
-        this->setKeyboardEnabled(true);
-        this->m_closeBtn->setVisible(true);
+    for (const auto& level : resultRes->failedConversions) log::error("Failed to convert level: {}", level);
 
-        didComplete = true;
-    }
-    else if (auto* progressRes = event->getProgress()){
-        progressBar->setVisible(true);
-        float dev = static_cast<float>(progressRes->filesWentOverAmount) / static_cast<float>(progressRes->maxAmount);
-        progressBar->setValue(dev);
-        progressBar->updateBar();
+    this->setKeypadEnabled(true);
+    this->setKeyboardEnabled(true);
+    this->m_closeBtn->setVisible(true);
 
-        this->setTitle("Working...");
-        textArea->setText(fmt::format(
-            "Converting files ({}/{})\nCurrently working on\n'{}'",
-            progressRes->convertedAmount,
-            progressRes->maxAmount,
-            progressRes->currentConvertingFile
-        ));
-    }
+    didComplete = true;
 }
 
 void FileConversionLayer::onClose(cocos2d::CCObject* sender){
     if (didComplete)
-        Popup<>::onClose(sender);
+        Popup::onClose(sender);
 }

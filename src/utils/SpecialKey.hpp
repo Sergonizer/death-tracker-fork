@@ -2,7 +2,7 @@
 
 using namespace geode::prelude;
 
-using UpdateTask = geode::Task<Result<std::string>, int>;
+using UpdateResult = Result<std::string>;
 
 #ifndef BIND_UPDATE_FUNC
 #define BIND_UPDATE_FUNC(METHOD) std::bind(&std::remove_reference<decltype(*this)>::type::METHOD, this)
@@ -15,14 +15,14 @@ class SpecialKey : public CCObject, public std::enable_shared_from_this<SpecialK
         std::string key;
         std::string description;
 
-        std::optional<std::function<UpdateTask()>> updateFunction = std::nullopt;
+        std::optional<std::function<UpdateResult()>> updateFunction = std::nullopt;
 
         std::function<void(const std::shared_ptr<SpecialKey>&)> updateCompletedCallback = nullptr;
         std::function<void(const std::shared_ptr<SpecialKey>&)> updateStartedCallback = nullptr;
 
-        geode::EventListener<UpdateTask> updateListener;
+        async::TaskHolder<UpdateResult> updateListener;
 
-        void onUpdateCompleted(UpdateTask::Event* e);
+        void onUpdateCompleted(UpdateResult* val);
 
         bool updateOngoing = false;
 
@@ -35,7 +35,7 @@ class SpecialKey : public CCObject, public std::enable_shared_from_this<SpecialK
 
         bool compareToKey(const std::string& otherKey);
 
-        void setUpdateFunction(const std::function<UpdateTask()>& task);
+        void setUpdateFunction(const std::function<UpdateResult()>& task);
 
         void updateContent();
 
