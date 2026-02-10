@@ -2,22 +2,24 @@
 #include <utils/Settings.hpp>
 #include <utils/Save.hpp>
 #if !defined(GEODE_IS_IOS)
-#include <geode.custom-keybinds/include/Keybinds.hpp>
+//#include <geode.custom-keybinds/include/Keybinds.hpp>
 #endif
 #include <nodes/TutorialButton.hpp>
 
 DTGraphLayer* DTGraphLayer::create() {
     auto ret = new DTGraphLayer();
-    auto winSize = CCDirector::sharedDirector()->getWinSize();
-    if (ret && ret->initAnchored(winSize.width - 120, winSize.height - 30, "square01_001.png", {0.f, 0.f, 94.f, 94.f})) {
+    if (ret->init()) {
         ret->autorelease();
         return ret;
     }
-    CC_SAFE_DELETE(ret);
+    delete ret;
     return nullptr;
 }
 
-bool DTGraphLayer::setup() {
+bool DTGraphLayer::init() {
+    auto winSize = CCDirector::sharedDirector()->getWinSize();
+    if (!Popup::init(winSize.width - 120, winSize.height - 30, "square01_001.png", {0.f, 0.f, 94.f, 94.f}))
+        return false;
 
     noGraphLabel = CCLabelBMFont::create("No Graphs\nEnabled!", "bigFont.fnt");
     noGraphLabel->setZOrder(1);
@@ -458,17 +460,17 @@ bool DTGraphLayer::setup() {
     return true;
 }
 
-void DTGraphLayer::keyDown(enumKeyCodes key){
+void DTGraphLayer::keyDown(enumKeyCodes key, double d){
     if (key == enumKeyCodes::KEY_LeftShift){
         holdingShift = true;
     }
 
     graph->sendKeyStuff(false, key);
     
-    Popup<>::keyDown(key);
+    Popup::keyDown(key, d);
 }
 
-void DTGraphLayer::keyUp(enumKeyCodes key){
+void DTGraphLayer::keyUp(enumKeyCodes key, double d){
     if (key == enumKeyCodes::KEY_LeftShift){
         holdingShift = false;
     }
@@ -564,7 +566,7 @@ void DTGraphLayer::onClose(cocos2d::CCObject* sender) {
         return;
     }
     displaysForPoints.clear();
-    Popup<>::onClose(sender);
+    Popup::onClose(sender);
 }
 
 void DTGraphLayer::update(float dt){
@@ -870,7 +872,7 @@ void DTGraphLayer::onColor(CCObject* sender){
     }
 
     if (popup != nullptr) {
-        popup->setDelegate(this);
+        popup->setCallback([&](auto color){ DTGraphLayer::updateColor(color);});
         popup->show();
     }
 }

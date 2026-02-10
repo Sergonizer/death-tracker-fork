@@ -3,18 +3,18 @@
 
 CreateBackupPopup* CreateBackupPopup::create() {
     auto ret = new CreateBackupPopup();
-    // @geode-ignore(unknown-resource)
-    if (ret && ret->initAnchored(250, 120, "geode.loader/GE_square01.png")) {
+    if (ret->init()) {
         ret->autorelease();
         return ret;
     }
-    CC_SAFE_DELETE(ret);
+    delete ret;
     return nullptr;
 }
 
-bool CreateBackupPopup::setup() {
+bool CreateBackupPopup::init() {
     auto winSize = CCDirector::sharedDirector()->getWinSize();
-
+    if (!Popup::init(250, 120, "geode.loader/GE_square01.png"))
+        return false;
     setTitle("Create Backup");
 
     auto saveGeneralLabel = CCLabelBMFont::create("Save General Progress:", "bigFont.fnt");

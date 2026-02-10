@@ -21,9 +21,9 @@ struct GraphPointDisplayPtrCompare {
     }
 };
 
-class DTGraphLayer : public Popup<>, public TextInputDelegate, public GraphPointDelegate, public ColorPickPopupDelegate, public FLAlertLayerProtocol {
+class DTGraphLayer : public Popup, public TextInputDelegate, public GraphPointDelegate, public FLAlertLayerProtocol {
     protected:
-        bool setup() override;
+        bool init() override;
     public:
         static DTGraphLayer* create();
 
@@ -37,8 +37,8 @@ class DTGraphLayer : public Popup<>, public TextInputDelegate, public GraphPoint
         //have no point displayed if the deselected point was the was selected prior
         void OnPointDeselected(GraphPoint* point) override;
 
-        void keyDown(enumKeyCodes key) override;
-        void keyUp(enumKeyCodes key) override;
+        void keyDown(enumKeyCodes key, double d) override;
+        void keyUp(enumKeyCodes key, double d) override;
 
         //handle the layer closing and refresh the text
         void onClose(cocos2d::CCObject*) override;
@@ -75,7 +75,7 @@ class DTGraphLayer : public Popup<>, public TextInputDelegate, public GraphPoint
 
         std::optional<GraphCell*> editedGraph = std::nullopt;
 
-        void updateColor(cocos2d::ccColor4B const& color) override;
+        void updateColor(cocos2d::ccColor4B const& color);
 
         std::optional<std::function<void(const ccColor4B&)>> callbacksForColorPopups = std::nullopt;
 

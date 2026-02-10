@@ -824,16 +824,13 @@ int StatsManager::getCursorPosition(CCLabelBMFont* const& text, CCLabelBMFont* c
 
     int index = -1;
 
-    CCObject* child;
+    for (const auto& node : CCArrayExt<CCNode*>(text->getChildren()))
+    {
+        if (node->isVisible()){
+            index++;
 
-    CCARRAY_FOREACH(text->getChildren(), child){
-        if (auto node = typeinfo_cast<CCNode*>(child)){
-            if (node->isVisible()){
-                index++;
-
-                if (node->getParent()->convertToWorldSpace(node->getPosition()).x > cursor->getParent()->convertToWorldSpace(cursor->getPosition()).x)
-                    return index;
-            }
+            if (node->getParent()->convertToWorldSpace(node->getPosition()).x > cursor->getParent()->convertToWorldSpace(cursor->getPosition()).x)
+                return index;
         }
     }
     

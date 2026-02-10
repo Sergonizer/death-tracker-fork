@@ -447,7 +447,7 @@ void DTTutorialLayer::keyBackClicked(){
     dialogueLayer->handleDialogTap();
 }
 
-void DTTutorialLayer::keyDown(enumKeyCodes key){
+void DTTutorialLayer::keyDown(enumKeyCodes key, double d){
     if (dialogueLayer == nullptr) return;
     for (const auto& glow : retainedSprites){
         if (!touchAllowedNodes.contains(glow)) continue;
@@ -455,14 +455,14 @@ void DTTutorialLayer::keyDown(enumKeyCodes key){
 
         auto keyDel = dynamic_cast<CCKeyboardDelegate*>(touchAllowedNodes[glow]);
         if (keyDel != nullptr){
-            keyDel->keyDown(key);
+            keyDel->keyDown(key, d);
             return;
         }
     }
 
-    CCLayer::keyDown(key);
+    CCLayer::keyDown(key, d);
 }
-void DTTutorialLayer::keyUp(enumKeyCodes key){
+void DTTutorialLayer::keyUp(enumKeyCodes key, double d){
     if (dialogueLayer == nullptr) return;
     for (const auto& glow : retainedSprites){
         if (!touchAllowedNodes.contains(glow)) continue;
@@ -470,12 +470,12 @@ void DTTutorialLayer::keyUp(enumKeyCodes key){
 
         auto keyDel = dynamic_cast<CCKeyboardDelegate*>(touchAllowedNodes[glow]);
         if (keyDel != nullptr){
-            keyDel->keyUp(key);
+            keyDel->keyUp(key, d);
             return;
         }
     }
 
-    CCLayer::keyUp(key);
+    CCLayer::keyUp(key, d);
 }
 
 void DTTutorialLayer::rightKeyDown(){

@@ -11,19 +11,20 @@
 #include <nodes/optionNodes/SessionOptions.hpp>
 
 DTLevelSpecificSettingsLayer* DTLevelSpecificSettingsLayer::create() {
-    auto ret = new DTLevelSpecificSettingsLayer();
-    auto winSize = CCDirector::sharedDirector()->getWinSize();
-    // @geode-ignore(unknown-resource)
-    if (ret && ret->initAnchored(winSize.width - 30, winSize.height - 30, "geode.loader/GE_square01.png")) {
-        ret->autorelease();
-        return ret;
+    auto popup = new DTLevelSpecificSettingsLayer;
+    if (popup->init()) {
+        popup->autorelease();
+        return popup;
     }
-    CC_SAFE_DELETE(ret);
+    delete popup;
     return nullptr;
+    auto ret = new DTLevelSpecificSettingsLayer();
 }
 
-bool DTLevelSpecificSettingsLayer::setup() {
+bool DTLevelSpecificSettingsLayer::init() {
     auto winSize = CCDirector::sharedDirector()->getWinSize();
+    if (!Popup::init(winSize.width - 30, winSize.height - 30, "geode.loader/GE_square01.png"))
+        return false;
 
     this->setTitle("Level Options", "goldFont.fnt", .8f, 15);
 
@@ -182,8 +183,9 @@ void DTLevelSpecificSettingsLayer::switchPage(CCObject* sender){
 }
 
 void DTLevelSpecificSettingsLayer::onClose(CCObject*){
-    auto dtlayer = DTLayer::get();
-    // if (dtlayer)
-    //     dtlayer->saveAndUpdateStats(true);
-    Popup<>::onClose(nullptr);
+    Popup::onClose(nullptr);
+}
+
+void DTLevelSpecificSettingsLayer::keyBackClicked(){
+    Popup::keyBackClicked();
 }

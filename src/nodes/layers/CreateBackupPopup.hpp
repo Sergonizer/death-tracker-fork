@@ -4,9 +4,9 @@
 
 using namespace geode::prelude;
 
-class CreateBackupPopup : public Popup<> {
+class CreateBackupPopup : public Popup {
     protected:
-        bool setup() override;
+        bool init() override;
 
     public:
         static CreateBackupPopup* create();

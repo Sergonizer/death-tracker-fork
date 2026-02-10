@@ -11,7 +11,7 @@ struct GetBackupTaskResult {
     double backupFileSizeInKB;
 };
 
-using GetBackupTask = Task<GetBackupTaskResult>;
+using GetBackupFuture = arc::Future<GetBackupTaskResult>;
 
 class BackupCell : public CCMenu {
     public:
@@ -37,8 +37,9 @@ class BackupCell : public CCMenu {
         long long backupTime;
 
         void LoadBackupData();
-        EventListener<GetBackupTask> getBackupListener;
-        void onBackupLoaded(GetBackupTask::Event* event);
+        GetBackupFuture LoadBackupDataFuture();
+        async::TaskHolder<GetBackupFuture::Output> getBackupListener;
+        void onBackupLoaded(GetBackupFuture::Output out);
 
         std::optional<BackupLevelData> backupData = std::nullopt;
 

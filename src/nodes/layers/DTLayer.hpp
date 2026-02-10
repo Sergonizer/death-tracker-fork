@@ -21,11 +21,11 @@ struct organizationResult{
     float highestColumn;
 };
 
-using organizationTask = Task<organizationResult>;
+using organizationFuture = arc::Future<organizationResult>;
 
-class DTLayer : public Popup<GJGameLevel* const&> {
+class DTLayer : public Popup {
     protected:
-        bool setup(GJGameLevel* const& Level) override;
+        bool init(GJGameLevel* const& Level);
 
     public:
         static DTLayer* create(GJGameLevel* const& Level);
@@ -40,8 +40,8 @@ class DTLayer : public Popup<GJGameLevel* const&> {
 
         void show() override;
 
-        virtual void keyDown(enumKeyCodes key)  override;
-        virtual void keyUp(enumKeyCodes key)  override;
+        virtual void keyDown(enumKeyCodes key, double d)  override;
+        virtual void keyUp(enumKeyCodes key, double d)  override;
 
         static DTLayer* get();
 
@@ -107,8 +107,8 @@ class DTLayer : public Popup<GJGameLevel* const&> {
     private:
         
         LayoutOptionsLayer* layoutOptionsLayer;
-        organizationTask organizeLayoutTask();
-        EventListener<organizationTask> organizationListener;
+        organizationFuture organizeLayoutTask();
+        async::TaskHolder<organizationFuture::Output> organizationListener;
         
         std::set<LayoutColumn*, ColumnComperator> columns;
 
@@ -169,27 +169,27 @@ class DTLayer : public Popup<GJGameLevel* const&> {
 
         void exitLayoutEditing();
 
-        UpdateResult onNLKey();
-        UpdateResult onATTKey();
-        UpdateResult onLVLNKey();
-        UpdateResult onGeneralKey();
-        UpdateResult onDTATTKey();
-        UpdateResult onRUNSKey();
-        UpdateResult onS0Key();
-        UpdateResult onSRUNSKey();
+        UpdateFuture onNLKey();
+        UpdateFuture onATTKey();
+        UpdateFuture onLVLNKey();
+        UpdateFuture onGeneralKey();
+        UpdateFuture onDTATTKey();
+        UpdateFuture onRUNSKey();
+        UpdateFuture onS0Key();
+        UpdateFuture onSRUNSKey();
         
         long long calcPlaytime(const Deaths& deaths);
         
-        UpdateResult onPTALLSKey();
-        UpdateResult onPTF0SKey();
-        UpdateResult onPTRUNSKey();
-        UpdateResult onPTSALLSKey();
-        UpdateResult onPTSF0Key();
-        UpdateResult onPTSRUNSKey();
+        UpdateFuture onPTALLSKey();
+        UpdateFuture onPTF0SKey();
+        UpdateFuture onPTRUNSKey();
+        UpdateFuture onPTSALLSKey();
+        UpdateFuture onPTSF0Key();
+        UpdateFuture onPTSRUNSKey();
 
-        UpdateResult onRunsTo100Key();
-        UpdateResult onBestRunsKey();
-        UpdateResult onSAttKey();
+        UpdateFuture onRunsTo100Key();
+        UpdateFuture onBestRunsKey();
+        UpdateFuture onSAttKey();
 
         std::optional<float> cachedLevelLength;
 };

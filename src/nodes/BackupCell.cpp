@@ -77,62 +77,63 @@ bool BackupCell::init(float width, const std::string& levelKey, const long long 
 }
 
 void BackupCell::LoadBackupData(){
-    auto task = GetBackupTask::run([&](auto progress, auto cancellation) -> GetBackupTask::Result {
-        auto backup = StatsManager::getBackupData(this->levelKey, this->backupTime);
-
-        int deathCount = -1;
-        if (backup.isOk() && backup.unwrap().from0.has_value()){
-            auto deaths = backup.unwrap().from0.value();
-
-            for (const auto& death : deaths.deaths)
-                deathCount += death.second;
-
-            for (const auto& death : deaths.runs)
-                deathCount += death.second;
+    getBackupListener.spawn(
+        LoadBackupDataFuture(),
+        [&](GetBackupFuture::Output val) {
+            this->onBackupLoaded(val);
         }
-
-        auto backupFileSizeInKB = StatsManager::getBackupFileSize(this->levelKey, this->backupTime) / 1024.0;
-
-        return GetBackupTaskResult{
-            .backup = backup,
-            .deathCount = deathCount,
-            .backupFileSizeInKB = backupFileSizeInKB
-        };
-    });
-
-    getBackupListener.bind(this, &BackupCell::onBackupLoaded);
-    getBackupListener.setFilter(task);
+    );
 }
 
-void BackupCell::onBackupLoaded(GetBackupTask::Event* event){
-    if (auto value = event->getValue()){
-        if (value == nullptr) return;
-        if (value->backup.isErr()){
-            titleLabel->setString("Failed to load backup data.");
-            return;
-        }
+GetBackupFuture BackupCell::LoadBackupDataFuture(){
+    auto backup = StatsManager::getBackupData(this->levelKey, this->backupTime);
 
-        backupData = value->backup.unwrap();
+    int deathCount = -1;
+    if (backup.isOk() && backup.unwrap().from0.has_value()){
+        auto deaths = backup.unwrap().from0.value();
 
-        auto timeTDate = static_cast<time_t>(backupData.value().backupDate);
+        for (const auto& death : deaths.deaths)
+            deathCount += death.second;
 
-        tm timeInfo = {};
-    #if defined(_WIN32)
-        gmtime_s(&timeInfo, &timeTDate);
-    #else
-        gmtime_r(&timeTDate, &timeInfo);
-    #endif
-
-        titleLabel->setString(fmt::format("{:%Y-%m-%d %H:%M:%S}", timeInfo).c_str());
-        descriptionLabel->setString(
-            fmt::format(
-                "Attempts: {}, Sessions: {}, Size: {:.2f} KB", 
-                value->deathCount,
-                backupData->sessionNames.has_value() ? std::to_string(backupData->sessionNames.value().size()) : "None",
-                value->backupFileSizeInKB
-            ).c_str()
-        );
+        for (const auto& death : deaths.runs)
+            deathCount += death.second;
     }
+
+    auto backupFileSizeInKB = StatsManager::getBackupFileSize(this->levelKey, this->backupTime) / 1024.0;
+
+    co_return GetBackupTaskResult{
+        .backup = backup,
+        .deathCount = deathCount,
+        .backupFileSizeInKB = backupFileSizeInKB
+    };
+}
+
+void BackupCell::onBackupLoaded(GetBackupFuture::Output out){
+    if (out.backup.isErr()){
+        titleLabel->setString("Failed to load backup data.");
+        return;
+    }
+
+    backupData = out.backup.unwrap();
+
+    auto timeTDate = static_cast<time_t>(backupData.value().backupDate);
+
+    tm timeInfo = {};
+#if defined(_WIN32)
+    gmtime_s(&timeInfo, &timeTDate);
+#else
+    gmtime_r(&timeTDate, &timeInfo);
+#endif
+
+    titleLabel->setString(fmt::format("{:%Y-%m-%d %H:%M:%S}", timeInfo).c_str());
+    descriptionLabel->setString(
+        fmt::format(
+            "Attempts: {}, Sessions: {}, Size: {:.2f} KB", 
+            out.deathCount,
+            backupData->sessionNames.has_value() ? std::to_string(backupData->sessionNames.value().size()) : "None",
+            out.backupFileSizeInKB
+        ).c_str()
+    );
 }
 
 void BackupCell::onRevert(CCObject* sender){

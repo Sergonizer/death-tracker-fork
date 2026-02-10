@@ -111,8 +111,8 @@ class DTTutorialLayer : public CCLayer, public DialogDelegate {
 
         CCTouchDelegate* touchedHighlight = nullptr;
 
-        void keyDown(enumKeyCodes key) override;
-        void keyUp(enumKeyCodes key) override;
+        void keyDown(enumKeyCodes key, double) override;
+        void keyUp(enumKeyCodes key, double) override;
 
         void rightKeyDown() override;
 

@@ -231,7 +231,7 @@ void SaveOptions::onOpened(){
     this->setEnabled(true);
     this->runAction(CCFadeTo::create(fadeTime, 255));
     backupsScrollLayer->getChildByID("bg")->runAction(CCFadeTo::create(fadeTime, 100));
-    for (const auto& child : CCArrayExt<BackupCell*>(backupsScrollLayer->m_contentLayer->getChildren())){
+    for (const auto& child : backupsScrollLayer->m_contentLayer->getChildrenExt<BackupCell*>()){
         child->runAction(CCFadeTo::create(fadeTime, 255));
         child->setEnabled(true);
     }
@@ -248,7 +248,7 @@ void SaveOptions::onClosed(){
     this->setEnabled(false);
     this->runAction(CCFadeTo::create(fadeTime, 0));
     backupsScrollLayer->getChildByID("bg")->runAction(CCFadeTo::create(fadeTime, 0));
-    for (const auto& child : CCArrayExt<BackupCell*>(backupsScrollLayer->m_contentLayer->getChildren())){
+    for (const auto& child : backupsScrollLayer->m_contentLayer->getChildrenExt<BackupCell*>()){
         child->runAction(CCFadeTo::create(fadeTime, 0));
         child->setEnabled(false);
     }

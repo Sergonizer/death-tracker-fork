@@ -284,67 +284,69 @@ void LinkOptions::onClosed(){
 }
 
 void LinkOptions::getAllLevelsData(){
-    if (getallLevelsListener.getFilter().isPending() || data.size()) return;
+    if (getallLevelsListener.isPending() || data.size()) return;
 
     loadingLabel->setVisible(true);
     loadingShadow->setVisible(true);
     loadingCircle->m_sprite->setVisible(true);
 
-    auto task = GetLevelsTask::run([&](auto progress, auto hasBeenCancelled) -> GetLevelsTask::Result {
-        auto progresObject = GetLevelsTaskProgress{"Getting list of played levels...", -1, -1};
-
-        progress(progresObject);
-
-        auto allLevels = StatsManager::allV3FileLevelKeys();
-        if (allLevels.empty()) return std::vector<LinkData>{};
-
-        progresObject.message = "Getting level data...";
-        progresObject.current = 0;
-        progresObject.max = static_cast<int>(allLevels.size());
-
-        progress(progresObject);
-
-        std::vector<LinkData> metadatas{};
-        metadatas.reserve(allLevels.size());
-
-        int i = 0;
-        for (const auto& levelKey : allLevels)
-        {
-            auto meta = StatsManager::getMetadata(levelKey);
-            if (meta.isOk()){
-                LinkData ldata{};
-                ldata.metadata = meta.unwrap();
-                ldata.levelKey = levelKey;
-
-                metadatas.emplace_back(std::move(ldata));
-            }
-
-            i++;
-            progresObject.current = i;
-            progress(progresObject);
+    getallLevelsListener.spawn(
+        getLevelsFuture(),
+        [&](GetLevelsFuture::Output val){
+            this->onGetLevels(val);
         }
-        
-        return metadatas;
-    });
-
-    getallLevelsListener.bind(this, &LinkOptions::onGetLevels);
-    getallLevelsListener.setFilter(task);
+    );
 }
 
-void LinkOptions::onGetLevels(GetLevelsTask::Event* e){
-    if (auto val = e->getValue()){
-        if (val == nullptr) return;
-        data = std::move(*val);
+void LinkOptions::onGetLevelsProgress(const GetLevelsTaskProgress& progress){
+    loadingLabel->setString(fmt::format("{}\n{}/{}", progress.message, progress.current, progress.max).c_str());
+}
 
-        loadingLabel->setVisible(false);
-        loadingShadow->setVisible(false);
-        loadingCircle->m_sprite->setVisible(false);
+void LinkOptions::onGetLevels(GetLevelsFuture::Output out){
+    data = std::move(out);
 
-        updateScrollsContent();
+    loadingLabel->setVisible(false);
+    loadingShadow->setVisible(false);
+    loadingCircle->m_sprite->setVisible(false);
+
+    updateScrollsContent();
+}
+
+GetLevelsFuture LinkOptions::getLevelsFuture(){
+    auto progresObject = GetLevelsTaskProgress{"Getting list of played levels...", -1, -1};
+
+    onGetLevelsProgress(progresObject);
+
+    auto allLevels = StatsManager::allV3FileLevelKeys();
+    if (allLevels.empty()) co_return std::vector<LinkData>{};
+
+    progresObject.message = "Getting level data...";
+    progresObject.current = 0;
+    progresObject.max = static_cast<int>(allLevels.size());
+
+    onGetLevelsProgress(progresObject);
+
+    std::vector<LinkData> metadatas{};
+    metadatas.reserve(allLevels.size());
+
+    int i = 0;
+    for (const auto& levelKey : allLevels)
+    {
+        auto meta = StatsManager::getMetadata(levelKey);
+        if (meta.isOk()){
+            LinkData ldata{};
+            ldata.metadata = meta.unwrap();
+            ldata.levelKey = levelKey;
+
+            metadatas.emplace_back(std::move(ldata));
+        }
+
+        i++;
+        progresObject.current = i;
+        onGetLevelsProgress(progresObject);
     }
-    else if (auto progress = e->getProgress()){
-        loadingLabel->setString(fmt::format("{}\n{}/{}", progress->message, progress->current, progress->max).c_str());
-    }
+    
+    co_return metadatas;
 }
 
 void LinkOptions::updateScrollsContent(){

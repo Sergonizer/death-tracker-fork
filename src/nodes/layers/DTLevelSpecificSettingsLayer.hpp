@@ -5,11 +5,13 @@
 
 using namespace geode::prelude;
 
-class DTLevelSpecificSettingsLayer : public geode::Popup<>, public TextInputDelegate {
+class DTLevelSpecificSettingsLayer : public geode::Popup, public TextInputDelegate {
     public:
         static DTLevelSpecificSettingsLayer* create();
+
+        void keyBackClicked() override;
     private:
-        bool setup() override;
+        bool init() override;
 
         void onClose(CCObject*) override;
 

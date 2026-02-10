@@ -332,9 +332,9 @@ void GraphHolder::removeGraph(const std::string& graphName){
 
 void GraphHolder::sendKeyStuff(bool up, enumKeyCodes key){
     if (up)
-        scrollLayer->keyUp(key);
+        scrollLayer->keyUp(key, 0);
     else
-        scrollLayer->keyDown(key);
+        scrollLayer->keyDown(key, 0);
 }
 
 void GraphHolder::changeGraphName(const std::string& oldName, const std::string& newName){

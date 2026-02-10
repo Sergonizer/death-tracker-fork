@@ -238,15 +238,15 @@ void AdvancedScrollLayer::scrollWheel(float y, float x) {
     //log::info("{}", ccp(y, x));
 }
 
-void AdvancedScrollLayer::keyDown(enumKeyCodes key){
+void AdvancedScrollLayer::keyDown(enumKeyCodes key, double d){
     if (key == enumKeyCodes::KEY_LeftShift){
         holdingShift = true;
     }
 
-    CCLayer::keyDown(key);
+    CCLayer::keyDown(key, d);
 }
 
-void AdvancedScrollLayer::keyUp(enumKeyCodes key){
+void AdvancedScrollLayer::keyUp(enumKeyCodes key, double d){
     if (key == enumKeyCodes::KEY_LeftShift){
         holdingShift = false;
     }

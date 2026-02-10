@@ -22,7 +22,7 @@ struct LinkData {
     std::string levelKey;
 };
 
-using GetLevelsTask = Task<std::vector<LinkData>, GetLevelsTaskProgress>;
+using GetLevelsFuture = arc::Future<std::vector<LinkData>>;
 
 class LinkOptions : public OptionsNode {
     public:
@@ -32,10 +32,12 @@ class LinkOptions : public OptionsNode {
 
         void getAllLevelsData();
 
-        void onGetLevels(GetLevelsTask::Event* e);
+        GetLevelsFuture getLevelsFuture();
+        void onGetLevels(GetLevelsFuture::Output out);
+        void onGetLevelsProgress(const GetLevelsTaskProgress& progress);
 
         std::vector<LinkData> data{};
-        EventListener<GetLevelsTask> getallLevelsListener;
+        async::TaskHolder<GetLevelsFuture::Output> getallLevelsListener;
 
         unsigned int currentLinkedPage;
         unsigned int currentPlayedPage;

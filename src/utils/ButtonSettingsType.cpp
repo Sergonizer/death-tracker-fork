@@ -60,7 +60,7 @@ void ButtonSettingNodeDT::updateState(CCNode* invoker) {
     m_buttonSprite->setOpacity(shouldEnable ? 255 : 155);
     m_buttonSprite->setColor(shouldEnable ? ccWHITE : ccGRAY);
 }
-void onButton(CCObject*) {
+void ButtonSettingNodeDT::onButton(CCObject*) {
     FileConversionLayer::create()->show();
 }
 

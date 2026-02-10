@@ -50,8 +50,8 @@ class AdvancedScrollLayer : public CCLayer {
         void ccTouchEnded(cocos2d::CCTouch* touch, cocos2d::CCEvent* event) override;
         void ccTouchCancelled(cocos2d::CCTouch* touch, cocos2d::CCEvent* event) override;
 
-        virtual void keyDown(enumKeyCodes key)  override;
-        virtual void keyUp(enumKeyCodes key)  override;
+        virtual void keyDown(enumKeyCodes key, double d)  override;
+        virtual void keyUp(enumKeyCodes key, double d)  override;
         
         CCNode* content;
 

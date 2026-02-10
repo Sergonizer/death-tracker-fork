@@ -4,36 +4,36 @@ using namespace geode::prelude;
 #include "managers/StatsManager.hpp"
 #include "utils/Settings.hpp"
 #if !defined(GEODE_IS_IOS)
-#include <geode.custom-keybinds/include/Keybinds.hpp>
-using namespace keybinds;
+//#include <geode.custom-keybinds/include/Keybinds.hpp>
+//using namespace keybinds;
 #endif
 
 $execute {
     #if !defined(GEODE_IS_IOS)
-    BindManager::get()->registerBindable({ "enter-new-line"_spr, "Enter new line",
-        "Enters a new line when editing a labels text",
-        { 
-            Keybind::create(KEY_Enter, Modifier::None) 
-        }
-    });
-    BindManager::get()->registerBindable({ "enter-new-run-per"_spr, "Enter new run percentage",
-        "Enters a new run percent when inputting for adding a new percent to your \"runs to track\"",
-        { 
-            Keybind::create(KEY_Enter, Modifier::None) 
-        }
-    });
-    BindManager::get()->registerBindable({ "add-deaths"_spr, "Add deaths",
-        "Adds deaths while you input a percent to change deaths to your level",
-        { 
-            Keybind::create(KEY_Enter, Modifier::None)
-        }
-    });
-    BindManager::get()->registerBindable({ "remove-deaths"_spr, "Remove deaths",
-        "Removes deaths while you input a percent to change deaths to your level",
-        { 
-            Keybind::create(KEY_Enter, Modifier::Shift)
-        }
-    });
+    // BindManager::get()->registerBindable({ "enter-new-line"_spr, "Enter new line",
+    //     "Enters a new line when editing a labels text",
+    //     { 
+    //         Keybind::create(KEY_Enter, Modifier::None) 
+    //     }
+    // });
+    // BindManager::get()->registerBindable({ "enter-new-run-per"_spr, "Enter new run percentage",
+    //     "Enters a new run percent when inputting for adding a new percent to your \"runs to track\"",
+    //     { 
+    //         Keybind::create(KEY_Enter, Modifier::None) 
+    //     }
+    // });
+    // BindManager::get()->registerBindable({ "add-deaths"_spr, "Add deaths",
+    //     "Adds deaths while you input a percent to change deaths to your level",
+    //     { 
+    //         Keybind::create(KEY_Enter, Modifier::None)
+    //     }
+    // });
+    // BindManager::get()->registerBindable({ "remove-deaths"_spr, "Remove deaths",
+    //     "Removes deaths while you input a percent to change deaths to your level",
+    //     { 
+    //         Keybind::create(KEY_Enter, Modifier::Shift)
+    //     }
+    // });
     #endif
 
     auto _ = file::createDirectory(Mod::get()->getSaveDir() / "levels");

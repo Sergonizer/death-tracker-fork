@@ -1,7 +1,7 @@
 #include "LayoutOptionsLayer.hpp"
 #include <nodes/layers/DTLayer.hpp>
 #if !defined(GEODE_IS_IOS)
-#include <geode.custom-keybinds/include/Keybinds.hpp>
+// #include <geode.custom-keybinds/include/Keybinds.hpp>
 #endif
 #include <nodes/SpecialKeyCell.hpp>
 
@@ -311,27 +311,27 @@ bool LayoutOptionsLayer::init(const CCSize& size) {
     labelSettingsNode->addChild(fontSelectionBtnLabel);
 
     #if !defined(GEODE_IS_IOS)
-    addEventListener<keybinds::InvokeBindFilter>([&](keybinds::InvokeBindEvent* event) {
-        if (event->isDown() && editedLabel.has_value()) {
-            TextInput* toEdit = nullptr;
-            if (labelTextInput->getInputNode()->m_selected) toEdit = labelTextInput;
-            else if (labelTextSpecialKeysInput->getInputNode()->m_selected) toEdit = labelTextSpecialKeysInput;
+    // addEventListener<keybinds::InvokeBindFilter>([&](keybinds::InvokeBindEvent* event) {
+    //     if (event->isDown() && editedLabel.has_value()) {
+    //         TextInput* toEdit = nullptr;
+    //         if (labelTextInput->getInputNode()->m_selected) toEdit = labelTextInput;
+    //         else if (labelTextSpecialKeysInput->getInputNode()->m_selected) toEdit = labelTextSpecialKeysInput;
             
-            if (toEdit == nullptr) return ListenerResult::Propagate;
+    //         if (toEdit == nullptr) return ListenerResult::Propagate;
 
-            auto str = toEdit->getString();
-            int pos = toEdit->getInputNode()->m_textField->m_uCursorPos;
+    //         auto str = toEdit->getString();
+    //         int pos = toEdit->getInputNode()->m_textField->m_uCursorPos;
 
-            if (pos == -1) str += "{nl}";
-            else {
-                str = str.insert(pos, "{nl}");
-                toEdit->getInputNode()->m_textField->m_uCursorPos += 4;
-            }
+    //         if (pos == -1) str += "{nl}";
+    //         else {
+    //             str = str.insert(pos, "{nl}");
+    //             toEdit->getInputNode()->m_textField->m_uCursorPos += 4;
+    //         }
 
-            toEdit->setString(str, true);
-        }
-        return ListenerResult::Propagate;
-    }, "enter-new-line"_spr);
+    //         toEdit->setString(str, true);
+    //     }
+    //     return ListenerResult::Propagate;
+    // }, "enter-new-line"_spr);
     #endif
 
     fontSelectionNode->setScaleY(0);
@@ -577,7 +577,7 @@ void LayoutOptionsLayer::onTextColorBtnClicked(CCObject*){
     if (!editedLabel.has_value()) return;
 
     auto popup = geode::ColorPickPopup::create(editedLabel.value()->info.textColor);
-    popup->setDelegate(this);
+    popup->setCallback([&](auto color){ updateColor(color); });
     popup->setColorTarget(textColorBtnSprite);
     colorChangeFunc = [&](cocos2d::ccColor4B const& color) {
         editedLabel.value()->setTextColor(color);
@@ -588,7 +588,7 @@ void LayoutOptionsLayer::onLabelColorBtnClicked(CCObject*){
     if (!editedLabel.has_value()) return;
 
     auto popup = geode::ColorPickPopup::create(editedLabel.value()->info.labelColor);
-    popup->setDelegate(this);
+    popup->setCallback([&](auto color){ updateColor(color); });
     popup->setColorTarget(labelColorBtnSprite);
     colorChangeFunc = [&](cocos2d::ccColor4B const& color) {
         editedLabel.value()->setLabelColor(color);

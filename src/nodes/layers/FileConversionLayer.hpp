@@ -2,7 +2,6 @@
 
 #include <Geode/Geode.hpp>
 #include <nodes/OptionsNode.hpp>
-#include <utils/ProgressFuture.hpp>
 
 using namespace geode::prelude;
 
@@ -18,8 +17,8 @@ struct ConversionResult{
     int convertedAmount;
 };
 
-using LookupTask = ProgressFuture<std::vector<std::string>, int>;
-using ConversionTask = ProgressFuture<ConversionResult, ConversionProgress>;
+using LookupFuture = arc::Future<std::vector<std::string>>;
+using ConversionFuture = arc::Future<ConversionResult>;
 
 class FileConversionLayer : public geode::Popup {
     public:
@@ -30,11 +29,13 @@ class FileConversionLayer : public geode::Popup {
         SimpleTextArea* textArea;
         Slider* progressBar;
 
-        void lookupComplete(LookupTask::Result* event);
-        async::TaskHolder<LookupTask> lookupListener;
+        LookupFuture lookupFuture();
+        void lookupComplete(LookupFuture::Output event);
+        async::TaskHolder<LookupFuture::Output> lookupListener;
 
-        void conversionComplete(ConversionTask::Result* event);
-        async::TaskHolder<ConversionTask> conversionListener;
+        ConversionFuture conversionFuture(std::vector<std::string> allLevels, geode::Function<void(ConversionProgress)> progress);
+        void conversionComplete(ConversionFuture::Output event);
+        async::TaskHolder<ConversionFuture::Output> conversionListener;
         
         void setTitle(const std::string& text);
 

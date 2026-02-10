@@ -1,10 +1,10 @@
 {
-	"geode": "5.0.0-alpha.1",
+	"geode": "5.0.0-alpha.2",
 	"gd": {
-        "android": "2.2074",
-        "win": "2.2074",
-		"mac": "2.2074",
-		"ios": "2.2074"
+        "android": "2.2081",
+        "win": "2.2081",
+		"mac": "2.2081",
+		"ios": "2.2081"
     },
 	"id": "elohmrow.death_tracker",
 	"name": "Death Tracker",
@@ -77,8 +77,7 @@
 		}
 	},
 	"dependencies": {
-		"geode.custom-keybinds": ">=v1.10.3",
 		"geode.node-ids": ">=v1.10.0",
-		"cvolton.level-id-api": "v1.0.1"
+		"cvolton.level-id-api": "v2.0.0-beta.2"
 	}
 }

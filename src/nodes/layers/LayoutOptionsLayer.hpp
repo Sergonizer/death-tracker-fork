@@ -7,7 +7,7 @@
 
 using namespace geode::prelude;
 
-class LayoutOptionsLayer : public CCLayer, public geode::ColorPickPopupDelegate {
+class LayoutOptionsLayer : public CCLayer {
     public:
         static LayoutOptionsLayer* create(const CCSize& size);
 
@@ -46,7 +46,7 @@ class LayoutOptionsLayer : public CCLayer, public geode::ColorPickPopupDelegate 
         void onTextColorBtnClicked(CCObject*);
         void onLabelColorBtnClicked(CCObject*);
         
-        void updateColor(cocos2d::ccColor4B const& color) override;
+        void updateColor(cocos2d::ccColor4B const& color);
         
         CCSprite* textColorBtnSprite;
         CCSprite* labelColorBtnSprite;
