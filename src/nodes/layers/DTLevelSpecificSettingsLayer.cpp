@@ -23,6 +23,7 @@ DTLevelSpecificSettingsLayer* DTLevelSpecificSettingsLayer::create() {
 
 bool DTLevelSpecificSettingsLayer::init() {
     auto winSize = CCDirector::sharedDirector()->getWinSize();
+    // @geode-ignore(unknown-resource)
     if (!Popup::init(winSize.width - 30, winSize.height - 30, "geode.loader/GE_square01.png"))
         return false;
 

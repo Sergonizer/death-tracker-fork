@@ -5,7 +5,7 @@ using namespace geode::prelude;
 using UpdateFuture = arc::Future<Result<std::string>>;
 
 #ifndef BIND_UPDATE_FUNC
-#define BIND_UPDATE_FUNC(METHOD) std::bind(&std::remove_reference<decltype(*this)>::type::METHOD, this)
+#define BIND_UPDATE_FUNC(METHOD) [&]() { return METHOD(); }
 #endif
 
 class SpecialKey : public CCObject, public std::enable_shared_from_this<SpecialKey> {
@@ -15,10 +15,10 @@ class SpecialKey : public CCObject, public std::enable_shared_from_this<SpecialK
         std::string key;
         std::string description;
 
-        std::optional<std::function<UpdateFuture()>> updateFunction = std::nullopt;
+        std::optional<geode::Function<UpdateFuture()>> updateFunction = std::nullopt;
 
-        std::function<void(const std::shared_ptr<SpecialKey>&)> updateCompletedCallback = nullptr;
-        std::function<void(const std::shared_ptr<SpecialKey>&)> updateStartedCallback = nullptr;
+        geode::Function<void(const std::shared_ptr<SpecialKey>&)> updateCompletedCallback = nullptr;
+        geode::Function<void(const std::shared_ptr<SpecialKey>&)> updateStartedCallback = nullptr;
 
         async::TaskHolder<UpdateFuture::Output> updateListener;
 
@@ -36,7 +36,7 @@ class SpecialKey : public CCObject, public std::enable_shared_from_this<SpecialK
 
         bool compareToKey(const std::string& otherKey);
 
-        void setUpdateFunction(const std::function<UpdateFuture()>& task);
+        void setUpdateFunction(geode::Function<UpdateFuture()> task);
 
         void updateContent();
 
@@ -50,8 +50,8 @@ class SpecialKey : public CCObject, public std::enable_shared_from_this<SpecialK
             return this->description;
         }
 
-        void setUpdateCompletedCallback(const std::function<void(const std::shared_ptr<SpecialKey>&)>& callback);
-        void setUpdateStartedCallback(const std::function<void(const std::shared_ptr<SpecialKey>&)>& callback);
+        void setUpdateCompletedCallback(geode::Function<void(const std::shared_ptr<SpecialKey>&)> callback);
+        void setUpdateStartedCallback(geode::Function<void(const std::shared_ptr<SpecialKey>&)> callback);
 
         void cancel();
 };

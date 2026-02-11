@@ -70,7 +70,7 @@ class DTLayer : public Popup {
 
         DTLabel* createNewLabel(DTLabelInfo info = DTLabelInfo{});
 
-        void subscribeToOrganizationEvent(CCNode* target, const std::function<void(float)>& callback);
+        void subscribeToOrganizationEvent(CCNode* target, geode::Function<void(float)> callback);
         void unsubscribeToOrganizationEvent(CCNode* target);
 
         void fixUpColumnPositions();
@@ -84,7 +84,7 @@ class DTLayer : public Popup {
         void removeColumn(LayoutColumn* column);
         bool cornerOnNextOrganization;
         void saveCurrentLayout();
-        bool isEditingLayout;
+        bool isEditingLayout = false;
 
         void subscribeKeyListener(DTLabel* label);
         void unsubscribeKeyListener(DTLabel* label);
@@ -102,13 +102,18 @@ class DTLayer : public Popup {
 
         Result<Session> loadSessionFromSave(std::optional<int> sessionIndex = std::nullopt);
 
-        void foreachLinkedLevel(const std::function<void(LevelData&)>& onLevelVisit);
+        void foreachLinkedLevel(geode::Function<void(LevelData&)> onLevelVisit);
 
     private:
         
-        LayoutOptionsLayer* layoutOptionsLayer;
+        LayoutOptionsLayer* layoutOptionsLayer = nullptr;
         organizationFuture organizeLayoutTask();
         async::TaskHolder<organizationFuture::Output> organizationListener;
+        async::TaskHolder<> orgCooldown;
+
+        bool canOrganize = true;
+        int firstTime = 0;
+        LoadingCircle* lc;
         
         std::set<LayoutColumn*, ColumnComperator> columns;
 
@@ -153,7 +158,7 @@ class DTLayer : public Popup {
         LayoutColumn* addColumn(std::optional<DTColumnInfo> info = std::nullopt);
         void addColumnBtnClicked(CCObject*);
 
-        std::map<CCNode*, std::function<void(float)>> onOrganizationCompleteEvent{};
+        std::map<CCNode*, geode::Function<void(float)>> onOrganizationCompleteEvent{};
 
         void setLayoutBy(const DTLayoutV3& layout);
 

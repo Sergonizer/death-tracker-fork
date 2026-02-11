@@ -437,8 +437,6 @@ bool LayoutOptionsLayer::init(const CCSize& size) {
     specialKeysScroll->moveToTop();
     specialKeysScroll->setMouseEnabled(false);
 
-
-
     columnWidthInput = TextInput::create((size.width - 10) / .75f, "Width");
     columnWidthInput->setScale(.75f);
     columnWidthInput->setCommonFilter(CommonFilter::Float);

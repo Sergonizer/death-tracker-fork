@@ -11,14 +11,14 @@ class LevelLinkCell : public CCMenu {
 
         void setAlignment(bool left);
 
-        void setCallback(const std::function<void(const std::string& levelKey, bool isLeftAligned)>& callback);
+        void setCallback(geode::Function<void(const std::string& levelKey, bool isLeftAligned)> callback);
 
     private:
         bool init(float width, const std::string& levelKey, const LevelMetadeta& data);
 
         std::string levelKey;
 
-        std::function<void(const std::string& levelKey, bool isLeftAligned)> callback = NULL;
+        geode::Function<void(const std::string& levelKey, bool isLeftAligned)> callback = NULL;
 
         bool isAlignedLeft;
 

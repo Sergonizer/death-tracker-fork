@@ -1,8 +1,8 @@
 #include "SpecialKeyCell.hpp"
 
-SpecialKeyCell* SpecialKeyCell::create(std::shared_ptr<SpecialKey> key, const std::function<void(const std::string&)>& onSelected){
+SpecialKeyCell* SpecialKeyCell::create(std::shared_ptr<SpecialKey> key, geode::Function<void(const std::string&)> onSelected){
     auto ret = new SpecialKeyCell();
-    if (ret && ret->init(key, onSelected)) {
+    if (ret && ret->init(key, std::move(onSelected))) {
         ret->autorelease();
     } else {
         delete ret;
@@ -11,7 +11,7 @@ SpecialKeyCell* SpecialKeyCell::create(std::shared_ptr<SpecialKey> key, const st
     return ret;
 }
 
-bool SpecialKeyCell::init(std::shared_ptr<SpecialKey> key, const std::function<void(const std::string&)>& onSelected){
+bool SpecialKeyCell::init(std::shared_ptr<SpecialKey> key, geode::Function<void(const std::string&)> onSelected){
     if (!CCMenu::init()) return false;
 
     this->setContentSize({135, 30});
@@ -52,7 +52,7 @@ bool SpecialKeyCell::init(std::shared_ptr<SpecialKey> key, const std::function<v
     this->addChild(addBtn);
 
     this->key = key;
-    this->onSelected = onSelected;
+    this->onSelected = std::move(onSelected);
 
     return true;
 }

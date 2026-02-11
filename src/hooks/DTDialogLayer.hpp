@@ -13,14 +13,14 @@ class $modify(DTDialogLayer, DialogLayer) {
 
     static DialogLayer* createWithTaggedSprites(CCArray* objects, int bg, const std::vector<std::tuple<std::string, int, float>>& icons);
 
-    void setProgressCallback(const std::function<void(DialogObject*)>& callback);
+    void setProgressCallback(geode::Function<void(DialogObject*)> callback);
 
     bool init(DialogObject* object, cocos2d::CCArray* objects, int background);
     void addToMainScene();
 
     struct Fields{
         std::vector<std::tuple<std::string, int, float>> icons;
-        std::function<void(DialogObject*)> callback = NULL;
+        geode::Function<void(DialogObject*)> callback = NULL;
         DialogObject* firstDialogue = nullptr;
         bool doCallCreationCallback = false;
     };

@@ -15,14 +15,14 @@ class GraphCell : public CCMenu {
             return graphInfo;
         };
 
-        std::function<void(GraphCell* cell, bool up)> onArrowCallback = NULL;
-        std::function<void(GraphCell* cell)> onOptionsCallback = NULL;
-        std::function<void(GraphCell* cell)> onEnabledChanged = NULL;
-        std::function<void(GraphCell* cell)> onInfoChangedCallback = NULL;
+        geode::Function<void(GraphCell* cell, bool up)> onArrowCallback = NULL;
+        geode::Function<void(GraphCell* cell)> onOptionsCallback = NULL;
+        geode::Function<void(GraphCell* cell)> onEnabledChanged = NULL;
+        geode::Function<void(GraphCell* cell)> onInfoChangedCallback = NULL;
 
-        std::function<bool(const std::string&, GraphCell*)> canChangeNameTo;
+        geode::Function<bool(const std::string&, GraphCell*)> canChangeNameTo;
 
-        std::function<void(DTGraphInfo)> onDeleted;
+        geode::Function<void(DTGraphInfo)> onDeleted;
 
         std::string oldName;
 

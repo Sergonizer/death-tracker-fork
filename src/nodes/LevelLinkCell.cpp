@@ -81,8 +81,8 @@ void LevelLinkCell::setAlignment(bool left){
     }
 }
 
-void LevelLinkCell::setCallback(const std::function<void(const std::string& levelKey, bool isLeftAligned)>& callback){
-    this->callback = callback;
+void LevelLinkCell::setCallback(geode::Function<void(const std::string& levelKey, bool isLeftAligned)> callback){
+    this->callback = std::move(callback);
 }
 
 void LevelLinkCell::onArrow(CCObject*){

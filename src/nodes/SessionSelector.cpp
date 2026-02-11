@@ -61,8 +61,8 @@ void SessionSelector::rightArrowClicked(CCObject*){
     setCurrentCount(currentCount + 1, true, true);
 }
 
-void SessionSelector::setCallback(const std::function<void(int)>& callback){
-    this->callback = callback;
+void SessionSelector::setCallback(geode::Function<void(int)> callback){
+    this->callback = std::move(callback);
 }
 
 void SessionSelector::setMaximumCount(int count, bool runCallback){

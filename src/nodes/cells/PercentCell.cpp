@@ -1,9 +1,9 @@
 #include <nodes/cells/PercentCell.hpp>
 #include <utils/Dev.hpp>
 
-PercentCell* PercentCell::create(float width, int Percent, int maxToHide, CCNode* sideButtonSprite, const std::function<void(PercentCell*)>& callback) {
+PercentCell* PercentCell::create(float width, int Percent, int maxToHide, CCNode* sideButtonSprite, geode::Function<void(PercentCell*)> callback) {
     auto ret = new PercentCell();
-    if (ret && ret->init(width, Percent, maxToHide, sideButtonSprite, callback)) {
+    if (ret && ret->init(width, Percent, maxToHide, sideButtonSprite, std::move(callback))) {
         ret->autorelease();
     } else {
         delete ret;
@@ -12,7 +12,7 @@ PercentCell* PercentCell::create(float width, int Percent, int maxToHide, CCNode
     return ret;
 }
 
-bool PercentCell::init(float width, int percent, int maxToHide, CCNode* sideButtonSprite, const std::function<void(PercentCell*)>& callback){
+bool PercentCell::init(float width, int percent, int maxToHide, CCNode* sideButtonSprite, geode::Function<void(PercentCell*)> callback){
     if (!CCMenu::init()) return false;
 
     this->maxToHide = maxToHide;
@@ -46,7 +46,7 @@ bool PercentCell::init(float width, int percent, int maxToHide, CCNode* sideButt
     this->addChild(label);
 
     this->percent = percent;
-    this->callback = callback;
+    this->callback = std::move(callback);
 
     MTHScroll = Slider::create(this, menu_selector(PercentCell::mthScroll));
     MTHScroll->ignoreAnchorPointForPosition(false);

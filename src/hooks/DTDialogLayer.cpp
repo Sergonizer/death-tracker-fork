@@ -54,8 +54,8 @@ DialogLayer* DTDialogLayer::createWithTaggedSprites(CCArray* objects, int bg, co
     return ret;
 }
 
-void DTDialogLayer::setProgressCallback(const std::function<void(DialogObject*)>& callback){
-    m_fields->callback = callback;
+void DTDialogLayer::setProgressCallback(geode::Function<void(DialogObject*)> callback){
+    m_fields->callback = std::move(callback);
 }
 
 bool DTDialogLayer::init(DialogObject* object, cocos2d::CCArray* objects, int background){

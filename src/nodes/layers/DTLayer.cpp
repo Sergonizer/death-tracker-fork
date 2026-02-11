@@ -8,6 +8,7 @@
 #include <utils/CCResizeWidthTo.hpp>
 
 #include <nodes/TutorialButton.hpp>
+#include <arc/task/Yield.hpp>
 
 float DTLayer::transitionTime = .35f;
 
@@ -29,6 +30,7 @@ DTLayer* DTLayer::create(GJGameLevel* const& Level) {
 
 bool DTLayer::init(GJGameLevel* const& level) {
     auto winSize = CCDirector::sharedDirector()->getWinSize();
+    // @geode-ignore(unknown-resource)
     if (!Popup::init(winSize.width - 150, winSize.height - 30, "geode.loader/GE_square01.png"))
         return false;
 
@@ -78,7 +80,7 @@ bool DTLayer::init(GJGameLevel* const& level) {
         //     "- <cg>iOS support</c>"
         // ), "OK", nullptr, 415, false, 200, 0.75f)->show();
     }
-
+    
     float height = 60;
     ogLimits = CCSize{m_size.width - 30 + 1, m_size.height - height  + 1};
     scrollLayer = AdvancedScrollLayer::create({m_size.width - 30, m_size.height - height}, ogLimits);
@@ -212,6 +214,11 @@ bool DTLayer::init(GJGameLevel* const& level) {
     addColumnButton->setOpacity(0);
     columnHolder->setEnabled(false);
 
+    lc = LoadingCircle::create();
+    lc->setContentSize({0, 0});
+    lc->m_sprite->setPosition(m_size / 2);
+    m_mainLayer->addChild(lc);
+
     CCTouchDispatcher::get()->removeDelegate(scrollLayer);
 
     this->setKeypadEnabled(true);
@@ -224,11 +231,6 @@ bool DTLayer::init(GJGameLevel* const& level) {
     this->scheduleUpdate();
 
     bottomMenu->updateLayout();
-
-    layoutOptionsLayer = LayoutOptionsLayer::create({150, m_size.height});
-    layoutOptionsLayer->setPosition({winSize.width + 10, (winSize.height - layoutOptionsLayer->getContentHeight()) / 2});
-    layoutOptionsLayer->onBackedOut = [&](){closeOptionsLayer();};
-    this->addChild(layoutOptionsLayer);
 
     editLayoutMenu = CCMenu::create();
     editLayoutMenu->setEnabled(false);
@@ -300,10 +302,20 @@ bool DTLayer::init(GJGameLevel* const& level) {
     testInfo->setPosition(m_size);
     m_buttonMenu->addChild(testInfo);
 
+    scrollLayer->setVisible(false);
+
     return true;
 }
 
 void DTLayer::onEditLayout(CCObject*){
+    if (layoutOptionsLayer == nullptr){
+        layoutOptionsLayer = LayoutOptionsLayer::create({150, m_size.height});
+        auto winSize = CCDirector::sharedDirector()->getWinSize();
+        layoutOptionsLayer->setPosition({winSize.width + 10, (winSize.height - layoutOptionsLayer->getContentHeight()) / 2});
+        layoutOptionsLayer->onBackedOut = [&](){closeOptionsLayer();};
+        this->addChild(layoutOptionsLayer);
+    }
+    
     isEditingLayout = true;
 
     std::set<DTLabel*> visitedLabels{};
@@ -379,8 +391,8 @@ void DTLayer::graphBtnClicked(CCObject*){
 }
 
 void DTLayer::addSpecialString(const std::shared_ptr<SpecialKey>& key){
-    key->setUpdateStartedCallback([this](const std::shared_ptr<SpecialKey>& k){ this->specialKeyUpdateStarted(k); });
-    key->setUpdateCompletedCallback([this](const std::shared_ptr<SpecialKey>& k){ this->specialKeyUpdateCompleted(k); });
+    key->setUpdateStartedCallback([&](const std::shared_ptr<SpecialKey>& k){ this->specialKeyUpdateStarted(k); });
+    key->setUpdateCompletedCallback([&](const std::shared_ptr<SpecialKey>& k) { this->specialKeyUpdateCompleted(k); });
     specialStrings.emplace(key->getKey(), key);
     key->updateContent();
 }
@@ -875,7 +887,7 @@ void DTLayer::update(float dt){
 }
 
 void DTLayer::organizeLayout(){
-    organizationListener.cancel();
+    if (!canOrganize) return;
     organizationListener.spawn(
         organizeLayoutTask(),
         [this](organizationFuture::Output result){
@@ -959,14 +971,37 @@ void DTLayer::organizeLayout(){
                 }
             }
 
-            for (const auto& [target, callback] : onOrganizationCompleteEvent)
+            for (const auto& [target, _] : onOrganizationCompleteEvent)
             {
-                callback(delta);
+                onOrganizationCompleteEvent[target](delta);
             }
             
             if (cornerOnNextOrganization){
                 cornerOnNextOrganization = false;
                 scrollLayer->moveToCorner(true, false);
+            }
+
+            if (firstTime == 0){
+                canOrganize = false;
+                orgCooldown.spawn(
+                    []() -> arc::Future<> {
+                        co_await arc::yield();
+                    },
+                    [&](){
+                        canOrganize = true;
+                        if (firstTime == 0){
+                            firstTime = 1;
+                            this->organizeLayout();
+                        }
+                    }
+                );
+            }
+            else if (firstTime == 1){
+                firstTime = 2;
+
+                scrollLayer->setVisible(true);
+                scrollLayer->moveToCorner(true, false);
+                lc->removeMeAndCleanup();
             }
         }
     );
@@ -986,7 +1021,7 @@ organizationFuture DTLayer::organizeLayoutTask(){
     
     std::vector<ColumnData> columnSnapshots;
     std::map<DTLabel*, LabelData> labelSnapshots;
-    
+
     for (const auto& column : columns)
     {
         ColumnData colData;
@@ -1010,9 +1045,9 @@ organizationFuture DTLayer::organizeLayoutTask(){
         }
         
         columnSnapshots.push_back(colData);
-
-        co_yield;
     }
+
+    co_await arc::yield();
     
     std::set<DTLabel*> allLabels{};
     std::map<DTLabel*, std::set<LayoutColumn*>> labelHolders{};
@@ -1021,25 +1056,30 @@ organizationFuture DTLayer::organizeLayoutTask(){
     {
         for (const auto& [layer, label] : colData.labels)
         {
+            co_await arc::yield();
             if (allLabels.contains(label)) continue;
 
             allLabels.insert(label);
             label->tempPos = ccp(std::numeric_limits<float>::max(), std::numeric_limits<float>::max());
             label->tempWidth = 0;
         }
+
+        co_await arc::yield();
     }
 
     for (const auto& [label, data] : labelSnapshots)
     {
         labelHolders[label] = data.holders;
+
+        co_await arc::yield();
     }
 
     std::map<LayoutColumn*, DTLabel*> lastVisitedLabelForColumn{};
     std::map<DTLabel*, std::map<LayoutColumn*, std::optional<int>>> labelAwaitingColumnValues{};
     std::set<DTLabel*> processedLabels{};
 
-    auto UpdateTempPos = [&](LayoutColumn* column, DTLabel* label, DTLabel* prevLabel){
-        if (column == nullptr || label == nullptr || label->getParent() == nullptr) return;
+    auto UpdateTempPos = [&](LayoutColumn* column, DTLabel* label, DTLabel* prevLabel) -> arc::Future<> {
+        if (column == nullptr || label == nullptr || label->getParent() == nullptr) co_return;
         auto startPosInLabelSpace = label->getParent()->convertToNodeSpace(column->convertToWorldSpace(column->bgSpr->getPosition()));
 
         float prevHeight = startPosInLabelSpace.y;
@@ -1053,11 +1093,13 @@ organizationFuture DTLayer::organizeLayoutTask(){
         if (newX < label->tempPos.x) label->tempPos.x = newX;
     };
 
-    auto UpdateTempWidth = [](DTLabel* label){
+    auto UpdateTempWidth = [](DTLabel* label) -> arc::Future<> {
         label->tempWidth = 0;
         for (const auto& labelColumn : label->getHolders())
         {
             label->tempWidth += labelColumn->getContentWidth();
+
+            co_await arc::yield();
         }
     };
 
@@ -1078,14 +1120,14 @@ organizationFuture DTLayer::organizeLayoutTask(){
                     foundLastLabel = true;
                 }
                 else if (label != lastVisitedLabelForColumn[column] && !foundLastLabel){
-                    UpdateTempPos(column, label, prevLabel);
+                    co_await UpdateTempPos(column, label, prevLabel);
                     prevLabel = label;
                     continue;
                 }
                 else foundLastLabel  = true;
 
                 if (processedLabels.contains(label)){
-                    UpdateTempPos(column, label, prevLabel);
+                    co_await UpdateTempPos(column, label, prevLabel);
                     prevLabel = label;
                     continue;
                 }
@@ -1105,8 +1147,10 @@ organizationFuture DTLayer::organizeLayoutTask(){
                     if (!labelAwaitingColumnValues.contains(label)){
                         std::map<LayoutColumn*, std::optional<int>> mapToSet{};
 
-                        for (const auto& holder : holdersBack)
+                        for (const auto& holder : holdersBack){
                             mapToSet.insert({holder, std::nullopt});
+                            co_await arc::yield();
+                        }
 
                         // log::info("populated list for label with {} holders", mapToSet.size());
 
@@ -1123,21 +1167,24 @@ organizationFuture DTLayer::organizeLayoutTask(){
                     int highestOptLayer = 0;
                     bool wereAllLayersFound = true;
 
-                    UpdateTempPos(column, label, prevLabel);
+                    co_await UpdateTempPos(column, label, prevLabel);
 
                     // log::info("checking conclusion..");
 
                     for (const auto& [column, optLayer] : labelAwaitingColumnValues[label]){
                         if (!optLayer.has_value()){
                             wereAllLayersFound = false;
+                            co_await arc::yield();
                             break;
                         }
 
                         highestOptLayer = std::max(highestOptLayer, optLayer.value());
+                        co_await arc::yield();
                     }
 
                     if (!wereAllLayersFound){
                         // log::info("invalid labels were found");
+                        co_await arc::yield();
                         break;
                     }
 
@@ -1146,7 +1193,7 @@ organizationFuture DTLayer::organizeLayoutTask(){
                     label->info.layer = highestOptLayer;
                     processedLabels.insert(label);
                     
-                    UpdateTempWidth(label);
+                    co_await UpdateTempWidth(label);
 
                     // log::info("combo found at {}", highestOptLayer);
 
@@ -1159,22 +1206,25 @@ organizationFuture DTLayer::organizeLayoutTask(){
                 label->info.layer = newLayer;
                 processedLabels.insert(label);
 
-                UpdateTempPos(column, label, prevLabel);
-                UpdateTempWidth(label);
+                co_await UpdateTempPos(column, label, prevLabel);
+                co_await UpdateTempWidth(label);
 
                 // log::info("single found at {}", newLayer);
 
                 prevLabel = label;
             }
+            co_await arc::yield();
         }
 
         // log::info("res: {} | {}", processedLabels.size(), allLabels.size());
 
         if (processedLabels.size() == allLabels.size()) break;
+        co_await arc::yield();
     }
 
     for (const auto& colData : columnSnapshots){
         colData.column->refreshAllLabelsLayer();
+        co_await arc::yield();
     }
 
     float heighestHeight = 0;
@@ -1184,7 +1234,9 @@ organizationFuture DTLayer::organizeLayoutTask(){
         {
             auto height = std::abs(label->tempPos.y) + label->getContentHeight() + LayoutColumn::addNewBtnOffset * 2;
             if (heighestHeight < height) heighestHeight = height;
+            co_await arc::yield();
         }
+        co_await arc::yield();
     }
 
     organizationResult data{};
@@ -1196,8 +1248,10 @@ organizationFuture DTLayer::organizeLayoutTask(){
         auto targetWidth = label->tempWidth - LayoutColumn::borderWidth;
 
         data.labelData.push_back({label, targetPosition, targetWidth});
+        co_await arc::yield();
     }
 
+    co_await arc::yield();
     co_return data;
 }
 
@@ -1298,10 +1352,10 @@ DTLabel* DTLayer::createNewLabel(DTLabelInfo info){
 }
 
 
-void DTLayer::subscribeToOrganizationEvent(CCNode* target, const std::function<void(float)>& callback){
+void DTLayer::subscribeToOrganizationEvent(CCNode* target, geode::Function<void(float)> callback){
     if (onOrganizationCompleteEvent.contains(target)) return;
 
-    onOrganizationCompleteEvent.insert({target, callback});
+    onOrganizationCompleteEvent.insert({target, std::move(callback)});
 }
 void DTLayer::unsubscribeToOrganizationEvent(CCNode* target){
     if (!onOrganizationCompleteEvent.contains(target)) return;
@@ -1309,54 +1363,62 @@ void DTLayer::unsubscribeToOrganizationEvent(CCNode* target){
     onOrganizationCompleteEvent.erase(target);
 }
 
-void DTLayer::setLayoutBy(const DTLayoutV3& layout){
-    auto columnsTemp = columns;
-    for (const auto& column : columnsTemp)
+void DTLayer::setLayoutBy(const DTLayoutV3& layout)
+{
+    for (auto* column : columns)
     {
         column->destroyColumnAndCleanup();
     }
-
     columns.clear();
 
-    for (const auto& column : layout.columns){
+    for (const auto& column : layout.columns)
+    {
         addColumn(column);
     }
 
     fixUpColumnPositions();
-
     columnHolder->updateLayout();
 
-    std::map<LayoutColumn*, std::vector<DTLabel*>> labelsForColumns{};
-    std::set<DTLabel*> labels{};
+    std::map<LayoutColumn*, std::vector<DTLabel*>> labelsForColumns;
+    std::vector<DTLabel*> allLabels;
+    allLabels.reserve(layout.labels.size());
 
-    for (const auto& label : layout.labels){
-        auto labelNode = createNewLabel(label);
+    for (const auto& label : layout.labels)
+    {
+        DTLabel* labelNode = createNewLabel(label);
+        allLabels.push_back(labelNode);
 
-        for (const auto& column : columns){
-            if (column->info.orderPos >= labelNode->info.minPlacementRange && column->info.orderPos <= labelNode->info.maxPlacementRange){
-                if (labelsForColumns.contains(column))
-                    labelsForColumns[column].push_back(labelNode);
-                else
-                    labelsForColumns.insert({column, {labelNode}});
-            }
+        const int minPos = labelNode->info.minPlacementRange;
+        const int maxPos = labelNode->info.maxPlacementRange;
+
+        for (auto* column : columns)
+        {
+            const int pos = column->info.orderPos;
+
+            if (pos < minPos)
+                continue;
+
+            if (pos > maxPos)
+                break;
+
+            labelsForColumns[column].push_back(labelNode);
         }
-
-        labels.insert(labelNode);
     }
 
-    for (const auto& [column, labels] : labelsForColumns)
+    for (auto& [column, labels] : labelsForColumns)
     {
-        for (const auto& label : labels)
+        for (auto* label : labels)
         {
             column->addLabel(label);
         }
-        
     }
 
-    for (const auto& label : labels)
+    for (auto* label : allLabels)
     {
         if (label->isAlone())
+        {
             label->removeMeAndCleanup();
+        }
     }
 
     cornerOnNextOrganization = true;
@@ -1941,13 +2003,15 @@ UpdateFuture DTLayer::onPTALLSKey(){
 
     for (const auto& levelData : linkedLevelsCopy)
     {
+        co_await arc::yield();
         if (levelData.from0.isErr() || levelData.levelKey == myStats.levelKey) continue;
         auto levelFrom0Stats = levelData.from0.unwrap();
         StatsManager::mergeMapsAdd(deaths, levelFrom0Stats.deaths);
         StatsManager::mergeMapsAdd(deaths, levelFrom0Stats.runs);
     }
 
-    co_return Ok(StatsManager::workingTime(calcPlaytime(deaths)));
+    auto pt = StatsManager::workingTime(calcPlaytime(deaths));
+    co_return Ok(pt);
 }
 
 UpdateFuture DTLayer::onPTF0SKey(){
@@ -1963,6 +2027,7 @@ UpdateFuture DTLayer::onPTF0SKey(){
 
     for (const auto& levelData : linkedLevelsCopy)
     {
+        co_await arc::yield();
         if (levelData.from0.isErr() || levelData.levelKey == myStats.levelKey) continue;
         auto levelFrom0Stats = levelData.from0.unwrap();
         StatsManager::mergeMapsAdd(deaths, levelFrom0Stats.deaths);
@@ -1983,6 +2048,7 @@ UpdateFuture DTLayer::onPTRUNSKey(){
 
     for (const auto& levelData : linkedLevelsCopy)
     {
+        co_await arc::yield();
         if (levelData.from0.isErr() || levelData.levelKey == myStats.levelKey) continue;
         auto levelFrom0Stats = levelData.from0.unwrap();
         StatsManager::mergeMapsAdd(deaths, levelFrom0Stats.runs);
@@ -2146,7 +2212,7 @@ UpdateFuture DTLayer::onSAttKey(){
     co_return Ok(std::to_string(attempts));
 }
 
-void DTLayer::foreachLinkedLevel(const std::function<void(LevelData&)>& onLevelVisit){
+void DTLayer::foreachLinkedLevel(geode::Function<void(LevelData&)> onLevelVisit){
     if (m_MyLevelStats.isErr()) return;
     auto& myStats = m_MyLevelStats.unwrap();
 

@@ -1,7 +1,7 @@
 #include "DTCCTextInputNode.hpp"
 
-void DTCCTextInputNode::setCallback(const std::function<void(const std::string&)>& callback){
-    m_fields->callback = callback;
+void DTCCTextInputNode::setCallback(geode::Function<void(const std::string&)> callback){
+    m_fields->callback = std::move(callback);
 }
 
 bool DTCCTextInputNode::onTextFieldInsertText(cocos2d::CCTextFieldTTF* pSender, char const* text, int nLen, cocos2d::enumKeyCodes keyCodes){

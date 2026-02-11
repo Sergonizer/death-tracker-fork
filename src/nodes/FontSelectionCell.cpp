@@ -1,8 +1,8 @@
 #include "FontSelectionCell.hpp"
 
-FontSelectionCell* FontSelectionCell::create(const std::string& font, const std::function<void(FontSelectionCell* onSelected)>& onFontChosen){
+FontSelectionCell* FontSelectionCell::create(const std::string& font, geode::Function<void(FontSelectionCell* onSelected)> onFontChosen){
     auto ret = new FontSelectionCell();
-    if (ret && ret->init(font, onFontChosen)) {
+    if (ret && ret->init(font, std::move(onFontChosen))) {
         ret->autorelease();
     } else {
         delete ret;
@@ -11,7 +11,7 @@ FontSelectionCell* FontSelectionCell::create(const std::string& font, const std:
     return ret;
 }
 
-bool FontSelectionCell::init(const std::string& font, const std::function<void(FontSelectionCell* onSelected)>& onFontChosen){
+bool FontSelectionCell::init(const std::string& font, geode::Function<void(FontSelectionCell* onSelected)> onFontChosen){
     if (!CCMenu::init()) return false;
 
     this->setContentSize({135, 60});
@@ -48,7 +48,7 @@ bool FontSelectionCell::init(const std::string& font, const std::function<void(F
     this->addChild(useBtn);
 
     this->font = font;
-    this->onFontChosen = onFontChosen;
+    this->onFontChosen = std::move(onFontChosen);
 
     return true;
 }

@@ -21,8 +21,8 @@ class SaveOptions : public OptionsNode, public FLAlertLayerProtocol {
 
         void FLAlert_Clicked(FLAlertLayer* layer, bool btn2) override;
 
-        void createChoiceAlert(const std::string& title, const std::string& desc, const std::string& btn1, const std::string& btn2, const std::function<void(bool)>& callback);
-        std::map<FLAlertLayer*, std::function<void(bool)>> choiceAlertsMap{};
+        void createChoiceAlert(const std::string& title, const std::string& desc, const std::string& btn1, const std::string& btn2, geode::Function<void(bool)> callback);
+        std::map<FLAlertLayer*, geode::Function<void(bool)>> choiceAlertsMap{};
 
         SimpleToggler* ultimitedBackupsToggler;
         TextInput* maxBackupsInput;

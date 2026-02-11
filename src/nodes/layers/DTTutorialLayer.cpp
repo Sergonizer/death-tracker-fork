@@ -56,7 +56,7 @@ DTTutorialLayer* DTTutorialLayer::appendDialogue(DialogObject* dialogue){
         .dialogue = dialogue
     };
     
-    allSegments.push_back(segment);
+    allSegments.push_back(std::move(segment));
 
     return this;
 }
@@ -78,13 +78,13 @@ DTTutorialLayer* DTTutorialLayer::joinTextToHighlight(const std::string& text, f
     return insertJoinTextToHighlight(allSegments.size() - 1, text, size, alignment);
 }
 
-DTTutorialLayer* DTTutorialLayer::joinCallback(const std::function<void()>& callback, bool beforeDialogue){
+DTTutorialLayer* DTTutorialLayer::joinCallback(geode::Function<void()> callback, bool beforeDialogue){
     if (!allSegments.size()) return this;
 
     if (beforeDialogue)
-        allSegments[allSegments.size() - 1].beforeCallback = callback;
+        allSegments[allSegments.size() - 1].beforeCallback = std::move(callback);
     else
-        allSegments[allSegments.size() - 1].afterCallback = callback;
+        allSegments[allSegments.size() - 1].afterCallback = std::move(callback);
 
     return this;
 }

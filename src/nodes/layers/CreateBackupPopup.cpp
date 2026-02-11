@@ -13,6 +13,7 @@ CreateBackupPopup* CreateBackupPopup::create() {
 
 bool CreateBackupPopup::init() {
     auto winSize = CCDirector::sharedDirector()->getWinSize();
+    // @geode-ignore(unknown-resource)
     if (!Popup::init(250, 120, "geode.loader/GE_square01.png"))
         return false;
     setTitle("Create Backup");

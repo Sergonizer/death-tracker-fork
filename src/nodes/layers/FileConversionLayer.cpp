@@ -12,6 +12,7 @@ FileConversionLayer* FileConversionLayer::create() {
 }
 
 bool FileConversionLayer::init() {
+    // @geode-ignore(unknown-resource)
     if (!Popup::init(250.f, 150.f, "geode.loader/GE_square01.png"))
         return false;
     auto winSize = CCDirector::sharedDirector()->getWinSize();

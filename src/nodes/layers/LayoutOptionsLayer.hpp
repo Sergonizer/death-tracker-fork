@@ -20,7 +20,7 @@ class LayoutOptionsLayer : public CCLayer {
             return editedLabel.has_value() || editedColumn.has_value();
         }
 
-        std::function<void()> onBackedOut = NULL;
+        geode::Function<void()> onBackedOut = NULL;
 
         void keyBackClicked() override;
 
@@ -54,7 +54,7 @@ class LayoutOptionsLayer : public CCLayer {
         void scaleSliderChanged(CCObject*);
         Slider* scaleSlider;
         
-        std::function<void(cocos2d::ccColor4B const&)> colorChangeFunc = NULL;
+        geode::Function<void(cocos2d::ccColor4B const&)> colorChangeFunc = NULL;
         
         void onAlignmentChanged(CCObject* sender);
         CCMenu* alignmentMenu;

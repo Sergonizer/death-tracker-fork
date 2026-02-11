@@ -23,7 +23,7 @@ class GraphHolder : public CCNode {
         void removeGraph(const std::string& graphName);
         void changeGraphName(const std::string& oldName, const std::string& newName);
 
-        void setToAllGraphs(const std::function<void(DTGraphNode*)>& graphSetFunction);
+        void setToAllGraphs(geode::Function<void(DTGraphNode*)> graphSetFunction);
 
         SessionSelector* sessionSelector;
 

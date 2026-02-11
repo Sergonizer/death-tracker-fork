@@ -9,8 +9,8 @@ bool SpecialKey::compareToKey(const std::string& otherKey){
     return this->key == otherKey;
 }
 
-void SpecialKey::setUpdateFunction(const std::function<UpdateFuture()>& task){
-    this->updateFunction = task;
+void SpecialKey::setUpdateFunction(geode::Function<UpdateFuture()> task){
+    this->updateFunction = std::move(task);
 }
 
 void SpecialKey::updateContent(){
@@ -41,12 +41,12 @@ UpdateFuture SpecialKey::updateFutureRunner(){
     co_return value;
 }
 
-void SpecialKey::setUpdateCompletedCallback(const std::function<void(const std::shared_ptr<SpecialKey>&)>& callback){
-    this->updateCompletedCallback = callback;
+void SpecialKey::setUpdateCompletedCallback(geode::Function<void(const std::shared_ptr<SpecialKey>&)> callback){
+    this->updateCompletedCallback = std::move(callback);
 }
 
-void SpecialKey::setUpdateStartedCallback(const std::function<void(const std::shared_ptr<SpecialKey>&)>& callback){
-    this->updateStartedCallback = callback;
+void SpecialKey::setUpdateStartedCallback(geode::Function<void(const std::shared_ptr<SpecialKey>&)> callback){
+    this->updateStartedCallback = std::move(callback);
 }
 
 void SpecialKey::onUpdateCompleted(UpdateFuture::Output val){

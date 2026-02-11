@@ -34,8 +34,8 @@ struct HighlightText{
 };
 
 struct TutorialSegment{
-    std::function<void()> beforeCallback = NULL;
-    std::function<void()> afterCallback = NULL;
+    geode::Function<void()> beforeCallback = NULL;
+    geode::Function<void()> afterCallback = NULL;
 
     DialogObject* dialogue = nullptr;
     std::optional<TutorialBoxPlacement> alignment = std::nullopt;
@@ -61,7 +61,7 @@ class DTTutorialLayer : public CCLayer, public DialogDelegate {
         DTTutorialLayer* joinTransform(TutorialBoxPlacement alignment, float boxScale = 1);
         DTTutorialLayer* joinHighlight(CCNode* targetObject, float delayTime = 0, bool allowTouches = false);
         DTTutorialLayer* joinTextToHighlight(const std::string& text, float size = 1, TutorialTextPlacement alignment = TutorialTextPlacement::TTTop);
-        DTTutorialLayer* joinCallback(const std::function<void()>& callback, bool beforeDialogue);
+        DTTutorialLayer* joinCallback(geode::Function<void()> callback, bool beforeDialogue);
 
         DTTutorialLayer* insertHighlight(int dialogueIndex, CCNode* targetObject, float delayTime = 0, bool allowTouches = false);
         DTTutorialLayer* insertJoinTextToHighlight(int dialogueIndex, const std::string& text, float size = 1, TutorialTextPlacement alignment = TutorialTextPlacement::TTTop);
