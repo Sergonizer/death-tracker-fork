@@ -7,12 +7,12 @@
 
 using namespace geode::prelude;
 
-using DeathStringTask = Task<Result<std::vector<DeathInfo>>>;
-using ResultTask = Task<Result<>>;
+using DeathStringFuture = arc::Future<Result<std::vector<DeathInfo>>>;
+using ResultFuture = arc::Future<Result<>>;
 
-class DTLayer : public Popup<GJGameLevel* const&>, public TextInputDelegate, public FLAlertLayerProtocol, public ColorPickPopupDelegate {
+class DTLayer : public Popup, public TextInputDelegate, public FLAlertLayerProtocol {
     protected:
-        bool setup(GJGameLevel* const& Level) override;
+        bool init(GJGameLevel* const& Level);
 
     public:
         static DTLayer* create(GJGameLevel* const& Level);
@@ -80,7 +80,7 @@ class DTLayer : public Popup<GJGameLevel* const&>, public TextInputDelegate, pub
     private:
         void update(float delta) override;
 
-        void updateColor(cocos2d::ccColor4B const& color) override;
+        void updateColor(cocos2d::ccColor4B const& color);
 
         //text
 
@@ -90,13 +90,13 @@ class DTLayer : public Popup<GJGameLevel* const&>, public TextInputDelegate, pub
         CCNode* m_TextCont = nullptr;
 
         //gets and processes the saved deaths for the current level, outputs result into 'm_DeathsInfo'
-        DeathStringTask CreateDeathsInfo(const Deaths& deaths, const NewBests& newBests);
+        DeathStringFuture CreateDeathsInfo(const Deaths& deaths, const NewBests& newBests);
         //gets and processes the saved runs for the current level, outputs result into 'm_RunInfo'
-        DeathStringTask CreateRunsInfo(const Runs runs);
+        DeathStringFuture CreateRunsInfo(const Runs runs);
         //uses the deaths and runs info to create a long string to be displayed in the main page
-        ResultTask refreshStrings();
+        ResultFuture refreshStrings();
         //uses the deaths and runs info to create a long string to be displayed in the main page, this creates the string specifically for the current session selected
-        ResultTask updateSessionString(const int& session);
+        ResultFuture updateSessionString(const int& session);
 
         //updates the playtime based on the given deaths and the current levels length
         //@param deaths the deaths to mesure from
@@ -217,9 +217,9 @@ class DTLayer : public Popup<GJGameLevel* const&>, public TextInputDelegate, pub
         CCSprite* levelSettingsBSArrow;
 
         //disables the refresh circle once a refresh process is finished
-        void onRefreshFinished(ResultTask::Event* event);
+        void onRefreshFinished(ResultFuture::Output out);
 
-        EventListener<ResultTask> refreshListener;
+        async::TaskHolder<ResultFuture::Output> refreshListener;
         LoadingCircle* refreshLoadingCircle = nullptr;
 
         //data

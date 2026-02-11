@@ -10,17 +10,18 @@
 #include "../layers/DTLevelSpecificSettingsLayer.hpp"
 
 DTLayer* DTLayer::create(GJGameLevel* const& Level) {
-    auto ret = new DTLayer();
-    if (ret && ret->initAnchored(368, 280, Level, "square01_001.png", {0.f, 0.f, 94.f, 94.f})) {
-        ret->autorelease();
-        return ret;
+    auto popup = new DTLayer;
+    if (popup->init(level)) {
+        popup->autorelease();
+        return popup;
     }
-    CC_SAFE_DELETE(ret);
+    delete popup;
     return nullptr;
 }
 
-bool DTLayer::setup(GJGameLevel* const& level) {
-    //create trackerLayer
+bool DTLayer::init(GJGameLevel* const& level) {
+    if (!Popup::init(368, 280, "square01_001.png", {0.f, 0.f, 94.f, 94.f}))
+        return false;
     auto winSize = CCDirector::sharedDirector()->getWinSize();
 
     m_Level = level;
@@ -897,166 +898,160 @@ std::string DTLayer::modifyString(std::string ToModify){
     return ToModify;
 }
 
-ResultTask DTLayer::refreshStrings(){
-    auto DeathsInfoRes = DTLayer::CreateDeathsInfo(m_SharedLevelStats.deaths, m_SharedLevelStats.newBests).chain([&](DeathStringTask::Value* value) -> ResultTask {
-        if (!value) return ResultTask::immediate(Err("Failed to get deaths string"));
-        if (value->isErr()){
-            deathsString = "No Saved Attempts!";
+ResultFuture DTLayer::refreshStrings(){
+    auto value = co_await DTLayer::CreateDeathsInfo(m_SharedLevelStats.deaths, m_SharedLevelStats.newBests);
+
+    if (!value) co_return Err("Failed to get deaths string");
+    if (value.isErr()){
+        deathsString = "No Saved Attempts!";
+    }
+    else{
+        m_DeathsInfo = value.unwrap();
+
+        DTLayer::updatePlaytime(m_DeathsInfo, false);
+
+        std::string mergedString = "No Saved Attempts! ";
+        for (const auto& deathI : m_DeathsInfo)
+        {
+            if (deathI.run.end < m_MyLevelStats.hideUpto) continue;
+            if (mergedString == "No Saved Attempts! ")
+                mergedString = "";
+
+            if (deathI.isNewBest)
+                mergedString += "<nbc>";
+            mergedString += fmt::format("{}% x{}\n", deathI.run.end, deathI.deaths);
         }
-        else{
-            m_DeathsInfo = value->unwrap();
+        mergedString = mergedString.substr(0, mergedString.size() - 1);
+        deathsString = mergedString;
+    }
 
-            DTLayer::updatePlaytime(m_DeathsInfo, false);
-
-            std::string mergedString = "No Saved Attempts! ";
-            for (const auto& deathI : m_DeathsInfo)
-            {
-                if (deathI.run.end < m_MyLevelStats.hideUpto) continue;
-                if (mergedString == "No Saved Attempts! ")
-                    mergedString = "";
-
-                if (deathI.isNewBest)
-                    mergedString += "<nbc>";
-                mergedString += fmt::format("{}% x{}\n", deathI.run.end, deathI.deaths);
-            }
-            mergedString = mergedString.substr(0, mergedString.size() - 1);
-            deathsString = mergedString;
-        }
-
-        
-        return DTLayer::CreateRunsInfo(m_SharedLevelStats.runs).chain([&](DeathStringTask::Value* value) -> ResultTask {
-            if (!value) return ResultTask::immediate(Err("Failed to get deaths string"));
-            if (value->isErr()){
-                RunString = "No Saved Runs!";
-            }
-            else{
-                m_RunInfo = value->unwrap();
-
-                DTLayer::updatePlaytime(m_RunInfo, true);
-
-                std::string mergedString = "No Saved Runs! ";
-                for (const auto& runI : m_RunInfo)
-                {
-                    if (runI.run.end - runI.run.start < m_MyLevelStats.hideRunLength) continue;
-                    if (mergedString == "No Saved Runs! ")
-                        mergedString = "";
-
-                    mergedString += fmt::format("{}% - {}% x{}\n", runI.run.start, runI.run.end, runI.deaths);
-                }
-                mergedString = mergedString.substr(0, mergedString.size() - 1);
-                RunString = mergedString;
-            }
-
-            
-            return DTLayer::updateSessionString(m_SessionSelected);
-        });
-    });
-
-    return DeathsInfoRes;
-}
-
-DeathStringTask DTLayer::CreateDeathsInfo(const Deaths& deaths, const NewBests& newBests){
-    return DeathStringTask::run([&, deaths, newBests](auto progress, auto hasBeenCancelled) -> DeathStringTask::Result {
-        if (!m_Level) return Err("invalid level");
-        if (deaths.size() == 0) return Err("No Saved Progress");
-
-        int totalDeaths = 0;
-        int bestRun = 0;
-        std::map<int, int> sortedDeaths{};
-
-        // sort the deaths
-        for (const auto& [percentKey, count] : deaths) {
-            GEODE_UNWRAP_INTO(int percentInt, geode::utils::numFromString<int>(percentKey));
-
-            sortedDeaths.insert(std::make_pair(percentInt, count));
-            totalDeaths += count;
-
-            if (percentInt > bestRun) bestRun = percentInt;
-        }
-
-        // create output
-        int offset = m_Level->m_normalPercent.value() == 100
-            ? 1
-            : 0;
-
-        std::vector<DeathInfo> output{};
-
-        for (const auto& [percent, count] : sortedDeaths) {
-            // calculate pass rate
-            totalDeaths -= count;
-
-            float passCount = totalDeaths;
-            float passRate = (passCount + offset) / (passCount + count + offset) * 100;
-
-            bool nb = newBests.contains(percent);
-                
-            if (percent == bestRun){
-                if (bestRun != 100)
-                    passRate = 0;
-                else
-                    passRate = 100;
-            }
-
-            auto info = DeathInfo(Run(0, percent), nb, count, passRate);
-            output.push_back(info);
-        }
-
-        if (output.size() == 0) return Err("No Saved Progress");
-        
-        std::ranges::sort(output, [](const DeathInfo a, const DeathInfo b) {
-            return a.run.end < b.run.end;
-        });
-
-        return Ok(output);
-    });
-}
-
-DeathStringTask DTLayer::CreateRunsInfo(const Runs runs){
-    return DeathStringTask::run([&, runs](auto progress, auto hasBeenCancelled) -> DeathStringTask::Result  {
-        if (!m_Level) return Err("invalid level");
-        if (runs.size() == 0) return Err("No Saved Progress");
-
-        std::map<int, int> totalDeaths{};
-        std::vector<std::tuple<std::string, int>> sortedRuns{};
-
-        for (const auto [runKey, count] : runs){
-            sortedRuns.push_back(std::make_tuple(runKey, count));
-            
-            Run currRun = StatsManager::splitRunKey(runKey);
-
-            totalDeaths[currRun.start] += count;
-        }
-
-        // sort the runs
-        std::ranges::sort(sortedRuns, [](const std::tuple<std::string, int> a, const std::tuple<std::string, int> b) {
-            auto runA = StatsManager::splitRunKey(std::get<0>(a));
-            auto runB = StatsManager::splitRunKey(std::get<0>(b));
-
-            // start is equal, compare end
-            if (runA.start == runB.start) return runA.end < runB.end;
-            return runA.start < runB.start;
-        });
-
-        // create output
-        std::vector<DeathInfo> output{};
-
-        for (const auto [runKey, count] : sortedRuns) {
-
-            auto splittedRun = StatsManager::splitRunKey(runKey); 
-
-            totalDeaths[splittedRun.start] -= count;
-
-            float passCount = totalDeaths[splittedRun.start];
-            float passRate = (passCount) / (passCount + count) * 100;
-
-            auto info = DeathInfo(splittedRun, false, count, passRate);
-
-            output.push_back(info);
-        }
-
-        return Ok(output);
-    });
+    auto value2 = co_await DTLayer::CreateRunsInfo(m_SharedLevelStats.runs);
     
+    if (!value2) co_return Err("Failed to get deaths string");
+    if (value2.isErr()){
+        RunString = "No Saved Runs!";
+    }
+    else{
+        m_RunInfo = value2.unwrap();
+
+        DTLayer::updatePlaytime(m_RunInfo, true);
+
+        std::string mergedString = "No Saved Runs! ";
+        for (const auto& runI : m_RunInfo)
+        {
+            if (runI.run.end - runI.run.start < m_MyLevelStats.hideRunLength) continue;
+            if (mergedString == "No Saved Runs! ")
+                mergedString = "";
+
+            mergedString += fmt::format("{}% - {}% x{}\n", runI.run.start, runI.run.end, runI.deaths);
+        }
+        mergedString = mergedString.substr(0, mergedString.size() - 1);
+        RunString = mergedString;
+    }
+
+    
+    co_return DTLayer::updateSessionString(m_SessionSelected);
+}
+
+DeathStringFuture DTLayer::CreateDeathsInfo(const Deaths& deaths, const NewBests& newBests){
+    if (!m_Level) co_return Err("invalid level");
+    if (deaths.size() == 0) co_return Err("No Saved Progress");
+
+    int totalDeaths = 0;
+    int bestRun = 0;
+    std::map<int, int> sortedDeaths{};
+
+    // sort the deaths
+    for (const auto& [percentKey, count] : deaths) {
+        auto numRes = geode::utils::numFromString<int>(percentKey);
+        if (numRes.isErr()) co_return Err(numRes.unwrapErr());
+        int percentInt = numRes.unwrap();
+
+        sortedDeaths.insert(std::make_pair(percentInt, count));
+        totalDeaths += count;
+
+        if (percentInt > bestRun) bestRun = percentInt;
+    }
+
+    // create output
+    int offset = m_Level->m_normalPercent.value() == 100
+        ? 1
+        : 0;
+
+    std::vector<DeathInfo> output{};
+
+    for (const auto& [percent, count] : sortedDeaths) {
+        // calculate pass rate
+        totalDeaths -= count;
+
+        float passCount = totalDeaths;
+        float passRate = (passCount + offset) / (passCount + count + offset) * 100;
+
+        bool nb = newBests.contains(percent);
+            
+        if (percent == bestRun){
+            if (bestRun != 100)
+                passRate = 0;
+            else
+                passRate = 100;
+        }
+
+        auto info = DeathInfo(Run(0, percent), nb, count, passRate);
+        output.push_back(info);
+    }
+
+    if (output.size() == 0) co_return Err("No Saved Progress");
+    
+    std::ranges::sort(output, [](const DeathInfo a, const DeathInfo b) {
+        return a.run.end < b.run.end;
+    });
+
+    co_return Ok(output);
+}
+
+DeathStringFuture DTLayer::CreateRunsInfo(const Runs runs){
+    if (!m_Level) co_return Err("invalid level");
+    if (runs.size() == 0) co_return Err("No Saved Progress");
+
+    std::map<int, int> totalDeaths{};
+    std::vector<std::tuple<std::string, int>> sortedRuns{};
+
+    for (const auto [runKey, count] : runs){
+        sortedRuns.push_back(std::make_tuple(runKey, count));
+        
+        Run currRun = StatsManager::splitRunKey(runKey);
+
+        totalDeaths[currRun.start] += count;
+    }
+
+    // sort the runs
+    std::ranges::sort(sortedRuns, [](const std::tuple<std::string, int> a, const std::tuple<std::string, int> b) {
+        auto runA = StatsManager::splitRunKey(std::get<0>(a));
+        auto runB = StatsManager::splitRunKey(std::get<0>(b));
+
+        // start is equal, compare end
+        if (runA.start == runB.start) return runA.end < runB.end;
+        return runA.start < runB.start;
+    });
+
+    // create output
+    std::vector<DeathInfo> output{};
+
+    for (const auto [runKey, count] : sortedRuns) {
+
+        auto splittedRun = StatsManager::splitRunKey(runKey); 
+
+        totalDeaths[splittedRun.start] -= count;
+
+        float passCount = totalDeaths[splittedRun.start];
+        float passRate = (passCount) / (passCount + count) * 100;
+
+        auto info = DeathInfo(splittedRun, false, count, passRate);
+
+        output.push_back(info);
+    }
+
+    co_return Ok(output);    
 }
 
 //better info time calc
@@ -1521,14 +1516,14 @@ void DTLayer::editnbcColor(CCObject*){
     openednbLast = true;
     colorSelectnb = geode::ColorPickPopup::create({colorSpritenb->getColor().r, colorSpritenb->getColor().g, colorSpritenb->getColor().b, 255});
     colorSelectnb->show();
-    colorSelectnb->setDelegate(this);
+    colorSelectnb->setCallback([&](auto color){this->updateColor(color);});
 }
 
 void DTLayer::editsbcColor(CCObject*){
     openednbLast = false;
     colorSelectsb = geode::ColorPickPopup::create({colorSpritesb->getColor().r, colorSpritesb->getColor().g, colorSpritesb->getColor().b, 255});
     colorSelectsb->show();
-    colorSelectsb->setDelegate(this);
+    colorSelectsb->setCallback([&](auto color){this->updateColor(color);});
 }
 
 void DTLayer::onSpecificSettings(CCObject*){
@@ -1615,36 +1610,39 @@ void DTLayer::updateColor(cocos2d::ccColor4B const& color){
 
 void DTLayer::refreshAll(bool moveToTop){
     refreshLoadingCircle->setVisible(true);
-    auto combinedTasks = refreshStrings().chain([&, moveToTop](ResultTask::Value* value) -> ResultTask {
-        if (value == nullptr) return ResultTask::immediate(Err("failed to refresh!"));
-        if (value->isErr()) return ResultTask::immediate(Err(value->unwrapErr()));
+        refreshListener.spawn([&, moveToTop]() -> ResultFuture {
+        auto value = co_await updateSessionString(m_SessionSelected);
+
+        if (value == nullptr) co_return Err("failed to refresh!");
+        if (value->isErr()) co_return Err(value->unwrapErr());
 
         DTLayer::RefreshText(moveToTop);
 
-        return ResultTask::immediate(Ok());
+        co_return Ok();
+    },
+    [&](ResultFuture::Output out){
+        this->onRefreshFinished(out);
     });
-
-    refreshListener.bind(this, &DTLayer::onRefreshFinished);
-
-    refreshListener.setFilter(combinedTasks);
 }
 
 void DTLayer::refreshSession(bool moveToTop){
     refreshLoadingCircle->setVisible(true);
-    auto combinedTasks = updateSessionString(m_SessionSelected).chain([&, moveToTop](ResultTask::Value* value) -> ResultTask {
-        if (value == nullptr) return ResultTask::immediate(Err("failed to refresh!"));
-        if (value->isErr()) return ResultTask::immediate(Err(value->unwrapErr()));
+
+    refreshListener.spawn([&, moveToTop]() -> ResultFuture {
+        auto value = co_await updateSessionString(m_SessionSelected);
+
+        if (value == nullptr) co_return Err("failed to refresh!");
+        if (value->isErr()) co_return Err(value->unwrapErr());
 
         DTLayer::RefreshText(moveToTop);
 
-        return ResultTask::immediate(Ok());
+        co_return Ok();
+    },
+    [&](ResultFuture::Output out){
+        this->onRefreshFinished(out);
     });
-
-    refreshListener.bind(this, &DTLayer::onRefreshFinished);
-
-    refreshListener.setFilter(combinedTasks);
 }
 
-void DTLayer::onRefreshFinished(ResultTask::Event* event){
+void DTLayer::onRefreshFinished(ResultFuture::Output event){
     refreshLoadingCircle->setVisible(false);
 }
