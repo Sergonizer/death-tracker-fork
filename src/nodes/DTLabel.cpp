@@ -8,6 +8,7 @@
 #include <utils/CCTextAreaFadeTo.hpp>
 
 #include <regex>
+#include <arc/task/Yield.hpp>
 
 float DTLabel::labelTitleHeight = 15;
 float DTLabel::moveThreshold = 5;
@@ -454,13 +455,10 @@ void DTLabel::ccTouchMoved(CCTouch* touch, CCEvent*){
 }
 
 void DTLabel::onSettings(){
-    // log::info("opened settings for label {}", name);
     DTLayer::get()->setOptionsLayerTo(this);
 }
 
 void DTLabel::onMoveBegan(){
-    // log::info("started moving label {}", name);
-
     holdersSave = holders;
 
     removeFromColumns();
@@ -487,8 +485,6 @@ void DTLabel::onMoveUpdate(float dt){
 }
 
 void DTLabel::onMoveEnded(){
-    // log::info("ended moving label {}", name);
-
     auto res = DTLayer::get()->getColumnLayerFromPosition(this->getParent()->convertToWorldSpace(currentTouchPosition + ccp(-this->getContentWidth(), this->getContentHeight()) / 2));
 
     if (res.first == nullptr){
@@ -551,31 +547,51 @@ std::set<LayoutColumn*, DTLabel::ColumnComperator> DTLabel::getHolders(){
 }
 
 void DTLabel::setLabelText(const std::string& text){
-    info.text = text;    
+    info.text = text;
     labelText->setText(text);
 
-    modifyKeys();
+    auto self = this;
+    self->retain();
+
+    modifyListener.spawn(modifyKeys(), [self](std::optional<std::string> opt){
+        if (!self) return;
+
+        self->loadingCircle->setVisible(false);
+        if (!opt) {
+            self->release();
+            return;
+        }
+
+        self->labelText->setText(opt.value());
+        self->release();
+    });
 }
 
-void DTLabel::modifyKeys(){
-    if (currentlyLoadingFor.size() != 0) return;
-    auto text = labelText->getText();
+arc::Future<std::optional<std::string>> DTLabel::modifyKeys(){
+    if (currentlyLoadingFor.size() != 0) co_return std::nullopt;
+
+    auto text = co_await async::waitForMainThread<std::string>([self = this]() -> std::string {
+        if (!self) return "";
+        self->loadingCircle->setVisible(true);
+        return self->labelText->getText();
+    });
+    if (!text.has_value()) {
+        co_return std::nullopt;
+    }
     
     keysUsed.clear();
-
-    //log::info("modifying {}", info.labelName);
     
-    auto modifiedText = modifyStrRecursive(text);
+    co_await arc::yield();
+    auto modifiedText = co_await modifyStrRecursive(text.value());
+    co_await arc::yield();
     if (modifiedText.length() != 0 && modifiedText[modifiedText.length() - 1] == '\n') modifiedText.push_back(' ');
-    labelText->setText(modifiedText);
-    //log::info("ended, {} keys exist | {}", keysUsed.size(), info.labelName);
+    
+    co_return std::make_optional(modifiedText);
 }
 
 void DTLabel::setLoading(const std::shared_ptr<SpecialKey>& key){
-    if (currentlyLoadingFor.contains(key) || !keysUsed.contains(key->getKey())) return;
+    if (currentlyLoadingFor.contains(key) || (!keysUsed.contains(key->getKey()) && keysUsed.size())) return;
     currentlyLoadingFor.insert(key);
-
-    //log::info("started loading for {}", key->getKey());
 
     loadingCircle->setVisible(true);
 }
@@ -583,12 +599,24 @@ void DTLabel::completeLoading(const std::shared_ptr<SpecialKey>& key){
     if (!currentlyLoadingFor.contains(key)) return;
     currentlyLoadingFor.erase(key);
 
-    //log::info("ended loading for {}", key->getContent());
-
     if (currentlyLoadingFor.size() == 0){
         loadingCircle->setVisible(false);
         labelText->setText(info.text);
-        modifyKeys();
+        auto self = this;
+        self->retain();
+
+        modifyListener.spawn(modifyKeys(), [self](std::optional<std::string> opt){
+            if (!self) return;
+
+            self->loadingCircle->setVisible(false);
+            if (!opt) {
+                self->release();
+                return;
+            }
+
+            self->labelText->setText(opt.value());
+            self->release();
+        });
     }
 }
 
@@ -657,7 +685,7 @@ void DTLabel::setEditable(bool editable){
     isEditable = editable;
 }
 
-std::string DTLabel::modifyStrRecursive(const std::string& str){
+arc::Future<std::string> DTLabel::modifyStrRecursive(const std::string& str){
     std::regex specialKeyRegex(R"(\{([A-Za-z0-9_\\]+)(?:-([^{}]*))?\})");
 
     std::sregex_iterator begin(str.begin(), str.end(), specialKeyRegex);
@@ -667,14 +695,13 @@ std::string DTLabel::modifyStrRecursive(const std::string& str){
 
     int lastPos = 0;
     for (auto it = begin; it != end; ++it) {
+        co_await arc::yield();
         const auto& match = *it;
 
         int matchStart = match.position();
         int matchEnd = matchStart + match.length();
 
         result += str.substr(lastPos, matchStart - lastPos);
-
-        auto dtLayer = DTLayer::get();
 
         std::string key = match.str(1);
         if (!keysUsed.contains(key)){
@@ -689,19 +716,23 @@ std::string DTLabel::modifyStrRecursive(const std::string& str){
 
         std::string value = match.size() > 2 ? match.str(2) : "";
 
-        if (dtLayer->specialStrings.contains(key)) {
-            result += modifyStrRecursive(dtLayer->specialStrings.at(key)->getContent());
+        auto dtLayer = DTLayer::get();
+        if (dtLayer != nullptr && dtLayer->specialStrings.contains(key)) {
+            result += co_await modifyStrRecursive(dtLayer->specialStrings.at(key)->getContent());
         }
         else {
             result += match.str();
         }
 
         lastPos = matchEnd;
+
+        co_await arc::yield();
     }
 
     result += str.substr(lastPos);
 
-    return result;
+    co_await arc::yield();
+    co_return result;
 }
 void DTLabel::setExpandable(bool enabled){
     isExpandable = enabled;

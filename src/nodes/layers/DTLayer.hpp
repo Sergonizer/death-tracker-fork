@@ -82,7 +82,7 @@ class DTLayer : public Popup {
         void closeOptionsLayer();
 
         void removeColumn(LayoutColumn* column);
-        bool cornerOnNextOrganization;
+        bool cornerOnNextOrganization = true;
         void saveCurrentLayout();
         bool isEditingLayout = false;
 

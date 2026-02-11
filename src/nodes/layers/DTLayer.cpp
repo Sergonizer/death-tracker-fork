@@ -9,6 +9,7 @@
 
 #include <nodes/TutorialButton.hpp>
 #include <arc/task/Yield.hpp>
+#include <arc/time/Sleep.hpp>
 
 float DTLayer::transitionTime = .35f;
 
@@ -902,6 +903,7 @@ void DTLayer::organizeLayout(){
 
             scrollLayer->setLimitsHeight(cappedHeight);
             columnHolder->setPositionY(cappedHeight);
+            columnHolder->updateLayout();
             labelsHolder->setPosition(columnHolder->getPosition());
 
             float delta = 0;
@@ -982,32 +984,23 @@ void DTLayer::organizeLayout(){
             }
 
             if (firstTime == 0){
-                canOrganize = false;
-                orgCooldown.spawn(
-                    []() -> arc::Future<> {
-                        co_await arc::yield();
-                    },
-                    [&](){
-                        canOrganize = true;
-                        if (firstTime == 0){
-                            firstTime = 1;
-                            this->organizeLayout();
-                        }
-                    }
-                );
+                firstTime = 1;
+                scrollLayer->setVisible(true);
+                lc->removeMeAndCleanup();
+                cornerOnNextOrganization = false;
+                
+                this->organizeLayout();
             }
             else if (firstTime == 1){
                 firstTime = 2;
 
-                scrollLayer->setVisible(true);
                 scrollLayer->moveToCorner(true, false);
-                lc->removeMeAndCleanup();
             }
         }
     );
 }
 
-organizationFuture DTLayer::organizeLayoutTask(){
+organizationFuture DTLayer::organizeLayoutTask(){    
     struct LabelData {
         DTLabel* label;
         std::set<LayoutColumn*> holders;
@@ -1851,6 +1844,7 @@ UpdateFuture DTLayer::onGeneralKey(){
 
     for (const auto& levelData : linkedLevelsCopy)
     {
+        co_await arc::yield();
         if (levelData.from0.isErr() || levelData.levelKey == myStats.levelKey) continue;
         auto levelFrom0Stats = levelData.from0.unwrap();
 
@@ -1874,21 +1868,24 @@ UpdateFuture DTLayer::onDTATTKey(){
 
     unsigned long long attempts = 0;
 
-    auto deaths = [&attempts](const Deaths& d){
-        for (const auto& [_, count] : d)
+    auto deaths = [&attempts](const Deaths& d) -> arc::Future<> {
+        for (const auto& [_, count] : d){
             attempts += count;
+            co_await arc::yield();
+        }
     };
 
-    deaths(myFrom0Stats.deaths);
-    deaths(myFrom0Stats.runs);
+    co_await deaths(myFrom0Stats.deaths);
+    co_await deaths(myFrom0Stats.runs);
 
     for (const auto& levelData : linkedLevelsCopy)
     {
+        co_await arc::yield();
         if (levelData.from0.isErr() || levelData.levelKey == myStats.levelKey) continue;
         auto levelFrom0Stats = levelData.from0.unwrap();
 
-        deaths(levelFrom0Stats.deaths);
-        deaths(levelFrom0Stats.runs);
+        co_await deaths(levelFrom0Stats.deaths);
+        co_await deaths(levelFrom0Stats.runs);
     }
 
     co_return Ok(std::to_string(attempts));
@@ -1906,6 +1903,7 @@ UpdateFuture DTLayer::onRUNSKey(){
 
     for (const auto& levelData : linkedLevelsCopy)
     {
+        co_await arc::yield();
         if (levelData.from0.isErr() || levelData.levelKey == myStats.levelKey) continue;
         auto levelFrom0Stats = levelData.from0.unwrap();
         StatsManager::mergeMapsAdd(sharedRuns, levelFrom0Stats.runs);
@@ -1924,6 +1922,8 @@ UpdateFuture DTLayer::onS0Key(){
 
     auto session = sessionRes.unwrap();
 
+    co_await arc::yield();
+
     std::string out;
     if (!createDeathsString(session.deaths, Save::getSessionF0Customazations(), out, &session.newBests, "{sbc}")) 
         co_return Err("Failed to create session from0 deaths string");
@@ -1935,6 +1935,8 @@ UpdateFuture DTLayer::onSRUNSKey(){
     if (sessionRes.isErr()) co_return Err("{}", sessionRes.unwrapErr());
 
     auto session = sessionRes.unwrap();
+
+    co_await arc::yield();
 
     std::string out;
     if (!createDeathsString(session.runs, Save::getRunsCustomazations(), out))
@@ -2066,6 +2068,8 @@ UpdateFuture DTLayer::onPTSALLSKey(){
     StatsManager::mergeMapsAdd(deaths, session.deaths);
     StatsManager::mergeMapsAdd(deaths, session.runs);
 
+    co_await arc::yield();
+
     co_return Ok(StatsManager::workingTime(calcPlaytime(deaths)));
 }
 UpdateFuture DTLayer::onPTSF0Key(){
@@ -2073,12 +2077,16 @@ UpdateFuture DTLayer::onPTSF0Key(){
     if (sessionRes.isErr()) co_return Err("{}", sessionRes.unwrapErr());
     auto session = sessionRes.unwrap();
 
+    co_await arc::yield();
+
     co_return Ok(StatsManager::workingTime(calcPlaytime(session.deaths)));
 }
 UpdateFuture DTLayer::onPTSRUNSKey(){
     auto sessionRes = loadSessionFromSave();
     if (sessionRes.isErr()) co_return Err("{}", sessionRes.unwrapErr());
     auto session = sessionRes.unwrap();
+
+    co_await arc::yield();
 
     co_return Ok(StatsManager::workingTime(calcPlaytime(session.runs)));
 }
@@ -2112,6 +2120,7 @@ UpdateFuture DTLayer::onRunsTo100Key(){
 
     for (const auto& levelData : linkedLevelsCopy)
     {
+        co_await arc::yield();
         if (levelData.from0.isErr() || levelData.levelKey == myStats.levelKey) continue;
         auto levelFrom0Stats = levelData.from0.unwrap();
         
@@ -2123,6 +2132,7 @@ UpdateFuture DTLayer::onRunsTo100Key(){
 
     for (const auto& death : deaths)
     {
+        co_await arc::yield();
         auto splitRunRes = StatsManager::splitRunKey(death.first);
         if (splitRunRes.isErr()) continue;
         auto splitRun = splitRunRes.unwrap();
@@ -2153,6 +2163,7 @@ UpdateFuture DTLayer::onBestRunsKey(){
 
     for (const auto& levelData : linkedLevelsCopy)
     {
+        co_await arc::yield();
         if (levelData.from0.isErr() || levelData.levelKey == myStats.levelKey) continue;
         auto levelFrom0Stats = levelData.from0.unwrap();
         
@@ -2164,6 +2175,7 @@ UpdateFuture DTLayer::onBestRunsKey(){
 
     for (const auto& death : deaths)
     {
+        co_await arc::yield();
         auto splitRunRes = StatsManager::splitRunKey(death.first);
         if (splitRunRes.isErr()) continue;
         auto splitRun = splitRunRes.unwrap();
@@ -2179,6 +2191,7 @@ UpdateFuture DTLayer::onBestRunsKey(){
 
     for (const auto& [bestRunStart, bestRunEnd] : bestRuns)
     {
+        co_await arc::yield();
         auto runStringRes = StatsManager::createRunKey(Run{bestRunStart, bestRunEnd});
         if (runStringRes.isErr()) continue;
         auto runString = runStringRes.unwrap();
@@ -2201,13 +2214,15 @@ UpdateFuture DTLayer::onSAttKey(){
 
     unsigned long long attempts = 0;
 
-    auto deathsCalc = [&attempts](const Deaths& d){
-        for (const auto& [_, count] : d)
+    auto deathsCalc = [&attempts](const Deaths& d) -> arc::Future<> {
+        for (const auto& [_, count] : d){
             attempts += count;
+            co_await arc::yield();
+        }
     };
 
-    deathsCalc(session.deaths);
-    deathsCalc(session.runs);
+    co_await deathsCalc(session.deaths);
+    co_await deathsCalc(session.runs);
     
     co_return Ok(std::to_string(attempts));
 }

@@ -58,7 +58,7 @@ bool DTPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
     if (session == nullptr){
         StatsManager::scheduleCreateNewSession(true);
         DTPlayLayer::updateSessionLastPlayed();
-        log::info("first session created");
+        // log::info("first session created");
         return true;
     }
 

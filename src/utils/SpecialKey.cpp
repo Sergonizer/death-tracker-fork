@@ -16,10 +16,9 @@ void SpecialKey::setUpdateFunction(geode::Function<UpdateFuture()> task){
 void SpecialKey::updateContent(){
     if (!this->updateFunction.has_value()) return;
 
-    // log::info("Starting update for special key {}, {}", this->key, updateOngoing);
+    // log::info("Starting update for special key {}, {}", this->key, updateListener.isPending());
 
-    if (!updateOngoing){
-        updateOngoing = true;
+    if (!updateListener.isPending()){
         if (this->updateStartedCallback)
             this->updateStartedCallback(this->shared_from_this());
     }
@@ -30,6 +29,7 @@ void SpecialKey::updateContent(){
     updateListener.spawn(
         updateFutureRunner(),
         [&](UpdateFuture::Output val) {
+            // log::info("completed update for {}", val);
             this->onUpdateCompleted(val);
         }
     );
@@ -57,8 +57,6 @@ void SpecialKey::onUpdateCompleted(UpdateFuture::Output val){
 
     if (this->updateCompletedCallback)
         this->updateCompletedCallback(this->shared_from_this());
-
-    updateOngoing = false;
 }
 
 void SpecialKey::cancel(){

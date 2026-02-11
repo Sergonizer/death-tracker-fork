@@ -18,8 +18,8 @@ class DTLabel : public CCMenu {
 
         void moveUpLayer();
 
-        CCPoint tempPos;
-        float tempWidth;
+        CCPoint tempPos = CCPoint{0, 0};
+        float tempWidth = 0;
 
         static float labelTitleHeight;
         static float moveThreshold;
@@ -50,7 +50,7 @@ class DTLabel : public CCMenu {
 
         void setLabelText(const std::string& text);
 
-        void modifyKeys();
+        arc::Future<std::optional<std::string>> modifyKeys();
 
         void setLoading(const std::shared_ptr<SpecialKey>& key);
         void completeLoading(const std::shared_ptr<SpecialKey>& key);
@@ -74,6 +74,8 @@ class DTLabel : public CCMenu {
         bool init(const DTLabelInfo& info);
 
         void update(float dt) override;
+
+        async::TaskHolder<std::optional<std::string>> modifyListener;
 
         bool isEditable;
 
@@ -126,7 +128,7 @@ class DTLabel : public CCMenu {
 
         CCSprite* glow;
 
-        std::string modifyStrRecursive(const std::string& str);
+        arc::Future<std::string> modifyStrRecursive(const std::string& str);
 
         bool isBeingEdited = false;
         bool isHovering;

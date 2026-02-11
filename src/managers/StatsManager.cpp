@@ -609,10 +609,6 @@ Session* StatsManager::getCurrentSession() {
     if (!m_scheduleCreateNewSession) return currentSession;
     m_scheduleCreateNewSession = false;
 
-    log::info("creating a new session!");
-
-    
-
     // the user has played the level
     // if a new session is created
     m_playedLevels.insert(levelKeyRes.unwrap());
@@ -745,7 +741,7 @@ Result<std::vector<std::pair<std::string, LevelMetadeta>>> StatsManager::getAllL
     {
         if (std::filesystem::is_directory(allLevels[i])){
             auto currentDirName = allLevels[i].parent_path().string();
-            log::info("Getting level stats for level: {}", currentDirName);
+            // log::info("Getting level stats for level: {}", currentDirName);
 
             auto currentLevel = StatsManager::getMetadata(currentDirName);
             if (currentLevel.isErr()){
