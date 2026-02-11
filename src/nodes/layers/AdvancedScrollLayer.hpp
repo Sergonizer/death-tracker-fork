@@ -18,8 +18,6 @@ class AdvancedScrollLayer : public CCLayer {
         CCScrollLayerExt* widthScrollExt;
         CCScrollLayerExt* heightScrollExt;
 
-        float getMinimumPosition(bool horizontal);
-        float getMaximumPosition(bool horizontal);
         void updateProgressBars();
         void updatePositionByProgBars(float dt);
 
@@ -97,6 +95,9 @@ class AdvancedScrollLayer : public CCLayer {
         float maxZoom = .5f;
 
         float zoomSensetivity = 0.01f;
+
+        float getMinimumPosition(bool horizontal);
+        float getMaximumPosition(bool horizontal);
 
         ~AdvancedScrollLayer();
 };

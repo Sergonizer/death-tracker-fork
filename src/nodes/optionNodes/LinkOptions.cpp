@@ -299,7 +299,9 @@ void LinkOptions::getAllLevelsData(){
 }
 
 void LinkOptions::onGetLevelsProgress(const GetLevelsTaskProgress& progress){
-    loadingLabel->setString(fmt::format("{}\n{}/{}", progress.message, progress.current, progress.max).c_str());
+    geode::queueInMainThread([&](){
+        loadingLabel->setString(fmt::format("{}\n{}/{}", progress.message, progress.current, progress.max).c_str());
+    });
 }
 
 void LinkOptions::onGetLevels(GetLevelsFuture::Output out){

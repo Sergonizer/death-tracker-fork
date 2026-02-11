@@ -18,7 +18,6 @@ DTLevelSpecificSettingsLayer* DTLevelSpecificSettingsLayer::create() {
     }
     delete popup;
     return nullptr;
-    auto ret = new DTLevelSpecificSettingsLayer();
 }
 
 bool DTLevelSpecificSettingsLayer::init() {

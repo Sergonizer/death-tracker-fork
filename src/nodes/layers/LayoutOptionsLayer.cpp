@@ -816,7 +816,7 @@ void LayoutOptionsLayer::onSpecialKeysClicked(CCObject*){
 void LayoutOptionsLayer::onSpecialKeyAdded(const std::string& str){
     if (!editedLabel.has_value()) return;
 
-    auto toEditStr = labelTextSpecialKeysInput->getString();
+    auto toEditStr = std::string(labelTextSpecialKeysInput->getString());
     int pos = labelTextSpecialKeysInput->getInputNode()->m_textField->m_uCursorPos;
 
     // log::info("is selected {}", labelTextSpecialKeysInput->getInputNode()->m_selected);

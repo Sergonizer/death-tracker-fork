@@ -532,8 +532,9 @@ void DTLayer::keyBackClicked(){
             }
         }
     }
-    else
+    else{
         DTLayer::onClose(nullptr);
+    }
 }
 
 void DTLayer::onClose(CCObject* sender){
@@ -901,6 +902,12 @@ void DTLayer::organizeLayout(){
 
             float oldHeightLimits = scrollLayer->content->getContentHeight();
 
+            float oldTop = scrollLayer->getMaximumPosition(false);
+            float oldBottom = scrollLayer->getMinimumPosition(false);
+            float oldHeight = oldBottom - oldTop;
+
+            float offsetFromTop = scrollLayer->content->getPositionY() - oldTop;
+
             scrollLayer->setLimitsHeight(cappedHeight);
             columnHolder->setPositionY(cappedHeight);
             columnHolder->updateLayout();
@@ -910,9 +917,14 @@ void DTLayer::organizeLayout(){
             
             delta = oldHeightLimits - scrollLayer->content->getContentHeight();
 
-            // log::info("delta {}", delta);
-            // log::info("{} | {}", oldHeightLimits, scrollLayer->content->getContentHeight());
             scrollLayer->moveBy(ccp(0, delta / 2));
+            float newTop = scrollLayer->getMaximumPosition(false);
+            float newBottom = scrollLayer->getMinimumPosition(false);
+            float newHeight = newBottom - newTop;
+
+            float newOffset = offsetFromTop * (newHeight / oldHeight);
+
+            scrollLayer->content->setPositionY(newTop + newOffset);
             
             for (const auto& [label, newPos, newWidth] : result.labelData)
             {

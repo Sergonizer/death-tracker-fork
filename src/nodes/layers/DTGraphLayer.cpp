@@ -466,8 +466,6 @@ void DTGraphLayer::keyDown(enumKeyCodes key, double d){
     }
 
     graph->sendKeyStuff(false, key);
-    
-    Popup::keyDown(key, d);
 }
 
 void DTGraphLayer::keyUp(enumKeyCodes key, double d){
