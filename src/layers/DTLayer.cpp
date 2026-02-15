@@ -343,9 +343,9 @@ bool DTLayer::init(GJGameLevel* const& level) {
 
     if (Save::getLastOpenedVersion() != Mod::get()->getVersion().toNonVString()){
         Save::setLastOpenedVersion(Mod::get()->getVersion().toNonVString());
-        FLAlertLayer::create(nullptr, fmt::format("Death Tracker {} Changelog", Mod::get()->getVersion().toVString()).c_str(), fmt::format(
+        FLAlertLayer::create(nullptr, "To all death tracker users!", fmt::format(
             "{}",
-            "- <cg>iOS support</c>"
+            "Hello! I am here to say I am sorry for the lack of updates and support for death tracker in the past while, I've been busy :(\n\n<cr>But!</c> I am here to announce that I've been working on a <cy>new beta</c> for the <cg>big death tracker V3 update!</c>\nIf you want to help <co>test out the new features</c>, or just <cy>get notified about death tracker news</c>, feel free to <cj>join the discord server</c> on the main mod page!"
         ), "OK", nullptr, 415, false, 200, 0.75f)->show();
     }
 

@@ -6,12 +6,15 @@
 		"mac": "2.2081",
 		"ios": "2.2081"
     },
-	"version": "v2.4.7",
+	"version": "v2.4.8",
 	"id": "elohmrow.death_tracker",
 	"name": "Death Tracker",
 	"developer": "abb2k",
 	"description": "Tracks your deaths at every percentage",
 	"repository": "https://github.com/eloh-mrow/death-tracker",
+	"links": {
+		"community": "https://discord.gg/8VTdWXghA6"
+	},
 	"resources": {
 		"sprites": [
 			"resources/*.png"
