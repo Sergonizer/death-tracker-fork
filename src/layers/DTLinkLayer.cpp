@@ -3,15 +3,17 @@
 
 DTLinkLayer* DTLinkLayer::create(DTLayer* const& layer) {
     auto ret = new DTLinkLayer();
-    if (ret && ret->initAnchored(540, 280, layer, "square01_001.png", {0.f, 0.f, 94.f, 94.f})) {
+    if (ret && ret->init(layer)) {
         ret->autorelease();
         return ret;
     }
-    CC_SAFE_DELETE(ret);
+    delete ret;
     return nullptr;
 }
 
-bool DTLinkLayer::setup(DTLayer* const& layer) {
+bool DTLinkLayer::init(DTLayer* const& layer) {
+    if (!Popup::init(540, 280, "square01_001.png", {0.f, 0.f, 94.f, 94.f}))
+        return false;
     //create trackerLayer
     auto winSize = CCDirector::sharedDirector()->getWinSize();
 
@@ -88,27 +90,26 @@ bool DTLinkLayer::setup(DTLayer* const& layer) {
 void DTLinkLayer::onLevelsLoaded(const std::vector<std::pair<std::string, LevelStats>>& levels){
     if (isClosed) return;
     m_AllLevels = levels;
+    levelsMoveLeft->setVisible(true);
+    levelsMoveRight->setVisible(true);
     this->refreshLists();
     seartchInput->getInputNode()->setDelegate(this);
     this->scheduleUpdate();
-    levelsMoveLeft->setVisible(true);
-    levelsMoveRight->setVisible(true);
     loading->setVisible(false);
 }
 
 void DTLinkLayer::SpacialEditList(GJListLayer* const& list, const CCPoint& titlePos, const float& titleSize){
-    CCObject* child;
 
-    CCARRAY_FOREACH(list->m_listView->m_tableView->m_cellArray, child){
-        auto childCell = dynamic_cast<GenericListCell*>(child);
-        if (childCell)
-            childCell->m_backgroundLayer->setOpacity(30);
+    for (const auto& child : CCArrayExt<GenericListCell*>(list->m_listView->m_tableView->m_cellArray))
+    {
+        child->m_backgroundLayer->setOpacity(30);
     }
 
     std::vector<CCSprite*> spritesToRemove;
     CCLabelBMFont* title;
 
-    CCARRAY_FOREACH(list->getChildren(), child){
+    for (const auto& child : list->getChildrenExt())
+    {
         auto childSprite = dynamic_cast<CCSprite*>(child);
         auto childLabel = dynamic_cast<CCLabelBMFont*>(child);
         if (childSprite)
@@ -153,15 +154,6 @@ void DTLinkLayer::refreshLists(){
             AllLevelsSearch.push_back(m_AllLevels[i]);
     }
 
-    if (!AllLevelsSearch.size() && m_LevelsList && m_LinkedLevelsList){
-        m_LevelsList->m_listView->m_tableView->m_contentLayer->removeAllChildrenWithCleanup(true);
-        m_LinkedLevelsList->m_listView->m_tableView->m_contentLayer->removeAllChildrenWithCleanup(true);
-        return;
-    }
-
-    if (m_LevelsList != nullptr) m_LevelsList->removeMeAndCleanup();
-    if (m_LinkedLevelsList != nullptr) m_LinkedLevelsList->removeMeAndCleanup();
-
     int startI = (levelPage - 1) * 10;
     if (startI <= 0){
         levelsMoveLeft->setVisible(false);
@@ -177,7 +169,16 @@ void DTLinkLayer::refreshLists(){
     else
         levelsMoveRight->setVisible(true);
 
-    if (AllLevelsSearch.size() <= 0) return;
+    if (!AllLevelsSearch.size() || endI > AllLevelsSearch.size() || startI < 0 || startI > AllLevelsSearch.size()) return;
+
+    if (!AllLevelsSearch.size() && m_LevelsList && m_LinkedLevelsList){
+        m_LevelsList->m_listView->m_tableView->m_contentLayer->removeAllChildrenWithCleanup(true);
+        m_LinkedLevelsList->m_listView->m_tableView->m_contentLayer->removeAllChildrenWithCleanup(true);
+        return;
+    }
+
+    if (m_LevelsList != nullptr) m_LevelsList->removeMeAndCleanup();
+    if (m_LinkedLevelsList != nullptr) m_LinkedLevelsList->removeMeAndCleanup();
 
     std::vector<std::pair<std::string, LevelStats>> allLevelsInRange(std::next(AllLevelsSearch.begin(), startI), std::next(AllLevelsSearch.begin(), endI));
     

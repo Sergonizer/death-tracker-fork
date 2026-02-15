@@ -4,15 +4,17 @@
 
 LabelSettingsLayer* LabelSettingsLayer::create(LabelLayoutWindow* const& labelWin, DTLayer* const& dtLayer) {
     auto ret = new LabelSettingsLayer();
-    if (ret && ret->initAnchored(325, 230, labelWin, dtLayer, "square01_001.png", {0.f, 0.f, 94.f, 94.f})) {
+    if (ret && ret->init(labelWin, dtLayer)) {
         ret->autorelease();
         return ret;
     }
-    CC_SAFE_DELETE(ret);
+    delete ret;
     return nullptr;
 }
 
-bool LabelSettingsLayer::setup(LabelLayoutWindow* const& labelWin, DTLayer* const& dtLayer) {
+bool LabelSettingsLayer::init(LabelLayoutWindow* const& labelWin, DTLayer* const& dtLayer) {
+    if (!Popup::init(325, 230, "square01_001.png", {0.f, 0.f, 94.f, 94.f}))
+        return false;
 
     m_LabelWin = labelWin;
     m_DTLayer = dtLayer;
@@ -306,13 +308,13 @@ void LabelSettingsLayer::playEntryAnimation(const CCPoint& startingPoint){
     textPreviewWindow->setScale(0);
     this->setOpacity(0);
     windowTitleInput->getBGSprite()->setOpacity(0);
-    GLubyte labelOpacityTo = windowTitleInput->getInputNode()->getPlaceholderLabel()->getOpacity();
-    windowTitleInput->getInputNode()->getPlaceholderLabel()->setOpacity(0);
+    GLubyte labelOpacityTo = windowTitleInput->getInputNode()->m_textLabel->getOpacity();
+    windowTitleInput->getInputNode()->m_textLabel->setOpacity(0);
 
     this->runAction(CCSequence::create(CCEaseInOut::create(CCFadeTo::create(transitionDuration * 1.3f, 105), 2), CCCallFuncO::create(this, callfuncO_selector(LabelSettingsLayer::OnTransitionEnded), CCBool::create(true)), nullptr));
     labelWinPreview->runAction(CCEaseInOut::create(CCFadeTo::create(transitionDuration, m_LabelWin->m_MyLayout.color.a), 2));
     windowTitleInput->getBGSprite()->runAction(CCEaseInOut::create(CCFadeTo::create(transitionDuration, 90), 2));
-    windowTitleInput->getInputNode()->getPlaceholderLabel()->runAction(CCEaseInOut::create(CCFadeTo::create(transitionDuration, labelOpacityTo), 2));
+    windowTitleInput->getInputNode()->m_textLabel->runAction(CCEaseInOut::create(CCFadeTo::create(transitionDuration, labelOpacityTo), 2));
 
     m_mainLayer->runAction(CCEaseInOut::create(CCScaleTo::create(transitionDuration, 1), 2));
     textPreviewWindow->runAction(CCEaseInOut::create(CCScaleTo::create(transitionDuration, 1), 2));
@@ -337,7 +339,7 @@ void LabelSettingsLayer::playClosingAnimation(const CCPoint& endPoint){
     this->runAction(CCSequence::create(CCEaseInOut::create(CCFadeTo::create(transitionDuration * 1.3f, 0), 2), CCCallFuncO::create(this, callfuncO_selector(LabelSettingsLayer::OnTransitionEnded), CCBool::create(false)), nullptr));
     labelWinPreview->runAction(CCEaseInOut::create(CCFadeTo::create(transitionDuration, 0), 2));
     windowTitleInput->getBGSprite()->runAction(CCEaseInOut::create(CCFadeTo::create(transitionDuration, 0), 2));
-    windowTitleInput->getInputNode()->getPlaceholderLabel()->runAction(CCEaseInOut::create(CCFadeTo::create(transitionDuration, 0), 2));
+    windowTitleInput->getInputNode()->m_textLabel->runAction(CCEaseInOut::create(CCFadeTo::create(transitionDuration, 0), 2));
 
     m_mainLayer->runAction(CCEaseInOut::create(CCScaleTo::create(transitionDuration, 0), 2));
     textPreviewWindow->runAction(CCEaseInOut::create(CCScaleTo::create(transitionDuration, 0), 2));
@@ -361,7 +363,7 @@ void LabelSettingsLayer::OnTransitionEnded(CCObject* transitionType){
             m_LabelWin->m_DTLayer->changeScrollSizeByBoxes();
         }
 
-        Popup<LabelLayoutWindow* const&, DTLayer* const&>::onClose(nullptr);
+        Popup::onClose(nullptr);
     }
 }
 
@@ -435,7 +437,7 @@ void LabelSettingsLayer::OnColorClicked(CCObject*){
     auto colorPick = geode::ColorPickPopup::create(m_LabelWin->m_MyLayout.color);
     colorPick->show();
     colorPick->setColorTarget(ColorSprite);
-    colorPick->setDelegate(this);
+    colorPick->setCallback([&](auto color){updateColor(color);});
 }
 
 void LabelSettingsLayer::updateColor(cocos2d::ccColor4B const& color){
@@ -471,7 +473,7 @@ void LabelSettingsLayer::useSTK(const std::string& stk){
     if (!labelTextInput->getString().empty())
         labelText = labelTextInput->getString();
 
-    int index = StatsManager::getCursorPosition(labelTextInput->getInputNode()->getPlaceholderLabel(), labelTextInput->getInputNode()->m_cursor);
+    int index = StatsManager::getCursorPosition(labelTextInput->getInputNode()->m_textLabel, labelTextInput->getInputNode()->m_cursor);
     
     if (index < labelText.length())
         labelText.insert(index, stk);

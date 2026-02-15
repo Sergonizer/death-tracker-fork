@@ -9,7 +9,7 @@
 #include "../hooks/DTColorSelectPopup.hpp"
 #include "../layers/DTLevelSpecificSettingsLayer.hpp"
 
-DTLayer* DTLayer::create(GJGameLevel* const& Level) {
+DTLayer* DTLayer::create(GJGameLevel* const& level) {
     auto popup = new DTLayer;
     if (popup->init(level)) {
         popup->autorelease();
@@ -398,61 +398,56 @@ void DTLayer::textInputClosed(CCTextInputNode* input){
     }
 }
 
-ResultTask DTLayer::updateSessionString(const int& session){
-    if (session - 1 < 0 || session - 1 >= m_SharedLevelStats.sessions.size()) return ResultTask::immediate(Err("couldent get current session!"));
+ResultFuture DTLayer::updateSessionString(int session){
+    if (session - 1 < 0 || session - 1 >= m_SharedLevelStats.sessions.size() || !m_SharedLevelStats.sessions.size()) co_return Err("couldent get current session!");
 
     Session currentSession = m_SharedLevelStats.sessions[session - 1];
 
-    auto selectedSessionInfoRes = CreateDeathsInfo(currentSession.deaths, currentSession.newBests).chain([&, currentSession](DeathStringTask::Value* value) -> ResultTask {
-        if (!value) return ResultTask::immediate(Err("Failed to get deaths string"));
-        if (value->isErr()){
-            selectedSessionString = "No Saved Attempts!";
+    auto value = co_await CreateDeathsInfo(currentSession.deaths, currentSession.newBests);
+
+    if (value.isErr()){
+        selectedSessionString = "No Saved Attempts!";
+    }
+    else{
+        selectedSessionInfo = value.unwrap();
+
+        std::string mergedString = "No Saved Attempts! ";
+        for (const auto& SDeathI : selectedSessionInfo)
+        {
+            if (SDeathI.run.end < m_MyLevelStats.hideUpto) continue;
+            if (mergedString == "No Saved Attempts! ")
+                mergedString = "";
+
+            if (SDeathI.isNewBest)
+                mergedString += "<sbc>";
+            mergedString += fmt::format("{}% x{}\n", SDeathI.run.end, SDeathI.deaths);
         }
-        else{
-            selectedSessionInfo = value->unwrap();
+        mergedString = mergedString.substr(0, mergedString.size() - 1);
+        selectedSessionString = mergedString;
+    }
 
-            std::string mergedString = "No Saved Attempts! ";
-            for (const auto& SDeathI : selectedSessionInfo)
-            {
-                if (SDeathI.run.end < m_MyLevelStats.hideUpto) continue;
-                if (mergedString == "No Saved Attempts! ")
-                    mergedString = "";
+    auto value2 = co_await CreateRunsInfo(currentSession.runs);
 
-                if (SDeathI.isNewBest)
-                    mergedString += "<sbc>";
-                mergedString += fmt::format("{}% x{}\n", SDeathI.run.end, SDeathI.deaths);
-            }
-            mergedString = mergedString.substr(0, mergedString.size() - 1);
-            selectedSessionString = mergedString;
+    if (value2.isErr()){
+        selectedSessionRunString = "No Saved Runs!";
+    }
+    else{
+        m_SelectedSessionRunInfo = value2.unwrap();
+
+        std::string mergedString = "No Saved Runs! ";
+        for (const auto& SRunI : m_SelectedSessionRunInfo)
+        {
+            if (SRunI.run.end - SRunI.run.start < m_MyLevelStats.hideRunLength) continue;
+            if (mergedString == "No Saved Runs! ")
+                mergedString = "";
+
+            mergedString += fmt::format("{}% - {}% x{}\n", SRunI.run.start, SRunI.run.end, SRunI.deaths);
         }
+        mergedString = mergedString.substr(0, mergedString.size() - 1);
+        selectedSessionRunString = mergedString;
+    }
 
-        return CreateRunsInfo(currentSession.runs).chain([&](DeathStringTask::Value* value) -> ResultTask {
-            if (!value) return ResultTask::immediate(Err("Failed to get deaths string"));
-            if (value->isErr()){
-                selectedSessionRunString = "No Saved Runs!";
-            }
-            else{
-                m_SelectedSessionRunInfo = value->unwrap();
-
-                std::string mergedString = "No Saved Runs! ";
-                for (const auto& SRunI : m_SelectedSessionRunInfo)
-                {
-                    if (SRunI.run.end - SRunI.run.start < m_MyLevelStats.hideRunLength) continue;
-                    if (mergedString == "No Saved Runs! ")
-                        mergedString = "";
-
-                    mergedString += fmt::format("{}% - {}% x{}\n", SRunI.run.start, SRunI.run.end, SRunI.deaths);
-                }
-                mergedString = mergedString.substr(0, mergedString.size() - 1);
-                selectedSessionRunString = mergedString;
-            }
-
-            
-            return ResultTask::immediate(Ok());
-        });
-    });
-
-    return selectedSessionInfoRes;
+    co_return Ok();
 }
 
 void DTLayer::onEditLayoutApply(CCObject*){
@@ -841,6 +836,7 @@ std::string DTLayer::modifyString(std::string ToModify){
         }
         if (StatsManager::isKeyInIndex(ToModify, inctences[i] + 1, "ptall}")){
             ToModify.erase(inctences[i], 7);
+            //log::info("{} | {}", playtimeFromRuns, playtimeFromZero);
             auto timeText = StatsManager::workingTime(playtimeFromRuns + playtimeFromZero);
             ToModify.insert(inctences[i], timeText);
             overallOffset -= 7;
@@ -857,10 +853,12 @@ std::string DTLayer::modifyString(std::string ToModify){
             }
             else{
                 time_t time = m_SharedLevelStats.sessions[m_SessionSelected - 1].sessionStartDate;
-                auto tm = std::localtime(&time);
+                auto tp = std::chrono::system_clock::from_time_t(time);
 
-                ToModify.insert(inctences[i], fmt::format("{}/{}/{}", tm->tm_mon + 1, tm->tm_mday, tm->tm_year + 1900));
-                overallOffset += fmt::format("{}/{}/{}", tm->tm_mon + 1, tm->tm_mday, tm->tm_year + 1900).length();
+                std::string dateStr = fmt::format("{:%m/%d/%Y}", tp);
+
+                ToModify.insert(inctences[i], dateStr);
+                overallOffset += dateStr.length();
             }
         }
         if (StatsManager::isKeyInIndex(ToModify, inctences[i] + 1, "sst}")){
@@ -876,17 +874,12 @@ std::string DTLayer::modifyString(std::string ToModify){
             }
             else{
                 time_t time = m_SharedLevelStats.sessions[m_SessionSelected - 1].sessionStartDate;
-                auto tm = std::localtime(&time);
+                auto tp = std::chrono::system_clock::from_time_t(time);
 
-                std::string clock12Time = "AM";
+                std::string timeStr = fmt::format("{:%I:%M%p}", tp);
 
-                if (tm->tm_hour > 12){
-                    tm->tm_hour -= 12;
-                    clock12Time = "PM";
-                }
-
-                ToModify.insert(inctences[i], fmt::format("{}:{}{}", tm->tm_hour, tm->tm_min, clock12Time));
-                overallOffset += fmt::format("{}:{}{}", tm->tm_hour, tm->tm_min, clock12Time).length();
+                ToModify.insert(inctences[i], timeStr);
+                overallOffset += timeStr.length();
             }
         }
 
@@ -901,7 +894,6 @@ std::string DTLayer::modifyString(std::string ToModify){
 ResultFuture DTLayer::refreshStrings(){
     auto value = co_await DTLayer::CreateDeathsInfo(m_SharedLevelStats.deaths, m_SharedLevelStats.newBests);
 
-    if (!value) co_return Err("Failed to get deaths string");
     if (value.isErr()){
         deathsString = "No Saved Attempts!";
     }
@@ -927,7 +919,6 @@ ResultFuture DTLayer::refreshStrings(){
 
     auto value2 = co_await DTLayer::CreateRunsInfo(m_SharedLevelStats.runs);
     
-    if (!value2) co_return Err("Failed to get deaths string");
     if (value2.isErr()){
         RunString = "No Saved Runs!";
     }
@@ -950,7 +941,9 @@ ResultFuture DTLayer::refreshStrings(){
     }
 
     
-    co_return DTLayer::updateSessionString(m_SessionSelected);
+    auto updateSessRes = co_await DTLayer::updateSessionString(m_SessionSelected);
+
+    co_return updateSessRes;
 }
 
 DeathStringFuture DTLayer::CreateDeathsInfo(const Deaths& deaths, const NewBests& newBests){
@@ -1110,7 +1103,22 @@ inline float travelForPortalId(int speed) {
     }
 }
 
+int DTLayer::stoi(std::string_view str) {
+    int result = 0;
+    std::from_chars(str.data(), str.data() + str.size(), result);
+    return result;
+}
+float DTLayer::stof(std::string_view str) {
+    return utils::numFromString<float>(str).unwrapOr(0);
+}
+
 float DTLayer::timeForLevelString(const std::string& levelString) {
+    struct SpeedPortalObject {
+        int id;
+        float xPos;
+        bool checked;
+    };
+
     try {
         auto a = timeInMs();
 
@@ -1120,7 +1128,9 @@ float DTLayer::timeForLevelString(const std::string& levelString) {
         std::string currentObject;
         std::string currentKey;
         std::string keyID;
+        std::vector<SpeedPortalObject> speedPortals;
 
+        //std::stringstream objectStream;
         float prevPortalX = 0;
         int prevPortalId = 0;
 
@@ -1133,14 +1143,19 @@ float DTLayer::timeForLevelString(const std::string& levelString) {
             float xPos = 0;
             bool checked = false;
 
+            /*objectStream.str("");
+            objectStream.clear();
+            objectStream << currentObject;
+            objectStream.seekp(0);
+            objectStream.seekg(0);*/
             std::stringstream objectStream(currentObject);
             while(getline(objectStream, currentKey, ',')) {
                 if(i % 2 == 0) keyID = currentKey;
                 else {
-                    if(keyID == "1") objID = geode::utils::numFromString<int>(currentKey).unwrapOr(0);
-                    else if(keyID == "2") xPos = geode::utils::numFromString<float>(currentKey).unwrapOr(0);
-                    else if(keyID == "13") checked = geode::utils::numFromString<int>(currentKey).unwrapOr(0);
-                    else if(keyID == "kA4") prevPortalId = speedToPortalId(geode::utils::numFromString<int>(currentKey).unwrapOr(0));
+                    if(keyID == "1") objID = DTLayer::stoi(currentKey);
+                    else if(keyID == "2") xPos = DTLayer::stof(currentKey);
+                    else if(keyID == "13") checked = DTLayer::stoi(currentKey);
+                    else if(keyID == "kA4") prevPortalId = speedToPortalId(DTLayer::stoi(currentKey));
                 }
                 i++;
 
@@ -1150,13 +1165,24 @@ float DTLayer::timeForLevelString(const std::string& levelString) {
             if(maxPos < xPos) maxPos = xPos;
             if(!checked || !objectIDIsSpeedPortal(objID)) continue;
 
-            timeFull += (xPos - prevPortalX) / travelForPortalId(prevPortalId);
-            prevPortalId = objID;
-            prevPortalX = xPos;
+            speedPortals.push_back({objID, xPos, checked});
         }
 
+        std::sort(speedPortals.begin(), speedPortals.end(), [](const SpeedPortalObject& a, const SpeedPortalObject& b) {
+            return a.xPos < b.xPos;
+        });
+
+        for(const auto& portal : speedPortals) {
+            //log::info("Object ID: {}, X Position: {}, Portal ID: {}", portal.id, portal.xPos, prevPortalId);
+            timeFull += (portal.xPos - prevPortalX) / travelForPortalId(prevPortalId);
+            prevPortalId = portal.id;
+            prevPortalX = portal.xPos;
+        }
+
+        //log::info("Last portal ID: {}, Last X Position: {}", prevPortalId, prevPortalX);
         timeFull += (maxPos - prevPortalX) / travelForPortalId(prevPortalId);
         auto b = timeInMs() - a;
+        //log::info("Time for levelString: {}ms, decompress: {}ms, parse: {}ms, maxPos {}", b, c - a, timeInMs() - c, maxPos);
         return timeFull;
     } catch(std::exception e) {
         log::error("An exception has occured while calculating time for levelString: {}", e.what());
@@ -1610,39 +1636,47 @@ void DTLayer::updateColor(cocos2d::ccColor4B const& color){
 
 void DTLayer::refreshAll(bool moveToTop){
     refreshLoadingCircle->setVisible(true);
-        refreshListener.spawn([&, moveToTop]() -> ResultFuture {
-        auto value = co_await updateSessionString(m_SessionSelected);
-
-        if (value == nullptr) co_return Err("failed to refresh!");
-        if (value->isErr()) co_return Err(value->unwrapErr());
-
-        DTLayer::RefreshText(moveToTop);
-
-        co_return Ok();
-    },
-    [&](ResultFuture::Output out){
-        this->onRefreshFinished(out);
-    });
+    refreshListener.spawn(
+        updateSessionAndRefresh(moveToTop, false),
+        [&](ResultFuture::Output out){
+            this->onRefreshFinished(out);
+        }
+    );
 }
 
 void DTLayer::refreshSession(bool moveToTop){
     refreshLoadingCircle->setVisible(true);
 
-    refreshListener.spawn([&, moveToTop]() -> ResultFuture {
-        auto value = co_await updateSessionString(m_SessionSelected);
-
-        if (value == nullptr) co_return Err("failed to refresh!");
-        if (value->isErr()) co_return Err(value->unwrapErr());
-
-        DTLayer::RefreshText(moveToTop);
-
-        co_return Ok();
-    },
-    [&](ResultFuture::Output out){
-        this->onRefreshFinished(out);
-    });
+    refreshListener.spawn(
+        updateSessionAndRefresh(moveToTop, true),
+        [&](ResultFuture::Output out){
+            this->onRefreshFinished(out);
+        }
+    );
 }
 
 void DTLayer::onRefreshFinished(ResultFuture::Output event){
     refreshLoadingCircle->setVisible(false);
+}
+ResultFuture DTLayer::updateSessionAndRefresh(bool moveToTop, bool refreshSessionOnly){
+    ResultFuture::Output updateOutput = Err("");
+
+    if (refreshSessionOnly){
+        updateOutput = co_await updateSessionString(m_SessionSelected);
+    }
+    else{
+        updateOutput = co_await refreshStrings();
+    }
+    if (updateOutput.isErr()) co_return Err(updateOutput.unwrapErr());
+
+    auto value = co_await updateSessionString(m_SessionSelected);
+
+    if (value.isErr()) co_return Err(value.unwrapErr());
+
+    geode::queueInMainThread([&](){
+        DTLayer::RefreshText(moveToTop);
+    });
+    
+
+    co_return Ok();
 }

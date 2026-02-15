@@ -154,8 +154,8 @@ bool DTLevelSpecificSettingsLayer::init(const CCSize& size, DTLayer* const& _DTL
         DeleteUnusedButtonBG->setOpacity(100);
         DeleteUnusedButtonLabel->setOpacity(100);
 
-        CCObject* child;
-        CCARRAY_FOREACH(runsAllowedCellsCont->getChildren(), child){
+        for (const auto& child : runsAllowedCellsCont->getChildrenExt())
+        {
             if (auto b = typeinfo_cast<RunAllowedCell*>(child)){
                 b->buttonSprite->m_BGSprite->setOpacity(100);
                 b->buttonSprite->m_label->setOpacity(100);
@@ -577,9 +577,9 @@ void DTLevelSpecificSettingsLayer::OnToggleAllRuns(CCObject*){
     }
 
     runsAllowedCellsCont->setEnabled(allRunsToggle->isOn());
-    
-    CCObject* child;
-    CCARRAY_FOREACH(runsAllowedCellsCont->getChildren(), child){
+
+    for (const auto& child : runsAllowedCellsCont->getChildrenExt())
+    {
         if (auto b = typeinfo_cast<RunAllowedCell*>(child)){
             if (runsAllowedCellsCont->isEnabled()){
                 b->buttonSprite->m_BGSprite->setOpacity(255);
@@ -937,8 +937,8 @@ void DTLevelSpecificSettingsLayer::EnableTouch(bool b){
             DeleteUnusedButtonBG->setOpacity(100);
             DeleteUnusedButtonLabel->setOpacity(100);
 
-            CCObject* child;
-            CCARRAY_FOREACH(runsAllowedCellsCont->getChildren(), child){
+            for (const auto& child : runsAllowedCellsCont->getChildrenExt())
+            {
                 if (auto b = typeinfo_cast<RunAllowedCell*>(child)){
                     b->buttonSprite->m_BGSprite->setOpacity(100);
                     b->buttonSprite->m_label->setOpacity(100);

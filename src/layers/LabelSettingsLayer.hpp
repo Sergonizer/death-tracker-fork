@@ -8,15 +8,15 @@
 
 using namespace geode::prelude;
 
-class LabelSettingsLayer : public Popup<LabelLayoutWindow* const&, DTLayer* const&>, public ColorPickPopupDelegate, public FLAlertLayerProtocol {
+class LabelSettingsLayer : public Popup, public FLAlertLayerProtocol {
     protected:
-        bool setup(LabelLayoutWindow* const& labelWin, DTLayer* const& dtLayer) override;
+        bool init(LabelLayoutWindow* const& labelWin, DTLayer* const& dtLayer);
 
         void onClose(cocos2d::CCObject*) override;
 
         void update(float delta) override;
 
-        void updateColor(cocos2d::ccColor4B const& color) override;
+        void updateColor(cocos2d::ccColor4B const& color);
 
         void FLAlert_Clicked(FLAlertLayer* p0, bool p1) override;
     public:

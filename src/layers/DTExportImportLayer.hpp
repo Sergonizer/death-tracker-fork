@@ -5,9 +5,9 @@
 
 using namespace geode::prelude;
 
-class DTExportImportLayer : public Popup<DTLayer* const&> {
+class DTExportImportLayer : public Popup {
     protected:
-        bool setup(DTLayer* const& layer) override;
+        bool init(DTLayer* const& layer);
     public:
         static DTExportImportLayer* create(DTLayer* const& layer);
         
@@ -35,7 +35,7 @@ class DTExportImportLayer : public Popup<DTLayer* const&> {
 
         LoadingCircle* loading;
         bool importing;
-        EventListener<Task<Result<std::filesystem::path>>> openFileLocListener;
+        async::TaskHolder<geode::utils::file::PickResult> openFileLocListener;
 
         //info
 

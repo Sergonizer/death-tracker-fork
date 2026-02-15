@@ -7,9 +7,9 @@
 
 using namespace geode::prelude;
 
-class DTGraphLayer : public Popup<DTLayer* const&>, public TextInputDelegate, public GraphPointDelegate {
+class DTGraphLayer : public Popup, public TextInputDelegate, public GraphPointDelegate {
     protected:
-        bool setup(DTLayer* const& layer) override;
+        bool init(DTLayer* const& layer);
     public:
         static DTGraphLayer* create(DTLayer* const& layer);
 

@@ -4,15 +4,17 @@
 
 DTGraphLayer* DTGraphLayer::create(DTLayer* const& layer) {
     auto ret = new DTGraphLayer();
-    if (ret && ret->initAnchored(520, 280, layer, "square01_001.png", {0.f, 0.f, 94.f, 94.f})) {
+    if (ret && ret->init(layer)) {
         ret->autorelease();
         return ret;
     }
-    CC_SAFE_DELETE(ret);
+    delete ret;
     return nullptr;
 }
 
-bool DTGraphLayer::setup(DTLayer* const& layer) {
+bool DTGraphLayer::init(DTLayer* const& layer) {
+    if (!Popup::init(520, 280, "square01_001.png", {0.f, 0.f, 94.f, 94.f}))
+        return false;
 
     m_DTLayer = layer;
 
@@ -194,18 +196,16 @@ bool DTGraphLayer::setup(DTLayer* const& layer) {
     m_RunsList->setPosition({-247, -30});
     alignmentNode->addChild(m_RunsList);
 
-    CCObject* child;
-
-    CCARRAY_FOREACH(m_RunsList->m_listView->m_tableView->m_cellArray, child){
-        auto childCell = dynamic_cast<GenericListCell*>(child);
-        if (childCell)
-            childCell->m_backgroundLayer->setOpacity(30);
+    for (const auto& child : CCArrayExt<GenericListCell*>(m_RunsList->m_listView->m_tableView->m_cellArray))
+    {
+        child->m_backgroundLayer->setOpacity(30);
     }
 
     std::vector<CCSprite*> spritesToRemove;
     CCLabelBMFont* title;
 
-    CCARRAY_FOREACH(m_RunsList->getChildren(), child){
+    for (const auto& child : m_RunsList->getChildrenExt())
+    {
         auto childSprite = dynamic_cast<CCSprite*>(child);
         if (childSprite)
             spritesToRemove.push_back(childSprite);

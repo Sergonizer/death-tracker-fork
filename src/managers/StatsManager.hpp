@@ -44,7 +44,7 @@ struct LevelStats_s {
     Runs runs;
     NewBests newBests;
     int currentBest;
-    std::vector<Session> sessions;
+    std::vector<Session> sessions{};
     std::vector<int> RunsToSave{-1};
     std::vector<std::string> LinkedLevels;
     std::string levelName = "Unknown name";

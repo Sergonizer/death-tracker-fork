@@ -306,7 +306,7 @@ Result<std::string> StatsManager::getLevelKey(GJGameLevel* const& level) {
     }
 
 	// local level postfix
-	if (level->m_levelType == GJLevelType::Local)
+	if (level->m_levelType == GJLevelType::Main)
 		levelId += "-local";
 
     if (level->m_levelType == GJLevelType::Editor)
@@ -794,9 +794,8 @@ int StatsManager::getCursorPosition(CCLabelBMFont* const& text, CCLabelBMFont* c
 
     int index = -1;
 
-    CCObject* child;
-
-    CCARRAY_FOREACH(text->getChildren(), child){
+    for (const auto& child : text->getChildrenExt())
+    {
         if (auto node = typeinfo_cast<CCNode*>(child)){
             if (node->isVisible()){
                 index++;
@@ -820,14 +819,14 @@ std::string StatsManager::workingTime(long long value){
     if(value < 0) return fmt::format("NA ({})", value);
     if(value == 0) return "NA";
 
-    int hours = value / 3600;
-    int minutes = (value % 3600) / 60;
-    int seconds = value % 60;
+    long long hours = value / 3600;
+    long long minutes = (value % 3600) / 60;
+    long long seconds = value % 60;
 
-    std::ostringstream stream;
-    if(hours > 0) stream << hours << "h ";
-    if(minutes > 0) stream << minutes << "m ";
-    stream << seconds << "s";
+    std::string res;
+    if(hours > 0) res += fmt::format("{}h ", hours);
+    if(hours > 0 || minutes > 0) res += fmt::format("{}m ", minutes);
+    res += fmt::format("{}s", seconds);
 
-    return stream.str();
+    return res;
 }

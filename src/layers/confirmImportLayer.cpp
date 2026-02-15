@@ -2,16 +2,17 @@
 
 confirmImportLayer* confirmImportLayer::create(DTLayer* const& layer, const Deaths& ds, const Runs& rs) {
     auto ret = new confirmImportLayer();
-    if (ret && ret->initAnchored(270, 230, layer, ds, rs, "square01_001.png", {0.f, 0.f, 94.f, 94.f})) {
+    if (ret && ret->init(layer, ds, rs)) {
         ret->autorelease();
         return ret;
     }
-    CC_SAFE_DELETE(ret);
+    delete ret;
     return nullptr;
 }
 
-bool confirmImportLayer::setup(DTLayer* const& layer, const Deaths& ds, const Runs& rs) {
-
+bool confirmImportLayer::init(DTLayer* const& layer, const Deaths& ds, const Runs& rs) {
+    if (!Popup::init(270, 230, "square01_001.png", {0.f, 0.f, 94.f, 94.f}))
+        return false;
     m_DTLayer = layer;
     deaths = ds;
     runs = rs;

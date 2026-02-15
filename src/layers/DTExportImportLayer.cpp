@@ -4,7 +4,7 @@
 
 DTExportImportLayer* DTExportImportLayer::create(DTLayer* const& layer) {
     auto ret = new DTExportImportLayer();
-    if (ret && ret->initAnchored(226, 137, layer, "square01_001.png", {0.f, 0.f, 94.f, 94.f})) {
+    if (ret && ret->init(layer)) {
         ret->autorelease();
         return ret;
     }
@@ -12,7 +12,9 @@ DTExportImportLayer* DTExportImportLayer::create(DTLayer* const& layer) {
     return nullptr;
 }
 
-bool DTExportImportLayer::setup(DTLayer* const& layer) {
+bool DTExportImportLayer::init(DTLayer* const& layer) {
+    if (!Popup::init(226, 137, "square01_001.png", {0.f, 0.f, 94.f, 94.f}))
+        return false;
 
     m_DTLayer = layer;
 
@@ -175,10 +177,12 @@ void DTExportImportLayer::onExportClicked(CCObject*){
     std::vector<file::FilePickOptions::Filter> filters = {filterlol};
     options.filters = filters;
 
-    file::pick(file::PickMode::SaveFile, options).listen([this](Result<std::filesystem::path>* path) {
-        auto currPath = path->unwrapOrDefault();
+    openFileLocListener.spawn(
+        file::pick(file::PickMode::SaveFile, options),
+        [&](geode::utils::file::PickResult path) {
+        auto currPathOpt = path.unwrapOrDefault();
 
-        if (currPath.empty())
+        if (!currPathOpt.has_value())
             return;
 
         std::string ToWrite;
@@ -219,16 +223,14 @@ void DTExportImportLayer::onExportClicked(CCObject*){
             
         }
 
-        if (currPath.extension() != ".txt")
-            currPath.replace_extension(".txt");
+        if (currPathOpt.value().extension() != ".txt")
+            currPathOpt.value().replace_extension(".txt");
 
 
-        auto _ = file::writeString(currPath, ToWrite);
+        auto _ = file::writeString(currPathOpt.value(), ToWrite);
 
-        FLAlertLayer::create("Success!", fmt::format("<cy>Your text file {} has been created!</c>\n\n Location: {}", currPath.stem().string(), currPath.string()), "OK")->show();
-        },
-        [] (auto progress) {},
-        [] () {}
+        FLAlertLayer::create("Success!", fmt::format("<cy>Your text file {} has been created!</c>\n\n Location: {}", currPathOpt.value().stem().string(), currPathOpt.value().string()), "OK")->show();
+        }
     );
 }
 
@@ -256,16 +258,19 @@ void DTExportImportLayer::onImportClicked(CCObject*){
 
     loading->setVisible(true);
 
-    openFileLocListener.bind([this](Task<Result<std::filesystem::path>>::Event* e){
-        if (auto* pathPacked = e->getValue()){
-            std::filesystem::path path = pathPacked->unwrapOrDefault();
+    openFileLocListener.spawn(
+        file::pick(file::PickMode::OpenFile, options),
+        [&](geode::utils::file::PickResult pathPacked){
+            auto pathOpt = pathPacked.unwrapOrDefault();
 
-            if (path.empty()){
+            if (!pathOpt.has_value()){
                 importing = false;
                 loading->setVisible(false);
                 geode::Notification::create("Failed opening the file!", CCSprite::createWithSpriteFrameName("GJ_deleteIcon_001.png"))->show();
                 return;
             }
+
+            std::filesystem::path path = pathOpt.value();
 
             auto fileText = file::readString(path).unwrapOr("-1");
 
@@ -285,11 +290,7 @@ void DTExportImportLayer::onImportClicked(CCObject*){
             CILayer->setZOrder(100);
             this->addChild(CILayer);
         }
-    });
-
-    auto task = file::pick(file::PickMode::OpenFile, options);
-
-    openFileLocListener.setFilter(task);
+    );
 }
 
 std::pair<const Deaths&, const Runs&> DTExportImportLayer::readRunsFromText(const std::string& textToRead){

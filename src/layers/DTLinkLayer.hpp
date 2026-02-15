@@ -7,9 +7,9 @@
 
 using namespace geode::prelude;
 
-class DTLinkLayer : public Popup<DTLayer* const&>, public TextInputDelegate {
+class DTLinkLayer : public Popup, public TextInputDelegate {
     protected:
-        bool setup(DTLayer* const& layer) override;
+        bool init(DTLayer* const& layer);
 
         void update(float delta) override;
     public:

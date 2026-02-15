@@ -56,8 +56,8 @@ class DTLayer : public Popup, public TextInputDelegate, public FLAlertLayerProto
         std::string deathsString;
         std::string selectedSessionString;
 
-        long long playtimeFromZero;
-        long long playtimeFromRuns;
+        long long playtimeFromZero = 0;
+        long long playtimeFromRuns = 0;
 
         bool m_IsMovingAWindow;
         std::vector<CCNode*> m_LayoutLines;
@@ -96,7 +96,7 @@ class DTLayer : public Popup, public TextInputDelegate, public FLAlertLayerProto
         //uses the deaths and runs info to create a long string to be displayed in the main page
         ResultFuture refreshStrings();
         //uses the deaths and runs info to create a long string to be displayed in the main page, this creates the string specifically for the current session selected
-        ResultFuture updateSessionString(const int& session);
+        ResultFuture updateSessionString(int session);
 
         //updates the playtime based on the given deaths and the current levels length
         //@param deaths the deaths to mesure from
@@ -108,6 +108,8 @@ class DTLayer : public Popup, public TextInputDelegate, public FLAlertLayerProto
         uint64_t timeInMs();
         std::string decodeBase64Gzip(const std::string& input);
         float timeForLevelString(const std::string& levelString);
+        int stoi(std::string_view str);
+        float stof(std::string_view str);
 
         //session selection
         
@@ -230,4 +232,6 @@ class DTLayer : public Popup, public TextInputDelegate, public FLAlertLayerProto
         CCScale9Sprite* m_TextBG;
         Scrollbar* m_ScrollBar;
         CCNode* alignmentNode;
+
+        ResultFuture updateSessionAndRefresh(bool moveToTop, bool refreshSessionOnly);
 };
