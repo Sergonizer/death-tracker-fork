@@ -313,13 +313,20 @@ void LayoutColumn::onOrganized(float deltaMove){
 
 void LayoutColumn::destroyColumnAndCleanup(){
     auto labelsTemp = labels;
+    std::set<DTLabel*> labelsToDelete{};
     for (const auto& [labelLayer, label] : labelsTemp)
     {
         removeLabel(label);
 
-        if (label->isAlone())
-            label->removeMeAndCleanup();
+        if (label->isAlone() && !labelsToDelete.contains(label))
+            labelsToDelete.insert(label);
     }
+
+    for (const auto& label : labelsToDelete)
+    {
+        label->removeMeAndCleanup();
+    }
+    
 
     // Unsubscribe from organization events before destroying this column
     DTLayer::get()->unsubscribeToOrganizationEvent(this);
