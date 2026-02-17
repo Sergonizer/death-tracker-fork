@@ -1,5 +1,8 @@
 # Changelog
 
+## v2.4.8
+- support for geode V5 :D
+
 ## v2.4.6
 - iOS support
 
