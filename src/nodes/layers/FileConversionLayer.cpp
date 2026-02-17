@@ -1,9 +1,9 @@
 #include <nodes/layers/FileConversionLayer.hpp>
 #include <managers/StatsManager.hpp>
 
-FileConversionLayer* FileConversionLayer::create() {
+FileConversionLayer* FileConversionLayer::create(bool exitIfNone) {
     auto popup = new FileConversionLayer;
-    if (popup->init()) {
+    if (popup->init(exitIfNone)) {
         popup->autorelease();
         return popup;
     }
@@ -11,11 +11,13 @@ FileConversionLayer* FileConversionLayer::create() {
     return nullptr;
 }
 
-bool FileConversionLayer::init() {
+bool FileConversionLayer::init(bool exitIfNone) {
     // @geode-ignore(unknown-resource)
     if (!Popup::init(250.f, 150.f, "geode.loader/GE_square01.png"))
         return false;
     auto winSize = CCDirector::sharedDirector()->getWinSize();
+
+    this->exitIfNone = exitIfNone;
 
     this->setTitle("Conversion Layer");
 
@@ -36,6 +38,18 @@ bool FileConversionLayer::init() {
     this->setKeyboardEnabled(true);
     this->m_closeBtn->setVisible(false);
 
+    auto startBtnSpr = ButtonSprite::create("Start");
+    startBtnSpr->setScale(.75f);
+    startBtn = CCMenuItemSpriteExtra::create(
+        startBtnSpr,
+        this,
+        menu_selector(FileConversionLayer::onStart)
+    );
+    startBtn->setVisible(false);
+    startBtn->setEnabled(false);
+    startBtn->setPosition(m_size.width / 2, startBtn->getContentHeight() / 2 + 10);
+    m_buttonMenu->addChild(startBtn);
+
     lookupListener.spawn(
         lookupFuture(),
         [&](LookupFuture::Output val) {
@@ -47,7 +61,13 @@ bool FileConversionLayer::init() {
 }
 
 void FileConversionLayer::lookupComplete(LookupFuture::Output result){
-    if (!result.size()){
+    lookupResult = std::move(result);
+    if (!lookupResult.size()){
+        if (exitIfNone){
+            didComplete = true;
+            keyBackClicked();
+            return;
+        }
         this->setTitle("No old files found!");
         textArea->setText("It looks like you're all set!\nNo old files were found!");
         this->m_closeBtn->setVisible(true);
@@ -55,30 +75,10 @@ void FileConversionLayer::lookupComplete(LookupFuture::Output result){
         return;
     }
     
-    this->setTitle("Files found!");
-    textArea->setText(fmt::format("<cy>{}</c> old files were found! Conversion will start right away!", result.size()));
-    
-    conversionListener.spawn(
-        conversionFuture(result, [&](ConversionProgress progress){
-            geode::queueInMainThread([&, progress](){
-                progressBar->setVisible(true);
-                float dev = static_cast<float>(progress.filesWentOverAmount) / static_cast<float>(progress.maxAmount);
-                progressBar->setValue(dev);
-                progressBar->updateBar();
-                
-                this->setTitle("Working...");
-                textArea->setText(fmt::format(
-                    "Converting files ({}/{})\nCurrently working on\n'{}'",
-                    progress.convertedAmount,
-                    progress.maxAmount,
-                    progress.currentConvertingFile
-                ));
-            });
-        }),
-        [&](ConversionFuture::Output val){
-            this->conversionComplete(val);
-        }
-    );
+    this->setTitle("Save Conversion");
+    textArea->setText(fmt::format("{} old files from death tracker V2\nwere detected, we will convert them\nto the new version!", lookupResult.size()));
+    startBtn->setVisible(true);
+    startBtn->setEnabled(true);
 }
 
 void FileConversionLayer::setTitle(const std::string& text){
@@ -151,4 +151,31 @@ void FileConversionLayer::conversionComplete(ConversionFuture::Output output){
 void FileConversionLayer::onClose(cocos2d::CCObject* sender){
     if (didComplete)
         Popup::onClose(sender);
+}
+
+void FileConversionLayer::onStart(cocos2d::CCObject* sender){
+    static_cast<CCMenuItemSpriteExtra*>(sender)->setVisible(false);
+    static_cast<CCMenuItemSpriteExtra*>(sender)->setEnabled(false);
+
+    conversionListener.spawn(
+        conversionFuture(lookupResult, [&](ConversionProgress progress){
+            geode::queueInMainThread([&, progress](){
+                progressBar->setVisible(true);
+                float dev = static_cast<float>(progress.filesWentOverAmount) / static_cast<float>(progress.maxAmount);
+                progressBar->setValue(dev);
+                progressBar->updateBar();
+                
+                this->setTitle("Working...");
+                textArea->setText(fmt::format(
+                    "Converting files ({}/{})\nCurrently working on\n'{}'",
+                    progress.convertedAmount,
+                    progress.maxAmount,
+                    progress.currentConvertingFile
+                ));
+            });
+        }),
+        [&](ConversionFuture::Output val){
+            this->conversionComplete(val);
+        }
+    );
 }

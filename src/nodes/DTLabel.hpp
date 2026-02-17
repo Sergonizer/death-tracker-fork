@@ -69,6 +69,10 @@ class DTLabel : public CCMenu {
         void fadeTextColorTo(ccColor4B newColor, float time);
         void fadeTitleColorTo(ccColor4B newColor, float time);
 
+        CCScale9Sprite* leftExpandLine;
+        CCScale9Sprite* rightExpandLine;
+        CCScale9Sprite* labelTitleBG;
+
         ~DTLabel();
     private:
         bool init(const DTLabelInfo& info);
@@ -86,13 +90,10 @@ class DTLabel : public CCMenu {
         std::set<LayoutColumn*, ColumnComperator> holders{};
 
         CCScale9Sprite* bg;
-        CCScale9Sprite* labelTitleBG;
+        
         CCMenu* menu;
         CCMenuItemSpriteExtra* expandBtn;
         SimpleTextArea* labelTitleArea;
-
-        CCScale9Sprite* leftExpandLine;
-        CCScale9Sprite* rightExpandLine;
 
         CCNode* labelTextContainer;
         SimpleTextArea* labelText;

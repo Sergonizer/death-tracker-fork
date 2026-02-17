@@ -73,6 +73,16 @@ DTTutorialLayer* DTTutorialLayer::joinTransform(TutorialBoxPlacement alignment, 
 DTTutorialLayer* DTTutorialLayer::joinHighlight(CCNode* targetObject, float delayTime, bool allowTouches){
     return insertHighlight(allSegments.size() - 1, targetObject, delayTime, allowTouches);
 }
+DTTutorialLayer* DTTutorialLayer::joinPreviousHighlight(){
+    if (allSegments.size() - 2 <= 0) return this;
+
+    for (const auto& [highlight, options] : allSegments[allSegments.size() - 2].targetObjects)
+    {
+        insertHighlight(allSegments.size() - 1, highlight, options.first, options.second);
+    }
+    
+    return this;
+}
 
 DTTutorialLayer* DTTutorialLayer::joinTextToHighlight(const std::string& text, float size, TutorialTextPlacement alignment){
     return insertJoinTextToHighlight(allSegments.size() - 1, text, size, alignment);

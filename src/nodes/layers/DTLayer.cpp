@@ -7,7 +7,6 @@
 #include <regex>
 #include <utils/CCResizeWidthTo.hpp>
 
-#include <nodes/TutorialButton.hpp>
 #include <arc/task/Yield.hpp>
 #include <arc/time/Sleep.hpp>
 
@@ -75,7 +74,7 @@ bool DTLayer::init(GJGameLevel* const& level) {
     this->setID("dt-layer");
 
     if (Save::getLastOpenedVersion() != Mod::get()->getVersion().toNonVString()){
-        //Save::setLastOpenedVersion(Mod::get()->getVersion().toNonVString());
+        Save::setLastOpenedVersion(Mod::get()->getVersion().toNonVString());
         // FLAlertLayer::create(nullptr, fmt::format("Death Tracker {} Changelog", Mod::get()->getVersion().toVString()).c_str(), fmt::format(
         //     "{}",
         //     "- <cg>iOS support</c>"
@@ -264,7 +263,7 @@ bool DTLayer::init(GJGameLevel* const& level) {
     discardChangesButton->setPosition({-191, -140});
     editLayoutMenu->addChild(discardChangesButton);
 
-    auto testInfo = TutorialButton::create(1, [&, levelSpecificOptionsBtn, graphBtn, editLayoutBtn, settingsBtn](DTTutorialLayer* tutorialLayer){
+    auto mainInfo = TutorialButton::create(1, [&, levelSpecificOptionsBtn, graphBtn, editLayoutBtn, settingsBtn](DTTutorialLayer* tutorialLayer){
         tutorialLayer->appendDialogue("Welcome to the <cy>main death tracker page!</c>", TutorialCharacterFace::TCFNormal)
             ->appendDialogue("This is the <cy>main view</c> where you can view <cg>all your data!</c>", TutorialCharacterFace::TCFNormal)
             ->joinTransform(TutorialBoxPlacement::TBPBottom, .75f)
@@ -300,8 +299,79 @@ bool DTLayer::init(GJGameLevel* const& level) {
             ->appendDialogue("Have fun playing around with the features!", TutorialCharacterFace::TCFNormal)
             ->joinTransform(TutorialBoxPlacement::TBPCenter);
     });
-    testInfo->setPosition(m_size);
-    m_buttonMenu->addChild(testInfo);
+    mainInfo->setPosition(m_size);
+    m_buttonMenu->addChild(mainInfo);
+
+    layoutInfo = TutorialButton::create(1, [&, applyChangesButton, discardChangesButton](DTTutorialLayer* tutorialLayer){
+        tutorialLayer
+            ->appendDialogue("This is where you can <cg>Edit how death tracker looks!</c>", TutorialCharacterFace::TCFNormal)
+            ->appendDialogue("Here you have different labels! which can display any text you want!", TutorialCharacterFace::TCFNormal)
+            ->joinTransform(TutorialBoxPlacement::TBPBottom, .65f);
+
+        std::set<DTLabel*> allLabels{};
+
+        int index = 0;
+        for (const auto& column : columns)
+        {
+            for (const auto& [_, label] : column->labels)
+            {
+                if (allLabels.contains(label)) continue;
+
+                allLabels.insert(label);
+                tutorialLayer->joinHighlight(label->labelTitleBG, .1f * index);
+                index++;
+            }
+        }
+        
+        tutorialLayer
+            ->appendDialogue("You can <cy>click</c> on them to enter the label settings", TutorialCharacterFace::TCFNormal)
+            ->joinPreviousHighlight()
+            ->appendDialogue("<cy>Drag them around</c> to move them", TutorialCharacterFace::TCFNormal)
+            ->joinPreviousHighlight()
+            ->appendDialogue("And also <cy>drag the edges</c> of the labels to <cg>expand</c> them", TutorialCharacterFace::TCFNormal);
+
+        index = 0;
+        for (const auto& label : allLabels){
+            tutorialLayer->joinHighlight(label->leftExpandLine, .2f * index);
+            tutorialLayer->joinHighlight(label->rightExpandLine, .2f * index);
+
+            index++;
+        }
+
+        tutorialLayer
+            ->appendDialogue("Every <cy>label</c> has to be attached to some <cp>column</c>", TutorialCharacterFace::TCFNormal)
+            ->joinTransform(TutorialBoxPlacement::TBPCenter, .65f);
+
+        index = 0;
+        for (const auto& column : columns)
+        {
+            tutorialLayer->joinHighlight(column->topSpr, .1f * index);
+            index++;
+        }
+
+        tutorialLayer
+            ->appendDialogue("Each <cp>column</c> can be <cy>clicked</c> to enter its settings", TutorialCharacterFace::TCFNormal)
+            ->joinPreviousHighlight()
+            ->appendDialogue("And can be <cg>expanded</c> when <cy>dragging its edges</c>", TutorialCharacterFace::TCFNormal);
+
+        index = 0;
+        for (const auto& column : columns)
+        {
+            tutorialLayer->joinHighlight(column->topBorder2, .2f * index);
+            index++;
+        }
+
+        tutorialLayer
+            ->appendDialogue("One you are done can click the <cg>Apply Changes</c> button to save your changes", TutorialCharacterFace::TCFNormal)
+            ->joinHighlight(applyChangesButton)
+            ->appendDialogue("Or delete all the changes you have made usign the <cr>Discard Changes</c> button!", TutorialCharacterFace::TCFNormal)
+            ->joinHighlight(discardChangesButton)
+            ->appendDialogue("Feel free to play around and explore the different settings!", TutorialCharacterFace::TCFNormal)
+            ->joinTransform(TutorialBoxPlacement::TBPCenter, 1);
+    });
+    layoutInfo->setPosition({100, 128});
+    layoutInfo->setOpacity(0);
+    editLayoutMenu->addChild(layoutInfo);
 
     scrollLayer->setVisible(false);
 
@@ -344,6 +414,8 @@ void DTLayer::onEditLayout(CCObject*){
     editLayoutBtnSpr->runAction(CCFadeTo::create(.15f, 0));
     
     editLayoutMenu->setEnabled(true);
+    layoutInfo->stopAllActions();
+    layoutInfo->runAction(CCFadeTo::create(.15f, 255));
     applyChangesButtonSpr->m_BGSprite->stopAllActions();
     applyChangesButtonSpr->m_BGSprite->runAction(CCFadeTo::create(.15f, 255));
     applyChangesButtonSpr->m_label->stopAllActions();
@@ -1602,6 +1674,8 @@ void DTLayer::exitLayoutEditing(){
     editLayoutBtnSpr->runAction(CCFadeTo::create(.15f, 255));
     
     editLayoutMenu->setEnabled(false);
+    layoutInfo->stopAllActions();
+    layoutInfo->runAction(CCFadeTo::create(.15f, 0));
     applyChangesButtonSpr->m_BGSprite->stopAllActions();
     applyChangesButtonSpr->m_BGSprite->runAction(CCFadeTo::create(.15f, 0));
     applyChangesButtonSpr->m_label->stopAllActions();

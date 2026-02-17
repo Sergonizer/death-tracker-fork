@@ -31,6 +31,8 @@ class LayoutColumn : public CCMenu {
 
         void refreshAllLabelsLayer();
         CCScale9Sprite* bgSpr;
+        CCScale9Sprite* topSpr;
+        CCScale9Sprite* topBorder2;
 
         static float topHeight;
 
@@ -47,11 +49,8 @@ class LayoutColumn : public CCMenu {
 
         int bgOpacity = 125;
 
-        CCScale9Sprite* topSpr;
-        
-
         CCScale9Sprite* topBorder1;
-        CCScale9Sprite* topBorder2;
+        
         CCScale9Sprite* topBorder3;
         CCScale9Sprite* bgSideBorder;
 

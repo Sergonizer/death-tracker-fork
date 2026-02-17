@@ -9,6 +9,7 @@
 #include <types/DTTypes.hpp>
 #include <utils/SpecialKey.hpp>
 #include <nodes/layers/LayoutOptionsLayer.hpp>
+#include <nodes/TutorialButton.hpp>
 
 using namespace geode::prelude;
 
@@ -167,6 +168,7 @@ class DTLayer : public Popup {
 
         CCMenu* bottomMenu;
         CCMenu* editLayoutMenu;
+        TutorialButton* layoutInfo;
         ButtonSprite* discardChangesButtonSpr;
         ButtonSprite* applyChangesButtonSpr;
         void onApplyLayoutChanges(CCObject*);

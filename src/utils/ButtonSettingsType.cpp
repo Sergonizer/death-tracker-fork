@@ -36,7 +36,7 @@ bool ButtonSettingNodeDT::init(std::shared_ptr<ButtonSettingDT> setting, float w
     if (!SettingNodeV3::init(setting, width))
         return false;
         
-    m_buttonSprite = ButtonSprite::create("Check", "goldFont.fnt", "GJ_button_01.png", .8f);
+    m_buttonSprite = ButtonSprite::create("Convert", "goldFont.fnt", "GJ_button_01.png", .8f);
     m_buttonSprite->setScale(.5f);
     m_button = CCMenuItemSpriteExtra::create(
         m_buttonSprite, this, menu_selector(ButtonSettingNodeDT::onButton)
@@ -61,7 +61,7 @@ void ButtonSettingNodeDT::updateState(CCNode* invoker) {
     m_buttonSprite->setColor(shouldEnable ? ccWHITE : ccGRAY);
 }
 void ButtonSettingNodeDT::onButton(CCObject*) {
-    FileConversionLayer::create()->show();
+    FileConversionLayer::create(false)->show();
 }
 
 void ButtonSettingNodeDT::onCommit() {}

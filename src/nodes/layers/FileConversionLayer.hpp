@@ -22,9 +22,9 @@ using ConversionFuture = arc::Future<ConversionResult>;
 
 class FileConversionLayer : public geode::Popup {
     public:
-        static FileConversionLayer* create();
+        static FileConversionLayer* create(bool exitIfNone);
     private:
-        bool init() override;
+        bool init(bool exitIfNone);
 
         SimpleTextArea* textArea;
         Slider* progressBar;
@@ -41,5 +41,12 @@ class FileConversionLayer : public geode::Popup {
 
         void onClose(cocos2d::CCObject*) override;
 
+        void onStart(cocos2d::CCObject*);
+
+        LookupFuture::Output lookupResult;
+        CCMenuItemSpriteExtra* startBtn;
+
         bool didComplete;
+
+        bool exitIfNone;
 };
