@@ -700,6 +700,9 @@ bool DTLayer::createDeathsString(const Deaths& deaths, const stringCustomazation
 
         bool includeRunStart = runSplit.start != -1;
 
+        std::string nbDeColor = "";
+        std::string nbColor = "";
+
         if (includeRunStart && !ignoreExtraSettings && !myMetadata.showAnyRun){
             if (myMetadata.RunsToShow.contains(runSplit.start)){
                 if (myMetadata.RunsToShow[runSplit.start] > runSplit.end)
@@ -709,22 +712,7 @@ bool DTLayer::createDeathsString(const Deaths& deaths, const stringCustomazation
                 continue;
             }
         }
-
-        if (prevStart != runSplit.start){
-            if (prevStart != -2){
-                out += "----------{nl}";
-            }
-            prevStart = runSplit.start;
-        }
-
-        std::string nbDeColor = "";
-        std::string nbColor = "";
-
-        if (includeRunStart){
-            if (myMetadata.hideRunLength > runSplit.end - runSplit.start)
-                continue;
-        }
-        else{
+        else if (!includeRunStart && !ignoreExtraSettings){
             if (myMetadata.hideUpto > runSplit.end)
                 continue;
 
@@ -732,6 +720,13 @@ bool DTLayer::createDeathsString(const Deaths& deaths, const stringCustomazation
                 nbDeColor = "{\\color}";
                 nbColor = newBestColoring;
             }
+        }
+
+        if (prevStart != runSplit.start){
+            if (prevStart != -2){
+                out += "----------{nl}";
+            }
+            prevStart = runSplit.start;
         }
 
         auto format = custom.format;

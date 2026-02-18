@@ -114,21 +114,24 @@ bool RunOptions::setup(){
     float rightOffset = 5;
 
     HidUpToInput = TextInput::create(45, "%");
-    HidUpToInput->setPosition({size.width - HidUpToInput->getContentWidth() / 2 - rightOffset, size.height / 8 * 5});
+    HidUpToInput->setPosition({size.width - HidUpToInput->getContentWidth() / 2 - rightOffset, size.height / 8 * 6});
     HidUpToInput->setString(dtlayer == nullptr ? "" : (dtlayer->m_MyLevelStats.isOk() ? std::to_string(dtlayer->m_MyLevelStats.unwrap().metadata.hideUpto) : ""));
     HidUpToInput->setCommonFilter(CommonFilter::Uint);
     HidUpToInput->setCallback([&](const std::string& newText){
         auto dtlayer = DTLayer::get();
         auto numRes = geode::utils::numFromString<int>(newText);
-
+        
         if (dtlayer == nullptr || dtlayer->m_MyLevelStats.isErr() || numRes.isErr()) return;
-
+        
         int num = numRes.unwrap();
         num = std::min(num, 100);
         HidUpToInput->setString(std::to_string(num));
 
         auto& stats = dtlayer->m_MyLevelStats.unwrap();
         stats.metadata.hideUpto = num;
+        auto _ = StatsManager::setMetadata(stats.metadata, stats.levelKey);
+
+        dtlayer->specialStrings["general"]->updateContent();
     });
     this->addChild(HidUpToInput);
 
@@ -139,31 +142,31 @@ bool RunOptions::setup(){
     HideUpToLabel->setAnchorPoint({1, .5f});
     this->addChild(HideUpToLabel);
 
-    RealEndPerInput = TextInput::create(45, "E %");
-    RealEndPerInput->setPosition({size.width - RealEndPerInput->getContentWidth() / 2 - rightOffset, size.height / 8 * 3});
-    RealEndPerInput->setString(dtlayer == nullptr ? "" : (dtlayer->m_MyLevelStats.isOk() ? std::to_string(dtlayer->m_MyLevelStats.unwrap().metadata.realEndPercent) : ""));
-    RealEndPerInput->setCommonFilter(CommonFilter::Uint);
-    RealEndPerInput->setCallback([&](const std::string& newText){
-        auto dtlayer = DTLayer::get();
-        auto numRes = geode::utils::numFromString<int>(newText);
+    // RealEndPerInput = TextInput::create(45, "E %");
+    // RealEndPerInput->setPosition({size.width - RealEndPerInput->getContentWidth() / 2 - rightOffset, size.height / 8 * 3});
+    // RealEndPerInput->setString(dtlayer == nullptr ? "" : (dtlayer->m_MyLevelStats.isOk() ? std::to_string(dtlayer->m_MyLevelStats.unwrap().metadata.realEndPercent) : ""));
+    // RealEndPerInput->setCommonFilter(CommonFilter::Uint);
+    // RealEndPerInput->setCallback([&](const std::string& newText){
+    //     auto dtlayer = DTLayer::get();
+    //     auto numRes = geode::utils::numFromString<int>(newText);
 
-        if (dtlayer == nullptr || dtlayer->m_MyLevelStats.isErr() || numRes.isErr()) return;
+    //     if (dtlayer == nullptr || dtlayer->m_MyLevelStats.isErr() || numRes.isErr()) return;
 
-        int num = numRes.unwrap();
-        num = std::min(num, 100);
-        RealEndPerInput->setString(std::to_string(num));
+    //     int num = numRes.unwrap();
+    //     num = std::min(num, 100);
+    //     RealEndPerInput->setString(std::to_string(num));
 
-        auto& stats = dtlayer->m_MyLevelStats.unwrap();
-        stats.metadata.realEndPercent = num;
-    });
-    this->addChild(RealEndPerInput);
+    //     auto& stats = dtlayer->m_MyLevelStats.unwrap();
+    //     stats.metadata.realEndPercent = num;
+    // });
+    // this->addChild(RealEndPerInput);
 
-    auto RealEndPerLabel = CCLabelBMFont::create("Real End %", "gjFont17.fnt");
-    RealEndPerLabel->setScale(.65f);
-    RealEndPerLabel->setWidth(size.width / 2 - RealEndPerInput->getContentWidth() - rightOffset);
-    RealEndPerLabel->setPosition(RealEndPerInput->getPosition() - ccp(RealEndPerInput->getContentWidth() / 2 + rightOffset, 0));
-    RealEndPerLabel->setAnchorPoint({1, .5f});
-    this->addChild(RealEndPerLabel);
+    // auto RealEndPerLabel = CCLabelBMFont::create("Real End %", "gjFont17.fnt");
+    // RealEndPerLabel->setScale(.65f);
+    // RealEndPerLabel->setWidth(size.width / 2 - RealEndPerInput->getContentWidth() - rightOffset);
+    // RealEndPerLabel->setPosition(RealEndPerInput->getPosition() - ccp(RealEndPerInput->getContentWidth() / 2 + rightOffset, 0));
+    // RealEndPerLabel->setAnchorPoint({1, .5f});
+    // this->addChild(RealEndPerLabel);
 
     auto ResetAsDeathToggler = SimpleToggler::createWithDefaults(
         .75f,
@@ -175,8 +178,9 @@ bool RunOptions::setup(){
 
         auto& stats = dtlayer->m_MyLevelStats.unwrap();
         stats.metadata.resetAsDeath = isToggled;
+        auto _ = StatsManager::setMetadata(stats.metadata, stats.levelKey);
     });
-    ResetAsDeathToggler->setPosition({size.width - ResetAsDeathToggler->getContentWidth() / 2 - rightOffset, size.height / 8 * 1});
+    ResetAsDeathToggler->setPosition({size.width - ResetAsDeathToggler->getContentWidth() / 2 - rightOffset, size.height / 8 * 2});
     this->addChild(ResetAsDeathToggler);
 
     auto ResetAsDeathLabel = CCLabelBMFont::create("Reset as Death", "gjFont17.fnt");
@@ -272,8 +276,8 @@ void RunOptions::onOpened(){
 
     runAdditionInput->getInputNode()->m_textLabel->setOpacity(0);
     Dev::fadeTextInput(runAdditionInput, true, fadeTime);
-    RealEndPerInput->getInputNode()->m_textLabel->setOpacity(0);
-    Dev::fadeTextInput(RealEndPerInput, true, fadeTime);
+    // RealEndPerInput->getInputNode()->m_textLabel->setOpacity(0);
+    // Dev::fadeTextInput(RealEndPerInput, true, fadeTime);
     HidUpToInput->getInputNode()->m_textLabel->setOpacity(0);
     Dev::fadeTextInput(HidUpToInput, true, fadeTime);
 
@@ -288,7 +292,7 @@ void RunOptions::onClosed(){
     this->runAction(CCFadeOut::create(fadeTime));
 
     Dev::fadeTextInput(runAdditionInput, false, fadeTime);
-    Dev::fadeTextInput(RealEndPerInput, false, fadeTime);
+    // Dev::fadeTextInput(RealEndPerInput, false, fadeTime);
     Dev::fadeTextInput(HidUpToInput, false, fadeTime);
 
     for (const auto& child : CCArrayExt<PercentCell*>(runsScrollLayer->m_contentLayer->getChildren())){

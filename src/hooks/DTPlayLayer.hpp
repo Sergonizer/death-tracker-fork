@@ -11,6 +11,8 @@ class $modify(DTPlayLayer, PlayLayer) {
         bool hasRespawned = false;
         Run currentRun;
 
+        bool lastOneDied = false;
+
         std::vector<int> fzeroToSave{};
         std::vector<Run> runsToSave{};
     };
@@ -41,4 +43,6 @@ class $modify(DTPlayLayer, PlayLayer) {
     void onQuit();
 
     float getActualProgress(GJBaseGameLayer* game);
+
+    void saveRun();
 };

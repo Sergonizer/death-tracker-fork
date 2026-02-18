@@ -18,7 +18,7 @@ class RunOptions : public OptionsNode {
         void addNewRun(CCObject*);
 
         TextInput* runAdditionInput;
-        TextInput* RealEndPerInput;
+        //TextInput* RealEndPerInput;
         TextInput* HidUpToInput;
 
         ScrollLayer* runsScrollLayer;

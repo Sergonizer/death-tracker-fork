@@ -986,7 +986,6 @@ Result<> StatsManager::convertV2SaveToV3(const std::string& levelKey){
     v3Meta.attempts = stats.attempts;
     v3Meta.difficulty = stats.difficulty;
     v3Meta.hideUpto = stats.hideUpto;
-    v3Meta.hideRunLength = stats.hideRunLength;
 
     if (setMetadata(v3Meta, levelKey).isErr()) return Err("Failed to write V3 meta!");
 

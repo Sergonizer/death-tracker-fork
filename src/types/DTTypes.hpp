@@ -94,7 +94,6 @@ typedef struct LevelMetadeta {
     int attempts = 0;
     int difficulty = 0;
     int hideUpto = 0;
-    int hideRunLength = 0;
     int realEndPercent = 100;
     bool resetAsDeath = false;
     std::optional<int> maxBackupsAmount = 2;
@@ -152,7 +151,6 @@ struct matjson::Serialize<LevelMetadeta> {
         GEODE_UNWRAP_INTO(stats.levelName, value["levelName"].asString());
         GEODE_UNWRAP_INTO(stats.attempts, value["attempts"].asInt());
         GEODE_UNWRAP_INTO(stats.difficulty, value["difficulty"].asInt());
-        GEODE_UNWRAP_INTO(stats.hideRunLength, value["hideRunLength"].asInt());
         GEODE_UNWRAP_INTO(stats.hideUpto, value["hideUpto"].asInt());
         GEODE_UNWRAP_INTO(stats.realEndPercent, value["realEndPercent"].asInt());
         GEODE_UNWRAP_INTO(stats.resetAsDeath, value["resetAsDeath"].asBool());
@@ -182,7 +180,6 @@ struct matjson::Serialize<LevelMetadeta> {
             { "levelName", value.levelName },
             { "attempts", value.attempts },
             { "difficulty", value.difficulty },
-            { "hideRunLength", value.hideRunLength },
             { "hideUpto", value.hideUpto },
             { "realEndPercent", value.realEndPercent },
             { "resetAsDeath", value.resetAsDeath },

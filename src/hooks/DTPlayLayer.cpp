@@ -114,13 +114,28 @@ void DTPlayLayer::checkpointActivated(CheckpointGameObject* checkpt) {
 #endif
 
 void DTPlayLayer::resetLevel() {
+    if (m_fields->lastOneDied){
+        m_fields->lastOneDied = false;
+    }
+    else{
+        if (!DTPlayLayer::disableCompletedLevelTracking() && isGameplayActive()){
+            auto metaRes = StatsManager::getMetadata(m_level);
+
+            if (metaRes.isOk() && metaRes.unwrap().resetAsDeath){
+                if (!m_level->isPlatformer())
+                    m_fields->currentRun.end = getActualProgress(this);
+
+                saveRun();
+            }
+        }
+    }
     PlayLayer::resetLevel();
-    // log::info("PlayLayer::resetLevel()");
+    //log::info("PlayLayer::resetLevel()");
 
     m_fields->hasRespawned = true;
 
     if (!m_level->isPlatformer())
-        m_fields->currentRun.start = static_cast<int>(this->getCurrentPercent());
+        m_fields->currentRun.start = getActualProgress(this);
     else
         m_fields->currentRun.start = m_fields->currentRun.end;
 }
@@ -147,9 +162,15 @@ void DTPlayLayer::destroyPlayer(PlayerObject* player, GameObject* p1) {
     //     m_level->isPlatformer()
     // );
 
+    m_fields->lastOneDied = true;
+
     if (m_fields->currentRun.start < 0)
         return;
 
+    saveRun();
+}
+
+void DTPlayLayer::saveRun(){
     if (!Settings::getLateSaveEnabled()){
         // log deaths from 0 in normal mode
         if (m_fields->currentRun.start == 0 && !m_isPracticeMode)
@@ -178,7 +199,6 @@ void DTPlayLayer::destroyPlayer(PlayerObject* player, GameObject* p1) {
         else
             m_fields->runsToSave.push_back(m_fields->currentRun);
     }
-        
 }
 
 void DTPlayLayer::levelComplete() {
@@ -200,24 +220,15 @@ void DTPlayLayer::levelComplete() {
     //     m_level->isPlatformer()
     // );
 
+    m_fields->lastOneDied = true;
+
     if (m_fields->currentRun.start < 0)
         return;
 
     if (m_level->isPlatformer())
         m_fields->currentRun.end++;
         
-    if (!Settings::getLateSaveEnabled()){
-        if (m_fields->currentRun.start == 0)
-            StatsManager::logDeath(m_fields->currentRun.end);
-        else
-            StatsManager::logRun(m_fields->currentRun);
-    }
-    else{
-        if (m_fields->currentRun.start == 0)
-            m_fields->fzeroToSave.push_back(m_fields->currentRun.end);
-        else
-            m_fields->runsToSave.push_back(m_fields->currentRun);
-    }            
+    saveRun();
 }
 
 void DTPlayLayer::removeAllCheckpoints() {
