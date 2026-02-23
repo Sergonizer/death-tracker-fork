@@ -2,9 +2,6 @@
 
 #include <nodes/layers/DTLayer.hpp>
 #include <utils/Dev.hpp>
-#if !defined(GEODE_IS_IOS)
-// #include <geode.custom-keybinds/include/Keybinds.hpp>
-#endif
 #include <nodes/TutorialButton.hpp>
 
 RunOptions* RunOptions::create(const CCSize& size) {
@@ -258,14 +255,17 @@ bool RunOptions::setup(){
 
     this->setOpacity(0);
 
-    #if !defined(GEODE_IS_IOS)
-    // addEventListener<keybinds::InvokeBindFilter>([&](keybinds::InvokeBindEvent* event) {
-    //     if (event->isDown() && runAdditionInput->getInputNode()->m_selected) {
-    //         addNewRun(nullptr);
-    //     }
-    //     return ListenerResult::Propagate;
-    // }, "enter-new-run-per"_spr);
-    #endif
+    this->addEventListener(
+        KeybindSettingPressedEvent(
+            Mod::get(),
+            "enter-new-run-per"
+        ),
+        [&](const Keybind& keybind, bool down, bool repeat, double) {
+            if (down && runAdditionInput->getInputNode()->m_selected) {
+                addNewRun(nullptr);
+            }
+        }
+    );
 
     return true;
 }

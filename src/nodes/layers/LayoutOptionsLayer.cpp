@@ -1,8 +1,5 @@
 #include "LayoutOptionsLayer.hpp"
 #include <nodes/layers/DTLayer.hpp>
-#if !defined(GEODE_IS_IOS)
-// #include <geode.custom-keybinds/include/Keybinds.hpp>
-#endif
 #include <nodes/SpecialKeyCell.hpp>
 
 /*
@@ -310,29 +307,32 @@ bool LayoutOptionsLayer::init(const CCSize& size) {
     fontSelectionBtnLabel->setPosition(fontSelectedIndicatorLabel->getPosition() + ccp(0, fontSelectedIndicatorLabel->getScaledContentHeight() / 2 + fontSelectionBtnLabel->getScaledContentHeight() / 2));
     labelSettingsNode->addChild(fontSelectionBtnLabel);
 
-    #if !defined(GEODE_IS_IOS)
-    // addEventListener<keybinds::InvokeBindFilter>([&](keybinds::InvokeBindEvent* event) {
-    //     if (event->isDown() && editedLabel.has_value()) {
-    //         TextInput* toEdit = nullptr;
-    //         if (labelTextInput->getInputNode()->m_selected) toEdit = labelTextInput;
-    //         else if (labelTextSpecialKeysInput->getInputNode()->m_selected) toEdit = labelTextSpecialKeysInput;
-            
-    //         if (toEdit == nullptr) return ListenerResult::Propagate;
+    this->addEventListener(
+        KeybindSettingPressedEvent(
+            Mod::get(),
+            "enter-new-line"
+        ),
+        [&](const Keybind& keybind, bool down, bool repeat, double) {
+            if (down && editedLabel.has_value()) {
+                TextInput* toEdit = nullptr;
+                if (labelTextInput->getInputNode()->m_selected) toEdit = labelTextInput;
+                else if (labelTextSpecialKeysInput->getInputNode()->m_selected) toEdit = labelTextSpecialKeysInput;
+                
+                if (toEdit == nullptr) return;
 
-    //         auto str = toEdit->getString();
-    //         int pos = toEdit->getInputNode()->m_textField->m_uCursorPos;
+                auto str = toEdit->getString();
+                int pos = toEdit->getInputNode()->m_textField->m_uCursorPos;
 
-    //         if (pos == -1) str += "{nl}";
-    //         else {
-    //             str = str.insert(pos, "{nl}");
-    //             toEdit->getInputNode()->m_textField->m_uCursorPos += 4;
-    //         }
+                if (pos == -1) str += "{nl}";
+                else {
+                    str = str.insert(pos, "{nl}");
+                    toEdit->getInputNode()->m_textField->m_uCursorPos += 4;
+                }
 
-    //         toEdit->setString(str, true);
-    //     }
-    //     return ListenerResult::Propagate;
-    // }, "enter-new-line"_spr);
-    #endif
+                toEdit->setString(str, true);
+            }
+        }
+    );
 
     fontSelectionNode->setScaleY(0);
     labelSettingsNode->setScaleY(0);
