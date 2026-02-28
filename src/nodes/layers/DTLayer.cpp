@@ -503,27 +503,27 @@ void DTLayer::populateSpecialStrings(){
     sessionRuns0Key->setUpdateFunction(BIND_UPDATE_FUNC(DTLayer::onSRUNSKey));
     addSpecialString(sessionRuns0Key);
 
-    auto ptallKey = std::make_shared<SpecialKey>("ptgen", "Adds your total estimated calculated platime (shared with linked levels)");
+    auto ptallKey = std::make_shared<SpecialKey>("ptgen", "Adds your total estimated calculated playtime (shared with linked levels)");
     ptallKey->setUpdateFunction(BIND_UPDATE_FUNC(DTLayer::onPTALLSKey));
     addSpecialString(ptallKey);
 
-    auto ptf0Key = std::make_shared<SpecialKey>("ptf0", "Adds your total estimated calculated platime from 0 (shared with linked levels)");
+    auto ptf0Key = std::make_shared<SpecialKey>("ptf0", "Adds your total estimated calculated playtime from 0 (shared with linked levels)");
     ptf0Key->setUpdateFunction(BIND_UPDATE_FUNC(DTLayer::onPTF0SKey));
     addSpecialString(ptf0Key);
 
-    auto ptrunKey = std::make_shared<SpecialKey>("ptruns", "Adds your total estimated calculated platime in runs (shared with linked levels)");
+    auto ptrunKey = std::make_shared<SpecialKey>("ptruns", "Adds your total estimated calculated playtime in runs (shared with linked levels)");
     ptrunKey->setUpdateFunction(BIND_UPDATE_FUNC(DTLayer::onPTRUNSKey));
     addSpecialString(ptrunKey);
 
-    auto ptsallKey = std::make_shared<SpecialKey>("ptsgen", "Adds your total estimated calculated session platime");
+    auto ptsallKey = std::make_shared<SpecialKey>("ptsgen", "Adds your total estimated calculated session playtime");
     ptsallKey->setUpdateFunction(BIND_UPDATE_FUNC(DTLayer::onPTSALLSKey));
     addSpecialString(ptsallKey);
 
-    auto ptsf0Key = std::make_shared<SpecialKey>("ptsf0", "Adds your total estimated calculated session platime from 0");
+    auto ptsf0Key = std::make_shared<SpecialKey>("ptsf0", "Adds your total estimated calculated session playtime from 0");
     ptsf0Key->setUpdateFunction(BIND_UPDATE_FUNC(DTLayer::onPTSF0Key));
     addSpecialString(ptsf0Key);
 
-    auto ptsrunKey = std::make_shared<SpecialKey>("ptsruns", "Adds your total estimated calculated session platime in runs");
+    auto ptsrunKey = std::make_shared<SpecialKey>("ptsruns", "Adds your total estimated calculated session playtime in runs");
     ptsrunKey->setUpdateFunction(BIND_UPDATE_FUNC(DTLayer::onPTSRUNSKey));
     addSpecialString(ptsrunKey);
 

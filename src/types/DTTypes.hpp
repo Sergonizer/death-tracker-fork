@@ -16,7 +16,37 @@ struct Run_s{
 
     Run_s() = default;
 };
-typedef struct Run_s Run; 
+typedef struct Run_s Run;
+
+typedef struct Playtime_pair {
+    long long start;
+    std::optional<long long> end;
+
+    Playtime_pair(long long _start, std::optional<long long> _end) : start(_start), end(_end){}
+
+    Playtime_pair() = default;
+} Playtime_pair;
+
+template <>
+struct matjson::Serialize<Playtime_pair> {
+    static Result<Playtime_pair> fromJson(const matjson::Value& value) {
+        Playtime_pair session;
+        GEODE_UNWRAP_INTO(session.start, value["start"].as<long long>());
+        GEODE_UNWRAP_INTO(auto tempEnd, value["end"].as<long long>());
+        if (tempEnd == -1) session.end = std::nullopt;
+        else session.end = tempEnd;
+        
+        return Ok(session);
+    }
+
+    static matjson::Value toJson(const Playtime_pair& value) {
+        matjson::Value obj = matjson::makeObject({
+            { "start", value.start },
+            { "end", value.end.has_value() ? value.end.value() : -1 },
+        });
+        return obj;
+    }
+};
 
 typedef struct {
     std::string ownerLevelKey;
@@ -26,6 +56,7 @@ typedef struct {
     NewBests newBests;
     int currentBest;
     long long sessionStartDate;
+    std::vector<Playtime_pair> playtime;
 } Session;
 
 template <>
@@ -38,6 +69,9 @@ struct matjson::Serialize<Session> {
         GEODE_UNWRAP_INTO(session.newBests, value["newBests"].as<NewBests>());
         GEODE_UNWRAP_INTO(session.currentBest, value["currentBest"].asInt());
         GEODE_UNWRAP_INTO(session.sessionStartDate, value["sessionStartDate"].as<long long>());
+        if (value.contains("playtime")) {
+            GEODE_UNWRAP_INTO(session.playtime, value["playtime"].as<std::vector<Playtime_pair>>());
+        }
 
         return Ok(session);
     }
@@ -50,6 +84,7 @@ struct matjson::Serialize<Session> {
             { "newBests", value.newBests },
             { "currentBest", value.currentBest },
             { "sessionStartDate", value.sessionStartDate },
+            {"playtime", value.playtime}
         });
         return obj;
     }
@@ -60,6 +95,7 @@ typedef struct {
     Deaths runs;
     NewBests newBests;
     int currentBest;
+    std::vector<Playtime_pair> playtime;
 } GeneralData;
 
 template <>
@@ -71,7 +107,9 @@ struct matjson::Serialize<GeneralData> {
         GEODE_UNWRAP_INTO(stats.runs, value["runs"].as<Deaths>());
         GEODE_UNWRAP_INTO(stats.newBests, value["newBests"].as<NewBests>());
         GEODE_UNWRAP_INTO(stats.currentBest, value["currentBest"].asInt());
-
+        if (value.contains("playtime")) {
+            GEODE_UNWRAP_INTO(stats.playtime, value["playtime"].as<std::vector<Playtime_pair>>());
+        }
         return Ok(stats);
     }
 
@@ -80,7 +118,8 @@ struct matjson::Serialize<GeneralData> {
             { "deaths", value.deaths },
             { "runs", value.runs },
             { "newBests", value.newBests },
-            { "currentBest", value.currentBest }
+            { "currentBest", value.currentBest },
+            {"playtime", value.playtime}
         });
         return obj;
     }
