@@ -187,6 +187,14 @@ class DTLayer : public Popup {
         
         long long calcPlaytime(const Deaths& deaths);
         
+        UpdateFuture onAPTALLSKey();
+        UpdateFuture onAPTF0SKey();
+        UpdateFuture onAPTRUNSKey();
+        UpdateFuture onAPTSALLSKey();
+        UpdateFuture onAPTSF0Key();
+        UpdateFuture onAPTSRUNSKey();
+
+
         UpdateFuture onPTALLSKey();
         UpdateFuture onPTF0SKey();
         UpdateFuture onPTRUNSKey();
