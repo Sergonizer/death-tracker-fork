@@ -1,5 +1,5 @@
 #include "../hooks/DTPlayLayer.hpp"
-
+#include <ctime>
 using namespace geode::prelude;
 
 bool DTPlayLayer::disableCompletedLevelTracking() {
@@ -102,6 +102,8 @@ bool DTPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
     }
 
     DTPlayLayer::updateSessionLastPlayed();
+    DTPlayLayer::startPlaytime();
+
     return true;
 }
 
@@ -112,6 +114,20 @@ void DTPlayLayer::checkpointActivated(CheckpointGameObject* checkpt) {
     m_fields->currentRun.end++;
 }
 #endif
+
+void DTPlayLayer::startPlaytime() {
+    time_t timestamp;
+
+    m_fields->sessionPlaytime.emplace_back(time(&timestamp), std::nullopt);
+}
+
+void DTPlayLayer::endPlaytime() {
+    time_t timestamp;
+
+    if (!m_fields->sessionPlaytime.size()) return;
+
+    m_fields->sessionPlaytime[m_fields->sessionPlaytime.size() - 1].end = time(&timestamp);
+}
 
 void DTPlayLayer::resetLevel() {
     if (m_fields->lastOneDied){
@@ -237,6 +253,21 @@ void DTPlayLayer::removeAllCheckpoints() {
     m_fields->currentRun.end = 0;
 }
 
+void DTPlayLayer::resume() {
+    // if remove pauses is on
+    DTPlayLayer::startPlaytime();
+    PlayLayer::resume();
+}
+
+void DTPlayLayer::pauseGame(bool unfocused) {
+
+
+    // if remove pauses
+    DTPlayLayer::endPlaytime();
+
+    PlayLayer::pauseGame(unfocused);
+}
+
 void DTPlayLayer::onQuit() {
     if (m_fields->fzeroToSave.size()){
         StatsManager::logDeaths(m_fields->fzeroToSave);
@@ -245,6 +276,15 @@ void DTPlayLayer::onQuit() {
     if (m_fields->runsToSave.size()){
         StatsManager::logRuns(m_fields->runsToSave);
     }
+
+    DTPlayLayer::endPlaytime();
+
+    auto session = StatsManager::getCurrentSession();
+    session->playtime.insert(session->playtime.end(), m_fields->sessionPlaytime.begin(), m_fields->sessionPlaytime.end());
+    (void)StatsManager::setSession(*session, m_level, session->sessionStartDate, false);
+    StatsManager::currentFrom0.playtime.insert(StatsManager::currentFrom0.playtime.end(), m_fields->sessionPlaytime.begin(), m_fields->sessionPlaytime.end());
+    (void)StatsManager::setGeneral(StatsManager::currentFrom0, m_level);
+
 
     // log::info("PlayLayer::onQuit()");
 

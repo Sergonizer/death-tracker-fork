@@ -11,6 +11,8 @@ class $modify(DTPlayLayer, PlayLayer) {
         bool hasRespawned = false;
         Run currentRun;
 
+        std::vector<Playtime_pair> sessionPlaytime;
+
         bool lastOneDied = false;
 
         std::vector<int> fzeroToSave{};
@@ -26,6 +28,10 @@ class $modify(DTPlayLayer, PlayLayer) {
 
     bool init(GJGameLevel* level, bool p1, bool p2);
 
+    void startPlaytime();
+
+    void endPlaytime();
+
     void resetLevel();
 
     void destroyPlayer(PlayerObject* player, GameObject* p1);
@@ -39,6 +45,10 @@ class $modify(DTPlayLayer, PlayLayer) {
     void checkpointActivated(CheckpointGameObject* checkpt);
     
     #endif
+
+    void pauseGame(bool unfocused);
+
+    void resume();
 
     void onQuit();
 
