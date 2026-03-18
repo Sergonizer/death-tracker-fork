@@ -4,6 +4,16 @@
 #include <utils/Dev.hpp>
 #include <nodes/layers/CreateBackupPopup.hpp>
 
+/*
+-- auto backup settings --
+
+- toggle auto backups on/off
+- create on level exit
+- create on pause
+- create on exiting death tracker menu
+
+*/
+
 SaveOptions* SaveOptions::create(const CCSize& size) {
     auto ret = new SaveOptions();
     if (ret && ret->initWithSetup(size)) {

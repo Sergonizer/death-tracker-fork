@@ -16,6 +16,10 @@ class SectionOptions : public OptionsNode {
         void saveSections();
         ScrollLayer* mainScroll;
 
+        void onStartPoses(CCObject*);
+
+        bool doesSectionExist(const Section& section);
+
         void onAddSection(CCObject* sender);
         void addSection(const Section& section);
     public:

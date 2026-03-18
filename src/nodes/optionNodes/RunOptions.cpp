@@ -64,11 +64,26 @@ bool RunOptions::setup(){
     });
     this->addChild(runAdditionInput);
 
+    auto startPosBtnSpr = CCSprite::createWithSpriteFrameName("GJ_plainBtn_001.png");
+    auto spSpr = CCSprite::createWithSpriteFrameName("edit_eStartPosBtn_001.png");
+    spSpr->setScale(.75f);
+    startPosBtnSpr->setCascadeOpacityEnabled(true);
+    startPosBtnSpr->setScale(.6f);
+    startPosBtnSpr->addChild(spSpr);
+    spSpr->setPosition(startPosBtnSpr->getContentSize() / 2);
+    auto startPosBtn = CCMenuItemSpriteExtra::create(
+        startPosBtnSpr,
+        this,
+        menu_selector(RunOptions::onStartPoses)
+    );
+    startPosBtn->setPosition(runAdditionInput->getPosition() - ccp(runAdditionInput->getContentWidth() / 2 + startPosBtn->getContentWidth() / 2 + 5, 0));
+    this->addChild(startPosBtn);
+
     auto plusBtnSpr = CCSprite::createWithSpriteFrameName("GJ_plus3Btn_001.png");
     auto plusBtn = CCMenuItemSpriteExtra::create(
         plusBtnSpr,
         this,
-        menu_selector(RunOptions::addNewRun)
+        menu_selector(RunOptions::onAddNewRun)
     );
     plusBtn->setPosition(runAdditionInput->getPosition() + ccp(runAdditionInput->getScaledContentWidth() / 2 + plusBtn->getContentWidth() / 2 + 5, 0));
     this->addChild(plusBtn);
@@ -262,7 +277,7 @@ bool RunOptions::setup(){
         ),
         [&](const Keybind& keybind, bool down, bool repeat, double) {
             if (down && runAdditionInput->getInputNode()->m_selected) {
-                addNewRun(nullptr);
+                onAddNewRun(nullptr);
             }
         }
     );
@@ -302,19 +317,25 @@ void RunOptions::onClosed(){
     this->setEnabled(false);
 }
 
-void RunOptions::addNewRun(CCObject*){
+void RunOptions::onAddNewRun(CCObject*){
     auto dtlayer = DTLayer::get();
-    //log::info("{}", dtlayer->specialStrings["totalLocalDeaths"]);
     auto numRes = geode::utils::numFromString<int>(runAdditionInput->getString());
 
     if (dtlayer == nullptr || dtlayer->m_MyLevelStats.isErr() || numRes.isErr()) return;
 
     int num = numRes.unwrap();
 
+    addNewRun(num);
+}
+
+bool RunOptions::addNewRun(int percent){
+    auto dtlayer = DTLayer::get();
+    if (dtlayer == nullptr) return false;
+
     auto& stats = dtlayer->m_MyLevelStats.unwrap();
-    if (stats.metadata.runsToShow.contains(num)) return;
+    if (stats.metadata.runsToShow.contains(percent)) return false;
     
-    stats.metadata.runsToShow.insert({num, num});
+    stats.metadata.runsToShow.insert({percent, percent});
 
     (void)StatsManager::setMetadata(stats.metadata, stats.levelKey);
 
@@ -322,13 +343,15 @@ void RunOptions::addNewRun(CCObject*){
     DTLayer::get()->specialStrings["sruns"]->updateContent();
 
     dtlayer->foreachLinkedLevel([&](auto& lvlData){
-        if (lvlData.metadata.runsToShow.contains(num)) return;
+        if (lvlData.metadata.runsToShow.contains(percent)) return;
 
-        lvlData.metadata.runsToShow.insert({num, num});
+        lvlData.metadata.runsToShow.insert({percent, percent});
         (void)StatsManager::setMetadata(lvlData.metadata, lvlData.levelKey);
     });
 
-    createRunCell(num, num);
+    createRunCell(percent, percent);
+
+    return true;
 }
 
 void RunOptions::PercentCellClicked(PercentCell* cell){
@@ -390,6 +413,47 @@ void RunOptions::createRunCell(int percent, int maxToHide){
     );
     percentCell->onMaxToHideChanged = [&](PercentCell* cell){ RunOptions::PercentMaxHideValChanged(cell); };
     runsScrollLayer->m_contentLayer->addChild(percentCell);
+
+    runsScrollLayer->m_contentLayer->updateLayout();
+}
+
+void RunOptions::onStartPoses(CCObject*){
+    auto currLvl = PlayLayer::get();
+    if (currLvl == nullptr){
+        FLAlertLayer::create("Cant add StartPos runs", "You must enter the level itself to automatically add StartPos runs!", "OK")->show();
+        return;
+    }
+
+    int anythingAdded = false;
+    bool foundStartPoses = false;
+    
+    for (auto child : currLvl->m_objects->asExt<GameObject*>()){
+        if (auto sp = typeinfo_cast<StartPosObject*>(child)){
+            float LLength = PlayLayer::get()->m_levelLength;
+            float startPosX = sp->getPositionX();
+
+            if (currLvl->m_level->m_timestamp > 0) {
+                float startPosTime = PlayLayer::get()->timeForPos({startPosX, 0}, 0, 0, true, 0);
+                float LTime = PlayLayer::get()->timeForPos({LLength, 0}, 0, 0, true, 0);
+                
+                if (addNewRun(startPosTime / LTime * 100))
+                    anythingAdded = true;
+            } else {
+                if (addNewRun(startPosX / LLength * 100))
+                    anythingAdded = true;
+            }
+
+            foundStartPoses = true;
+        }
+    }
+
+    if (!foundStartPoses) {
+        Notification::create("No StartPoses detected!", NotificationIcon::Info)->show();
+    }
+    else if (anythingAdded)
+        Notification::create("Added StartPos runs!", NotificationIcon::Success)->show();
+    else
+        Notification::create("StartPos runs were already added", NotificationIcon::Info)->show();
 
     runsScrollLayer->m_contentLayer->updateLayout();
 }

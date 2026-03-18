@@ -35,6 +35,21 @@ bool SectionOptions::setup(){
     sectionsLabel->setScale(.75f);
     this->addChild(sectionsLabel);
 
+    auto startPosBtnSpr = CCSprite::createWithSpriteFrameName("GJ_plainBtn_001.png");
+    auto spSpr = CCSprite::createWithSpriteFrameName("edit_eStartPosBtn_001.png");
+    spSpr->setScale(.75f);
+    startPosBtnSpr->setScale(.6f);
+    startPosBtnSpr->addChild(spSpr);
+    startPosBtnSpr->setCascadeOpacityEnabled(true);
+    spSpr->setPosition(startPosBtnSpr->getContentSize() / 2);
+    auto startPosBtn = CCMenuItemSpriteExtra::create(
+        startPosBtnSpr,
+        this,
+        menu_selector(SectionOptions::onStartPoses)
+    );
+    startPosBtn->setPosition(sectionsLabel->getPosition() - ccp(sectionsLabel->getContentWidth() / 2 + startPosBtn->getContentWidth() / 2 + 5, 0));
+    this->addChild(startPosBtn);
+
     if (dtlayer->m_MyLevelStats.isErr()){
 
     }
@@ -136,4 +151,82 @@ void SectionOptions::addSection(const Section& section){
     mainScroll->m_contentLayer->addChild(cell);
     mainScroll->m_contentLayer->updateLayout();
     mainScroll->m_contentLayer->setPositionY(0);
+}
+
+void SectionOptions::onStartPoses(CCObject*){
+    auto currLvl = PlayLayer::get();
+    if (currLvl == nullptr){
+        FLAlertLayer::create("Cant add StartPos sections", "You must enter the level itself to automatically add StartPos sections!", "OK")->show();
+        return;
+    }
+
+    int anythingAdded = false;
+
+    std::set<int> startPosPercents{};
+    
+    for (const auto& child : currLvl->m_objects->asExt<GameObject*>()){
+        if (auto sp = typeinfo_cast<StartPosObject*>(child)){
+            float LLength = PlayLayer::get()->m_levelLength;
+            float startPosX = sp->getPositionX();
+
+            if (currLvl->m_level->m_timestamp > 0) {
+                float startPosTime = PlayLayer::get()->timeForPos({startPosX, 0}, 0, 0, true, 0);
+                float LTime = PlayLayer::get()->timeForPos({LLength, 0}, 0, 0, true, 0);
+
+                startPosPercents.insert(startPosTime / LTime * 100);
+            } else {
+                startPosPercents.insert(startPosX / LLength * 100);
+            }
+        }
+    }
+
+    if (startPosPercents.size()) startPosPercents.insert(100);
+    else{
+        Notification::create("No StartPoses detected!", NotificationIcon::Info)->show();
+        return;
+    }
+
+    int prevRunPercent = 0;
+
+    int index = 0;
+
+    for (const auto& percent : startPosPercents){
+        Section section{
+            .startPercent = prevRunPercent,
+            .endPercent = percent,
+        };
+
+        section.name = fmt::format("#{}", 1 + index);
+        index++;
+
+        prevRunPercent = percent;
+
+        if (doesSectionExist(section)) continue;
+
+        addSection(section);
+        anythingAdded = true;
+    }
+
+    
+    if (anythingAdded){
+        saveSections();
+        Notification::create("Added StartPos sections!", NotificationIcon::Success)->show();
+    }
+    else
+        Notification::create("StartPos sections were already added", NotificationIcon::Info)->show();
+}
+
+bool SectionOptions::doesSectionExist(const Section& section){
+    std::vector<Section> newSections;
+    for (const auto& cell : mainScroll->m_contentLayer->getChildrenExt<SectionCell*>()) {
+        newSections.push_back(cell->getSection());
+    }
+
+    for (const auto& existingSection : newSections) {
+        if (existingSection.startPercent == section.startPercent && existingSection.endPercent == section.endPercent) {
+            return true;
+        }
+    }
+
+    return false;
 }

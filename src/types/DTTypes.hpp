@@ -139,6 +139,10 @@ typedef struct Section {
         return !(startPercent > endPercent);
     }
 
+    bool operator==(const Section& other) const {
+        return startPercent == other.startPercent && endPercent == other.endPercent;
+    }
+
 } Section;
 
 template <>

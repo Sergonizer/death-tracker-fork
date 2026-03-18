@@ -33,7 +33,6 @@ bool DTPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
     }
     else if (metaRes.isErr()){
         geode::Notification::create(fmt::format("Failed to load DT level data! {}", metaRes.unwrapErr()), NotificationIcon::Error)->show();
-        //log::info("{}", metaRes.unwrapErr());
     }
 
     if (metaRes.isOk()){
@@ -42,8 +41,7 @@ bool DTPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
         metadata.attempts = level->m_attempts;
         metadata.difficulty = StatsManager::getDifficulty(level);
         (void)StatsManager::setMetadata(metadata, level);
-        // if (_.isErr())
-        //     log::info("set meta res {}", _.unwrapErr());
+        
         metaRes = Ok(metadata);
     }
 
@@ -297,10 +295,8 @@ float DTPlayLayer::getActualProgress(GJBaseGameLayer* game) {
     float percent;
     if (game->m_level->m_timestamp > 0) {
         percent = static_cast<float>(game->m_gameState.m_levelTime * 240.f) / game->m_level->m_timestamp * 100.f;
-        log::info("2.2 per, {}", percent);
     } else {
         percent = game->m_player1->getPositionX() / game->m_levelLength * 100.f;
-        log::info("2.1 per, {}", percent);
     }
     return std::clamp(percent, 0.f, 100.f);
 }
