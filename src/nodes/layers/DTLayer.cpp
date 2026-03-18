@@ -56,7 +56,7 @@ bool DTLayer::init(GJGameLevel* const& level) {
         stats.metadata.levelName = level->m_levelName;
         stats.metadata.attempts = level->m_attempts;
         stats.metadata.difficulty = StatsManager::getDifficulty(level);
-        auto _ = StatsManager::setMetadata(stats.metadata, stats.levelKey);
+        (void)StatsManager::setMetadata(stats.metadata, stats.levelKey);
         m_MyLevelStats = Ok(stats);
     }
 
@@ -538,6 +538,10 @@ void DTLayer::populateSpecialStrings(){
     auto sAttKey = std::make_shared<SpecialKey>("satt", "Adds your attempt count for the selected session");
     sAttKey->setUpdateFunction(BIND_UPDATE_FUNC(DTLayer::onSAttKey));
     addSpecialString(sAttKey);
+
+    auto sectionKey = std::make_shared<SpecialKey>("section", "Adds your section runs");
+    sectionKey->setUpdateFunction(BIND_UPDATE_FUNC(DTLayer::onSectionKey));
+    addSpecialString(sectionKey);
 }
 
 void DTLayer::UpdateSharedStats(){
@@ -552,7 +556,7 @@ void DTLayer::UpdateSharedStats(){
 
     std::set<std::string> linkedLevels{};
     std::map<std::string, LevelData> visitedLevels{};
-    linkedLevels.insert(sharedStats.metadata.LinkedLevels.begin(), sharedStats.metadata.LinkedLevels.end());
+    linkedLevels.insert(sharedStats.metadata.linkedLevels.begin(), sharedStats.metadata.linkedLevels.end());
 
     while (true){
         auto startSize = linkedLevels.size();
@@ -567,7 +571,7 @@ void DTLayer::UpdateSharedStats(){
             }
             auto currStats = currStatsRes.unwrap();
 
-            linkedLevels.insert(currStats.metadata.LinkedLevels.begin(), currStats.metadata.LinkedLevels.end());
+            linkedLevels.insert(currStats.metadata.linkedLevels.begin(), currStats.metadata.linkedLevels.end());
             visitedLevels.insert({currStats.levelKey, currStats});
         }
 
@@ -704,8 +708,8 @@ bool DTLayer::createDeathsString(const Deaths& deaths, const stringCustomazation
         std::string nbColor = "";
 
         if (includeRunStart && !ignoreExtraSettings && !myMetadata.showAnyRun){
-            if (myMetadata.RunsToShow.contains(runSplit.start)){
-                if (myMetadata.RunsToShow[runSplit.start] > runSplit.end)
+            if (myMetadata.runsToShow.contains(runSplit.start)){
+                if (myMetadata.runsToShow[runSplit.start] > runSplit.end)
                     continue;
             }
             else{
@@ -1737,8 +1741,8 @@ void DTLayer::modifyRun(int startPer, int amount, std::optional<int> sessionNumb
 
         if (!processRun(session.deaths)) return;
 
-        auto _ = StatsManager::setSession(session, it->second, it->first, false);
-        if (_.isErr()) log::error("{}", _.unwrapErr());
+        auto setSessionRes = StatsManager::setSession(session, it->second, it->first, false);
+        if (setSessionRes.isErr()) log::error("{}", setSessionRes.unwrapErr());
     }
     else{
         auto& stats = m_MyLevelStats.unwrap();
@@ -1746,8 +1750,8 @@ void DTLayer::modifyRun(int startPer, int amount, std::optional<int> sessionNumb
         auto& from0Stats = stats.from0.unwrap();
 
         if (processRun(from0Stats.deaths)){
-            auto _ = StatsManager::setGeneral(from0Stats, stats.levelKey);
-            if (_.isErr()) log::error("{}", _.unwrapErr());
+            auto setGeneralRes = StatsManager::setGeneral(from0Stats, stats.levelKey);
+            if (setGeneralRes.isErr()) log::error("{}", setGeneralRes.unwrapErr());
             return;
         }
 
@@ -1757,8 +1761,8 @@ void DTLayer::modifyRun(int startPer, int amount, std::optional<int> sessionNumb
             auto& linkedLevelFrom0Stats = linkedLevel.from0.unwrap();
 
             if (processRun(linkedLevelFrom0Stats.deaths)){
-                auto _ = StatsManager::setGeneral(linkedLevelFrom0Stats, linkedLevel.levelKey);
-                if (_.isErr()) log::error("{}", _.unwrapErr());
+                auto setGeneralRes = StatsManager::setGeneral(linkedLevelFrom0Stats, linkedLevel.levelKey);
+                if (setGeneralRes.isErr()) log::error("{}", setGeneralRes.unwrapErr());
                 return;
             }
         }
@@ -1801,8 +1805,8 @@ void DTLayer::modifyRun(int startPer, int endPer, int amount, std::optional<int>
 
         if (!processRun(session.runs)) return;
 
-        auto _ = StatsManager::setSession(session, it->second, it->first, false);
-        if (_.isErr()) log::error("{}", _.unwrapErr());
+        auto setSessionRes = StatsManager::setSession(session, it->second, it->first, false);
+        if (setSessionRes.isErr()) log::error("{}", setSessionRes.unwrapErr());
     }
     else{
         auto& stats = m_MyLevelStats.unwrap();
@@ -1810,8 +1814,8 @@ void DTLayer::modifyRun(int startPer, int endPer, int amount, std::optional<int>
         auto& from0Stats = stats.from0.unwrap();
 
         if (processRun(from0Stats.runs)){
-            auto _ = StatsManager::setGeneral(from0Stats, stats.levelKey);
-            if (_.isErr()) log::error("{}", _.unwrapErr());
+            auto setGeneralRes = StatsManager::setGeneral(from0Stats, stats.levelKey);
+            if (setGeneralRes.isErr()) log::error("{}", setGeneralRes.unwrapErr());
             return;
         }
 
@@ -1821,8 +1825,8 @@ void DTLayer::modifyRun(int startPer, int endPer, int amount, std::optional<int>
             auto& linkedLevelFrom0Stats = linkedLevel.from0.unwrap();
 
             if (processRun(linkedLevelFrom0Stats.runs)){
-                auto _ = StatsManager::setGeneral(linkedLevelFrom0Stats, linkedLevel.levelKey);
-                if (_.isErr()) log::error("{}", _.unwrapErr());
+                auto setGeneralRes = StatsManager::setGeneral(linkedLevelFrom0Stats, linkedLevel.levelKey);
+                if (setGeneralRes.isErr()) log::error("{}", setGeneralRes.unwrapErr());
                 return;
             }
         }
@@ -1859,8 +1863,8 @@ void DTLayer::modifyNewBest(int percent, bool makeTrue, std::optional<int> sessi
 
         processBest(session.newBests);
 
-        auto _ = StatsManager::setSession(session, it->second, it->first, false);
-        if (_.isErr()) log::error("{}", _.unwrapErr());
+        auto setSessionRes = StatsManager::setSession(session, it->second, it->first, false);
+        if (setSessionRes.isErr()) log::error("{}", setSessionRes.unwrapErr());
     }
     else{
         auto& stats = m_MyLevelStats.unwrap();
@@ -1868,8 +1872,8 @@ void DTLayer::modifyNewBest(int percent, bool makeTrue, std::optional<int> sessi
         auto& from0Stats = stats.from0.unwrap();
 
         if (processBest(from0Stats.newBests)){
-            auto _ = StatsManager::setGeneral(from0Stats, stats.levelKey);
-            if (_.isErr()) log::error("{}", _.unwrapErr());
+            auto setGeneralRes = StatsManager::setGeneral(from0Stats, stats.levelKey);
+            if (setGeneralRes.isErr()) log::error("{}", setGeneralRes.unwrapErr());
             return;
         }
 
@@ -1879,8 +1883,8 @@ void DTLayer::modifyNewBest(int percent, bool makeTrue, std::optional<int> sessi
             auto& linkedLevelFrom0Stats = linkedLevel.from0.unwrap();
             
             if (processBest(linkedLevelFrom0Stats.newBests)){
-                auto _ = StatsManager::setGeneral(linkedLevelFrom0Stats, linkedLevel.levelKey);
-                if (_.isErr()) log::error("{}", _.unwrapErr());
+                auto setGeneralRes = StatsManager::setGeneral(linkedLevelFrom0Stats, linkedLevel.levelKey);
+                if (setGeneralRes.isErr()) log::error("{}", setGeneralRes.unwrapErr());
                 return;
             }
         }
@@ -2317,4 +2321,107 @@ void DTLayer::foreachLinkedLevel(geode::Function<void(LevelData&)> onLevelVisit)
         if (levelData.levelKey == myStats.levelKey) continue;
         onLevelVisit(levelData);
     }
+}
+
+UpdateFuture DTLayer::onSectionKey(){
+    if (m_MyLevelStats.isErr()) co_return Err("Failed to calculate runs playtime");
+    auto myStats = m_MyLevelStats.unwrap();
+    if (myStats.from0.isErr()) co_return Err("No deaths saved!");
+    auto myFrom0Stats = myStats.from0.unwrap();
+
+    std::vector<Section> validSections{};
+    for (const auto& section : myStats.metadata.sections)
+    {
+        if (!section.isValid()) continue;
+
+        validSections.push_back(section);
+    }
+    
+    if (validSections.size() <= 1) co_return Err("Not enough sections!");
+
+    auto linkedLevelsCopy = linkedLevelsData;
+
+    Deaths deaths{};
+    StatsManager::mergeMapsAdd(deaths, myFrom0Stats.runs);
+    StatsManager::mergeMapsAdd(deaths, myFrom0Stats.deaths);
+
+    for (const auto& levelData : linkedLevelsCopy)
+    {
+        co_await arc::yield();
+        if (levelData.from0.isErr() || levelData.levelKey == myStats.levelKey) continue;
+        auto levelFrom0Stats = levelData.from0.unwrap();
+        
+        StatsManager::mergeMapsAdd(deaths, levelFrom0Stats.runs);
+        StatsManager::mergeMapsAdd(deaths, levelFrom0Stats.deaths);
+    }
+
+    std::unordered_map<std::string, int> deathsPerSection{};
+
+    for (const auto& death : deaths){
+        auto splitDeathRes = StatsManager::splitRunKey(death.first);
+        if (splitDeathRes.isErr()) continue;
+        auto splitDeath = splitDeathRes.unwrap();
+        
+        std::vector<Section> startingSectionsForDeath{};
+
+        for (const auto& section : validSections)
+        {
+            if (!section.isPercentInSection(splitDeath.start)) continue;
+
+            startingSectionsForDeath.push_back(section);
+        }
+
+        for (const auto& startingSection : startingSectionsForDeath)
+        {
+            Section endingSection;
+            for (const auto& section : validSections)
+            {
+                if (!section.isPercentInSection(splitDeath.end)) continue;
+
+                endingSection = section;
+                break;
+            }
+
+            auto sectionID = fmt::format("{}-{}", startingSection.name, endingSection.name);
+            if (!deathsPerSection.contains(sectionID))
+                deathsPerSection.insert({sectionID, death.second});
+            else
+                deathsPerSection[sectionID] += death.second;
+        }
+    }
+
+    std::string out;
+
+    std::vector<int> order;
+    order.reserve(validSections.size());
+    for (size_t i = 0; i < validSections.size(); ++i) order.push_back(i);
+    std::sort(order.begin(), order.end(), [&](int a, int b){
+        return validSections[a].startPercent < validSections[b].startPercent;
+    });
+
+    auto custom = Save::getFrom0Customazations();
+
+    for (const auto& startIdx : order)
+    {
+        for (const auto& endIdx : order)
+        {
+            auto sectionID = fmt::format("{}-{}", validSections[startIdx].name, validSections[endIdx].name);
+            auto it = deathsPerSection.find(sectionID);
+            if (it == deathsPerSection.end()) continue;
+
+            auto format = custom.format;
+            format = std::regex_replace(format, std::regex("\\{per\\}"), sectionID);
+            format = std::regex_replace(format, std::regex("\\{d\\}"), std::to_string(it->second));
+
+            out += fmt::format("{}{}", format, custom.seperator);
+        }
+
+        if (startIdx != order.back())
+            out += "----------{nl}";
+    }
+
+    if (!out.empty())
+        out.erase(out.length() - custom.seperator.length());
+
+    co_return Ok(out);
 }

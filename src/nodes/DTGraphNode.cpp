@@ -231,18 +231,19 @@ void DTGraphNode::updateGraphContent(){
             percentageDeaths.emplace(percentageDeaths.begin(), it->first.end, overallCount);
         }
 
-        if (percentageDeaths[0].first > RunStartPercent){
-            int RunStartPercentTemp = RunStartPercent == -1 ? RunStartPercent + 1 : RunStartPercent;
-            percentageDeaths.emplace(percentageDeaths.begin(), RunStartPercentTemp, overallCount);
-        }
-        
-        if (percentageDeaths[percentageDeaths.size() - 1].first < 100){
-            percentageDeaths.emplace_back(percentageDeaths[percentageDeaths.size() - 1].first + 1, 0);
-
-            if (percentageDeaths[percentageDeaths.size() - 1].first != 100)
-                percentageDeaths.emplace_back(100, 0);
-        }
+        if (percentageDeaths.size()){
+             if (percentageDeaths[0].first > RunStartPercent){
+                int RunStartPercentTemp = RunStartPercent == -1 ? RunStartPercent + 1 : RunStartPercent;
+                percentageDeaths.emplace(percentageDeaths.begin(), RunStartPercentTemp, overallCount);
+            }
             
+            if (percentageDeaths[percentageDeaths.size() - 1].first < 100){
+                percentageDeaths.emplace_back(percentageDeaths[percentageDeaths.size() - 1].first + 1, 0);
+
+                if (percentageDeaths[percentageDeaths.size() - 1].first != 100)
+                    percentageDeaths.emplace_back(100, 0);
+            }
+        }
 
         for (int i = 0; i < percentageDeaths.size(); i++)
         {

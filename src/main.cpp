@@ -5,7 +5,7 @@ using namespace geode::prelude;
 #include "utils/Settings.hpp"
 
 $execute {
-    auto _ = file::createDirectory(Mod::get()->getSaveDir() / "levels");
+    (void)file::createDirectory(Mod::get()->getSaveDir() / "levels");
 
     auto oldLayout = Save::getOldLayout();
 

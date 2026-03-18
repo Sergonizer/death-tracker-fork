@@ -35,11 +35,11 @@ bool RunOptions::setup(){
 
         auto& stats = dtlayer->m_MyLevelStats.unwrap();
         stats.metadata.showAnyRun = isToggled;
-        auto _ = StatsManager::setMetadata(stats.metadata, stats.levelKey);
+        (void)StatsManager::setMetadata(stats.metadata, stats.levelKey);
 
         dtlayer->foreachLinkedLevel([&isToggled](auto& lvlData){
             lvlData.metadata.showAnyRun = isToggled;
-            auto _ = StatsManager::setMetadata(lvlData.metadata, lvlData.levelKey);
+            (void)StatsManager::setMetadata(lvlData.metadata, lvlData.levelKey);
         });
 
         DTLayer::get()->specialStrings["runs"]->updateContent();
@@ -96,7 +96,7 @@ bool RunOptions::setup(){
 
     if (dtlayer != nullptr && dtlayer->m_MyLevelStats.isOk()){
         auto& stats = dtlayer->m_MyLevelStats.unwrap();
-        for (const auto& [startPercent, maxToShow] : stats.metadata.RunsToShow)
+        for (const auto& [startPercent, maxToShow] : stats.metadata.runsToShow)
         {
             createRunCell(startPercent, maxToShow);
         }
@@ -126,7 +126,7 @@ bool RunOptions::setup(){
 
         auto& stats = dtlayer->m_MyLevelStats.unwrap();
         stats.metadata.hideUpto = num;
-        auto _ = StatsManager::setMetadata(stats.metadata, stats.levelKey);
+        (void)StatsManager::setMetadata(stats.metadata, stats.levelKey);
 
         dtlayer->specialStrings["general"]->updateContent();
     });
@@ -175,7 +175,7 @@ bool RunOptions::setup(){
 
         auto& stats = dtlayer->m_MyLevelStats.unwrap();
         stats.metadata.resetAsDeath = isToggled;
-        auto _ = StatsManager::setMetadata(stats.metadata, stats.levelKey);
+        (void)StatsManager::setMetadata(stats.metadata, stats.levelKey);
     });
     ResetAsDeathToggler->setPosition({size.width - ResetAsDeathToggler->getContentWidth() / 2 - rightOffset, size.height / 8 * 2});
     this->addChild(ResetAsDeathToggler);
@@ -312,20 +312,20 @@ void RunOptions::addNewRun(CCObject*){
     int num = numRes.unwrap();
 
     auto& stats = dtlayer->m_MyLevelStats.unwrap();
-    if (stats.metadata.RunsToShow.contains(num)) return;
+    if (stats.metadata.runsToShow.contains(num)) return;
     
-    stats.metadata.RunsToShow.insert({num, num});
+    stats.metadata.runsToShow.insert({num, num});
 
-    auto _ = StatsManager::setMetadata(stats.metadata, stats.levelKey);
+    (void)StatsManager::setMetadata(stats.metadata, stats.levelKey);
 
     DTLayer::get()->specialStrings["runs"]->updateContent();
     DTLayer::get()->specialStrings["sruns"]->updateContent();
 
     dtlayer->foreachLinkedLevel([&](auto& lvlData){
-        if (lvlData.metadata.RunsToShow.contains(num)) return;
+        if (lvlData.metadata.runsToShow.contains(num)) return;
 
-        lvlData.metadata.RunsToShow.insert({num, num});
-        auto _ = StatsManager::setMetadata(lvlData.metadata, lvlData.levelKey);
+        lvlData.metadata.runsToShow.insert({num, num});
+        (void)StatsManager::setMetadata(lvlData.metadata, lvlData.levelKey);
     });
 
     createRunCell(num, num);
@@ -338,19 +338,19 @@ void RunOptions::PercentCellClicked(PercentCell* cell){
         int percent = cell->getPercent();
 
         auto& stats = dtlayer->m_MyLevelStats.unwrap();
-        if (stats.metadata.RunsToShow.contains(percent)){
-            stats.metadata.RunsToShow.erase(percent);
-            auto _ = StatsManager::setMetadata(stats.metadata, stats.levelKey);
+        if (stats.metadata.runsToShow.contains(percent)){
+            stats.metadata.runsToShow.erase(percent);
+            (void)StatsManager::setMetadata(stats.metadata, stats.levelKey);
 
             DTLayer::get()->specialStrings["runs"]->updateContent();
             DTLayer::get()->specialStrings["sruns"]->updateContent();
         }
 
         dtlayer->foreachLinkedLevel([&](auto& lvlData){
-            if (!lvlData.metadata.RunsToShow.contains(percent)) return;
+            if (!lvlData.metadata.runsToShow.contains(percent)) return;
 
-            lvlData.metadata.RunsToShow.erase(percent);
-            auto _ = StatsManager::setMetadata(lvlData.metadata, lvlData.levelKey);
+            lvlData.metadata.runsToShow.erase(percent);
+            (void)StatsManager::setMetadata(lvlData.metadata, lvlData.levelKey);
         });
     }
 
@@ -365,17 +365,17 @@ void RunOptions::PercentMaxHideValChanged(PercentCell* cell){
         int percent = cell->getPercent();
 
         auto& stats = dtlayer->m_MyLevelStats.unwrap();
-        if (stats.metadata.RunsToShow.contains(percent)){
-            stats.metadata.RunsToShow[percent] = cell->getMaxToHide();
-            auto _ = StatsManager::setMetadata(stats.metadata, stats.levelKey);
+        if (stats.metadata.runsToShow.contains(percent)){
+            stats.metadata.runsToShow[percent] = cell->getMaxToHide();
+            (void)StatsManager::setMetadata(stats.metadata, stats.levelKey);
 
             DTLayer::get()->specialStrings["runs"]->updateContent();
             DTLayer::get()->specialStrings["sruns"]->updateContent();
         }
 
         dtlayer->foreachLinkedLevel([&](auto& lvlData){
-            lvlData.metadata.RunsToShow[percent] = cell->getMaxToHide();
-            auto _ = StatsManager::setMetadata(lvlData.metadata, lvlData.levelKey);
+            lvlData.metadata.runsToShow[percent] = cell->getMaxToHide();
+            (void)StatsManager::setMetadata(lvlData.metadata, lvlData.levelKey);
         });
     }
 }

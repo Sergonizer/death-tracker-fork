@@ -293,20 +293,20 @@ Result<> StatsManager::addBackup(const std::string& levelKey, bool saveLevelStat
 
     auto levelBackupsFilePath = m_savesFolderPath / levelKey / StatsManager::BACKUPS_DIR_NAME;
 
-    auto _ = geode::utils::file::createDirectory(levelBackupsFilePath);
-    if (_.isErr()) return Err("failed to create backups folder! {}", _.unwrapErr());
+    auto lvlBackupsDirRes = geode::utils::file::createDirectory(levelBackupsFilePath);
+    if (lvlBackupsDirRes.isErr()) return Err("failed to create backups folder! {}", lvlBackupsDirRes.unwrapErr());
 
     auto currBackupName = StatsManager::getNowSeconds();
 
     levelBackupsFilePath /= std::to_string(currBackupName);
 
-    _ = geode::utils::file::createDirectory(levelBackupsFilePath);
-    if (_.isErr()) return Err("failed to create backup folder! {}", _.unwrapErr());
+    auto lvlBackupDirRes = geode::utils::file::createDirectory(levelBackupsFilePath);
+    if (lvlBackupDirRes.isErr()) return Err("failed to create backup folder! {}", lvlBackupDirRes.unwrapErr());
 
     if (saveLevelStats){
 
         if (getGeneral(levelKey).isErr()){
-            _ = deleteBackup(levelKey, currBackupName);
+            (void)deleteBackup(levelKey, currBackupName);
 
             return Err("backup failed! failed to read general stats");
         }
@@ -324,7 +324,7 @@ Result<> StatsManager::addBackup(const std::string& levelKey, bool saveLevelStat
             {
                 if (index == count.size() - metadata.maxBackupsAmount.value()) break;
 
-                _ = deleteBackup(levelKey, backupName);
+                (void)deleteBackup(levelKey, backupName);
 
                 index++;
             }
@@ -336,8 +336,8 @@ Result<> StatsManager::addBackup(const std::string& levelKey, bool saveLevelStat
     if (sessionsToSave.value() >= -1){
         levelBackupsFilePath /= StatsManager::SESSIONS_DIR_NAME;
 
-        auto _ = geode::utils::file::createDirectory(levelBackupsFilePath);
-        if (_.isErr()) return Err("failed to create backup sessions folder! {}", _.unwrapErr());
+        auto lvlBackupsDirRes = geode::utils::file::createDirectory(levelBackupsFilePath);
+        if (lvlBackupsDirRes.isErr()) return Err("failed to create backup sessions folder! {}", lvlBackupsDirRes.unwrapErr());
 
         std::set<long long, std::greater<long long>> sessionTimes{};
         auto nonSorted = getAllSessionTimesForLevel(levelKey);
@@ -373,19 +373,19 @@ Result<> StatsManager::addBackup(const std::string& levelKey, bool saveLevelStat
 }
 
 void StatsManager::createFilesIfNeeded(const std::string& levelKey){
-    auto _ = geode::utils::file::createDirectory(m_savesFolderPath);
+    (void)geode::utils::file::createDirectory(m_savesFolderPath);
 
     auto levelSaveFilePath = m_savesFolderPath / levelKey;
 
     // log::info("attempting to create level folder at {}", levelSaveFilePath.string());
 
-    _ = geode::utils::file::createDirectory(levelSaveFilePath);
-    if (_.isErr())
-        log::error("failed to create level folder: {}", _.unwrapErr());
+    auto lvlSavesDirRes = geode::utils::file::createDirectory(levelSaveFilePath);
+    if (lvlSavesDirRes.isErr())
+        log::error("failed to create level folder: {}", lvlSavesDirRes.unwrapErr());
 
     createFile((levelSaveFilePath / METADATA_FILE_NAME));
     createFile((levelSaveFilePath / FROM0_FILE_NAME));
-    _ = geode::utils::file::createDirectory((levelSaveFilePath / SESSIONS_DIR_NAME));
+    (void)geode::utils::file::createDirectory((levelSaveFilePath / SESSIONS_DIR_NAME));
 }
 
 void StatsManager::createFile(const std::filesystem::path& path){
@@ -456,8 +456,8 @@ void StatsManager::logDeath(const int& percent, bool instantSave) {
     
 
     if (instantSave){
-        auto _ = StatsManager::setGeneral(currentFrom0, currentLevel);
-        if (session) _ = StatsManager::setSession(*session, currentLevel, session->sessionStartDate, true);
+        (void)StatsManager::setGeneral(currentFrom0, currentLevel);
+        if (session) (void)StatsManager::setSession(*session, currentLevel, session->sessionStartDate, true);
     }
 }
 
@@ -472,8 +472,8 @@ void StatsManager::logDeaths(const std::vector<int>& percents) {
         logDeath(percents[i], false);
     }
 
-    auto _ = StatsManager::setGeneral(currentFrom0, currentLevel);
-    _ = StatsManager::setSession(currentSession, currentLevel, currentSession.sessionStartDate, true);
+    (void)StatsManager::setGeneral(currentFrom0, currentLevel);
+    (void)StatsManager::setSession(currentSession, currentLevel, currentSession.sessionStartDate, true);
 }
 
 void StatsManager::logRun(const Run& run, bool instantSave) {
@@ -494,8 +494,8 @@ void StatsManager::logRun(const Run& run, bool instantSave) {
     session->runs[runKey]++;
     
     if (instantSave){
-        auto _ = StatsManager::setGeneral(currentFrom0, currentLevel);
-        _ = StatsManager::setSession(currentSession, currentLevel, currentSession.sessionStartDate, true);
+        (void)StatsManager::setGeneral(currentFrom0, currentLevel);
+        (void)StatsManager::setSession(currentSession, currentLevel, currentSession.sessionStartDate, true);
     }
 }
 
@@ -511,8 +511,8 @@ void StatsManager::logRuns(const std::vector<Run>& runs) {
         logRun(runs[i], false);
     }
 
-    auto _ = StatsManager::setGeneral(currentFrom0, currentLevel);
-    _ = StatsManager::setSession(currentSession, currentLevel, currentSession.sessionStartDate, true);
+    (void)StatsManager::setGeneral(currentFrom0, currentLevel);
+    (void)StatsManager::setSession(currentSession, currentLevel, currentSession.sessionStartDate, true);
 }
 
 /* utility functions
@@ -867,7 +867,7 @@ void StatsManager::updateCurrentSessionLastPlayed(){
     auto now = StatsManager::getNowSeconds();
     session->lastPlayed = now;
 
-    auto _ = StatsManager::setSession(*session, currentLevel, session->sessionStartDate, true);
+    (void)StatsManager::setSession(*session, currentLevel, session->sessionStartDate, true);
 }
 
 GJGameLevel* StatsManager::getCurrentLevel(){
@@ -978,10 +978,10 @@ Result<> StatsManager::convertV2SaveToV3(const std::string& levelKey){
 
         runsMap.insert({percent, percent});
     }
-    v3Meta.RunsToShow = runsMap;
+    v3Meta.runsToShow = runsMap;
     v3Meta.showAnyRun = showAnyRun;
     std::set<std::string> linkedLevelsSet(stats.LinkedLevels.begin(), stats.LinkedLevels.end());
-    v3Meta.LinkedLevels = linkedLevelsSet;
+    v3Meta.linkedLevels = linkedLevelsSet;
     v3Meta.levelName = stats.levelName;
     v3Meta.attempts = stats.attempts;
     v3Meta.difficulty = stats.difficulty;

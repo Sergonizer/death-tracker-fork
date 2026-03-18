@@ -2,6 +2,7 @@
 
 #include <Geode/Geode.hpp>
 #include <nodes/OptionsNode.hpp>
+#include <types/DTTypes.hpp>
 
 using namespace geode::prelude;
 
@@ -11,6 +12,12 @@ class SectionOptions : public OptionsNode {
         static SectionOptions* create(const CCSize& size);
     private:
         virtual bool setup();
+
+        void saveSections();
+        ScrollLayer* mainScroll;
+
+        void onAddSection(CCObject* sender);
+        void addSection(const Section& section);
     public:
         virtual void onOpened();
         virtual void onClosed();

@@ -197,6 +197,8 @@ class DTLayer : public Popup {
         UpdateFuture onRunsTo100Key();
         UpdateFuture onBestRunsKey();
         UpdateFuture onSAttKey();
+        
+        UpdateFuture onSectionKey();
 
         std::optional<float> cachedLevelLength;
 };

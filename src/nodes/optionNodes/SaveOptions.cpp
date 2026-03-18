@@ -61,7 +61,7 @@ bool SaveOptions::setup(){
 
         auto& stats = DTLayer::get()->m_MyLevelStats.unwrap();
         stats.metadata.autoBackup = toggled;
-        auto _ = StatsManager::setMetadata(stats.metadata, stats.levelKey);
+        (void)StatsManager::setMetadata(stats.metadata, stats.levelKey);
     });
     autoBackupToggler->setPosition(backupBtn->getPosition() - ccp(0, backupBtn->getContentWidth() / 2 + autoBackupToggler->getContentWidth() / 2 + 5));
     this->addChild(autoBackupToggler);
@@ -123,7 +123,7 @@ bool SaveOptions::setup(){
             maxBackupsInput->setString("Unlimited");
             maxBackupsInput->setEnabled(false);
 
-            auto _ = StatsManager::setMetadata(stats.metadata, stats.levelKey);
+            (void)StatsManager::setMetadata(stats.metadata, stats.levelKey);
         } else {
             maxBackupsInput->setString("2", true);
             maxBackupsInput->setEnabled(true);
@@ -141,7 +141,7 @@ bool SaveOptions::setup(){
         int num = numRes.unwrap();
         stats.metadata.maxBackupsAmount = num;
 
-        auto _ = StatsManager::setMetadata(stats.metadata, stats.levelKey);
+        (void)StatsManager::setMetadata(stats.metadata, stats.levelKey);
     });
 
 
@@ -272,9 +272,9 @@ void SaveOptions::onBackup(CCObject*){
 
     auto popup = CreateBackupPopup::create();
     popup->setCallback([this](bool general, std::optional<int> sessions) {
-        auto _ = StatsManager::addBackup(DTLayer::get()->m_MyLevelStats.unwrap().levelKey, general, sessions);
-        if (_.isErr()) {
-            log::error("{}", _.unwrapErr());
+        auto addBackupRes = StatsManager::addBackup(DTLayer::get()->m_MyLevelStats.unwrap().levelKey, general, sessions);
+        if (addBackupRes.isErr()) {
+            log::error("{}", addBackupRes.unwrapErr());
             Notification::create("Failed to create backup!", NotificationIcon::Error)->show();
         }
         else Notification::create("Created backup successfully!", NotificationIcon::Success)->show();
@@ -340,9 +340,9 @@ void SaveOptions::onBackupDelete(BackupCell* cell){
 
     createChoiceAlert("WARNING!", "Deleting this backup is irreversible.\nAre you sure you want to do this?", "No", "Yes", [&, cell](bool btn2){
         if (btn2){
-            auto _ = StatsManager::deleteBackup(cell->getLevelKey(), cell->getBackupTime());
-            if (_.isErr()){
-                log::error("{}", _.unwrapErr());
+            auto deleteBackupRes = StatsManager::deleteBackup(cell->getLevelKey(), cell->getBackupTime());
+            if (deleteBackupRes.isErr()){
+                log::error("{}", deleteBackupRes.unwrapErr());
                 return;
             }
 

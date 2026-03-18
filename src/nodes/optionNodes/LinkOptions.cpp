@@ -4,6 +4,7 @@
 #include <nodes/LevelLinkCell.hpp>
 #include <utils/Dev.hpp>
 #include <utils/CCTextAreaFadeTo.hpp>
+#include <arc/task/Yield.hpp>
 
 const int LinkOptions::PER_PAGE_COUNT = 10;
 
@@ -299,7 +300,7 @@ void LinkOptions::getAllLevelsData(){
 }
 
 void LinkOptions::onGetLevelsProgress(const GetLevelsTaskProgress& progress){
-    geode::queueInMainThread([&](){
+    geode::queueInMainThread([&, progress](){
         loadingLabel->setString(fmt::format("{}\n{}/{}", progress.message, progress.current, progress.max).c_str());
     });
 }
@@ -342,6 +343,8 @@ GetLevelsFuture LinkOptions::getLevelsFuture(){
 
             metadatas.emplace_back(std::move(ldata));
         }
+
+        co_await arc::yield();
 
         i++;
         progresObject.current = i;
@@ -390,7 +393,7 @@ void LinkOptions::updateScrollsContent(){
             }
         }
 
-        if (myStats.metadata.LinkedLevels.contains(meta.levelKey))
+        if (myStats.metadata.linkedLevels.contains(meta.levelKey))
             linkedLevels.insert(&meta);
         else
             playedLevels.insert(&meta);
@@ -450,56 +453,58 @@ void LinkOptions::onLinkCellClicked(const std::string& levelKey, bool isLeftAlig
 
     if (!isLeftAligned){ // link
         auto& myData = DTLayer::get()->m_MyLevelStats.unwrap();
-        myData.metadata.LinkedLevels.insert(levelKey);
+        myData.metadata.linkedLevels.insert(levelKey);
         
         DTLayer::get()->UpdateSharedStats();
         
-        auto _ = StatsManager::setMetadata(myData.metadata, myData.levelKey);
+        (void)StatsManager::setMetadata(myData.metadata, myData.levelKey);
 
         for (auto& other : DTLayer::get()->linkedLevelsData) {
             if (other.levelKey == myData.levelKey) continue;
             bool changed = false;
 
-            for (const auto& k : myData.metadata.LinkedLevels) {
+            for (const auto& k : myData.metadata.linkedLevels) {
                 if (k == other.levelKey) continue;
-                if (!other.metadata.LinkedLevels.contains(k)) {
-                    other.metadata.LinkedLevels.insert(k);
+                if (!other.metadata.linkedLevels.contains(k)) {
+                    other.metadata.linkedLevels.insert(k);
                     changed = true;
                 }
             }
 
             if (other.levelKey == levelKey){
-                other.metadata.LinkedLevels.insert(myData.levelKey);
+                other.metadata.linkedLevels.insert(myData.levelKey);
                 changed = true;
             }
 
             if (changed) {
-                auto _ = StatsManager::setMetadata(other.metadata, other.levelKey);
+                (void)StatsManager::setMetadata(other.metadata, other.levelKey);
             }
         }
 
         DTLayer::get()->foreachLinkedLevel([&myData](LevelData& linkedLevel){
             linkedLevel.metadata.showAnyRun = myData.metadata.showAnyRun;
-            linkedLevel.metadata.RunsToShow = myData.metadata.RunsToShow;
+            linkedLevel.metadata.runsToShow = myData.metadata.runsToShow;
 
-            auto _ = StatsManager::setMetadata(linkedLevel.metadata, linkedLevel.levelKey);
+            linkedLevel.metadata.sections = myData.metadata.sections;
+
+            (void)StatsManager::setMetadata(linkedLevel.metadata, linkedLevel.levelKey);
         });
     }
     else{ // unlink
         auto& myData = DTLayer::get()->m_MyLevelStats.unwrap();
-        myData.metadata.LinkedLevels.erase(levelKey);
+        myData.metadata.linkedLevels.erase(levelKey);
 
         std::set<std::string> toRemoveFromTarget{};
 
         LevelData* targetToRemove = nullptr;
 
         for (auto& other : DTLayer::get()->linkedLevelsData) {
-            if (other.metadata.LinkedLevels.contains(levelKey)){
-                other.metadata.LinkedLevels.erase(levelKey);
+            if (other.metadata.linkedLevels.contains(levelKey)){
+                other.metadata.linkedLevels.erase(levelKey);
 
                 toRemoveFromTarget.insert(other.levelKey);
 
-                auto _ = StatsManager::setMetadata(other.metadata, other.levelKey);
+                (void)StatsManager::setMetadata(other.metadata, other.levelKey);
             }
 
             if (other.levelKey == levelKey){
@@ -510,15 +515,15 @@ void LinkOptions::onLinkCellClicked(const std::string& levelKey, bool isLeftAlig
         if (targetToRemove != nullptr){
             for (const auto& lvlKey : toRemoveFromTarget)
             {
-                targetToRemove->metadata.LinkedLevels.erase(lvlKey);
+                targetToRemove->metadata.linkedLevels.erase(lvlKey);
             }
 
-            auto _ = StatsManager::setMetadata(targetToRemove->metadata, targetToRemove->levelKey);
+            (void)StatsManager::setMetadata(targetToRemove->metadata, targetToRemove->levelKey);
         }
 
         DTLayer::get()->UpdateSharedStats();
 
-        auto _ = StatsManager::setMetadata(myData.metadata, myData.levelKey);
+        (void)StatsManager::setMetadata(myData.metadata, myData.levelKey);
     }
 
     updateScrollsContent();
