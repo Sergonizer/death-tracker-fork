@@ -203,8 +203,8 @@ bool RunOptions::setup(){
     this->addChild(ResetAsDeathLabel);
 
     auto runsHidingTutorial = TutorialButton::create(.75f, [&, TARToggler, TARLabel, plusBtn](DTTutorialLayer* tutorial){
-        int randomPer = 7 + CCRANDOM_0_1() * (95 - 7);
-        int randomMaxToHide = (randomPer + 2) + CCRANDOM_0_1() * (93 - (randomPer + 2));
+        int randomPer = 7 + static_cast<int>(CCRANDOM_0_1() * (95.f - 7.f));
+        int randomMaxToHide = (randomPer + 2) + static_cast<int>(CCRANDOM_0_1() * (93.f - (randomPer + 2.f)));
 
         auto emptyPer = PercentCell::create(
             runsScrollLayer->m_contentLayer->getContentWidth(), 
