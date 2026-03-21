@@ -15,6 +15,7 @@ class SectionOptions : public OptionsNode {
 
         void saveSections();
         ScrollLayer* mainScroll;
+        CCScale9Sprite* scrollBG;
 
         void onStartPoses(CCObject*);
 

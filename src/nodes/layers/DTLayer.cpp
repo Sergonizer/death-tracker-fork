@@ -2357,10 +2357,37 @@ UpdateFuture DTLayer::onSectionKey(){
 
     std::unordered_map<std::string, int> deathsPerSection{};
 
+    auto CreateSectioIDForSectionPair = [&](const Run& splitDeath, const std::optional<Section>& startingSection, int deaths){
+        Section endingSection;
+        for (const auto& section : validSections)
+        {
+            if (!section.isPercentInSection(splitDeath.end)) continue;
+
+            endingSection = section;
+            break;
+        }
+
+        std::string sectionID = "";
+        if (!startingSection.has_value()){
+            sectionID = fmt::format("{}", endingSection.name);
+        }
+        else
+            sectionID = fmt::format("{}-{}", startingSection.value().name, endingSection.name);
+        if (!deathsPerSection.contains(sectionID))
+            deathsPerSection.insert({sectionID, deaths});
+        else
+            deathsPerSection[sectionID] += deaths;
+    };
+
     for (const auto& death : deaths){
         auto splitDeathRes = StatsManager::splitRunKey(death.first);
         if (splitDeathRes.isErr()) continue;
         auto splitDeath = splitDeathRes.unwrap();
+
+        if (splitDeath.start == -1){
+            CreateSectioIDForSectionPair(splitDeath, std::nullopt, death.second);
+            continue;
+        }
         
         std::vector<Section> startingSectionsForDeath{};
 
@@ -2373,20 +2400,7 @@ UpdateFuture DTLayer::onSectionKey(){
 
         for (const auto& startingSection : startingSectionsForDeath)
         {
-            Section endingSection;
-            for (const auto& section : validSections)
-            {
-                if (!section.isPercentInSection(splitDeath.end)) continue;
-
-                endingSection = section;
-                break;
-            }
-
-            auto sectionID = fmt::format("{}-{}", startingSection.name, endingSection.name);
-            if (!deathsPerSection.contains(sectionID))
-                deathsPerSection.insert({sectionID, death.second});
-            else
-                deathsPerSection[sectionID] += death.second;
+            CreateSectioIDForSectionPair(splitDeath, startingSection, death.second);
         }
     }
 
@@ -2405,7 +2419,7 @@ UpdateFuture DTLayer::onSectionKey(){
     {
         for (const auto& endIdx : order)
         {
-            auto sectionID = fmt::format("{}-{}", validSections[startIdx].name, validSections[endIdx].name);
+            auto sectionID = (startIdx == endIdx) ? validSections[startIdx].name : fmt::format("{}-{}", validSections[startIdx].name, validSections[endIdx].name);
             auto it = deathsPerSection.find(sectionID);
             if (it == deathsPerSection.end()) continue;
 

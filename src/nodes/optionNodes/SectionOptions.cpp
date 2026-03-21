@@ -27,8 +27,18 @@ bool SectionOptions::setup(){
         ->setAutoGrowAxis(mainScroll->getContentHeight())
         ->setAxisAlignment(AxisAlignment::End)
         ->setAxisReverse(true)
+        ->ignoreInvisibleChildren(false)
     );
     this->addChild(mainScroll);
+
+    scrollBG = CCScale9Sprite::create("square02_001.png");
+    scrollBG->setContentSize(mainScroll->getContentSize() + ccp(15, 10));
+    scrollBG->setPosition(mainScroll->getPosition());
+    scrollBG->setOpacity(0);
+    scrollBG->setID("BG");
+    scrollBG->setZOrder(-1);
+    scrollBG->setCascadeOpacityEnabled(false);
+    this->addChild(scrollBG);
 
     auto sectionsLabel = CCLabelBMFont::create("Sections", "bigFont.fnt");
     sectionsLabel->setPosition(mainScroll->getPosition() + ccp(0, mainScroll->getContentSize().height / 2 + sectionsLabel->getScaledContentHeight() / 2 + 5));
@@ -93,6 +103,8 @@ void SectionOptions::onOpened(){
     mainScroll->moveToTop();
     mainScroll->setMouseEnabled(true);
 
+    scrollBG->runAction(CCFadeTo::create(fadeTime, 120));
+
     for (const auto& cell : mainScroll->m_contentLayer->getChildrenExt<SectionCell*>())
     {
         cell->fade(true, fadeTime);
@@ -104,6 +116,7 @@ void SectionOptions::onClosed(){
     this->runAction(CCFadeTo::create(fadeTime, 0));
 
     mainScroll->setMouseEnabled(false);
+    scrollBG->runAction(CCFadeTo::create(fadeTime, 0));
 
     for (const auto& cell : mainScroll->m_contentLayer->getChildrenExt<SectionCell*>())
     {
