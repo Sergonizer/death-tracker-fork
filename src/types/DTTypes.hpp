@@ -177,7 +177,7 @@ typedef struct LevelMetadeta {
     int hideUpto = 0;
     int realEndPercent = 100;
     bool resetAsDeath = false;
-    std::optional<int> maxBackupsAmount = 2;
+    std::optional<int> maxBackupsAmount = 4;
     bool autoBackup = true;
     bool autoBackupLevelStats = true;
     std::optional<int> autoSessionsToBackupAmount = -1;

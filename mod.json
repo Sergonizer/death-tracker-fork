@@ -22,7 +22,8 @@
 	"resources": {
 		"spritesheets": {
 			"dt-sheet": [
-				"resources/*.png"
+				"resources/*.png",
+				"resources/tutorialExpressions/*.png"
 			]
 		}
 	},

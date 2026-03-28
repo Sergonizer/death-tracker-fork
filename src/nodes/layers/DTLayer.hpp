@@ -201,4 +201,6 @@ class DTLayer : public Popup {
         UpdateFuture onSectionKey();
 
         std::optional<float> cachedLevelLength;
+
+        void onCalculator(CCObject*);
 };

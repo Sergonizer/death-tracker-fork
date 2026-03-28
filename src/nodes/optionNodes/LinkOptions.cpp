@@ -191,6 +191,12 @@ bool LinkOptions::setup(){
     loadingLabel->setAlignment(CCTextAlignment::kCCTextAlignmentCenter);
     parentLayer->addChild(loadingLabel);
 
+    auto linkInfo = TutorialButton::create(1, "tbp", [&](DTTutorialLayer* tutorialLayer){
+        
+    });
+    linkInfo->setPosition(size);
+    this->addChild(linkInfo);
+
     this->setEnabled(false);
     this->setOpacity(0);
 

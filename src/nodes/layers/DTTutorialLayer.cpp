@@ -33,17 +33,7 @@ bool DTTutorialLayer::init() {
 }
 
 DTTutorialLayer* DTTutorialLayer::appendDialogue(const std::string& text, TutorialCharacterFace face, const ccColor3B& textColor, float textSize){
-    int idOfFace = 0;
-
-    switch (face)
-    {
-    case TutorialCharacterFace::TCFNormal :
-        idOfFace = -204;
-        break;
-    
-    default:
-        break;
-    }
+    int idOfFace = static_cast<int>(face);
     
     auto dObj = DialogObject::create("abb2k", text, 1, textSize, false, textColor);
     dObj->setTag(idOfFace);
@@ -143,7 +133,13 @@ void DTTutorialLayer::show(){
     }
     
     dialogueLayer = DTDialogLayer::createWithTaggedSprites(dialogueArray, 1, {
-        {"abb2k.png"_spr, -204, 2}
+        {"normal.png"_spr, static_cast<int>(TutorialCharacterFace::TCFNormal), 2},
+        {"tiltedNormal.png"_spr, static_cast<int>(TutorialCharacterFace::TCFNormalTilted), 2.15f},
+        {"happy.png"_spr, static_cast<int>(TutorialCharacterFace::TCFHappy), 2.15f},
+        {"angry.png"_spr, static_cast<int>(TutorialCharacterFace::TCFAngry), 2},
+        {"worried.png"_spr, static_cast<int>(TutorialCharacterFace::TCFWorried), 2},
+        {"sleeping.png"_spr, static_cast<int>(TutorialCharacterFace::TCFSleeping), 2},
+        {"bored.png"_spr, static_cast<int>(TutorialCharacterFace::TCFBored), 2}
     });
     static_cast<DTDialogLayer*>(dialogueLayer)->setProgressCallback(std::bind(&DTTutorialLayer::onProgress, this, std::placeholders::_1));
     dialogueLayer->addToMainScene();

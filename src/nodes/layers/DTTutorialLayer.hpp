@@ -24,7 +24,13 @@ enum TutorialTextPlacement{
 };
 
 enum TutorialCharacterFace{
-    TCFNormal
+    TCFNormal = -204,
+    TCFNormalTilted = -205,
+    TCFHappy = -206,
+    TCFAngry = -207,
+    TCFWorried = -208,
+    TCFSleeping = -209,
+    TCFBored = -210
 };
 
 struct HighlightText{

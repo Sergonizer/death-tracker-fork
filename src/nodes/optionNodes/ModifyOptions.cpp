@@ -167,84 +167,11 @@ bool ModifyOptions::setup(){
     previewScroll->m_contentLayer->updateLayout();
     previewScroll->moveToTop();
 
-    auto runSeperatorInput = TextInput::create(60, "Run Sep", "gjFont17.fnt");
-    runSeperatorInput->setPosition({
-        previewBG->getPositionX() + previewBG->getContentWidth() / 2 + runSeperatorInput->getContentWidth() / 2 + previewBGMargin,
-        runSeperatorInput->getContentHeight() / 2 + previewBGMargin / 2
-    });
-    runSeperatorInput->setString(Save::getRunsCustomazations().seperator);
-    runSeperatorInput->setCallback([&](auto newStr){
-        auto curr = Save::getRunsCustomazations();
-        curr.seperator = newStr;
-
-        Save::setRunCustomazations(curr);
-
-        DTLayer::get()->specialStrings["runs"]->updateContent();
-        DTLayer::get()->specialStrings["sruns"]->updateContent();
-    });
-    runSeperatorInput->setCommonFilter(CommonFilter::Any);
-    this->addChild(runSeperatorInput);
-
-    auto f0SeperatorInput = TextInput::create(60, "F0 Sep", "gjFont17.fnt");
-    f0SeperatorInput->setPosition({
-        previewBG->getPositionX() + previewBG->getContentWidth() / 2 + f0SeperatorInput->getContentWidth() / 2 + previewBGMargin,
-        previewBGMargin / 2 + previewBG->getContentHeight() / 2
-    });
-    f0SeperatorInput->setString(Save::getFrom0Customazations().seperator);
-    f0SeperatorInput->setCallback([&](auto newStr){
-        auto curr = Save::getFrom0Customazations();
-        curr.seperator = newStr;
-
-        Save::setFrom0Customazations(curr);
-
-        DTLayer::get()->specialStrings["general"]->updateContent();
-        DTLayer::get()->specialStrings["s0"]->updateContent();
-    });
-    f0SeperatorInput->setCommonFilter(CommonFilter::Any);
-    this->addChild(f0SeperatorInput);
-
-    auto deathFormatInput = TextInput::create(60, "DFormat", "gjFont17.fnt");
-    deathFormatInput->setPosition({
-        previewBG->getPositionX() + previewBG->getContentWidth() / 2 + deathFormatInput->getContentWidth() / 2 + previewBGMargin,
-        previewBGMargin / 2 + previewBG->getContentHeight() - deathFormatInput->getContentHeight() / 2
-    });
-    deathFormatInput->setString(Save::getFrom0Customazations().format);
-    deathFormatInput->setCallback([&](auto newStr){
-        auto currF0 = Save::getFrom0Customazations();
-        auto currRuns = Save::getRunsCustomazations();
-        currF0.format = newStr;
-        currRuns.format = newStr;
-
-        Save::setFrom0Customazations(currF0);
-        Save::setRunCustomazations(currRuns);
-
-        DTLayer::get()->specialStrings["general"]->updateContent();
-        DTLayer::get()->specialStrings["s0"]->updateContent();
-        DTLayer::get()->specialStrings["runs"]->updateContent();
-        DTLayer::get()->specialStrings["sruns"]->updateContent();
-    });
-    deathFormatInput->setCommonFilter(CommonFilter::Any);
-    this->addChild(deathFormatInput);
-
     auto seperator1 = CCScale9Sprite::create("pixel.png");
-    seperator1->setContentSize({1.5f, size.height - (deathFormatInput->getContentHeight() / 2 + deathFormatInput->getPositionY() + 10)});
-    seperator1->setPositionX(size.width / 2 - 20);
-    seperator1->setPositionY(deathFormatInput->getScaledContentHeight() / 2 + deathFormatInput->getPositionY() + 10 + seperator1->getContentHeight() / 2);
+    seperator1->setContentSize({1.5f, size.height - 10});
+    seperator1->setPositionX(size.width / 2);
+    seperator1->setPositionY(size.height / 2);
     this->addChild(seperator1);
-
-    auto seperator2 = CCScale9Sprite::create("pixel.png");
-    seperator2->setContentSize({deathFormatInput->getScaledContentWidth(), 1.5f});
-    seperator2->setAnchorPoint({0, 0});
-    seperator2->setPositionX(seperator1->getPositionX());
-    seperator2->setPositionY(seperator1->getPositionY() - seperator1->getContentHeight() / 2);
-    this->addChild(seperator2);
-
-    auto seperator3 = CCScale9Sprite::create("pixel.png");
-    seperator3->setContentSize({1.5f, size.height - seperator1->getContentHeight()});
-    seperator3->setAnchorPoint({1, 1});
-    seperator3->setPositionX(seperator2->getPositionX() + seperator2->getContentWidth());
-    seperator3->setPositionY(seperator2->getPositionY());
-    this->addChild(seperator3);
 
     auto amountInput = TextInput::create(60, "amount", "gjFont17.fnt");
     amountInput->setPosition({
@@ -473,6 +400,12 @@ bool ModifyOptions::setup(){
     addNewBestInputLabel->setAnchorPoint({.5f, 0});
     addNewBestInputLabel->setScale(.5f);
     this->addChild(addNewBestInputLabel);
+
+    auto modiftyInfo = TutorialButton::create(1, "tbp", [&](DTTutorialLayer* tutorialLayer){
+        
+    });
+    modiftyInfo->setPosition(size);
+    this->addChild(modiftyInfo);
 
     for (const auto& child : CCArrayExt<CCNode*>(this->getChildren()))
     {

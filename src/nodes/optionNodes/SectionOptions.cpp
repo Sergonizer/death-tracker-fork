@@ -81,6 +81,12 @@ bool SectionOptions::setup(){
     addSectionBtn->setPosition(mainScroll->getPosition() + ccp(mainScroll->getScaledContentWidth() / 2, mainScroll->getScaledContentHeight() / 2));
     this->addChild(addSectionBtn);
 
+    auto sectionsInfo = TutorialButton::create(1, "tbp", [&](DTTutorialLayer* tutorialLayer){
+        
+    });
+    sectionsInfo->setPosition(size);
+    this->addChild(sectionsInfo);
+
     for (const auto& cell : mainScroll->m_contentLayer->getChildrenExt<SectionCell*>())
     {
         cell->fade(false, 0);

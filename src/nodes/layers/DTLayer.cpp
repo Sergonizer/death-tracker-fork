@@ -2,6 +2,7 @@
 
 #include <nodes/layers/DTGraphLayer.hpp>
 #include <nodes/layers/DTLevelSpecificSettingsLayer.hpp>
+#include <nodes/layers/CalculatorPopup.hpp>
 
 #include <Geode/ui/GeodeUI.hpp>
 #include <regex>
@@ -263,15 +264,15 @@ bool DTLayer::init(GJGameLevel* const& level) {
     discardChangesButton->setPosition({-191, -140});
     editLayoutMenu->addChild(discardChangesButton);
 
-    auto mainInfo = TutorialButton::create(1, [&, levelSpecificOptionsBtn, graphBtn, editLayoutBtn, settingsBtn](DTTutorialLayer* tutorialLayer){
-        tutorialLayer->appendDialogue("Welcome to the <cy>main death tracker page!</c>", TutorialCharacterFace::TCFNormal)
+    auto mainInfo = TutorialButton::create(1, "main-overall", [&, levelSpecificOptionsBtn, graphBtn, editLayoutBtn, settingsBtn](DTTutorialLayer* tutorialLayer){
+        tutorialLayer->appendDialogue("Welcome to the <cy>main death tracker page!</c>", TutorialCharacterFace::TCFHappy)
             ->appendDialogue("This is the <cy>main view</c> where you can view <cg>all your data!</c>", TutorialCharacterFace::TCFNormal)
             ->joinTransform(TutorialBoxPlacement::TBPBottom, .75f)
             ->joinHighlight(scrollLayer, 0, true)
             ->joinTextToHighlight("Main Scroll View", .5f, TutorialTextPlacement::TTTop)
-            ->appendDialogue("You can hold <cg>control</c> and <cp>scroll</c> to zoom in! and <cc>shift</c> and <cp>scroll</c> to move side to side.", TutorialCharacterFace::TCFNormal)
+            ->appendDialogue("You can hold <cg>control</c> and <cp>scroll</c> to zoom in! and <cc>shift</c> and <cp>scroll</c> to move side to side.", TutorialCharacterFace::TCFNormalTilted)
             ->joinHighlight(scrollLayer, 0, true)
-            ->appendDialogue("Of course you can also scroll normally :D", TutorialCharacterFace::TCFNormal)
+            ->appendDialogue("Of course you can also scroll normally :D", TutorialCharacterFace::TCFHappy)
             ->joinTransform(TutorialBoxPlacement::TBPCenter)
             ->appendDialogue("You also have many options <cy>at the bottom</c> here!", TutorialCharacterFace::TCFNormal)
             ->joinTransform(TutorialBoxPlacement::TBPCenter, .75f)
@@ -280,29 +281,29 @@ bool DTLayer::init(GJGameLevel* const& level) {
             ->joinHighlight(levelSpecificOptionsBtn)
             ->joinTransform(TutorialBoxPlacement::TBPLeft, .75f)
             ->joinTextToHighlight("level options", .3f, TutorialTextPlacement::TTTop)
-            ->appendDialogue("You have the <cg>graphs</c> which allow you to visually see your consistancy and other aspects of your data", TutorialCharacterFace::TCFNormal)
+            ->appendDialogue("You have the <cg>graphs</c> which allow you to visually see your consistancy and other aspects of your data", TutorialCharacterFace::TCFNormalTilted)
             ->joinHighlight(graphBtn)
             ->joinTextToHighlight("graphs", .3f, TutorialTextPlacement::TTTop)
             ->appendDialogue("You have the <co>session selector</c>, allowing you to choose which session to view", TutorialCharacterFace::TCFNormal)
             ->joinHighlight(sessionSelector)
             ->joinTransform(TutorialBoxPlacement::TBPCenter, .75f)
             ->joinTextToHighlight("Session Selector", .3f, TutorialTextPlacement::TTTop)
-            ->appendDialogue("The <cy>higher</c> the number, the <cr>older</c> the session! so <co>session 1</c> is the most recent and <co>the last</c> is the oldest!", TutorialCharacterFace::TCFNormal)
+            ->appendDialogue("The <cy>higher</c> the number, the <cr>older</c> the session! so <co>session 1</c> is the most recent and <co>the last</c> is the oldest!", TutorialCharacterFace::TCFHappy)
             ->joinHighlight(sessionSelector)
             ->appendDialogue("You also have the option to <cy>edit how your data is layed out</c> using this button!", TutorialCharacterFace::TCFNormal)
             ->joinHighlight(editLayoutBtn)
             ->joinTextToHighlight("Layout Editor", .3f, TutorialTextPlacement::TTTop)
             ->joinTransform(TutorialBoxPlacement::TBPRight, .75f)
-            ->appendDialogue("And lastly you have quick access to the mod settings for death tracker right here!", TutorialCharacterFace::TCFNormal)
+            ->appendDialogue("And lastly you have quick access to the mod settings for death tracker right here!", TutorialCharacterFace::TCFNormalTilted)
             ->joinHighlight(settingsBtn)
             ->joinTextToHighlight("Mod Options", .3f, TutorialTextPlacement::TTTop)
-            ->appendDialogue("Have fun playing around with the features!", TutorialCharacterFace::TCFNormal)
+            ->appendDialogue("Have fun playing around with the features!", TutorialCharacterFace::TCFHappy)
             ->joinTransform(TutorialBoxPlacement::TBPCenter);
     });
     mainInfo->setPosition(m_size);
     m_buttonMenu->addChild(mainInfo);
 
-    layoutInfo = TutorialButton::create(1, [&, applyChangesButton, discardChangesButton](DTTutorialLayer* tutorialLayer){
+    layoutInfo = TutorialButton::create(1, "layout-overall", [&, applyChangesButton, discardChangesButton](DTTutorialLayer* tutorialLayer){
         tutorialLayer
             ->appendDialogue("This is where you can <cg>Edit how death tracker looks!</c>", TutorialCharacterFace::TCFNormal)
             ->appendDialogue("Here you have different labels! which can display any text you want!", TutorialCharacterFace::TCFNormal)
@@ -374,6 +375,15 @@ bool DTLayer::init(GJGameLevel* const& level) {
     editLayoutMenu->addChild(layoutInfo);
 
     scrollLayer->setVisible(false);
+
+    auto calculatorBtnSpr = CCSprite::createWithSpriteFrameName("GJ_ngBtn_001.png");
+    calculatorBtnSpr->setScale(.75f);
+    auto calculatorBtn = CCMenuItemSpriteExtra::create(
+        calculatorBtnSpr,
+        this,
+        menu_selector(DTLayer::onCalculator)
+    );
+    m_buttonMenu->addChild(calculatorBtn);
 
     return true;
 }
@@ -2438,4 +2448,8 @@ UpdateFuture DTLayer::onSectionKey(){
         out.erase(out.length() - custom.seperator.length());
 
     co_return Ok(out);
+}
+
+void DTLayer::onCalculator(CCObject*){
+    CalculatorPopup::create()->show();
 }

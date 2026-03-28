@@ -29,7 +29,7 @@ bool DTGraphLayer::init() {
     graph->delegate = this;
     this->m_mainLayer->addChild(graph);
 
-    auto graphTutorial = TutorialButton::create(.6f, [&](DTTutorialLayer* tl){
+    auto graphTutorial = TutorialButton::create(.6f, "grapg-overall", [&](DTTutorialLayer* tl){
         tl->appendDialogue("Welcome to the graph view!", TutorialCharacterFace::TCFNormal)
             ->appendDialogue("This is the main graphs view", TutorialCharacterFace::TCFNormal)
             ->joinHighlight(graph->scrollLayer, 0, true)
@@ -150,7 +150,7 @@ bool DTGraphLayer::init() {
         addGraph(currGraph);
     }
 
-    auto sideTutorial = TutorialButton::create(.6f, [&, runSelectInputLabel, SessionSelectionLabel](DTTutorialLayer* tl){
+    auto sideTutorial = TutorialButton::create(.6f, "graphs-side", [&, runSelectInputLabel, SessionSelectionLabel](DTTutorialLayer* tl){
         tl->appendDialogue("This is where you can manage your graphs!", TutorialCharacterFace::TCFNormal)
             ->appendDialogue("These are the graphs you have available", TutorialCharacterFace::TCFNormal)
             ->joinTransform(TutorialBoxPlacement::TBPRight, .75f)

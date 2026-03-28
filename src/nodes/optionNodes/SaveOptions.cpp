@@ -221,6 +221,18 @@ bool SaveOptions::setup(){
     importBtnLabel->setPosition(importBtn->getPosition() + ccp(importBtn->getContentWidth() / 2 + 5, 0));
     this->addChild(importBtnLabel);
 
+    auto saveOverallInfo = TutorialButton::create(1, "tbp", [&](DTTutorialLayer* tutorialLayer){
+        
+    });
+    saveOverallInfo->setPosition(size);
+    this->addChild(saveOverallInfo);
+
+    auto saveBackupsInfo = TutorialButton::create(1, "tbp", [&](DTTutorialLayer* tutorialLayer){
+        
+    });
+    saveBackupsInfo->setPosition(backupsScrollLabel->getPosition() + ccp(backupsScrollLabel->getScaledContentWidth() / 2 + saveBackupsInfo->getScaledContentWidth() / 2, 0));
+    this->addChild(saveBackupsInfo);
+
     this->setEnabled(false);
     this->setOpacity(0);
     backupsScrollBG->setOpacity(0);
