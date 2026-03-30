@@ -100,7 +100,6 @@ bool DTPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
     }
 
     DTPlayLayer::updateSessionLastPlayed();
-    DTPlayLayer::startPlaytime();
 
     return true;
 }
@@ -146,6 +145,8 @@ void DTPlayLayer::resetLevel() {
     PlayLayer::resetLevel();
     //log::info("PlayLayer::resetLevel()");
 
+    startPlaytime();
+
     m_fields->hasRespawned = true;
 
     if (!m_level->isPlatformer())
@@ -161,6 +162,8 @@ void DTPlayLayer::destroyPlayer(PlayerObject* player, GameObject* p1) {
  
     if (!m_fields->hasRespawned) return;
     m_fields->hasRespawned = false;
+
+    endPlaytime();
 
     if (DTPlayLayer::disableCompletedLevelTracking()) return;
 
@@ -215,6 +218,8 @@ void DTPlayLayer::levelComplete() {
     if (!m_fields->hasRespawned) return;
     m_fields->hasRespawned = false;
 
+    endPlaytime();
+
     // disable tracking deaths on completed levels
     if (DTPlayLayer::disableCompletedLevelTracking()) return;
 
@@ -246,7 +251,8 @@ void DTPlayLayer::removeAllCheckpoints() {
 
 void DTPlayLayer::resume() {
     // if remove pauses is on
-    DTPlayLayer::startPlaytime();
+    if (!m_player1->m_isDead)
+        DTPlayLayer::startPlaytime();
     PlayLayer::resume();
 }
 
@@ -254,7 +260,8 @@ void DTPlayLayer::pauseGame(bool unfocused) {
 
 
     // if remove pauses
-    DTPlayLayer::endPlaytime();
+    if (!m_player1->m_isDead)
+        DTPlayLayer::endPlaytime();
 
     PlayLayer::pauseGame(unfocused);
 }
