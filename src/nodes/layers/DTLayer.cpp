@@ -40,6 +40,7 @@ bool DTLayer::init(GJGameLevel* const& level) {
     // ================================== //
     // loading data
 
+
     m_MyLevelStats = StatsManager::getLevelData(m_Level);
     if (m_MyLevelStats.isErr() && m_MyLevelStats.unwrapErr().size() && m_MyLevelStats.unwrapErr()[0] == '1'){
         LevelData newData;
@@ -51,7 +52,7 @@ bool DTLayer::init(GJGameLevel* const& level) {
         notif->show();
         notif->setZOrder(101);
     }
-    
+
     if (m_MyLevelStats.isOk()){
         auto stats = m_MyLevelStats.unwrap();
         stats.metadata.levelName = level->m_levelName;
@@ -70,6 +71,8 @@ bool DTLayer::init(GJGameLevel* const& level) {
      * main page
     */
 
+    DTLayer::transferPlaytimeFromPT();
+
     instance = this;
 
     this->setID("dt-layer");
@@ -81,7 +84,7 @@ bool DTLayer::init(GJGameLevel* const& level) {
         //     "- <cg>iOS support</c>"
         // ), "OK", nullptr, 415, false, 200, 0.75f)->show();
     }
-    
+
     float height = 60;
     ogLimits = CCSize{m_size.width - 30 + 1, m_size.height - height  + 1};
     scrollLayer = AdvancedScrollLayer::create({m_size.width - 30, m_size.height - height}, ogLimits);
@@ -239,7 +242,7 @@ bool DTLayer::init(GJGameLevel* const& level) {
     editLayoutMenu->ignoreAnchorPointForPosition(false);
     editLayoutMenu->setAnchorPoint({0,0});
     m_mainLayer->addChild(editLayoutMenu);
-    
+
     applyChangesButtonSpr = ButtonSprite::create("Apply Changes", "goldFont.fnt", "GJ_button_01.png");
     applyChangesButtonSpr->m_BGSprite->setOpacity(0);
     applyChangesButtonSpr->m_label->setOpacity(0);
@@ -251,7 +254,7 @@ bool DTLayer::init(GJGameLevel* const& level) {
     );
     applyChangesButton->setPosition({41, -140});
     editLayoutMenu->addChild(applyChangesButton);
-    
+
     discardChangesButtonSpr = ButtonSprite::create("Discard Changes", "goldFont.fnt", "GJ_button_06.png");
     discardChangesButtonSpr->m_BGSprite->setOpacity(0);
     discardChangesButtonSpr->m_label->setOpacity(0);
@@ -323,7 +326,7 @@ bool DTLayer::init(GJGameLevel* const& level) {
                 index++;
             }
         }
-        
+
         tutorialLayer
             ->appendDialogue("You can <cy>click</c> on them to enter the label settings", TutorialCharacterFace::TCFNormal)
             ->joinPreviousHighlight()
@@ -405,7 +408,7 @@ void DTLayer::onEditLayout(CCObject*){
         layoutOptionsLayer->onBackedOut = [&](){closeOptionsLayer();};
         this->addChild(layoutOptionsLayer);
     }
-    
+
     isEditingLayout = true;
 
     std::set<DTLabel*> visitedLabels{};
@@ -431,7 +434,7 @@ void DTLayer::onEditLayout(CCObject*){
     m_buttonMenu->runAction(CCFadeTo::create(.15f, 0));
     editLayoutBtnSpr->stopAllActions();
     editLayoutBtnSpr->runAction(CCFadeTo::create(.15f, 0));
-    
+
     editLayoutMenu->setEnabled(true);
     layoutInfo->stopAllActions();
     layoutInfo->runAction(CCFadeTo::create(.15f, 255));
@@ -487,6 +490,31 @@ void DTLayer::addSpecialString(const std::shared_ptr<SpecialKey>& key){
     key->setUpdateCompletedCallback([&](const std::shared_ptr<SpecialKey>& k) { this->specialKeyUpdateCompleted(k); });
     specialStrings.emplace(key->getKey(), key);
     key->updateContent();
+}
+
+void DTLayer::transferPlaytimeFromPT() {
+    auto ptPath = Mod::get()->getPersistentDir().parent_path() / "nanew.playtime-tracker" / "leveldata.json";
+
+    if (!exists(ptPath) || !m_MyLevelStats.isOk()) return;
+
+    std::string levelID = std::to_string(m_Level->m_levelID.value());
+    if (m_Level->m_levelType == GJLevelType::Editor) levelID = "Editor-" + levelID;
+
+    auto ptObj = file::readFromJson<matjson::Value>(ptPath).unwrapOrDefault();
+
+    if (ptObj[levelID].isNull()) return;
+
+    for (auto session : ptObj[levelID]["sessions"]) {
+        if (!session[0][0].isNumber()) continue;
+        for (const auto& dtSession : sessionsOrder) {
+            if (dtSession.first != session[0][0].as<long long>().unwrap()) continue;
+            for (auto ptPair : session) { // [start, end/pause]
+                // TODO: write conversion into DTSession
+            }
+            break;
+        }
+    }
+    //TODO: write to main general deaths
 }
 
 void DTLayer::populateSpecialStrings(){
@@ -586,6 +614,8 @@ void DTLayer::populateSpecialStrings(){
     addSpecialString(sectionKey);
 }
 
+void
+
 void DTLayer::UpdateSharedStats(){
     if (m_MyLevelStats.isErr()){
         linkedLevelsData.clear();
@@ -605,7 +635,7 @@ void DTLayer::UpdateSharedStats(){
         for (const auto& linkedLevel : linkedLevels)
         {
             if (visitedLevels.contains(linkedLevel)) continue;
-            
+
             auto currStatsRes = StatsManager::getLevelData(linkedLevel);
             if (currStatsRes.isErr()){
                 Notification::create(fmt::format("failed to get data for linked level - {} | {}", linkedLevel, currStatsRes.unwrapErr()))->show();
@@ -783,13 +813,13 @@ bool DTLayer::createDeathsString(const Deaths& deaths, const stringCustomazation
             std::regex("\\{per\\}"),
             toReplaceWith
         );
-        
+
         format = std::regex_replace(
             format,
             std::regex("\\{d\\}"),
             std::to_string(amount)
         );
-        
+
         //old coloring
         //out += fmt::format("{}{}{}{}", nbColor, format, nbDeColor, custom.seperator);
         auto toAdd = fmt::format("{}{}", format, custom.seperator);
@@ -812,7 +842,7 @@ int DTLayer::getCurrentSelectedSession(){
 void DTLayer::onSessionSelected(int sessionNum, bool updateContent){
     auto it = sessionsOrder.begin();
     std::advance(it, sessionNum - 1);
-    
+
     if (it == sessionsOrder.end()) return;
 
     if (sessionNum - 1 == currentSession) return;
@@ -1027,7 +1057,7 @@ void DTLayer::organizeLayout(){
             labelsHolder->setPosition(columnHolder->getPosition());
 
             float delta = 0;
-            
+
             delta = oldHeightLimits - scrollLayer->content->getContentHeight();
 
             scrollLayer->moveBy(ccp(0, delta / 2));
@@ -1038,7 +1068,7 @@ void DTLayer::organizeLayout(){
             float newOffset = offsetFromTop * (newHeight / oldHeight);
 
             scrollLayer->content->setPositionY(newTop + newOffset);
-            
+
             for (const auto& [label, newPos, newWidth] : result.labelData)
             {
                 const int MOVEMENT_TAG = 2;
@@ -1049,7 +1079,7 @@ void DTLayer::organizeLayout(){
 
                 bool doCreateNewMoveAction = true;
                 bool doCreateNewResizeAction = true;
-                
+
                 //movement action check
                 if (taggedMovementAction != nullptr){
                     auto currentMovementActionEase = static_cast<CCEaseInOut*>(taggedMovementAction);
@@ -1102,7 +1132,7 @@ void DTLayer::organizeLayout(){
             {
                 onOrganizationCompleteEvent[target](delta);
             }
-            
+
             if (cornerOnNextOrganization){
                 cornerOnNextOrganization = false;
                 scrollLayer->moveToCorner(true, false);
@@ -1113,7 +1143,7 @@ void DTLayer::organizeLayout(){
                 scrollLayer->setVisible(true);
                 lc->removeMeAndCleanup();
                 cornerOnNextOrganization = false;
-                
+
                 this->organizeLayout();
             }
             else if (firstTime == 1){
@@ -1125,18 +1155,18 @@ void DTLayer::organizeLayout(){
     );
 }
 
-organizationFuture DTLayer::organizeLayoutTask(){    
+organizationFuture DTLayer::organizeLayoutTask(){
     struct LabelData {
         DTLabel* label;
         std::set<LayoutColumn*> holders;
     };
-    
+
     struct ColumnData {
         LayoutColumn* column;
         int orderPos;
         std::vector<std::pair<int, DTLabel*>> labels;
     };
-    
+
     std::vector<ColumnData> columnSnapshots;
     std::map<DTLabel*, LabelData> labelSnapshots;
 
@@ -1145,11 +1175,11 @@ organizationFuture DTLayer::organizeLayoutTask(){
         ColumnData colData;
         colData.column = column;
         colData.orderPos = column->info.orderPos;
-        
+
         for (const auto& [layer, label] : column->labels)
         {
             colData.labels.push_back({layer, label});
-            
+
             if (labelSnapshots.find(label) == labelSnapshots.end())
             {
                 auto holders = label->getHolders();
@@ -1161,12 +1191,12 @@ organizationFuture DTLayer::organizeLayoutTask(){
                 labelSnapshots[label] = {label, holderSet};
             }
         }
-        
+
         columnSnapshots.push_back(colData);
     }
 
     co_await arc::yield();
-    
+
     std::set<DTLabel*> allLabels{};
     std::map<DTLabel*, std::set<LayoutColumn*>> labelHolders{};
 
@@ -1251,7 +1281,7 @@ organizationFuture DTLayer::organizeLayoutTask(){
                 }
 
                 // log::info("label valid");
-                
+
                 lastVisitedLabelForColumn[column] = label;
 
                 int newLayer = prevLabel == nullptr ? 0 : prevLabel->info.layer + 1;
@@ -1310,7 +1340,7 @@ organizationFuture DTLayer::organizeLayoutTask(){
 
                     label->info.layer = highestOptLayer;
                     processedLabels.insert(label);
-                    
+
                     co_await UpdateTempWidth(label);
 
                     // log::info("combo found at {}", highestOptLayer);
@@ -1320,7 +1350,7 @@ organizationFuture DTLayer::organizeLayoutTask(){
                 }
 
                 // log::info("non double found! adding..");
-                
+
                 label->info.layer = newLayer;
                 processedLabels.insert(label);
 
@@ -1346,7 +1376,7 @@ organizationFuture DTLayer::organizeLayoutTask(){
     }
 
     float heighestHeight = 0;
-    
+
     for (const auto& colData : columnSnapshots){
         for (const auto& [_, label] : colData.labels)
         {
@@ -1453,7 +1483,7 @@ LayoutColumn* DTLayer::addColumn(std::optional<DTColumnInfo> info){
             .orderPos = position
         };
     }
-    
+
     auto column = LayoutColumn::create(info.value(), isEditingLayout, scrollLayer->getContentHeight());
     columnHolder->addChild(column);
     columns.insert(column);
@@ -1575,7 +1605,7 @@ void DTLayer::saveCurrentLayout(){
     }
 
     // log::info("saving {} columns and {} labels", layout.columns.size(), layout.labels.size());
-    
+
     Save::setLayout(layout);
 }
 
@@ -1713,7 +1743,7 @@ void DTLayer::exitLayoutEditing(){
     m_buttonMenu->runAction(CCFadeTo::create(.15f, 255));
     editLayoutBtnSpr->stopAllActions();
     editLayoutBtnSpr->runAction(CCFadeTo::create(.15f, 255));
-    
+
     editLayoutMenu->setEnabled(false);
     layoutInfo->stopAllActions();
     layoutInfo->runAction(CCFadeTo::create(.15f, 0));
@@ -1732,7 +1762,7 @@ void DTLayer::exitLayoutEditing(){
 
     scrollLayer->moveBy(ccp(0, LayoutColumn::topHeight));
 
-    this->organizeLayout();   
+    this->organizeLayout();
 }
 
 void DTLayer::subscribeKeyListener(DTLabel* label){
@@ -1774,7 +1804,7 @@ void DTLayer::modifyRun(int startPer, int amount, std::optional<int> sessionNumb
     if (sessionNumber.has_value()){
         auto it = sessionsOrder.begin();
         std::advance(it, sessionNumber.value() - 1);
-        
+
         if (it == sessionsOrder.end()) return;
 
         auto sessionRes = StatsManager::getSession(it->second, it->first);
@@ -1838,7 +1868,7 @@ void DTLayer::modifyRun(int startPer, int endPer, int amount, std::optional<int>
     if (sessionNumber.has_value()){
         auto it = sessionsOrder.begin();
         std::advance(it, sessionNumber.value() - 1);
-        
+
         if (it == sessionsOrder.end()) return;
 
         auto sessionRes = StatsManager::getSession(it->second, it->first);
@@ -1896,7 +1926,7 @@ void DTLayer::modifyNewBest(int percent, bool makeTrue, std::optional<int> sessi
     if (sessionNumber.has_value()){
         auto it = sessionsOrder.begin();
         std::advance(it, sessionNumber.value() - 1);
-        
+
         if (it == sessionsOrder.end()) return;
 
         auto sessionRes = StatsManager::getSession(it->second, it->first);
@@ -1923,7 +1953,7 @@ void DTLayer::modifyNewBest(int percent, bool makeTrue, std::optional<int> sessi
         {
             if (linkedLevel.from0.isErr()) continue;
             auto& linkedLevelFrom0Stats = linkedLevel.from0.unwrap();
-            
+
             if (processBest(linkedLevelFrom0Stats.newBests)){
                 auto setGeneralRes = StatsManager::setGeneral(linkedLevelFrom0Stats, linkedLevel.levelKey);
                 if (setGeneralRes.isErr()) log::error("{}", setGeneralRes.unwrapErr());
@@ -1951,7 +1981,7 @@ UpdateFuture DTLayer::onATTKey(){
     long long totalAttempts = 0;
     for (const auto& lebel : linkedLevelsData)
         totalAttempts += lebel.metadata.attempts;
-    
+
     co_return Ok(std::to_string(totalAttempts));
 }
 UpdateFuture DTLayer::onLVLNKey(){
@@ -2052,7 +2082,7 @@ UpdateFuture DTLayer::onS0Key(){
     co_await arc::yield();
 
     std::string out;
-    if (!createDeathsString(session.deaths, Save::getSessionF0Customazations(), out, &session.newBests, "{sbc}")) 
+    if (!createDeathsString(session.deaths, Save::getSessionF0Customazations(), out, &session.newBests, "{sbc}"))
         co_return Err("Failed to create session from0 deaths string");
 
     co_return Ok(out);
@@ -2227,7 +2257,7 @@ Result<Session> DTLayer::loadSessionFromSave(std::optional<int> sessionIndex){
 
     auto it = sessionsOrder.begin();
     std::advance(it, i - 1);
-    
+
     auto levelKey = it->second;
 
     return StatsManager::getSession(levelKey, it->first);
@@ -2250,7 +2280,7 @@ UpdateFuture DTLayer::onRunsTo100Key(){
         co_await arc::yield();
         if (levelData.from0.isErr() || levelData.levelKey == myStats.levelKey) continue;
         auto levelFrom0Stats = levelData.from0.unwrap();
-        
+
         StatsManager::mergeMapsAdd(deaths, levelFrom0Stats.runs);
         StatsManager::mergeMapsAdd(deaths, levelFrom0Stats.deaths);
     }
@@ -2268,7 +2298,7 @@ UpdateFuture DTLayer::onRunsTo100Key(){
 
         to100Deaths.insert(death);
     }
-    
+
     std::string out;
     if (!createDeathsString(to100Deaths, Save::getRunsCustomazations(), out))
         co_return Err("Failed to create runs to 100 string");
@@ -2293,7 +2323,7 @@ UpdateFuture DTLayer::onBestRunsKey(){
         co_await arc::yield();
         if (levelData.from0.isErr() || levelData.levelKey == myStats.levelKey) continue;
         auto levelFrom0Stats = levelData.from0.unwrap();
-        
+
         StatsManager::mergeMapsAdd(deaths, levelFrom0Stats.runs);
         StatsManager::mergeMapsAdd(deaths, levelFrom0Stats.deaths);
     }
@@ -2350,7 +2380,7 @@ UpdateFuture DTLayer::onSAttKey(){
 
     co_await deathsCalc(session.deaths);
     co_await deathsCalc(session.runs);
-    
+
     co_return Ok(std::to_string(attempts));
 }
 
@@ -2445,7 +2475,7 @@ UpdateFuture DTLayer::onPTRUNSKey() {
 
         validSections.push_back(section);
     }
-    
+
     if (validSections.size() <= 1) co_return Err("Not enough sections!");
 
     Deaths deaths{};
@@ -2587,7 +2617,7 @@ UpdateFuture DTLayer::onSectionKey(){
             CreateSectioIDForSectionPair(splitDeath, std::nullopt, death.second);
             continue;
         }
-        
+
         std::vector<Section> startingSectionsForDeath{};
 
         for (const auto& section : validSections)
