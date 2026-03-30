@@ -320,7 +320,7 @@ bool LayoutOptionsLayer::init(const CCSize& size) {
                 
                 if (toEdit == nullptr) return;
 
-                auto str = toEdit->getString();
+                auto str = std::string(toEdit->getString());
                 int pos = toEdit->getInputNode()->m_textField->m_uCursorPos;
 
                 if (pos == -1) str += "{nl}";

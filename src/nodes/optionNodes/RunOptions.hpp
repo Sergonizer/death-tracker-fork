@@ -15,7 +15,8 @@ class RunOptions : public OptionsNode {
     private:
         virtual bool setup();
 
-        void addNewRun(CCObject*);
+        void onAddNewRun(CCObject*);
+        bool addNewRun(int percent);
 
         TextInput* runAdditionInput;
         //TextInput* RealEndPerInput;
@@ -27,6 +28,8 @@ class RunOptions : public OptionsNode {
         void PercentMaxHideValChanged(PercentCell* cell);
 
         void createRunCell(int percent, int maxToHide);
+
+        void onStartPoses(CCObject*);
 
     public:
         virtual void onOpened();

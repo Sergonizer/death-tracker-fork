@@ -125,20 +125,63 @@ struct matjson::Serialize<GeneralData> {
     }
 };
 
+typedef struct Section {
+    std::string name;
+    int startPercent;
+    int endPercent;
+
+    bool isPercentInSection(int percent) const {
+        return percent >= startPercent && percent < endPercent ||
+            percent >= startPercent && endPercent == 100;
+    }
+
+    bool isValid() const {
+        return !(startPercent > endPercent);
+    }
+
+    bool operator==(const Section& other) const {
+        return startPercent == other.startPercent && endPercent == other.endPercent;
+    }
+
+} Section;
+
+template <>
+struct matjson::Serialize<Section> {
+    static Result<Section> fromJson(const matjson::Value& value) {
+        Section section;
+
+        GEODE_UNWRAP_INTO(section.name, value["name"].asString());
+        GEODE_UNWRAP_INTO(section.startPercent, value["start"].asInt());
+        GEODE_UNWRAP_INTO(section.endPercent, value["end"].asInt());
+
+        return Ok(section);
+    }
+
+    static matjson::Value toJson(const Section& value) {
+        matjson::Value obj = matjson::makeObject({
+            { "name", value.name },
+            { "start", value.startPercent },
+            { "end", value.endPercent },
+        });
+        return obj;
+    }
+};
+
 typedef struct LevelMetadeta {
-    std::map<int, int> RunsToShow{};
+    std::map<int, int> runsToShow{};
     bool showAnyRun = true;
-    std::set<std::string> LinkedLevels{};
+    std::set<std::string> linkedLevels{};
     std::string levelName = "Unknown name";
     int attempts = 0;
     int difficulty = 0;
     int hideUpto = 0;
     int realEndPercent = 100;
     bool resetAsDeath = false;
-    std::optional<int> maxBackupsAmount = 2;
+    std::optional<int> maxBackupsAmount = 4;
     bool autoBackup = true;
     bool autoBackupLevelStats = true;
     std::optional<int> autoSessionsToBackupAmount = -1;
+    std::vector<Section> sections{};
 } LevelMetadeta;
 
 template <>
@@ -174,10 +217,10 @@ struct matjson::Serialize<LevelMetadeta> {
             auto oldRunsToSave = value["RunsToSave"].as<std::set<int>>().unwrapOr(std::set<int>{});
 
             for (const auto& runToSave : oldRunsToSave)
-                stats.RunsToShow.insert({runToSave, runToSave});
+                stats.runsToShow.insert({runToSave, runToSave});
         }
         else {
-            GEODE_UNWRAP_INTO(stats.RunsToShow, value["RunsToShow"].as<std::map<int, int>>());
+            GEODE_UNWRAP_INTO(stats.runsToShow, value["RunsToShow"].as<std::map<int, int>>());
         }
         if (value.contains("trackAnyRun")){
             GEODE_UNWRAP_INTO(stats.showAnyRun, value["trackAnyRun"].asBool());
@@ -186,7 +229,7 @@ struct matjson::Serialize<LevelMetadeta> {
             GEODE_UNWRAP_INTO(stats.showAnyRun, value["showAnyRun"].asBool());
         }
 
-        GEODE_UNWRAP_INTO(stats.LinkedLevels, value["LinkedLevels"].as<std::set<std::string>>());
+        GEODE_UNWRAP_INTO(stats.linkedLevels, value["LinkedLevels"].as<std::set<std::string>>());
         GEODE_UNWRAP_INTO(stats.levelName, value["levelName"].asString());
         GEODE_UNWRAP_INTO(stats.attempts, value["attempts"].asInt());
         GEODE_UNWRAP_INTO(stats.difficulty, value["difficulty"].asInt());
@@ -207,15 +250,18 @@ struct matjson::Serialize<LevelMetadeta> {
             GEODE_UNWRAP_INTO(auto autoSessionsToBackupAmountRes, value["autoSessionsToBackupAmount"].asInt());
             stats.autoSessionsToBackupAmount = autoSessionsToBackupAmountRes == -2 ? std::nullopt : std::make_optional(autoSessionsToBackupAmountRes);
         }
+        if (value.contains("sections")){
+            GEODE_UNWRAP_INTO(stats.sections, value["sections"].as<std::vector<Section>>());
+        }
 
         return Ok(stats);
     }
 
     static matjson::Value toJson(const LevelMetadeta& value) {
         matjson::Value obj = matjson::makeObject({
-            { "RunsToShow", value.RunsToShow },
+            { "RunsToShow", value.runsToShow },
             { "showAnyRun", value.showAnyRun },
-            { "LinkedLevels", value.LinkedLevels },
+            { "LinkedLevels", value.linkedLevels },
             { "levelName", value.levelName },
             { "attempts", value.attempts },
             { "difficulty", value.difficulty },
@@ -226,6 +272,7 @@ struct matjson::Serialize<LevelMetadeta> {
             { "autoBackup", value.autoBackup },
             { "autoBackupLevelStats", value.autoBackupLevelStats },
             { "autoSessionsToBackupAmount", value.autoSessionsToBackupAmount == std::nullopt ? -2 : value.autoSessionsToBackupAmount.value() },
+            { "sections", value.sections }
         });
         return obj;
     }

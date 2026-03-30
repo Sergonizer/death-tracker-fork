@@ -20,7 +20,7 @@ void DTPlayLayer::updateSessionLastPlayed() {
 /* hooks
 ========== */
 static void onModify(auto& self) {
-    auto _ = self.setHookPriority("PlayLayer::levelComplete", -9999);
+    (void)self.setHookPriority("PlayLayer::levelComplete", -9999);
 }
 
 bool DTPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
@@ -33,7 +33,6 @@ bool DTPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
     }
     else if (metaRes.isErr()){
         geode::Notification::create(fmt::format("Failed to load DT level data! {}", metaRes.unwrapErr()), NotificationIcon::Error)->show();
-        //log::info("{}", metaRes.unwrapErr());
     }
 
     if (metaRes.isOk()){
@@ -41,9 +40,8 @@ bool DTPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
         metadata.levelName = level->m_levelName;
         metadata.attempts = level->m_attempts;
         metadata.difficulty = StatsManager::getDifficulty(level);
-        auto _ = StatsManager::setMetadata(metadata, level);
-        // if (_.isErr())
-        //     log::info("set meta res {}", _.unwrapErr());
+        (void)StatsManager::setMetadata(metadata, level);
+        
         metaRes = Ok(metadata);
     }
 
@@ -160,23 +158,14 @@ void DTPlayLayer::destroyPlayer(PlayerObject* player, GameObject* p1) {
     PlayLayer::destroyPlayer(player, p1);
 
     if (!player->m_isDead) return;
-
-    // just in case some mod accidentally calls
-    // PlayLayer::destroyPlayer() twice
+ 
     if (!m_fields->hasRespawned) return;
     m_fields->hasRespawned = false;
 
-    // disable tracking deaths on completed levels
     if (DTPlayLayer::disableCompletedLevelTracking()) return;
 
     if (!m_level->isPlatformer())
         m_fields->currentRun.end = getActualProgress(this);
-
-    // log::info("PlayLayer::destroyPlayer()\ncurrentRun.start = {}\ncurrentRun.end = {}\nplatformer = {}",
-    //     m_fields->currentRun.start,
-    //     m_fields->currentRun.end,
-    //     m_level->isPlatformer()
-    // );
 
     m_fields->lastOneDied = true;
 
@@ -188,32 +177,34 @@ void DTPlayLayer::destroyPlayer(PlayerObject* player, GameObject* p1) {
 
 void DTPlayLayer::saveRun(){
     if (!Settings::getLateSaveEnabled()){
-        // log deaths from 0 in normal mode
-        if (m_fields->currentRun.start == 0 && !m_isPracticeMode)
+        if (m_fields->currentRun.start == 0 && !m_isPracticeMode){
             StatsManager::logDeath(m_fields->currentRun.end);
-        else if (!m_isPracticeMode && m_level->isPlatformer())
+        }
+        else if (!m_isPracticeMode && m_level->isPlatformer()){
             StatsManager::logDeath(m_fields->currentRun.end);
+        }
 
-        // anything else is a run
-        // platformer runs only from 0
-        else if (m_level->isPlatformer() && m_isPracticeMode)
+        else if (m_level->isPlatformer() && m_isPracticeMode){
             StatsManager::logRun(m_fields->currentRun);
-        else
+        }
+        else{
             StatsManager::logRun(m_fields->currentRun);
+        }
     }
     else{
-        // log deaths from 0 in normal mode
-        if (m_fields->currentRun.start == 0 && !m_isPracticeMode)
-        m_fields->fzeroToSave.push_back(m_fields->currentRun.end);
-        else if (!m_isPracticeMode && m_level->isPlatformer())
+        if (m_fields->currentRun.start == 0 && !m_isPracticeMode){
             m_fields->fzeroToSave.push_back(m_fields->currentRun.end);
+        }
+        else if (!m_isPracticeMode && m_level->isPlatformer()){
+            m_fields->fzeroToSave.push_back(m_fields->currentRun.end);
+        }
 
-        // anything else is a run
-        // platformer runs only from 0
-        else if (m_level->isPlatformer() && m_isPracticeMode)
+        else if (m_level->isPlatformer() && m_isPracticeMode){
             m_fields->runsToSave.push_back(m_fields->currentRun);
-        else
+        }
+        else{
             m_fields->runsToSave.push_back(m_fields->currentRun);
+        }
     }
 }
 

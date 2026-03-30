@@ -7,6 +7,7 @@
 #include <nodes/GraphCell.hpp>
 #include <nodes/OptionSwitcher.hpp>
 #include <nodes/GraphPointDisplay.hpp>
+#include <nodes/FloatingList.hpp>
 
 using namespace geode::prelude;
 
@@ -95,4 +96,8 @@ class DTGraphLayer : public Popup, public TextInputDelegate, public GraphPointDe
         std::set<GraphPointDisplay*, GraphPointDisplayPtrCompare> displays{};
 
         bool holdingShift;
+
+        FloatingList* runsFloatList;
+
+        void onRunSelectHelper(CCObject*);
     };

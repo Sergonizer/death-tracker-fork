@@ -1,5 +1,5 @@
 {
-	"geode": "5.2.0",
+	"geode": "5.4.1",
 	"gd": {
         "android": "2.2081",
         "win": "2.2081",
@@ -22,12 +22,60 @@
 	"resources": {
 		"spritesheets": {
 			"dt-sheet": [
-				"resources/*.png"
+				"resources/*.png",
+				"resources/tutorialExpressions/*.png"
 			]
 		}
 	},
 	"tags": ["utility", "interface", "offline"],
 	"settings": {
+		"session-method": {
+			"name": "Session Method",
+			"description": "Determines when a session should end.\n<cy>Exit level</c> - Ends when exiting the level.\n<cy>Exit Game</c> - Ends when exiting the game.\n<cy>Exit Game</c> - End after a set amount of seconds pass (Session Length).",
+			"type": "string",
+			"default": "Exit level",
+			"one-of": ["Exit level", "Exit game"]
+		},
+		"check-for-old":{
+			"name": "Convert old saves",
+			"description": "This is used to convert old saves from death tracker V2 to V3",
+			"type": "custom:button-type-dt"
+		},
+		"pause-menu": {
+			"name": "Pause Menu Button",
+			"description": "Adds the tracker button to the pause menu.",
+			"type": "bool",
+			"default": true
+		},
+		"left-menu": {
+			"name": "Left Menu Button",
+			"description": "Moves the death tracker button to the left menu of the level page.",
+			"type": "bool",
+			"default": false
+		},
+		"late-save": {
+			"name": "Late Save",
+			"description": "Will save your deaths when exiting the level instead of when you die, this may fix lag spikes that happen on death.",
+			"type": "bool",
+			"default": false
+		},
+		"disable-tracking-completed-levels": {
+			"name": "Disable Tracking Completed Levels",
+			"description": "Disables tracking on completed online levels.",
+			"type": "bool",
+			"default": false
+		},
+		"practice-zero-deaths": {
+			"name": "Enable 0% Practice Mode Deaths",
+			"description": "Deaths will be shown instead of runs from 0% in practice mode.",
+			"type": "bool",
+			"default": true
+		},
+		"save-path-new": {
+			"type": "folder",
+			"name": "Save Path",
+			"default": "{mod_save_dir}/levels"
+		},
 		"enter-new-line":{
 			"type": "keybind",
             "name": "Enter new line",
@@ -79,53 +127,6 @@
 				"ios": ["Shift+Enter"],
 				"android": ["Shift+Enter"]
 			}
-		},
-		"session-method": {
-			"name": "Session Method",
-			"description": "Determines when a session should end.\n<cy>Exit level</c> - Ends when exiting the level.\n<cy>Exit Game</c> - Ends when exiting the game.\n<cy>Exit Game</c> - End after a set amount of seconds pass (Session Length).",
-			"type": "string",
-			"default": "Exit level",
-			"one-of": ["Exit level", "Exit game"]
-		},
-		"check-for-old":{
-			"name": "Convert old saves",
-			"description": "This is used to convert old saves from death tracker V2 to V3",
-			"type": "custom:button-type-dt"
-		},
-		"pause-menu": {
-			"name": "Pause Menu Button",
-			"description": "Adds the tracker button to the pause menu.",
-			"type": "bool",
-			"default": true
-		},
-		"left-menu": {
-			"name": "Left Menu Button",
-			"description": "Moves the death tracker button to the left menu of the level page.",
-			"type": "bool",
-			"default": false
-		},
-		"late-save": {
-			"name": "Late Save",
-			"description": "Will save your deaths when exiting the level instead of when you die, this may fix lag spikes that happen on death.",
-			"type": "bool",
-			"default": false
-		},
-		"disable-tracking-completed-levels": {
-			"name": "Disable Tracking Completed Levels",
-			"description": "Disables tracking on completed online levels.",
-			"type": "bool",
-			"default": false
-		},
-		"practice-zero-deaths": {
-			"name": "Enable 0% Practice Mode Deaths",
-			"description": "Deaths will be shown instead of runs from 0% in practice mode.",
-			"type": "bool",
-			"default": true
-		},
-		"save-path-new": {
-			"type": "folder",
-			"name": "Save Path",
-			"default": "{mod_save_dir}/levels"
 		}
 	},
 	"dependencies": {

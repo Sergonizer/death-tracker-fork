@@ -35,11 +35,11 @@ bool RunOptions::setup(){
 
         auto& stats = dtlayer->m_MyLevelStats.unwrap();
         stats.metadata.showAnyRun = isToggled;
-        auto _ = StatsManager::setMetadata(stats.metadata, stats.levelKey);
+        (void)StatsManager::setMetadata(stats.metadata, stats.levelKey);
 
         dtlayer->foreachLinkedLevel([&isToggled](auto& lvlData){
             lvlData.metadata.showAnyRun = isToggled;
-            auto _ = StatsManager::setMetadata(lvlData.metadata, lvlData.levelKey);
+            (void)StatsManager::setMetadata(lvlData.metadata, lvlData.levelKey);
         });
 
         DTLayer::get()->specialStrings["runs"]->updateContent();
@@ -64,11 +64,26 @@ bool RunOptions::setup(){
     });
     this->addChild(runAdditionInput);
 
+    auto startPosBtnSpr = CCSprite::createWithSpriteFrameName("GJ_plainBtn_001.png");
+    auto spSpr = CCSprite::createWithSpriteFrameName("edit_eStartPosBtn_001.png");
+    spSpr->setScale(.75f);
+    startPosBtnSpr->setCascadeOpacityEnabled(true);
+    startPosBtnSpr->setScale(.6f);
+    startPosBtnSpr->addChild(spSpr);
+    spSpr->setPosition(startPosBtnSpr->getContentSize() / 2);
+    auto startPosBtn = CCMenuItemSpriteExtra::create(
+        startPosBtnSpr,
+        this,
+        menu_selector(RunOptions::onStartPoses)
+    );
+    startPosBtn->setPosition(runAdditionInput->getPosition() - ccp(runAdditionInput->getContentWidth() / 2 + startPosBtn->getContentWidth() / 2 + 5, 0));
+    this->addChild(startPosBtn);
+
     auto plusBtnSpr = CCSprite::createWithSpriteFrameName("GJ_plus3Btn_001.png");
     auto plusBtn = CCMenuItemSpriteExtra::create(
         plusBtnSpr,
         this,
-        menu_selector(RunOptions::addNewRun)
+        menu_selector(RunOptions::onAddNewRun)
     );
     plusBtn->setPosition(runAdditionInput->getPosition() + ccp(runAdditionInput->getScaledContentWidth() / 2 + plusBtn->getContentWidth() / 2 + 5, 0));
     this->addChild(plusBtn);
@@ -96,7 +111,7 @@ bool RunOptions::setup(){
 
     if (dtlayer != nullptr && dtlayer->m_MyLevelStats.isOk()){
         auto& stats = dtlayer->m_MyLevelStats.unwrap();
-        for (const auto& [startPercent, maxToShow] : stats.metadata.RunsToShow)
+        for (const auto& [startPercent, maxToShow] : stats.metadata.runsToShow)
         {
             createRunCell(startPercent, maxToShow);
         }
@@ -126,7 +141,7 @@ bool RunOptions::setup(){
 
         auto& stats = dtlayer->m_MyLevelStats.unwrap();
         stats.metadata.hideUpto = num;
-        auto _ = StatsManager::setMetadata(stats.metadata, stats.levelKey);
+        (void)StatsManager::setMetadata(stats.metadata, stats.levelKey);
 
         dtlayer->specialStrings["general"]->updateContent();
     });
@@ -175,7 +190,7 @@ bool RunOptions::setup(){
 
         auto& stats = dtlayer->m_MyLevelStats.unwrap();
         stats.metadata.resetAsDeath = isToggled;
-        auto _ = StatsManager::setMetadata(stats.metadata, stats.levelKey);
+        (void)StatsManager::setMetadata(stats.metadata, stats.levelKey);
     });
     ResetAsDeathToggler->setPosition({size.width - ResetAsDeathToggler->getContentWidth() / 2 - rightOffset, size.height / 8 * 2});
     this->addChild(ResetAsDeathToggler);
@@ -187,9 +202,9 @@ bool RunOptions::setup(){
     ResetAsDeathLabel->setAnchorPoint({1, .5f});
     this->addChild(ResetAsDeathLabel);
 
-    auto runsHidingTutorial = TutorialButton::create(.75f, [&, TARToggler, TARLabel, plusBtn](DTTutorialLayer* tutorial){
-        int randomPer = 7 + CCRANDOM_0_1() * (95 - 7);
-        int randomMaxToHide = (randomPer + 2) + CCRANDOM_0_1() * (93 - (randomPer + 2));
+    auto runsHidingTutorial = TutorialButton::create(.75f, "run-hiding", [&, TARToggler, TARLabel, plusBtn](DTTutorialLayer* tutorial){
+        int randomPer = 7 + (static_cast<float>(rand()) / static_cast<float>(RAND_MAX)) * (95.f - 7.f);
+        int randomMaxToHide = (randomPer + 2) + (static_cast<float>(rand()) / static_cast<float>(RAND_MAX)) * (93.f - (randomPer + 2.f));
 
         auto emptyPer = PercentCell::create(
             runsScrollLayer->m_contentLayer->getContentWidth(), 
@@ -262,7 +277,7 @@ bool RunOptions::setup(){
         ),
         [&](const Keybind& keybind, bool down, bool repeat, double) {
             if (down && runAdditionInput->getInputNode()->m_selected) {
-                addNewRun(nullptr);
+                onAddNewRun(nullptr);
             }
         }
     );
@@ -302,33 +317,41 @@ void RunOptions::onClosed(){
     this->setEnabled(false);
 }
 
-void RunOptions::addNewRun(CCObject*){
+void RunOptions::onAddNewRun(CCObject*){
     auto dtlayer = DTLayer::get();
-    //log::info("{}", dtlayer->specialStrings["totalLocalDeaths"]);
     auto numRes = geode::utils::numFromString<int>(runAdditionInput->getString());
 
     if (dtlayer == nullptr || dtlayer->m_MyLevelStats.isErr() || numRes.isErr()) return;
 
     int num = numRes.unwrap();
 
-    auto& stats = dtlayer->m_MyLevelStats.unwrap();
-    if (stats.metadata.RunsToShow.contains(num)) return;
-    
-    stats.metadata.RunsToShow.insert({num, num});
+    addNewRun(num);
+}
 
-    auto _ = StatsManager::setMetadata(stats.metadata, stats.levelKey);
+bool RunOptions::addNewRun(int percent){
+    auto dtlayer = DTLayer::get();
+    if (dtlayer == nullptr) return false;
+
+    auto& stats = dtlayer->m_MyLevelStats.unwrap();
+    if (stats.metadata.runsToShow.contains(percent)) return false;
+    
+    stats.metadata.runsToShow.insert({percent, percent});
+
+    (void)StatsManager::setMetadata(stats.metadata, stats.levelKey);
 
     DTLayer::get()->specialStrings["runs"]->updateContent();
     DTLayer::get()->specialStrings["sruns"]->updateContent();
 
     dtlayer->foreachLinkedLevel([&](auto& lvlData){
-        if (lvlData.metadata.RunsToShow.contains(num)) return;
+        if (lvlData.metadata.runsToShow.contains(percent)) return;
 
-        lvlData.metadata.RunsToShow.insert({num, num});
-        auto _ = StatsManager::setMetadata(lvlData.metadata, lvlData.levelKey);
+        lvlData.metadata.runsToShow.insert({percent, percent});
+        (void)StatsManager::setMetadata(lvlData.metadata, lvlData.levelKey);
     });
 
-    createRunCell(num, num);
+    createRunCell(percent, percent);
+
+    return true;
 }
 
 void RunOptions::PercentCellClicked(PercentCell* cell){
@@ -338,19 +361,19 @@ void RunOptions::PercentCellClicked(PercentCell* cell){
         int percent = cell->getPercent();
 
         auto& stats = dtlayer->m_MyLevelStats.unwrap();
-        if (stats.metadata.RunsToShow.contains(percent)){
-            stats.metadata.RunsToShow.erase(percent);
-            auto _ = StatsManager::setMetadata(stats.metadata, stats.levelKey);
+        if (stats.metadata.runsToShow.contains(percent)){
+            stats.metadata.runsToShow.erase(percent);
+            (void)StatsManager::setMetadata(stats.metadata, stats.levelKey);
 
             DTLayer::get()->specialStrings["runs"]->updateContent();
             DTLayer::get()->specialStrings["sruns"]->updateContent();
         }
 
         dtlayer->foreachLinkedLevel([&](auto& lvlData){
-            if (!lvlData.metadata.RunsToShow.contains(percent)) return;
+            if (!lvlData.metadata.runsToShow.contains(percent)) return;
 
-            lvlData.metadata.RunsToShow.erase(percent);
-            auto _ = StatsManager::setMetadata(lvlData.metadata, lvlData.levelKey);
+            lvlData.metadata.runsToShow.erase(percent);
+            (void)StatsManager::setMetadata(lvlData.metadata, lvlData.levelKey);
         });
     }
 
@@ -365,17 +388,17 @@ void RunOptions::PercentMaxHideValChanged(PercentCell* cell){
         int percent = cell->getPercent();
 
         auto& stats = dtlayer->m_MyLevelStats.unwrap();
-        if (stats.metadata.RunsToShow.contains(percent)){
-            stats.metadata.RunsToShow[percent] = cell->getMaxToHide();
-            auto _ = StatsManager::setMetadata(stats.metadata, stats.levelKey);
+        if (stats.metadata.runsToShow.contains(percent)){
+            stats.metadata.runsToShow[percent] = cell->getMaxToHide();
+            (void)StatsManager::setMetadata(stats.metadata, stats.levelKey);
 
             DTLayer::get()->specialStrings["runs"]->updateContent();
             DTLayer::get()->specialStrings["sruns"]->updateContent();
         }
 
         dtlayer->foreachLinkedLevel([&](auto& lvlData){
-            lvlData.metadata.RunsToShow[percent] = cell->getMaxToHide();
-            auto _ = StatsManager::setMetadata(lvlData.metadata, lvlData.levelKey);
+            lvlData.metadata.runsToShow[percent] = cell->getMaxToHide();
+            (void)StatsManager::setMetadata(lvlData.metadata, lvlData.levelKey);
         });
     }
 }
@@ -390,6 +413,47 @@ void RunOptions::createRunCell(int percent, int maxToHide){
     );
     percentCell->onMaxToHideChanged = [&](PercentCell* cell){ RunOptions::PercentMaxHideValChanged(cell); };
     runsScrollLayer->m_contentLayer->addChild(percentCell);
+
+    runsScrollLayer->m_contentLayer->updateLayout();
+}
+
+void RunOptions::onStartPoses(CCObject*){
+    auto currLvl = PlayLayer::get();
+    if (currLvl == nullptr){
+        FLAlertLayer::create("Cant add StartPos runs", "You must enter the level itself to automatically add StartPos runs!", "OK")->show();
+        return;
+    }
+
+    int anythingAdded = false;
+    bool foundStartPoses = false;
+    
+    for (auto child : currLvl->m_objects->asExt<GameObject*>()){
+        if (auto sp = typeinfo_cast<StartPosObject*>(child)){
+            float LLength = PlayLayer::get()->m_levelLength;
+            float startPosX = sp->getPositionX();
+
+            if (currLvl->m_level->m_timestamp > 0) {
+                float startPosTime = PlayLayer::get()->timeForPos({startPosX, 0}, 0, 0, true, 0);
+                float LTime = PlayLayer::get()->timeForPos({LLength, 0}, 0, 0, true, 0);
+                
+                if (addNewRun(startPosTime / LTime * 100))
+                    anythingAdded = true;
+            } else {
+                if (addNewRun(startPosX / LLength * 100))
+                    anythingAdded = true;
+            }
+
+            foundStartPoses = true;
+        }
+    }
+
+    if (!foundStartPoses) {
+        Notification::create("No StartPoses detected!", NotificationIcon::Info)->show();
+    }
+    else if (anythingAdded)
+        Notification::create("Added StartPos runs!", NotificationIcon::Success)->show();
+    else
+        Notification::create("StartPos runs were already added", NotificationIcon::Info)->show();
 
     runsScrollLayer->m_contentLayer->updateLayout();
 }

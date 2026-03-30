@@ -4,6 +4,16 @@
 #include <utils/Dev.hpp>
 #include <nodes/layers/CreateBackupPopup.hpp>
 
+/*
+-- auto backup settings --
+
+- toggle auto backups on/off
+- create on level exit
+- create on pause
+- create on exiting death tracker menu
+
+*/
+
 SaveOptions* SaveOptions::create(const CCSize& size) {
     auto ret = new SaveOptions();
     if (ret && ret->initWithSetup(size)) {
@@ -61,7 +71,7 @@ bool SaveOptions::setup(){
 
         auto& stats = DTLayer::get()->m_MyLevelStats.unwrap();
         stats.metadata.autoBackup = toggled;
-        auto _ = StatsManager::setMetadata(stats.metadata, stats.levelKey);
+        (void)StatsManager::setMetadata(stats.metadata, stats.levelKey);
     });
     autoBackupToggler->setPosition(backupBtn->getPosition() - ccp(0, backupBtn->getContentWidth() / 2 + autoBackupToggler->getContentWidth() / 2 + 5));
     this->addChild(autoBackupToggler);
@@ -123,7 +133,7 @@ bool SaveOptions::setup(){
             maxBackupsInput->setString("Unlimited");
             maxBackupsInput->setEnabled(false);
 
-            auto _ = StatsManager::setMetadata(stats.metadata, stats.levelKey);
+            (void)StatsManager::setMetadata(stats.metadata, stats.levelKey);
         } else {
             maxBackupsInput->setString("2", true);
             maxBackupsInput->setEnabled(true);
@@ -141,7 +151,7 @@ bool SaveOptions::setup(){
         int num = numRes.unwrap();
         stats.metadata.maxBackupsAmount = num;
 
-        auto _ = StatsManager::setMetadata(stats.metadata, stats.levelKey);
+        (void)StatsManager::setMetadata(stats.metadata, stats.levelKey);
     });
 
 
@@ -211,6 +221,18 @@ bool SaveOptions::setup(){
     importBtnLabel->setPosition(importBtn->getPosition() + ccp(importBtn->getContentWidth() / 2 + 5, 0));
     this->addChild(importBtnLabel);
 
+    auto saveOverallInfo = TutorialButton::create(1, "tbp", [&](DTTutorialLayer* tutorialLayer){
+        
+    });
+    saveOverallInfo->setPosition(size);
+    this->addChild(saveOverallInfo);
+
+    auto saveBackupsInfo = TutorialButton::create(1, "tbp", [&](DTTutorialLayer* tutorialLayer){
+        
+    });
+    saveBackupsInfo->setPosition(backupsScrollLabel->getPosition() + ccp(backupsScrollLabel->getScaledContentWidth() / 2 + saveBackupsInfo->getScaledContentWidth() / 2, 0));
+    this->addChild(saveBackupsInfo);
+
     this->setEnabled(false);
     this->setOpacity(0);
     backupsScrollBG->setOpacity(0);
@@ -272,9 +294,9 @@ void SaveOptions::onBackup(CCObject*){
 
     auto popup = CreateBackupPopup::create();
     popup->setCallback([this](bool general, std::optional<int> sessions) {
-        auto _ = StatsManager::addBackup(DTLayer::get()->m_MyLevelStats.unwrap().levelKey, general, sessions);
-        if (_.isErr()) {
-            log::error("{}", _.unwrapErr());
+        auto addBackupRes = StatsManager::addBackup(DTLayer::get()->m_MyLevelStats.unwrap().levelKey, general, sessions);
+        if (addBackupRes.isErr()) {
+            log::error("{}", addBackupRes.unwrapErr());
             Notification::create("Failed to create backup!", NotificationIcon::Error)->show();
         }
         else Notification::create("Created backup successfully!", NotificationIcon::Success)->show();
@@ -340,9 +362,9 @@ void SaveOptions::onBackupDelete(BackupCell* cell){
 
     createChoiceAlert("WARNING!", "Deleting this backup is irreversible.\nAre you sure you want to do this?", "No", "Yes", [&, cell](bool btn2){
         if (btn2){
-            auto _ = StatsManager::deleteBackup(cell->getLevelKey(), cell->getBackupTime());
-            if (_.isErr()){
-                log::error("{}", _.unwrapErr());
+            auto deleteBackupRes = StatsManager::deleteBackup(cell->getLevelKey(), cell->getBackupTime());
+            if (deleteBackupRes.isErr()){
+                log::error("{}", deleteBackupRes.unwrapErr());
                 return;
             }
 

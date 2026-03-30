@@ -39,6 +39,8 @@ class ModifyOptions : public OptionsNode {
 
         int currAmount = 1;
 
+        TextInput* amountInput;
+
     public:
         virtual void onOpened();
         virtual void onClosed();

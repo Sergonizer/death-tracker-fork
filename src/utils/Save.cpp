@@ -83,3 +83,18 @@ std::vector<DTGraphInfo> Save::getGraphs(){
 void Save::setGraphs(const std::vector<DTGraphInfo>& graphs){
     Mod::get()->setSavedValue("graphs", graphs);
 }
+
+bool Save::wasTutorialSeen(const std::string& tutorialID){
+    auto tutorialsSeen = Mod::get()->getSavedValue<std::set<std::string>>("tutorialsSeen");
+
+    return tutorialsSeen.contains(tutorialID);
+}
+void Save::setTutorialSeen(const std::string& tutorialID){
+    auto tutorialsSeen = Mod::get()->getSavedValue<std::set<std::string>>("tutorialsSeen");
+
+    if (tutorialsSeen.contains(tutorialID)) return;
+
+    tutorialsSeen.insert(tutorialID);
+
+    Mod::get()->setSavedValue("tutorialsSeen", tutorialsSeen);
+}

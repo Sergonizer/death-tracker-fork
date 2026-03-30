@@ -2,6 +2,7 @@
 
 #include <nodes/layers/DTGraphLayer.hpp>
 #include <nodes/layers/DTLevelSpecificSettingsLayer.hpp>
+#include <nodes/layers/CalculatorPopup.hpp>
 
 #include <Geode/ui/GeodeUI.hpp>
 #include <regex>
@@ -56,7 +57,7 @@ bool DTLayer::init(GJGameLevel* const& level) {
         stats.metadata.levelName = level->m_levelName;
         stats.metadata.attempts = level->m_attempts;
         stats.metadata.difficulty = StatsManager::getDifficulty(level);
-        auto _ = StatsManager::setMetadata(stats.metadata, stats.levelKey);
+        (void)StatsManager::setMetadata(stats.metadata, stats.levelKey);
         m_MyLevelStats = Ok(stats);
     }
 
@@ -263,15 +264,15 @@ bool DTLayer::init(GJGameLevel* const& level) {
     discardChangesButton->setPosition({-191, -140});
     editLayoutMenu->addChild(discardChangesButton);
 
-    auto mainInfo = TutorialButton::create(1, [&, levelSpecificOptionsBtn, graphBtn, editLayoutBtn, settingsBtn](DTTutorialLayer* tutorialLayer){
-        tutorialLayer->appendDialogue("Welcome to the <cy>main death tracker page!</c>", TutorialCharacterFace::TCFNormal)
+    auto mainInfo = TutorialButton::create(1, "main-overall", [&, levelSpecificOptionsBtn, graphBtn, editLayoutBtn, settingsBtn](DTTutorialLayer* tutorialLayer){
+        tutorialLayer->appendDialogue("Welcome to the <cy>main death tracker page!</c>", TutorialCharacterFace::TCFHappy)
             ->appendDialogue("This is the <cy>main view</c> where you can view <cg>all your data!</c>", TutorialCharacterFace::TCFNormal)
             ->joinTransform(TutorialBoxPlacement::TBPBottom, .75f)
             ->joinHighlight(scrollLayer, 0, true)
             ->joinTextToHighlight("Main Scroll View", .5f, TutorialTextPlacement::TTTop)
-            ->appendDialogue("You can hold <cg>control</c> and <cp>scroll</c> to zoom in! and <cc>shift</c> and <cp>scroll</c> to move side to side.", TutorialCharacterFace::TCFNormal)
+            ->appendDialogue("You can hold <cg>control</c> and <cp>scroll</c> to zoom in! and <cc>shift</c> and <cp>scroll</c> to move side to side.", TutorialCharacterFace::TCFNormalTilted)
             ->joinHighlight(scrollLayer, 0, true)
-            ->appendDialogue("Of course you can also scroll normally :D", TutorialCharacterFace::TCFNormal)
+            ->appendDialogue("Of course you can also scroll normally :D", TutorialCharacterFace::TCFHappy)
             ->joinTransform(TutorialBoxPlacement::TBPCenter)
             ->appendDialogue("You also have many options <cy>at the bottom</c> here!", TutorialCharacterFace::TCFNormal)
             ->joinTransform(TutorialBoxPlacement::TBPCenter, .75f)
@@ -280,29 +281,29 @@ bool DTLayer::init(GJGameLevel* const& level) {
             ->joinHighlight(levelSpecificOptionsBtn)
             ->joinTransform(TutorialBoxPlacement::TBPLeft, .75f)
             ->joinTextToHighlight("level options", .3f, TutorialTextPlacement::TTTop)
-            ->appendDialogue("You have the <cg>graphs</c> which allow you to visually see your consistancy and other aspects of your data", TutorialCharacterFace::TCFNormal)
+            ->appendDialogue("You have the <cg>graphs</c> which allow you to visually see your consistancy and other aspects of your data", TutorialCharacterFace::TCFNormalTilted)
             ->joinHighlight(graphBtn)
             ->joinTextToHighlight("graphs", .3f, TutorialTextPlacement::TTTop)
             ->appendDialogue("You have the <co>session selector</c>, allowing you to choose which session to view", TutorialCharacterFace::TCFNormal)
             ->joinHighlight(sessionSelector)
             ->joinTransform(TutorialBoxPlacement::TBPCenter, .75f)
             ->joinTextToHighlight("Session Selector", .3f, TutorialTextPlacement::TTTop)
-            ->appendDialogue("The <cy>higher</c> the number, the <cr>older</c> the session! so <co>session 1</c> is the most recent and <co>the last</c> is the oldest!", TutorialCharacterFace::TCFNormal)
+            ->appendDialogue("The <cy>higher</c> the number, the <cr>older</c> the session! so <co>session 1</c> is the most recent and <co>the last</c> is the oldest!", TutorialCharacterFace::TCFHappy)
             ->joinHighlight(sessionSelector)
             ->appendDialogue("You also have the option to <cy>edit how your data is layed out</c> using this button!", TutorialCharacterFace::TCFNormal)
             ->joinHighlight(editLayoutBtn)
             ->joinTextToHighlight("Layout Editor", .3f, TutorialTextPlacement::TTTop)
             ->joinTransform(TutorialBoxPlacement::TBPRight, .75f)
-            ->appendDialogue("And lastly you have quick access to the mod settings for death tracker right here!", TutorialCharacterFace::TCFNormal)
+            ->appendDialogue("And lastly you have quick access to the mod settings for death tracker right here!", TutorialCharacterFace::TCFNormalTilted)
             ->joinHighlight(settingsBtn)
             ->joinTextToHighlight("Mod Options", .3f, TutorialTextPlacement::TTTop)
-            ->appendDialogue("Have fun playing around with the features!", TutorialCharacterFace::TCFNormal)
+            ->appendDialogue("Have fun playing around with the features!", TutorialCharacterFace::TCFHappy)
             ->joinTransform(TutorialBoxPlacement::TBPCenter);
     });
     mainInfo->setPosition(m_size);
     m_buttonMenu->addChild(mainInfo);
 
-    layoutInfo = TutorialButton::create(1, [&, applyChangesButton, discardChangesButton](DTTutorialLayer* tutorialLayer){
+    layoutInfo = TutorialButton::create(1, "layout-overall", [&, applyChangesButton, discardChangesButton](DTTutorialLayer* tutorialLayer){
         tutorialLayer
             ->appendDialogue("This is where you can <cg>Edit how death tracker looks!</c>", TutorialCharacterFace::TCFNormal)
             ->appendDialogue("Here you have different labels! which can display any text you want!", TutorialCharacterFace::TCFNormal)
@@ -364,7 +365,7 @@ bool DTLayer::init(GJGameLevel* const& level) {
         tutorialLayer
             ->appendDialogue("One you are done can click the <cg>Apply Changes</c> button to save your changes", TutorialCharacterFace::TCFNormal)
             ->joinHighlight(applyChangesButton)
-            ->appendDialogue("Or delete all the changes you have made usign the <cr>Discard Changes</c> button!", TutorialCharacterFace::TCFNormal)
+            ->appendDialogue("Or delete all the changes you have made using the <cr>Discard Changes</c> button!", TutorialCharacterFace::TCFNormal)
             ->joinHighlight(discardChangesButton)
             ->appendDialogue("Feel free to play around and explore the different settings!", TutorialCharacterFace::TCFNormal)
             ->joinTransform(TutorialBoxPlacement::TBPCenter, 1);
@@ -374,6 +375,24 @@ bool DTLayer::init(GJGameLevel* const& level) {
     editLayoutMenu->addChild(layoutInfo);
 
     scrollLayer->setVisible(false);
+
+    auto calculatorBtnSpr = CCSprite::createWithSpriteFrameName("GJ_ngBtn_001.png");
+    calculatorBtnSpr->setScale(.75f);
+    auto calculatorBtn = CCMenuItemSpriteExtra::create(
+        calculatorBtnSpr,
+        this,
+        menu_selector(DTLayer::onCalculator)
+    );
+    m_buttonMenu->addChild(calculatorBtn);
+
+    testList = FloatingList::create({80, 100});
+    testList->setCallback([&](const int& id){
+        geode::Notification::create(fmt::format("Clicked item with id: {}", id), NotificationIcon::Info)->show();
+    });
+    testList->addItem({1, "hello yay :D"});
+    testList->addItem({2, "stuff", "goldFont.fnt"});
+    testList->addItem({3, "ya", "bigFont.fnt", "GJ_button_04.png"});
+    this->addChild(testList);
 
     return true;
 }
@@ -562,6 +581,9 @@ void DTLayer::populateSpecialStrings(){
     auto ptsrunKey = std::make_shared<SpecialKey>("ptsruns", "Adds your total accurate calculated session playtime in runs");
     ptsrunKey->setUpdateFunction(BIND_UPDATE_FUNC(DTLayer::onPTSRUNSKey));
     addSpecialString(ptsrunKey);
+    auto sectionKey = std::make_shared<SpecialKey>("section", "Adds your section runs");
+    sectionKey->setUpdateFunction(BIND_UPDATE_FUNC(DTLayer::onSectionKey));
+    addSpecialString(sectionKey);
 }
 
 void DTLayer::UpdateSharedStats(){
@@ -576,7 +598,7 @@ void DTLayer::UpdateSharedStats(){
 
     std::set<std::string> linkedLevels{};
     std::map<std::string, LevelData> visitedLevels{};
-    linkedLevels.insert(sharedStats.metadata.LinkedLevels.begin(), sharedStats.metadata.LinkedLevels.end());
+    linkedLevels.insert(sharedStats.metadata.linkedLevels.begin(), sharedStats.metadata.linkedLevels.end());
 
     while (true){
         auto startSize = linkedLevels.size();
@@ -591,7 +613,7 @@ void DTLayer::UpdateSharedStats(){
             }
             auto currStats = currStatsRes.unwrap();
 
-            linkedLevels.insert(currStats.metadata.LinkedLevels.begin(), currStats.metadata.LinkedLevels.end());
+            linkedLevels.insert(currStats.metadata.linkedLevels.begin(), currStats.metadata.linkedLevels.end());
             visitedLevels.insert({currStats.levelKey, currStats});
         }
 
@@ -728,8 +750,8 @@ bool DTLayer::createDeathsString(const Deaths& deaths, const stringCustomazation
         std::string nbColor = "";
 
         if (includeRunStart && !ignoreExtraSettings && !myMetadata.showAnyRun){
-            if (myMetadata.RunsToShow.contains(runSplit.start)){
-                if (myMetadata.RunsToShow[runSplit.start] > runSplit.end)
+            if (myMetadata.runsToShow.contains(runSplit.start)){
+                if (myMetadata.runsToShow[runSplit.start] > runSplit.end)
                     continue;
             }
             else{
@@ -1761,8 +1783,8 @@ void DTLayer::modifyRun(int startPer, int amount, std::optional<int> sessionNumb
 
         if (!processRun(session.deaths)) return;
 
-        auto _ = StatsManager::setSession(session, it->second, it->first, false);
-        if (_.isErr()) log::error("{}", _.unwrapErr());
+        auto setSessionRes = StatsManager::setSession(session, it->second, it->first, false);
+        if (setSessionRes.isErr()) log::error("{}", setSessionRes.unwrapErr());
     }
     else{
         auto& stats = m_MyLevelStats.unwrap();
@@ -1770,8 +1792,8 @@ void DTLayer::modifyRun(int startPer, int amount, std::optional<int> sessionNumb
         auto& from0Stats = stats.from0.unwrap();
 
         if (processRun(from0Stats.deaths)){
-            auto _ = StatsManager::setGeneral(from0Stats, stats.levelKey);
-            if (_.isErr()) log::error("{}", _.unwrapErr());
+            auto setGeneralRes = StatsManager::setGeneral(from0Stats, stats.levelKey);
+            if (setGeneralRes.isErr()) log::error("{}", setGeneralRes.unwrapErr());
             return;
         }
 
@@ -1781,8 +1803,8 @@ void DTLayer::modifyRun(int startPer, int amount, std::optional<int> sessionNumb
             auto& linkedLevelFrom0Stats = linkedLevel.from0.unwrap();
 
             if (processRun(linkedLevelFrom0Stats.deaths)){
-                auto _ = StatsManager::setGeneral(linkedLevelFrom0Stats, linkedLevel.levelKey);
-                if (_.isErr()) log::error("{}", _.unwrapErr());
+                auto setGeneralRes = StatsManager::setGeneral(linkedLevelFrom0Stats, linkedLevel.levelKey);
+                if (setGeneralRes.isErr()) log::error("{}", setGeneralRes.unwrapErr());
                 return;
             }
         }
@@ -1825,8 +1847,8 @@ void DTLayer::modifyRun(int startPer, int endPer, int amount, std::optional<int>
 
         if (!processRun(session.runs)) return;
 
-        auto _ = StatsManager::setSession(session, it->second, it->first, false);
-        if (_.isErr()) log::error("{}", _.unwrapErr());
+        auto setSessionRes = StatsManager::setSession(session, it->second, it->first, false);
+        if (setSessionRes.isErr()) log::error("{}", setSessionRes.unwrapErr());
     }
     else{
         auto& stats = m_MyLevelStats.unwrap();
@@ -1834,8 +1856,8 @@ void DTLayer::modifyRun(int startPer, int endPer, int amount, std::optional<int>
         auto& from0Stats = stats.from0.unwrap();
 
         if (processRun(from0Stats.runs)){
-            auto _ = StatsManager::setGeneral(from0Stats, stats.levelKey);
-            if (_.isErr()) log::error("{}", _.unwrapErr());
+            auto setGeneralRes = StatsManager::setGeneral(from0Stats, stats.levelKey);
+            if (setGeneralRes.isErr()) log::error("{}", setGeneralRes.unwrapErr());
             return;
         }
 
@@ -1845,8 +1867,8 @@ void DTLayer::modifyRun(int startPer, int endPer, int amount, std::optional<int>
             auto& linkedLevelFrom0Stats = linkedLevel.from0.unwrap();
 
             if (processRun(linkedLevelFrom0Stats.runs)){
-                auto _ = StatsManager::setGeneral(linkedLevelFrom0Stats, linkedLevel.levelKey);
-                if (_.isErr()) log::error("{}", _.unwrapErr());
+                auto setGeneralRes = StatsManager::setGeneral(linkedLevelFrom0Stats, linkedLevel.levelKey);
+                if (setGeneralRes.isErr()) log::error("{}", setGeneralRes.unwrapErr());
                 return;
             }
         }
@@ -1883,8 +1905,8 @@ void DTLayer::modifyNewBest(int percent, bool makeTrue, std::optional<int> sessi
 
         processBest(session.newBests);
 
-        auto _ = StatsManager::setSession(session, it->second, it->first, false);
-        if (_.isErr()) log::error("{}", _.unwrapErr());
+        auto setSessionRes = StatsManager::setSession(session, it->second, it->first, false);
+        if (setSessionRes.isErr()) log::error("{}", setSessionRes.unwrapErr());
     }
     else{
         auto& stats = m_MyLevelStats.unwrap();
@@ -1892,8 +1914,8 @@ void DTLayer::modifyNewBest(int percent, bool makeTrue, std::optional<int> sessi
         auto& from0Stats = stats.from0.unwrap();
 
         if (processBest(from0Stats.newBests)){
-            auto _ = StatsManager::setGeneral(from0Stats, stats.levelKey);
-            if (_.isErr()) log::error("{}", _.unwrapErr());
+            auto setGeneralRes = StatsManager::setGeneral(from0Stats, stats.levelKey);
+            if (setGeneralRes.isErr()) log::error("{}", setGeneralRes.unwrapErr());
             return;
         }
 
@@ -1903,8 +1925,8 @@ void DTLayer::modifyNewBest(int percent, bool makeTrue, std::optional<int> sessi
             auto& linkedLevelFrom0Stats = linkedLevel.from0.unwrap();
             
             if (processBest(linkedLevelFrom0Stats.newBests)){
-                auto _ = StatsManager::setGeneral(linkedLevelFrom0Stats, linkedLevel.levelKey);
-                if (_.isErr()) log::error("{}", _.unwrapErr());
+                auto setGeneralRes = StatsManager::setGeneral(linkedLevelFrom0Stats, linkedLevel.levelKey);
+                if (setGeneralRes.isErr()) log::error("{}", setGeneralRes.unwrapErr());
                 return;
             }
         }
@@ -2407,6 +2429,7 @@ UpdateFuture DTLayer::onPTF0SKey() {
 
 // same thing here, no distinction between playtime from 0 and playtime from runs
 UpdateFuture DTLayer::onPTRUNSKey() {
+UpdateFuture DTLayer::onSectionKey(){
     if (m_MyLevelStats.isErr()) co_return Err("Failed to calculate runs playtime");
     auto myStats = m_MyLevelStats.unwrap();
     if (myStats.from0.isErr()) co_return Err("No deaths saved!");
@@ -2416,6 +2439,21 @@ UpdateFuture DTLayer::onPTRUNSKey() {
 
     std::vector<Playtime_pair> playtime{};
     playtime.insert(playtime.end(), myFrom0Stats.playtime.begin(), myFrom0Stats.playtime.end());
+    std::vector<Section> validSections{};
+    for (const auto& section : myStats.metadata.sections)
+    {
+        if (!section.isValid()) continue;
+
+        validSections.push_back(section);
+    }
+    
+    if (validSections.size() <= 1) co_return Err("Not enough sections!");
+
+    auto linkedLevelsCopy = linkedLevelsData;
+
+    Deaths deaths{};
+    StatsManager::mergeMapsAdd(deaths, myFrom0Stats.runs);
+    StatsManager::mergeMapsAdd(deaths, myFrom0Stats.deaths);
 
     for (const auto& levelData : linkedLevelsCopy)
     {
@@ -2485,4 +2523,101 @@ UpdateFuture DTLayer::onPTSRUNSKey() {
         playtimeVal += playtime_pair.end.value() - playtime_pair.start;
     }
     co_return Ok(StatsManager::workingTime(playtimeVal));
+        
+        StatsManager::mergeMapsAdd(deaths, levelFrom0Stats.runs);
+        StatsManager::mergeMapsAdd(deaths, levelFrom0Stats.deaths);
+    }
+
+    std::unordered_map<std::string, int> deathsPerSection{};
+
+    auto CreateSectioIDForSectionPair = [&](const Run& splitDeath, const std::optional<Section>& startingSection, int deaths){
+        Section endingSection;
+        for (const auto& section : validSections)
+        {
+            if (!section.isPercentInSection(splitDeath.end)) continue;
+
+            endingSection = section;
+            break;
+        }
+
+        std::string sectionID = "";
+        if (!startingSection.has_value()){
+            sectionID = fmt::format("{}", endingSection.name);
+        }
+        else
+            sectionID = fmt::format("{}-{}", startingSection.value().name, endingSection.name);
+        if (!deathsPerSection.contains(sectionID))
+            deathsPerSection.insert({sectionID, deaths});
+        else
+            deathsPerSection[sectionID] += deaths;
+    };
+
+    for (const auto& death : deaths){
+        auto splitDeathRes = StatsManager::splitRunKey(death.first);
+        if (splitDeathRes.isErr()) continue;
+        auto splitDeath = splitDeathRes.unwrap();
+
+        if (splitDeath.start == -1){
+            CreateSectioIDForSectionPair(splitDeath, std::nullopt, death.second);
+            continue;
+        }
+        
+        std::vector<Section> startingSectionsForDeath{};
+
+        for (const auto& section : validSections)
+        {
+            if (!section.isPercentInSection(splitDeath.start)) continue;
+
+            startingSectionsForDeath.push_back(section);
+        }
+
+        for (const auto& startingSection : startingSectionsForDeath)
+        {
+            CreateSectioIDForSectionPair(splitDeath, startingSection, death.second);
+        }
+    }
+
+    std::string out;
+
+    std::vector<int> order;
+    order.reserve(validSections.size());
+    for (size_t i = 0; i < validSections.size(); ++i) order.push_back(i);
+    std::sort(order.begin(), order.end(), [&](int a, int b){
+        return validSections[a].startPercent < validSections[b].startPercent;
+    });
+
+    auto custom = Save::getFrom0Customazations();
+
+    for (const auto& startIdx : order)
+    {
+        for (const auto& endIdx : order)
+        {
+            auto sectionID = (startIdx == endIdx) ? validSections[startIdx].name : fmt::format("{}-{}", validSections[startIdx].name, validSections[endIdx].name);
+            auto it = deathsPerSection.find(sectionID);
+            if (it == deathsPerSection.end()) continue;
+
+            auto format = custom.format;
+            format = std::regex_replace(format, std::regex("\\{per\\}"), sectionID);
+            format = std::regex_replace(format, std::regex("\\{d\\}"), std::to_string(it->second));
+
+            out += fmt::format("{}{}", format, custom.seperator);
+        }
+
+        if (startIdx != order.back())
+            out += "----------{nl}";
+    }
+
+    if (!out.empty())
+        out.erase(out.length() - custom.seperator.length());
+
+    co_return Ok(out);
+}
+
+void DTLayer::onCalculator(CCObject*){
+    //CalculatorPopup::create()->show();
+
+    if (testList->isOpened())
+        testList->close();
+    else
+        testList->open();
 }

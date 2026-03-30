@@ -39,4 +39,7 @@ class Save {
         
         static std::vector<DTGraphInfo> getGraphs();
         static void setGraphs(const std::vector<DTGraphInfo>& graphs);
+
+        static bool wasTutorialSeen(const std::string& tutorialID);
+        static void setTutorialSeen(const std::string& tutorialID);
 };

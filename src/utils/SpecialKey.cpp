@@ -26,6 +26,7 @@ void SpecialKey::updateContent(){
         cancel();
     }
 
+    updateListener.setName("DTKey-" + key);
     updateListener.spawn(
         updateFutureRunner(),
         [&](UpdateFuture::Output val) {
