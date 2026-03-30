@@ -522,29 +522,29 @@ void DTLayer::populateSpecialStrings(){
     sessionRuns0Key->setUpdateFunction(BIND_UPDATE_FUNC(DTLayer::onSRUNSKey));
     addSpecialString(sessionRuns0Key);
 
-    auto ptallKey = std::make_shared<SpecialKey>("ptgen", "Adds your total estimated calculated playtime (shared with linked levels)");
-    ptallKey->setUpdateFunction(BIND_UPDATE_FUNC(DTLayer::onPTALLSKey));
-    addSpecialString(ptallKey);
+    auto aptallKey = std::make_shared<SpecialKey>("aptgen", "Adds your total estimated calculated playtime (shared with linked levels)");
+    aptallKey->setUpdateFunction(BIND_UPDATE_FUNC(DTLayer::onAPTALLSKey));
+    addSpecialString(aptallKey);
 
-    auto ptf0Key = std::make_shared<SpecialKey>("ptf0", "Adds your total estimated calculated playtime from 0 (shared with linked levels)");
-    ptf0Key->setUpdateFunction(BIND_UPDATE_FUNC(DTLayer::onPTF0SKey));
-    addSpecialString(ptf0Key);
+    auto aptf0Key = std::make_shared<SpecialKey>("aptf0", "Adds your total estimated calculated playtime from 0 (shared with linked levels)");
+    aptf0Key->setUpdateFunction(BIND_UPDATE_FUNC(DTLayer::onAPTF0SKey));
+    addSpecialString(aptf0Key);
 
-    auto ptrunKey = std::make_shared<SpecialKey>("ptruns", "Adds your total estimated calculated playtime in runs (shared with linked levels)");
-    ptrunKey->setUpdateFunction(BIND_UPDATE_FUNC(DTLayer::onPTRUNSKey));
-    addSpecialString(ptrunKey);
+    auto aptrunKey = std::make_shared<SpecialKey>("aptruns", "Adds your total estimated calculated playtime in runs (shared with linked levels)");
+    aptrunKey->setUpdateFunction(BIND_UPDATE_FUNC(DTLayer::onAPTRUNSKey));
+    addSpecialString(aptrunKey);
 
-    auto ptsallKey = std::make_shared<SpecialKey>("ptsgen", "Adds your total estimated calculated session playtime");
-    ptsallKey->setUpdateFunction(BIND_UPDATE_FUNC(DTLayer::onPTSALLSKey));
-    addSpecialString(ptsallKey);
+    auto aptsallKey = std::make_shared<SpecialKey>("aptsgen", "Adds your total estimated calculated session playtime");
+    aptsallKey->setUpdateFunction(BIND_UPDATE_FUNC(DTLayer::onAPTSALLSKey));
+    addSpecialString(aptsallKey);
 
-    auto ptsf0Key = std::make_shared<SpecialKey>("ptsf0", "Adds your total estimated calculated session playtime from 0");
-    ptsf0Key->setUpdateFunction(BIND_UPDATE_FUNC(DTLayer::onPTSF0Key));
-    addSpecialString(ptsf0Key);
+    auto aptsf0Key = std::make_shared<SpecialKey>("aptsf0", "Adds your total estimated calculated session playtime from 0");
+    aptsf0Key->setUpdateFunction(BIND_UPDATE_FUNC(DTLayer::onAPTSF0Key));
+    addSpecialString(aptsf0Key);
 
-    auto ptsrunKey = std::make_shared<SpecialKey>("ptsruns", "Adds your total estimated calculated session playtime in runs");
-    ptsrunKey->setUpdateFunction(BIND_UPDATE_FUNC(DTLayer::onPTSRUNSKey));
-    addSpecialString(ptsrunKey);
+    auto aptsrunKey = std::make_shared<SpecialKey>("aptsruns", "Adds your total estimated calculated session playtime in runs");
+    aptsrunKey->setUpdateFunction(BIND_UPDATE_FUNC(DTLayer::onAPTSRUNSKey));
+    addSpecialString(aptsrunKey);
 
     auto runsTo100Key = std::make_shared<SpecialKey>("rt100", "Adds all your runs to 100");
     runsTo100Key->setUpdateFunction(BIND_UPDATE_FUNC(DTLayer::onRunsTo100Key));
@@ -558,6 +558,29 @@ void DTLayer::populateSpecialStrings(){
     sAttKey->setUpdateFunction(BIND_UPDATE_FUNC(DTLayer::onSAttKey));
     addSpecialString(sAttKey);
 
+    auto ptallKey = std::make_shared<SpecialKey>("ptgen", "Adds your total accurate calculated playtime (shared with linked levels)");
+    ptallKey->setUpdateFunction(BIND_UPDATE_FUNC(DTLayer::onPTALLSKey));
+    addSpecialString(ptallKey);
+
+    auto ptf0Key = std::make_shared<SpecialKey>("ptf0", "Adds your total accurate calculated playtime from 0 (shared with linked levels)");
+    ptf0Key->setUpdateFunction(BIND_UPDATE_FUNC(DTLayer::onPTF0SKey));
+    addSpecialString(ptf0Key);
+
+    auto ptrunKey = std::make_shared<SpecialKey>("ptruns", "Adds your total accurate calculated playtime in runs (shared with linked levels)");
+    ptrunKey->setUpdateFunction(BIND_UPDATE_FUNC(DTLayer::onPTRUNSKey));
+    addSpecialString(ptrunKey);
+
+    auto ptsallKey = std::make_shared<SpecialKey>("ptsgen", "Adds your total accurate calculated session playtime");
+    ptsallKey->setUpdateFunction(BIND_UPDATE_FUNC(DTLayer::onPTSALLSKey));
+    addSpecialString(ptsallKey);
+
+    auto ptsf0Key = std::make_shared<SpecialKey>("ptsf0", "Adds your total accurate calculated session playtime from 0");
+    ptsf0Key->setUpdateFunction(BIND_UPDATE_FUNC(DTLayer::onPTSF0Key));
+    addSpecialString(ptsf0Key);
+
+    auto ptsrunKey = std::make_shared<SpecialKey>("ptsruns", "Adds your total accurate calculated session playtime in runs");
+    ptsrunKey->setUpdateFunction(BIND_UPDATE_FUNC(DTLayer::onPTSRUNSKey));
+    addSpecialString(ptsrunKey);
     auto sectionKey = std::make_shared<SpecialKey>("section", "Adds your section runs");
     sectionKey->setUpdateFunction(BIND_UPDATE_FUNC(DTLayer::onSectionKey));
     addSpecialString(sectionKey);
@@ -2095,7 +2118,7 @@ long long DTLayer::calcPlaytime(const Deaths& deaths){
     return playtime;
 }
 
-UpdateFuture DTLayer::onPTALLSKey(){
+UpdateFuture DTLayer::onAPTALLSKey(){
     if (m_MyLevelStats.isErr()) co_return Err("Failed to calculate playtime");
     auto myStats = m_MyLevelStats.unwrap();
     if (myStats.from0.isErr()) co_return Err("No deaths saved!");
@@ -2120,7 +2143,7 @@ UpdateFuture DTLayer::onPTALLSKey(){
     co_return Ok(pt);
 }
 
-UpdateFuture DTLayer::onPTF0SKey(){
+UpdateFuture DTLayer::onAPTF0SKey(){
     if (m_MyLevelStats.isErr()) co_return Err("Failed to calculate from 0 playtime");
     auto myStats = m_MyLevelStats.unwrap();
     if (myStats.from0.isErr()) co_return Err("No deaths saved!");
@@ -2141,7 +2164,7 @@ UpdateFuture DTLayer::onPTF0SKey(){
 
     co_return Ok(StatsManager::workingTime(calcPlaytime(deaths)));
 }
-UpdateFuture DTLayer::onPTRUNSKey(){
+UpdateFuture DTLayer::onAPTRUNSKey(){
     if (m_MyLevelStats.isErr()) co_return Err("Failed to calculate runs playtime");
     auto myStats = m_MyLevelStats.unwrap();
     if (myStats.from0.isErr()) co_return Err("No deaths saved!");
@@ -2163,7 +2186,7 @@ UpdateFuture DTLayer::onPTRUNSKey(){
     co_return Ok(StatsManager::workingTime(calcPlaytime(deaths)));
 }
 
-UpdateFuture DTLayer::onPTSALLSKey(){
+UpdateFuture DTLayer::onAPTSALLSKey(){
     auto sessionRes = loadSessionFromSave();
     if (sessionRes.isErr()) co_return Err("{}", sessionRes.unwrapErr());
     auto session = sessionRes.unwrap();
@@ -2176,7 +2199,7 @@ UpdateFuture DTLayer::onPTSALLSKey(){
 
     co_return Ok(StatsManager::workingTime(calcPlaytime(deaths)));
 }
-UpdateFuture DTLayer::onPTSF0Key(){
+UpdateFuture DTLayer::onAPTSF0Key(){
     auto sessionRes = loadSessionFromSave();
     if (sessionRes.isErr()) co_return Err("{}", sessionRes.unwrapErr());
     auto session = sessionRes.unwrap();
@@ -2185,7 +2208,7 @@ UpdateFuture DTLayer::onPTSF0Key(){
 
     co_return Ok(StatsManager::workingTime(calcPlaytime(session.deaths)));
 }
-UpdateFuture DTLayer::onPTSRUNSKey(){
+UpdateFuture DTLayer::onAPTSRUNSKey(){
     auto sessionRes = loadSessionFromSave();
     if (sessionRes.isErr()) co_return Err("{}", sessionRes.unwrapErr());
     auto session = sessionRes.unwrap();
@@ -2342,12 +2365,80 @@ void DTLayer::foreachLinkedLevel(geode::Function<void(LevelData&)> onLevelVisit)
     }
 }
 
+UpdateFuture DTLayer::onPTALLSKey(){
+    if (m_MyLevelStats.isErr()) co_return Err("Failed to calculate playtime");
+    auto myStats = m_MyLevelStats.unwrap();
+    if (myStats.from0.isErr()) co_return Err("No deaths saved!");
+    auto myFrom0Stats = myStats.from0.unwrap();
+
+    auto linkedLevelsCopy = linkedLevelsData;
+
+    std::vector<Playtime_pair> playtime{};
+
+    playtime.insert(playtime.end(), myFrom0Stats.playtime.begin(), myFrom0Stats.playtime.end());
+
+    for (const auto& levelData : linkedLevelsCopy)
+    {
+        co_await arc::yield();
+        if (levelData.from0.isErr() || levelData.levelKey == myStats.levelKey) continue;
+        auto levelFrom0Stats = levelData.from0.unwrap();
+        playtime.insert(playtime.end(),levelFrom0Stats.playtime.begin(), levelFrom0Stats.playtime.end());
+    }
+
+    long long playtimeVal{};
+
+    for (const auto& playtime_pair : playtime) {
+        if (!playtime_pair.end.has_value()) continue;
+        playtimeVal += playtime_pair.end.value() - playtime_pair.start;
+    }
+
+    auto pt = StatsManager::workingTime(playtimeVal);
+    co_return Ok(pt);
+}
+
+// currently same as PTALLSKey since theres no difference between playtime on runs and playtime from 0
+// TODO: make distinguishment between runs and from 0 playtime? remove key?
+UpdateFuture DTLayer::onPTF0SKey() {
+    if (m_MyLevelStats.isErr()) co_return Err("Failed to calculate from 0 playtime");
+    auto myStats = m_MyLevelStats.unwrap();
+    if (myStats.from0.isErr()) co_return Err("No deaths saved!");
+    auto myFrom0Stats = myStats.from0.unwrap();
+
+    auto linkedLevelsCopy = linkedLevelsData;
+
+    std::vector<Playtime_pair> playtime{};
+    playtime.insert(playtime.end(), myFrom0Stats.playtime.begin(), myFrom0Stats.playtime.end());
+
+    for (const auto& levelData : linkedLevelsCopy)
+    {
+        co_await arc::yield();
+        if (levelData.from0.isErr() || levelData.levelKey == myStats.levelKey) continue;
+        auto levelFrom0Stats = levelData.from0.unwrap();
+        playtime.insert(playtime.end(),levelFrom0Stats.playtime.begin(), levelFrom0Stats.playtime.end());
+    }
+
+    long long playtimeVal{};
+
+    for (const auto& playtime_pair : playtime) {
+        if (!playtime_pair.end.has_value()) continue;
+        playtimeVal += playtime_pair.end.value() - playtime_pair.start;
+    }
+
+    co_return Ok(StatsManager::workingTime(playtimeVal));
+}
+
+// same thing here, no distinction between playtime from 0 and playtime from runs
+UpdateFuture DTLayer::onPTRUNSKey() {
 UpdateFuture DTLayer::onSectionKey(){
     if (m_MyLevelStats.isErr()) co_return Err("Failed to calculate runs playtime");
     auto myStats = m_MyLevelStats.unwrap();
     if (myStats.from0.isErr()) co_return Err("No deaths saved!");
     auto myFrom0Stats = myStats.from0.unwrap();
 
+    auto linkedLevelsCopy = linkedLevelsData;
+
+    std::vector<Playtime_pair> playtime{};
+    playtime.insert(playtime.end(), myFrom0Stats.playtime.begin(), myFrom0Stats.playtime.end());
     std::vector<Section> validSections{};
     for (const auto& section : myStats.metadata.sections)
     {
@@ -2369,6 +2460,69 @@ UpdateFuture DTLayer::onSectionKey(){
         co_await arc::yield();
         if (levelData.from0.isErr() || levelData.levelKey == myStats.levelKey) continue;
         auto levelFrom0Stats = levelData.from0.unwrap();
+        playtime.insert(playtime.end(), levelFrom0Stats.playtime.begin(), levelFrom0Stats.playtime.end());
+    }
+
+    long long playtimeVal{};
+
+    for (const auto& playtime_pair : playtime) {
+        if (!playtime_pair.end.has_value()) continue;
+        playtimeVal += playtime_pair.end.value() - playtime_pair.start;
+    }
+
+    co_return Ok(StatsManager::workingTime(playtimeVal));
+}
+
+UpdateFuture DTLayer::onPTSALLSKey() {
+    auto sessionRes = loadSessionFromSave();
+    if (sessionRes.isErr()) co_return Err("{}", sessionRes.unwrapErr());
+    auto session = sessionRes.unwrap();
+
+    co_await arc::yield();
+
+    long long playtimeVal{};
+
+    for (const auto& playtime_pair : session.playtime) {
+        if (!playtime_pair.end.has_value()) continue;
+        playtimeVal += playtime_pair.end.value() - playtime_pair.start;
+    }
+
+    co_return Ok(StatsManager::workingTime(playtimeVal));
+}
+
+// again, no difference between playtime from 0 and playtime from runs, consider removing?
+UpdateFuture DTLayer::onPTSF0Key() {
+    auto sessionRes = loadSessionFromSave();
+    if (sessionRes.isErr()) co_return Err("{}", sessionRes.unwrapErr());
+    auto session = sessionRes.unwrap();
+
+    co_await arc::yield();
+
+    long long playtimeVal{};
+
+    for (const auto& playtime_pair : session.playtime) {
+        if (!playtime_pair.end.has_value()) continue;
+        playtimeVal += playtime_pair.end.value() - playtime_pair.start;
+    }
+
+    co_return Ok(StatsManager::workingTime(playtimeVal));
+}
+
+// again, no difference between playtime from 0 and playtime from runs, consider removing?
+UpdateFuture DTLayer::onPTSRUNSKey() {
+    auto sessionRes = loadSessionFromSave();
+    if (sessionRes.isErr()) co_return Err("{}", sessionRes.unwrapErr());
+    auto session = sessionRes.unwrap();
+
+    co_await arc::yield();
+
+    long long playtimeVal{};
+
+    for (const auto& playtime_pair : session.playtime) {
+        if (!playtime_pair.end.has_value()) continue;
+        playtimeVal += playtime_pair.end.value() - playtime_pair.start;
+    }
+    co_return Ok(StatsManager::workingTime(playtimeVal));
         
         StatsManager::mergeMapsAdd(deaths, levelFrom0Stats.runs);
         StatsManager::mergeMapsAdd(deaths, levelFrom0Stats.deaths);
