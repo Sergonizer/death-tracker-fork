@@ -2429,7 +2429,6 @@ UpdateFuture DTLayer::onPTF0SKey() {
 
 // same thing here, no distinction between playtime from 0 and playtime from runs
 UpdateFuture DTLayer::onPTRUNSKey() {
-UpdateFuture DTLayer::onSectionKey(){
     if (m_MyLevelStats.isErr()) co_return Err("Failed to calculate runs playtime");
     auto myStats = m_MyLevelStats.unwrap();
     if (myStats.from0.isErr()) co_return Err("No deaths saved!");
@@ -2448,8 +2447,6 @@ UpdateFuture DTLayer::onSectionKey(){
     }
     
     if (validSections.size() <= 1) co_return Err("Not enough sections!");
-
-    auto linkedLevelsCopy = linkedLevelsData;
 
     Deaths deaths{};
     StatsManager::mergeMapsAdd(deaths, myFrom0Stats.runs);
@@ -2523,6 +2520,35 @@ UpdateFuture DTLayer::onPTSRUNSKey() {
         playtimeVal += playtime_pair.end.value() - playtime_pair.start;
     }
     co_return Ok(StatsManager::workingTime(playtimeVal));
+}
+
+UpdateFuture DTLayer::onSectionKey(){
+    if (m_MyLevelStats.isErr()) co_return Err("Failed to calculate runs playtime");
+    auto myStats = m_MyLevelStats.unwrap();
+    if (myStats.from0.isErr()) co_return Err("No deaths saved!");
+    auto myFrom0Stats = myStats.from0.unwrap();
+
+    std::vector<Section> validSections{};
+    for (const auto& section : myStats.metadata.sections)
+    {
+        if (!section.isValid()) continue;
+
+        validSections.push_back(section);
+    }
+    
+    if (validSections.size() <= 1) co_return Err("Not enough sections!");
+
+    auto linkedLevelsCopy = linkedLevelsData;
+
+    Deaths deaths{};
+    StatsManager::mergeMapsAdd(deaths, myFrom0Stats.runs);
+    StatsManager::mergeMapsAdd(deaths, myFrom0Stats.deaths);
+
+    for (const auto& levelData : linkedLevelsCopy)
+    {
+        co_await arc::yield();
+        if (levelData.from0.isErr() || levelData.levelKey == myStats.levelKey) continue;
+        auto levelFrom0Stats = levelData.from0.unwrap();
         
         StatsManager::mergeMapsAdd(deaths, levelFrom0Stats.runs);
         StatsManager::mergeMapsAdd(deaths, levelFrom0Stats.deaths);
