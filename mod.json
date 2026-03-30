@@ -1,96 +1,41 @@
 {
-	"geode": "5.2.0",
+	"geode": "5.0.0",
 	"gd": {
         "android": "2.2081",
         "win": "2.2081",
 		"mac": "2.2081",
 		"ios": "2.2081"
     },
+	"version": "v2.4.9",
 	"id": "elohmrow.death_tracker",
 	"name": "Death Tracker",
-	"version": "v3.0.0-beta.8",
 	"developer": "abb2k",
 	"description": "Tracks your deaths at every percentage",
+	"repository": "https://github.com/eloh-mrow/death-tracker",
 	"links": {
-		"source": "https://github.com/abb2k/death-tracker",
 		"community": "https://discord.gg/8VTdWXghA6"
 	},
-	"issues": {
-		"info": "Feel free to send eny issues on the \"feedback\" channel on the discord server!",
-		"url": "https://discord.gg/8VTdWXghA6"
-	},
 	"resources": {
-		"spritesheets": {
-			"dt-sheet": [
-				"resources/*.png"
-			]
-		}
+		"sprites": [
+			"resources/*.png"
+		]
 	},
 	"tags": ["utility", "interface", "offline"],
 	"settings": {
-		"enter-new-line":{
-			"type": "keybind",
-            "name": "Enter new line",
-            "description": "Enters a new line when editing a labels text",
-            "category": "universal",
-            "migrate-from": "elohmrow.death_tracker/enter-new-line",
-            "default": {
-				"win": ["Enter"],
-				"mac": ["Enter"],
-				"ios": ["Enter"],
-				"android": ["Enter"]
-			}
-		},
-		"enter-new-run-per":{
-			"type": "keybind",
-            "name": "Enter new run percentage",
-            "description": "Enters a new run percent when inputting for adding a new percent to your \"runs to track\"",
-            "category": "universal",
-            "migrate-from": "elohmrow.death_tracker/enter-new-run-per",
-            "default": {
-				"win": ["Enter"],
-				"mac": ["Enter"],
-				"ios": ["Enter"],
-				"android": ["Enter"]
-			}
-		},
-		"add-deaths":{
-			"type": "keybind",
-            "name": "Add deaths",
-            "description": "Adds deaths while you input a percent to change deaths to your level",
-            "category": "universal",
-            "migrate-from": "elohmrow.death_tracker/add-deaths",
-            "default": {
-				"win": ["Enter"],
-				"mac": ["Enter"],
-				"ios": ["Enter"],
-				"android": ["Enter"]
-			}
-		},
-		"remove-deaths":{
-			"type": "keybind",
-            "name": "Remove deaths",
-            "description": "Removes deaths while you input a percent to change deaths to your level",
-            "category": "universal",
-            "migrate-from": "elohmrow.death_tracker/remove-deaths",
-            "default": {
-				"win": ["Shift+Enter"],
-				"mac": ["Shift+Enter"],
-				"ios": ["Shift+Enter"],
-				"android": ["Shift+Enter"]
-			}
-		},
 		"session-method": {
 			"name": "Session Method",
 			"description": "Determines when a session should end.\n<cy>Exit level</c> - Ends when exiting the level.\n<cy>Exit Game</c> - Ends when exiting the game.\n<cy>Exit Game</c> - End after a set amount of seconds pass (Session Length).",
 			"type": "string",
 			"default": "Exit level",
-			"one-of": ["Exit level", "Exit game"]
+			"one-of": ["Exit level", "Exit game", "Seconds"]
 		},
-		"check-for-old":{
-			"name": "Convert old saves",
-			"description": "This is used to convert old saves from death tracker V2 to V3",
-			"type": "custom:button-type-dt"
+		"session-length": {
+			"name": "Session Length",
+			"description": "How long a session last in seconds, only if the session method is \"Seconds\"",
+			"type": "int",
+			"default": 1,
+			"min": 1,
+			"max": 86400
 		},
 		"pause-menu": {
 			"name": "Pause Menu Button",
@@ -122,6 +67,14 @@
 			"type": "bool",
 			"default": true
 		},
+		"graph-point-size": {
+			"name": "Graph point size",
+			"description": "determines the size of the points on the graph (this setting will layer be moved to the graph layer)",
+			"type": "float",
+			"default": 1,
+			"min": 0.5,
+			"max": 2
+		},
 		"save-path-new": {
 			"type": "folder",
 			"name": "Save Path",
@@ -129,7 +82,7 @@
 		}
 	},
 	"dependencies": {
-		"geode.node-ids": ">=v1.10.0",
-		"cvolton.level-id-api": "v2.0.0-beta.2"
+		"geode.node-ids": ">=1.12.0-beta.1",
+		"cvolton.level-id-api": ">=v2.0.0-beta.2"
 	}
 }
