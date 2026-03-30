@@ -173,25 +173,6 @@ bool ModifyOptions::setup(){
     seperator1->setPositionY(size.height / 2);
     this->addChild(seperator1);
 
-    auto amountInput = TextInput::create(60, "amount", "gjFont17.fnt");
-    amountInput->setPosition({
-        seperator1->getPositionX() + amountInput->getScaledContentWidth() / 2 + 15,
-        seperator1->getPositionY()
-    });
-    amountInput->setString(std::to_string(currAmount));
-    amountInput->setCallback([&, amountInput](auto newstr){
-        auto numRes = geode::utils::numFromString<int>(newstr);
-        if (numRes.isErr()) return;
-        currAmount = numRes.unwrap();
-
-        if (currAmount > 100) {
-            currAmount = 100;
-            amountInput->setString("100");
-        }
-    });
-    amountInput->setCommonFilter(CommonFilter::Uint);
-    this->addChild(amountInput);
-
     auto addPercentInput = TextInput::create(75, "percent", "gjFont17.fnt");
     addPercentInput->setPosition({
         size.width - size.width / 5,
@@ -210,7 +191,7 @@ bool ModifyOptions::setup(){
     addPercentInput->setCommonFilter(CommonFilter::Uint);
     this->addChild(addPercentInput);
 
-    addPlusMinusBtns(addPercentInput, false, [&, addPercentInput, amountInput](bool isPlus){
+    addPlusMinusBtns(addPercentInput, false, [&, addPercentInput](bool isPlus){
         auto amountRes = utils::numFromString<int>(amountInput->getString());
         if (amountRes.isErr()) return;
         auto amount = amountRes.unwrap();
@@ -308,7 +289,7 @@ bool ModifyOptions::setup(){
     addRunOverallNode->setContentWidth(addRunSeperator->getScaledContentWidth() + addRunStartInput->getContentWidth() + addRunEndInput->getContentWidth() + 10);
     this->addChild(addRunOverallNode);
 
-    addPlusMinusBtns(addRunOverallNode, false, [&, amountInput, addRunStartInput, addRunEndInput](bool isPlus){
+    addPlusMinusBtns(addRunOverallNode, false, [&, addRunStartInput, addRunEndInput](bool isPlus){
         auto amountRes = utils::numFromString<int>(amountInput->getString());
         if (amountRes.isErr()) return;
         auto amount = amountRes.unwrap();
@@ -377,10 +358,7 @@ bool ModifyOptions::setup(){
     addNewBestInput->setCommonFilter(CommonFilter::Uint);
     this->addChild(addNewBestInput);
 
-    addPlusMinusBtns(addNewBestInput, false, [&, amountInput, addNewBestInput](bool isPlus){
-        auto amountRes = utils::numFromString<int>(amountInput->getString());
-        if (amountRes.isErr()) return;
-        auto amount = amountRes.unwrap();
+    addPlusMinusBtns(addNewBestInput, false, [&, addNewBestInput](bool isPlus){
         auto nbPercentRes = utils::numFromString<int>(addNewBestInput->getString());
         if (nbPercentRes.isErr()) return;
         auto nbPercent = nbPercentRes.unwrap();
@@ -400,6 +378,31 @@ bool ModifyOptions::setup(){
     addNewBestInputLabel->setAnchorPoint({.5f, 0});
     addNewBestInputLabel->setScale(.5f);
     this->addChild(addNewBestInputLabel);
+
+    amountInput = TextInput::create(60, "amount", "gjFont17.fnt");
+    amountInput->setPosition({
+        seperator1->getPositionX() + amountInput->getScaledContentWidth() / 2 + 15,
+        addRunOverallNode->getPositionY() + (addPercentInput->getPositionY() - addRunOverallNode->getPositionY()) / 2
+    });
+    amountInput->setString(std::to_string(currAmount));
+    amountInput->setCallback([&](auto newstr){
+        auto numRes = geode::utils::numFromString<int>(newstr);
+        if (numRes.isErr()) return;
+        currAmount = numRes.unwrap();
+
+        if (currAmount > 100) {
+            currAmount = 100;
+            amountInput->setString("100");
+        }
+    });
+    amountInput->setCommonFilter(CommonFilter::Uint);
+    this->addChild(amountInput);
+
+    auto amountInputLabel = CCLabelBMFont::create("Amount", "bigFont.fnt");
+    amountInputLabel->setPosition(amountInput->getPosition() + ccp(0, amountInput->getContentHeight() / 2));
+    amountInputLabel->setAnchorPoint({.5f, 0});
+    amountInputLabel->setScale(.5f);
+    this->addChild(amountInputLabel);
 
     auto modiftyInfo = TutorialButton::create(1, "tbp", [&](DTTutorialLayer* tutorialLayer){
         

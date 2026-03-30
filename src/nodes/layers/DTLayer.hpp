@@ -10,6 +10,7 @@
 #include <utils/SpecialKey.hpp>
 #include <nodes/layers/LayoutOptionsLayer.hpp>
 #include <nodes/TutorialButton.hpp>
+#include <nodes/FloatingList.hpp>
 
 using namespace geode::prelude;
 
@@ -203,4 +204,6 @@ class DTLayer : public Popup {
         std::optional<float> cachedLevelLength;
 
         void onCalculator(CCObject*);
+
+        FloatingList* testList = nullptr;
 };

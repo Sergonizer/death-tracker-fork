@@ -134,6 +134,50 @@ bool DTGraphLayer::init() {
     });
     graphsPage->addChild(runSelectInput);
 
+    auto runSelectHelperTopSpr = CCSprite::createWithSpriteFrameName("edit_findBtn_001.png");
+    auto runSelectHelperSpr = ButtonSprite::create(
+        runSelectHelperTopSpr,
+        runSelectHelperTopSpr->getContentHeight(),
+        runSelectHelperTopSpr->getContentHeight(),
+        runSelectHelperTopSpr->getContentHeight(),
+        1.25f,
+        false,
+        "GJ_button_04.png",
+        true
+    );
+    runSelectHelperSpr->setScale(0.4f);
+    auto runSelectHelperBtn = CCMenuItemSpriteExtra::create(
+        runSelectHelperSpr,
+        this,
+        menu_selector(DTGraphLayer::onRunSelectHelper)
+    );
+    runSelectHelperBtn->setPosition(runSelectInput->getPosition() + ccp(runSelectInput->getScaledContentWidth() / 2 + 10, 0));
+    graphsPage->addChild(runSelectHelperBtn);
+
+    runsFloatList = FloatingList::create({runSelectInput->getScaledContentWidth(), 100});
+    runsFloatList->setPosition(runSelectInput->getPosition() + ccp(0, runSelectInput->getScaledContentHeight() / 2 + 5));
+    runsFloatList->setAnchorPoint({.5f, 0});
+
+    std::vector<FloatingListItem> runItems{};
+    if (DTLayer::get()->m_MyLevelStats.isOk()){
+        auto& levelStats = DTLayer::get()->m_MyLevelStats.unwrap();
+        for (const auto& run : levelStats.metadata.runsToShow)
+        {
+            runItems.push_back(FloatingListItem{
+                .id = run.first,
+                .text = fmt::format("{}%", run.first)
+            });
+        }
+    }
+
+    runsFloatList->addItems(runItems);
+    runsFloatList->setCallback([&](const int& id){
+        runSelectInput->setString(std::to_string(id), true);
+
+        runsFloatList->close();
+    });
+    graphsPage->addChild(runsFloatList);
+
     auto addGraphBtnSpr = CCSprite::createWithSpriteFrameName("GJ_plus3Btn_001.png");
     auto addGraphBtn = CCMenuItemSpriteExtra::create(
         addGraphBtnSpr,
@@ -948,5 +992,14 @@ void DTGraphLayer::FLAlert_Clicked(FLAlertLayer* layer, bool btn2){
         editedGraph = std::nullopt;
 
         closeOptionsTab();
+    }
+}
+
+void DTGraphLayer::onRunSelectHelper(CCObject*){
+    if (runsFloatList->isOpened()){
+        runsFloatList->close();
+    }
+    else{
+        runsFloatList->open();
     }
 }

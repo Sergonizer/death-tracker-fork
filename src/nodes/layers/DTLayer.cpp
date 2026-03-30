@@ -365,7 +365,7 @@ bool DTLayer::init(GJGameLevel* const& level) {
         tutorialLayer
             ->appendDialogue("One you are done can click the <cg>Apply Changes</c> button to save your changes", TutorialCharacterFace::TCFNormal)
             ->joinHighlight(applyChangesButton)
-            ->appendDialogue("Or delete all the changes you have made usign the <cr>Discard Changes</c> button!", TutorialCharacterFace::TCFNormal)
+            ->appendDialogue("Or delete all the changes you have made using the <cr>Discard Changes</c> button!", TutorialCharacterFace::TCFNormal)
             ->joinHighlight(discardChangesButton)
             ->appendDialogue("Feel free to play around and explore the different settings!", TutorialCharacterFace::TCFNormal)
             ->joinTransform(TutorialBoxPlacement::TBPCenter, 1);
@@ -384,6 +384,15 @@ bool DTLayer::init(GJGameLevel* const& level) {
         menu_selector(DTLayer::onCalculator)
     );
     m_buttonMenu->addChild(calculatorBtn);
+
+    testList = FloatingList::create({80, 100});
+    testList->setCallback([&](const int& id){
+        geode::Notification::create(fmt::format("Clicked item with id: {}", id), NotificationIcon::Info)->show();
+    });
+    testList->addItem({1, "hello yay :D"});
+    testList->addItem({2, "stuff", "goldFont.fnt"});
+    testList->addItem({3, "ya", "bigFont.fnt", "GJ_button_04.png"});
+    this->addChild(testList);
 
     return true;
 }
@@ -2451,5 +2460,10 @@ UpdateFuture DTLayer::onSectionKey(){
 }
 
 void DTLayer::onCalculator(CCObject*){
-    CalculatorPopup::create()->show();
+    //CalculatorPopup::create()->show();
+
+    if (testList->isOpened())
+        testList->close();
+    else
+        testList->open();
 }
