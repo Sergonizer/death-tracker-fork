@@ -56,7 +56,7 @@ bool DTPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
     if (session == nullptr){
         StatsManager::scheduleCreateNewSession(true);
         DTPlayLayer::updateSessionLastPlayed();
-        // log::info("first session created");
+        //log::info("first session created");
         return true;
     }
 
@@ -76,7 +76,9 @@ bool DTPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
             case -1: {
                 // returns true if a new session
                 // was created during this game launch
+                //log::info("has played lvl?");
                 if (StatsManager::hasPlayedLevel()) break;
+                //log::info("ya i no p[lay yet]");
 
                     m_fields->isSessionExpired = true;
                     StatsManager::scheduleCreateNewSession(true);
@@ -263,10 +265,26 @@ void DTPlayLayer::pauseGame(bool unfocused) {
     if (!m_player1->m_isDead)
         DTPlayLayer::endPlaytime();
 
+    m_fields->didJustPause = true;
     PlayLayer::pauseGame(unfocused);
+    m_fields->didJustPause = false;
 }
 
-void DTPlayLayer::onQuit() {
+//tysm eclips menu ur awesome and mega goated :fire:
+float DTPlayLayer::getActualProgress(GJBaseGameLayer* game) {
+    float percent;
+    if (game->m_level->m_timestamp > 0) {
+        percent = static_cast<float>(game->m_gameState.m_levelTime * 240.f) / game->m_level->m_timestamp * 100.f;
+    } else {
+        percent = game->m_player1->getPositionX() / game->m_levelLength * 100.f;
+    }
+    return std::clamp(percent, 0.f, 100.f);
+}
+
+void DTPlayLayer::onExit(){
+    PlayLayer::onExit();
+    if (m_fields->didJustPause) return;
+
     if (m_fields->fzeroToSave.size()){
         StatsManager::logDeaths(m_fields->fzeroToSave);
     }
@@ -293,17 +311,4 @@ void DTPlayLayer::onQuit() {
     DTPlayLayer::updateSessionLastPlayed();
 
     StatsManager::setCurrentLevel(nullptr);
-
-    PlayLayer::onQuit();
-}
-
-//tysm eclips menu ur awesome and mega goated :fire:
-float DTPlayLayer::getActualProgress(GJBaseGameLayer* game) {
-    float percent;
-    if (game->m_level->m_timestamp > 0) {
-        percent = static_cast<float>(game->m_gameState.m_levelTime * 240.f) / game->m_level->m_timestamp * 100.f;
-    } else {
-        percent = game->m_player1->getPositionX() / game->m_levelLength * 100.f;
-    }
-    return std::clamp(percent, 0.f, 100.f);
 }

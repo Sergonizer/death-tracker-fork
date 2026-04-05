@@ -446,18 +446,21 @@ void StatsManager::logDeath(const int& percent, bool instantSave) {
     }
 
     auto session = StatsManager::getCurrentSession();
+    if (session != nullptr){
+        session->deaths[percentKey]++;
+        log::info("logging death {} to session {}", percentKey, session->sessionStartDate);
 
-    if (session) session->deaths[percentKey]++;
-
-    if (session && percent > session->currentBest) {
-        session->currentBest = percent;
-        session->newBests.insert(percent);
+        if (session && percent > session->currentBest) {
+            session->currentBest = percent;
+            session->newBests.insert(percent);
+        }
     }
-    
 
     if (instantSave){
         (void)StatsManager::setGeneral(currentFrom0, currentLevel);
-        if (session) (void)StatsManager::setSession(*session, currentLevel, session->sessionStartDate, true);
+        if (session){
+            (void)StatsManager::setSession(*session, currentLevel, session->sessionStartDate, true);
+        }
     }
 }
 
@@ -472,8 +475,13 @@ void StatsManager::logDeaths(const std::vector<int>& percents) {
         logDeath(percents[i], false);
     }
 
+    auto session = StatsManager::getCurrentSession();
+
     (void)StatsManager::setGeneral(currentFrom0, currentLevel);
-    (void)StatsManager::setSession(currentSession, currentLevel, currentSession.sessionStartDate, true);
+    if (session){
+        //log::info("session does exist");
+        (void)StatsManager::setSession(*session, currentLevel, session->sessionStartDate, true);
+    }
 }
 
 void StatsManager::logRun(const Run& run, bool instantSave) {
@@ -511,8 +519,13 @@ void StatsManager::logRuns(const std::vector<Run>& runs) {
         logRun(runs[i], false);
     }
 
+    auto session = StatsManager::getCurrentSession();
+
     (void)StatsManager::setGeneral(currentFrom0, currentLevel);
-    (void)StatsManager::setSession(currentSession, currentLevel, currentSession.sessionStartDate, true);
+    if (session){
+        //log::info("session does exist r");
+        (void)StatsManager::setSession(*session, currentLevel, session->sessionStartDate, true);
+    }
 }
 
 /* utility functions
@@ -598,7 +611,11 @@ Session* StatsManager::getCurrentSession() {
 
     auto levelKeyRes = StatsManager::getLevelKey(currentLevel);
 
+    //log::info("scheduled new session ? {}", m_scheduleCreateNewSession);
+
     if (levelKeyRes.isErr()) return currentSession;
+
+    //log::info("a");
     
     auto sessionsCount = getAllSessionTimesForLevel(levelKeyRes.unwrap());
 
@@ -606,7 +623,18 @@ Session* StatsManager::getCurrentSession() {
     // and are created when the player dies
     if (!sessionsCount.size() && !m_scheduleCreateNewSession) return nullptr;
 
+    if (!m_scheduleCreateNewSession && currentSession->sessionStartDate == 0){
+        auto latestSession = StatsManager::getSession(currentLevel, *std::prev(sessionsCount.end()));
+        if (latestSession.isErr()){
+            log::error("failed to load latest session! current session is dysfunctional");
+        }
+        else{
+            StatsManager::currentSession = latestSession.unwrap();
+        }
+    }
+
     if (!m_scheduleCreateNewSession) return currentSession;
+    //log::info("c");
     m_scheduleCreateNewSession = false;
 
     // the user has played the level

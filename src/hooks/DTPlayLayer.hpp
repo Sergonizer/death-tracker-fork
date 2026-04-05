@@ -15,6 +15,8 @@ class $modify(DTPlayLayer, PlayLayer) {
 
         bool lastOneDied = false;
 
+        bool didJustPause = false;
+
         std::vector<int> fzeroToSave{};
         std::vector<Run> runsToSave{};
     };
@@ -50,9 +52,9 @@ class $modify(DTPlayLayer, PlayLayer) {
 
     void resume();
 
-    void onQuit();
-
     float getActualProgress(GJBaseGameLayer* game);
 
     void saveRun();
+
+    void onExit();
 };
