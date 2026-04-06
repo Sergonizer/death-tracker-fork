@@ -71,8 +71,6 @@ bool DTLayer::init(GJGameLevel* const& level) {
      * main page
     */
 
-    DTLayer::transferPlaytimeFromPT();
-
     instance = this;
 
     this->setID("dt-layer");
@@ -388,6 +386,8 @@ bool DTLayer::init(GJGameLevel* const& level) {
     );
     m_buttonMenu->addChild(calculatorBtn);
 
+    DTLayer::transferPlaytimeFromPT();
+
     return true;
 }
 
@@ -484,9 +484,13 @@ void DTLayer::addSpecialString(const std::shared_ptr<SpecialKey>& key){
 }
 
 void DTLayer::transferPlaytimeFromPT() {
-    auto ptPath = Mod::get()->getPersistentDir().parent_path() / "nanew.playtime-tracker" / "leveldata.json";
+    auto ptPath = Mod::get()->getSaveDir().parent_path() / "nanew.playtime-tracker" / "leveldata.json";
 
     if (!exists(ptPath) || !m_MyLevelStats.isOk()) return;
+
+    auto& stats = m_MyLevelStats.unwrap();
+
+    if (stats.metadata.hasGottenDataFromPT) return;
 
     std::string levelID = std::to_string(m_Level->m_levelID.value());
     if (m_Level->m_levelType == GJLevelType::Editor) levelID = "Editor-" + levelID;
@@ -495,17 +499,52 @@ void DTLayer::transferPlaytimeFromPT() {
 
     if (ptObj[levelID].isNull()) return;
 
+    uint64_t overallPT = 0;
+
     for (auto session : ptObj[levelID]["sessions"]) {
         if (!session[0][0].isNumber()) continue;
+
         for (const auto& dtSession : sessionsOrder) {
             if (dtSession.first != session[0][0].as<long long>().unwrap()) continue;
-            for (auto ptPair : session) { // [start, end/pause]
-                // TODO: write conversion into DTSession
+
+            auto realSessRes = StatsManager::getSession(stats.levelKey, dtSession.first);
+            if (realSessRes.isErr()) continue;
+            auto realSess = realSessRes.unwrap();
+
+            for (auto ptPair : session) {
+
+                auto endT = ptPair[1].as<long long>();
+                auto startT = ptPair[0].as<long long>();
+                if (endT.isErr() || startT.isErr()) continue;
+
+                realSess.data.playtimeGeneral.playtimeF0 += (endT.unwrap() - startT.unwrap()) * 1000000000LL;
+
+                break;
             }
-            break;
+
+            (void)StatsManager::setSession(realSess, stats.levelKey, dtSession.first, false);
+        }
+
+        for (auto ptPair : session) {
+
+            auto endT = ptPair[1].as<long long>();
+            auto startT = ptPair[0].as<long long>();
+            if (endT.isErr() || startT.isErr()) continue;
+
+            overallPT += (endT.unwrap() - startT.unwrap());
         }
     }
     //TODO: write to main general deaths
+
+    if (stats.from0.isOk()){
+        auto& f0 = stats.from0.unwrap();
+        f0.playtimeGeneral.playtimeF0 += overallPT * 1000000000LL;
+
+        (void)StatsManager::setGeneral(f0, stats.levelKey);
+    }
+
+    stats.metadata.hasGottenDataFromPT = true;
+    (void)StatsManager::setMetadata(stats.metadata, stats.levelKey);
 }
 
 void DTLayer::populateSpecialStrings(){
@@ -624,8 +663,6 @@ void DTLayer::populateSpecialStrings(){
     sectionKey->setUpdateFunction(BIND_UPDATE_FUNC(DTLayer::onSectionKey));
     addSpecialString(sectionKey);
 }
-
-void
 
 void DTLayer::UpdateSharedStats(){
     if (m_MyLevelStats.isErr()){
@@ -2358,8 +2395,8 @@ UpdateFuture DTLayer::onSAttKey(){
         }
     };
 
-    co_await deathsCalc(session.deaths);
-    co_await deathsCalc(session.runs);
+    co_await deathsCalc(session.data.deaths);
+    co_await deathsCalc(session.data.runs);
     
     co_return Ok(std::to_string(attempts));
 }
@@ -2391,45 +2428,9 @@ UpdateFuture DTLayer::onPTF0SKey() {
 
 // same thing here, no distinction between playtime from 0 and playtime from runs
 UpdateFuture DTLayer::onPTRUNSKey() {
-    if (m_MyLevelStats.isErr()) co_return Err("Failed to calculate runs playtime");
-    auto myStats = m_MyLevelStats.unwrap();
-    if (myStats.from0.isErr()) co_return Err("No deaths saved!");
-    auto myFrom0Stats = myStats.from0.unwrap();
-
-    auto linkedLevelsCopy = linkedLevelsData;
-
-    std::vector<Playtime_pair> playtime{};
-    playtime.insert(playtime.end(), myFrom0Stats.playtime.begin(), myFrom0Stats.playtime.end());
-    std::vector<Section> validSections{};
-    for (const auto& section : myStats.metadata.sections)
-    {
-        if (!section.isValid()) continue;
-
-        validSections.push_back(section);
-    }
-    
-    if (validSections.size() <= 1) co_return Err("Not enough sections!");
-
-    Deaths deaths{};
-    StatsManager::mergeMapsAdd(deaths, myFrom0Stats.runs);
-    StatsManager::mergeMapsAdd(deaths, myFrom0Stats.deaths);
-
-    for (const auto& levelData : linkedLevelsCopy)
-    {
-        co_await arc::yield();
-        if (levelData.from0.isErr() || levelData.levelKey == myStats.levelKey) continue;
-        auto levelFrom0Stats = levelData.from0.unwrap();
-        playtime.insert(playtime.end(), levelFrom0Stats.playtime.begin(), levelFrom0Stats.playtime.end());
-    }
-
-    long long playtimeVal{};
-
-    for (const auto& playtime_pair : playtime) {
-        if (!playtime_pair.end.has_value()) continue;
-        playtimeVal += playtime_pair.end.value() - playtime_pair.start;
-    }
-
-    co_return Ok(StatsManager::workingTime(playtimeVal));
+    co_return co_await getPlaytimeFor([](GeneralData const& data){
+        return data.playtimeGeneral.playtimeRuns;
+    }, false);
 }
 
 UpdateFuture DTLayer::onPTSALLSKey() {

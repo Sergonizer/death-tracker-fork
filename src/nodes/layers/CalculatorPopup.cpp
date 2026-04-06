@@ -1,6 +1,6 @@
 #include "CalculatorPopup.hpp"
 
-#include <nodes/CalculatorModes/beforeCalcMode.hpp>
+#include <nodes/CalculatorModes/BeforeCalcMode.hpp>
 #include <nodes/CalculatorModes/PastCalcMode.hpp>
 
 CalculatorPopup* CalculatorPopup::create() {
@@ -59,8 +59,8 @@ bool CalculatorPopup::init() {
         (modeLabel->getPositionY() - modeLabel->getScaledContentHeight() / 2) / 1.5f - calcBtn->getPositionY()
     );
     
-    addMode(BeforeCalcMode::create(modeSize, [&](auto str){ this->varsChanged(str); }, [&](auto str){ this->onCalc(str); }));
     addMode(PastCalcMode::create(modeSize, [&](auto str){ this->varsChanged(str); }, [&](auto str){ this->onCalc(str); }));
+    addMode(BeforeCalcMode::create(modeSize, [&](auto str){ this->varsChanged(str); }, [&](auto str){ this->onCalc(str); }));
 
     std::vector<std::string> modesTexts{};
     for (const auto& mode : modes)
@@ -130,9 +130,9 @@ void CalculatorPopup::addMode(CalculatorMode* mode){
 void CalculatorPopup::updateText(){
     std::string str = currentVars;
     if (currentCalc.has_value())
-        currentVars += " = " + currentCalc.value();
+        str += " = " + currentCalc.value();
 
-    calcBG->setString(currentVars);
+    calcBG->setString(str);
 }
 
 void CalculatorPopup::onCalcBtn(CCObject*){

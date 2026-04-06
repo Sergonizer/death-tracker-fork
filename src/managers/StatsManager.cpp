@@ -889,7 +889,6 @@ std::string StatsManager::workingTime(uint64_t nanoseconds) {
     if (nanoseconds == 0) return "NA";
 
     uint64_t totalSeconds = nanoseconds / 1'000'000'000ULL;
-    log::info("mili {} | {}", nanoseconds, totalSeconds);
 
     uint64_t hours = totalSeconds / 3600;
     uint64_t minutes = (totalSeconds % 3600) / 60;

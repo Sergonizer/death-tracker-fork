@@ -206,6 +206,7 @@ typedef struct LevelMetadeta {
     bool autoBackupLevelStats = true;
     std::optional<int> autoSessionsToBackupAmount = -1;
     std::vector<Section> sections{};
+    bool hasGottenDataFromPT;
 } LevelMetadeta;
 
 template <>
@@ -277,6 +278,9 @@ struct matjson::Serialize<LevelMetadeta> {
         if (value.contains("sections")){
             GEODE_UNWRAP_INTO(stats.sections, value["sections"].as<std::vector<Section>>());
         }
+        if (value.contains("hasGottenDataFromPT")){
+            GEODE_UNWRAP_INTO(stats.hasGottenDataFromPT, value["hasGottenDataFromPT"].asBool());
+        }
 
         return Ok(stats);
     }
@@ -296,7 +300,8 @@ struct matjson::Serialize<LevelMetadeta> {
             { "autoBackup", value.autoBackup },
             { "autoBackupLevelStats", value.autoBackupLevelStats },
             { "autoSessionsToBackupAmount", value.autoSessionsToBackupAmount == std::nullopt ? -2 : value.autoSessionsToBackupAmount.value() },
-            { "sections", value.sections }
+            { "sections", value.sections },
+            { "hasGottenDataFromPT", value.hasGottenDataFromPT }
         });
         return obj;
     }
