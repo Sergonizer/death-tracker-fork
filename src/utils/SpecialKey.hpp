@@ -27,6 +27,8 @@ class SpecialKey : public CCObject, public std::enable_shared_from_this<SpecialK
 
         bool updateOngoing = false;
 
+        std::set<std::string> toRefreshWith{};
+
     public:
         SpecialKey(const std::string& key, const std::string& description);
         ~SpecialKey(){
@@ -54,4 +56,9 @@ class SpecialKey : public CCObject, public std::enable_shared_from_this<SpecialK
         void setUpdateStartedCallback(geode::Function<void(const std::shared_ptr<SpecialKey>&)> callback);
 
         void cancel();
+
+        bool doesRefreshWith(const std::string& other);
+
+        void refreshWith(const std::string& other);
+        void refreshWith(const std::set<std::string>& others);
 };

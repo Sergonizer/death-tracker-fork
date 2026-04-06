@@ -114,18 +114,30 @@ void DTPlayLayer::checkpointActivated(CheckpointGameObject* checkpt) {
 }
 #endif
 
-void DTPlayLayer::startPlaytime() {
-    time_t timestamp;
+void DTPlayLayer::cutoutPlaytime() {
+    if (!m_fields->startTime.has_value()) return;
 
-    m_fields->sessionPlaytime.emplace_back(time(&timestamp), std::nullopt);
+    auto now = std::chrono::steady_clock::now();
+    uint64_t timeSpent = std::chrono::duration_cast<std::chrono::nanoseconds>(now - m_fields->startTime.value()).count();
+    m_fields->startTime = now;
+    
+    m_fields->timePassed += timeSpent;
+
+    //log::info("playing for {}", m_fields->timePassed / 1000000000.0);
 }
 
-void DTPlayLayer::endPlaytime() {
-    time_t timestamp;
+void DTPlayLayer::discardPlaytime() {
+    if (!m_fields->startTime.has_value()) return;
+    
+    m_fields->startTime = std::chrono::steady_clock::now();
 
-    if (!m_fields->sessionPlaytime.size()) return;
+    //log::info("discarded playtime");
+}
 
-    m_fields->sessionPlaytime[m_fields->sessionPlaytime.size() - 1].end = time(&timestamp);
+void DTPlayLayer::startupPlaytime() {
+    m_fields->startTime = std::chrono::steady_clock::now();
+
+    //log::info("startup playtime");
 }
 
 void DTPlayLayer::resetLevel() {
@@ -147,7 +159,8 @@ void DTPlayLayer::resetLevel() {
     PlayLayer::resetLevel();
     //log::info("PlayLayer::resetLevel()");
 
-    startPlaytime();
+    m_fields->levelBeaten = false;
+    discardPlaytime();
 
     m_fields->hasRespawned = true;
 
@@ -165,7 +178,7 @@ void DTPlayLayer::destroyPlayer(PlayerObject* player, GameObject* p1) {
     if (!m_fields->hasRespawned) return;
     m_fields->hasRespawned = false;
 
-    endPlaytime();
+    cutoutPlaytime();
 
     if (DTPlayLayer::disableCompletedLevelTracking()) return;
 
@@ -220,8 +233,6 @@ void DTPlayLayer::levelComplete() {
     if (!m_fields->hasRespawned) return;
     m_fields->hasRespawned = false;
 
-    endPlaytime();
-
     // disable tracking deaths on completed levels
     if (DTPlayLayer::disableCompletedLevelTracking()) return;
 
@@ -254,16 +265,14 @@ void DTPlayLayer::removeAllCheckpoints() {
 void DTPlayLayer::resume() {
     // if remove pauses is on
     if (!m_player1->m_isDead)
-        DTPlayLayer::startPlaytime();
+        DTPlayLayer::discardPlaytime();
     PlayLayer::resume();
 }
 
 void DTPlayLayer::pauseGame(bool unfocused) {
-
-
     // if remove pauses
-    if (!m_player1->m_isDead)
-        DTPlayLayer::endPlaytime();
+    if (!m_player1->m_isDead && !m_fields->levelBeaten)
+        DTPlayLayer::cutoutPlaytime();
 
     m_fields->didJustPause = true;
     PlayLayer::pauseGame(unfocused);
@@ -293,8 +302,6 @@ void DTPlayLayer::onExit(){
         StatsManager::logRuns(m_fields->runsToSave);
     }
 
-    DTPlayLayer::endPlaytime();
-
     auto session = StatsManager::getCurrentSession();
     session->playtime.insert(session->playtime.end(), m_fields->sessionPlaytime.begin(), m_fields->sessionPlaytime.end());
     (void)StatsManager::setSession(*session, m_level, session->sessionStartDate, false);
@@ -311,4 +318,26 @@ void DTPlayLayer::onExit(){
     DTPlayLayer::updateSessionLastPlayed();
 
     StatsManager::setCurrentLevel(nullptr);
+}
+
+void DTPlayLayer::startGame(){
+    PlayLayer::startGame();
+
+    startupPlaytime();
+}
+
+void DTPlayLayer::playEndAnimationToPos(cocos2d::CCPoint position){
+    PlayLayer::playEndAnimationToPos(position);
+
+    cutoutPlaytime();
+
+    m_fields->levelBeaten = true;
+}
+
+void DTPlayLayer::playPlatformerEndAnimationToPos(cocos2d::CCPoint position, bool instant){
+    PlayLayer::playPlatformerEndAnimationToPos(position, instant);
+
+    cutoutPlaytime();
+
+    m_fields->levelBeaten = true;
 }

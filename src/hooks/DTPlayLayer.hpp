@@ -1,6 +1,7 @@
 #include <Geode/modify/PlayLayer.hpp>
 #include "../managers/StatsManager.hpp"
 #include "../utils/Settings.hpp"
+#include <chrono>
 
 using namespace geode::prelude;
 
@@ -16,9 +17,13 @@ class $modify(DTPlayLayer, PlayLayer) {
         bool lastOneDied = false;
 
         bool didJustPause = false;
+        uint64_t timePassed = 0;
+        std::optional<std::chrono::steady_clock::time_point> startTime;
 
         std::vector<int> fzeroToSave{};
         std::vector<Run> runsToSave{};
+
+        bool levelBeaten = false;
     };
 
     bool disableCompletedLevelTracking();
@@ -30,9 +35,11 @@ class $modify(DTPlayLayer, PlayLayer) {
 
     bool init(GJGameLevel* level, bool p1, bool p2);
 
-    void startPlaytime();
+    void cutoutPlaytime();
 
-    void endPlaytime();
+    void discardPlaytime();
+
+    void startupPlaytime();
 
     void resetLevel();
 
@@ -57,4 +64,10 @@ class $modify(DTPlayLayer, PlayLayer) {
     void saveRun();
 
     void onExit();
+
+    void startGame();
+
+    void playEndAnimationToPos(cocos2d::CCPoint position);
+
+    void playPlatformerEndAnimationToPos(cocos2d::CCPoint position, bool instant);
 };

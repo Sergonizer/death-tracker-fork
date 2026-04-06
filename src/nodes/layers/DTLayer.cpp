@@ -507,6 +507,7 @@ void DTLayer::populateSpecialStrings(){
     addSpecialString(generalKey);
 
     auto dtattKey = std::make_shared<SpecialKey>("dtatt", "Adds your death tracker attempt count (shared with linked levels)");
+    dtattKey->refreshWith(generalKey->getKey());
     dtattKey->setUpdateFunction(BIND_UPDATE_FUNC(DTLayer::onDTATTKey));
     addSpecialString(dtattKey);
 
@@ -518,27 +519,38 @@ void DTLayer::populateSpecialStrings(){
     sessionFrom0Key->setUpdateFunction(BIND_UPDATE_FUNC(DTLayer::onS0Key));
     addSpecialString(sessionFrom0Key);
 
-    auto sessionRuns0Key = std::make_shared<SpecialKey>("sruns", "Adds all your runs on the selected session");
-    sessionRuns0Key->setUpdateFunction(BIND_UPDATE_FUNC(DTLayer::onSRUNSKey));
-    addSpecialString(sessionRuns0Key);
+    auto sessionRunsKey = std::make_shared<SpecialKey>("sruns", "Adds all your runs on the selected session");
+    sessionRunsKey->setUpdateFunction(BIND_UPDATE_FUNC(DTLayer::onSRUNSKey));
+    addSpecialString(sessionRunsKey);
 
     auto aptallKey = std::make_shared<SpecialKey>("aptgen", "Adds your total estimated calculated playtime (shared with linked levels)");
+    aptallKey->refreshWith({
+        generalKey->getKey(),
+        runsKey->getKey()
+    });
     aptallKey->setUpdateFunction(BIND_UPDATE_FUNC(DTLayer::onAPTALLSKey));
     addSpecialString(aptallKey);
 
     auto aptf0Key = std::make_shared<SpecialKey>("aptf0", "Adds your total estimated calculated playtime from 0 (shared with linked levels)");
+    aptf0Key->refreshWith(generalKey->getKey());
     aptf0Key->setUpdateFunction(BIND_UPDATE_FUNC(DTLayer::onAPTF0SKey));
     addSpecialString(aptf0Key);
 
     auto aptrunKey = std::make_shared<SpecialKey>("aptruns", "Adds your total estimated calculated playtime in runs (shared with linked levels)");
+    aptrunKey->refreshWith(runsKey->getKey());
     aptrunKey->setUpdateFunction(BIND_UPDATE_FUNC(DTLayer::onAPTRUNSKey));
     addSpecialString(aptrunKey);
 
     auto aptsallKey = std::make_shared<SpecialKey>("aptsgen", "Adds your total estimated calculated session playtime");
+    aptsallKey->refreshWith({
+        sessionFrom0Key->getKey(),
+        sessionRunsKey->getKey()
+    });
     aptsallKey->setUpdateFunction(BIND_UPDATE_FUNC(DTLayer::onAPTSALLSKey));
     addSpecialString(aptsallKey);
 
     auto aptsf0Key = std::make_shared<SpecialKey>("aptsf0", "Adds your total estimated calculated session playtime from 0");
+    aptsf0Key->refreshWith(sessionFrom0Key->getKey());
     aptsf0Key->setUpdateFunction(BIND_UPDATE_FUNC(DTLayer::onAPTSF0Key));
     addSpecialString(aptsf0Key);
 
@@ -547,6 +559,8 @@ void DTLayer::populateSpecialStrings(){
     addSpecialString(aptsrunKey);
 
     auto runsTo100Key = std::make_shared<SpecialKey>("rt100", "Adds all your runs to 100");
+    runsTo100Key->refreshWith(generalKey->getKey());
+    runsTo100Key->refreshWith(runsKey->getKey());
     runsTo100Key->setUpdateFunction(BIND_UPDATE_FUNC(DTLayer::onRunsTo100Key));
     addSpecialString(runsTo100Key);
 
@@ -555,6 +569,10 @@ void DTLayer::populateSpecialStrings(){
     addSpecialString(bRunsKey);
 
     auto sAttKey = std::make_shared<SpecialKey>("satt", "Adds your attempt count for the selected session");
+    sAttKey->refreshWith({
+        sessionFrom0Key->getKey(),
+        sessionRunsKey->getKey()
+    });
     sAttKey->setUpdateFunction(BIND_UPDATE_FUNC(DTLayer::onSAttKey));
     addSpecialString(sAttKey);
 
@@ -581,7 +599,9 @@ void DTLayer::populateSpecialStrings(){
     auto ptsrunKey = std::make_shared<SpecialKey>("ptsruns", "Adds your total accurate calculated session playtime in runs");
     ptsrunKey->setUpdateFunction(BIND_UPDATE_FUNC(DTLayer::onPTSRUNSKey));
     addSpecialString(ptsrunKey);
+
     auto sectionKey = std::make_shared<SpecialKey>("section", "Adds your section runs");
+    sectionKey->refreshWith(runsKey->getKey());
     sectionKey->setUpdateFunction(BIND_UPDATE_FUNC(DTLayer::onSectionKey));
     addSpecialString(sectionKey);
 }
@@ -1587,26 +1607,11 @@ void DTLayer::specialKeyUpdateStarted(const std::shared_ptr<SpecialKey>& key){
 }
 
 void DTLayer::specialKeyUpdateCompleted(const std::shared_ptr<SpecialKey>& key){
-    if (key->getKey() == "general"){
-        specialStrings["dtatt"]->updateContent();
-        specialStrings["ptf0"]->updateContent();
-        specialStrings["ptgen"]->updateContent();
-        specialStrings["rt100"]->updateContent();
-    }
-    else if (key->getKey() == "runs"){
-        specialStrings["ptruns"]->updateContent();
-        specialStrings["ptgen"]->updateContent();
-        specialStrings["rt100"]->updateContent();
-    }
-    else if (key->getKey() == "s0"){
-        specialStrings["ptsf0"]->updateContent();
-        specialStrings["ptsgen"]->updateContent();
-        specialStrings["satt"]->updateContent();
-    }
-    else if (key->getKey() == "sruns"){
-        specialStrings["ptsruns"]->updateContent();
-        specialStrings["ptsgen"]->updateContent();
-        specialStrings["satt"]->updateContent();
+
+    for (const auto& [_, otherKey] : specialStrings)
+    {
+        if (otherKey->doesRefreshWith(key->getKey()))
+            otherKey->updateContent();
     }
 
     for (const auto& label : keyListeners)
@@ -2587,6 +2592,8 @@ UpdateFuture DTLayer::onSectionKey(){
             CreateSectioIDForSectionPair(splitDeath, std::nullopt, death.second);
             continue;
         }
+        
+        if (!myStats.metadata.showAnyRun && !myStats.metadata.runsToShow.contains(splitDeath.start)) continue;
         
         std::vector<Section> startingSectionsForDeath{};
 
