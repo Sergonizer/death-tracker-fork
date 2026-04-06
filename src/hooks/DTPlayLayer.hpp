@@ -12,12 +12,12 @@ class $modify(DTPlayLayer, PlayLayer) {
         bool hasRespawned = false;
         Run currentRun;
 
-        std::vector<Playtime_pair> sessionPlaytime;
-
         bool lastOneDied = false;
 
         bool didJustPause = false;
-        uint64_t timePassed = 0;
+        PlaytimePair timePassedGeneral;
+        PlaytimePair timePassedDead;
+        PlaytimePair timePassedPaused;
         std::optional<std::chrono::steady_clock::time_point> startTime;
 
         std::vector<int> fzeroToSave{};

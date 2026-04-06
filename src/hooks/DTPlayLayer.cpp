@@ -121,7 +121,35 @@ void DTPlayLayer::cutoutPlaytime() {
     uint64_t timeSpent = std::chrono::duration_cast<std::chrono::nanoseconds>(now - m_fields->startTime.value()).count();
     m_fields->startTime = now;
     
-    m_fields->timePassed += timeSpent;
+    if (m_fields->currentRun.start == 0){
+        if (m_isPaused || m_fields->levelBeaten){
+            m_fields->timePassedPaused.playtimeF0 += timeSpent;
+            // log::info("added playtime from 0 paused");
+        }
+        else if (m_fields->lastOneDied){
+            m_fields->timePassedDead.playtimeF0 += timeSpent;
+            // log::info("added playtime from 0 dead");
+        }
+        else{
+            m_fields->timePassedGeneral.playtimeF0 += timeSpent;
+            // log::info("added playtime from 0 general");
+        }
+    }
+    else{
+        if (m_isPaused || m_fields->levelBeaten){
+            m_fields->timePassedPaused.playtimeRuns += timeSpent;
+            // log::info("added playtime runs paused");
+        }
+        else if (m_fields->lastOneDied){
+            m_fields->timePassedDead.playtimeRuns += timeSpent;
+            // log::info("added playtime runs dead");
+        }
+        else{
+            m_fields->timePassedGeneral.playtimeRuns += timeSpent;
+            // log::info("added playtime runs general");
+        }
+    }
+
 
     //log::info("playing for {}", m_fields->timePassed / 1000000000.0);
 }
@@ -141,6 +169,8 @@ void DTPlayLayer::startupPlaytime() {
 }
 
 void DTPlayLayer::resetLevel() {
+    cutoutPlaytime();
+
     if (m_fields->lastOneDied){
         m_fields->lastOneDied = false;
     }
@@ -160,7 +190,6 @@ void DTPlayLayer::resetLevel() {
     //log::info("PlayLayer::resetLevel()");
 
     m_fields->levelBeaten = false;
-    discardPlaytime();
 
     m_fields->hasRespawned = true;
 
@@ -264,14 +293,13 @@ void DTPlayLayer::removeAllCheckpoints() {
 
 void DTPlayLayer::resume() {
     // if remove pauses is on
-    if (!m_player1->m_isDead)
-        DTPlayLayer::discardPlaytime();
+    DTPlayLayer::cutoutPlaytime();
     PlayLayer::resume();
 }
 
 void DTPlayLayer::pauseGame(bool unfocused) {
     // if remove pauses
-    if (!m_player1->m_isDead && !m_fields->levelBeaten)
+    if (!m_fields->levelBeaten)
         DTPlayLayer::cutoutPlaytime();
 
     m_fields->didJustPause = true;
@@ -302,10 +330,16 @@ void DTPlayLayer::onExit(){
         StatsManager::logRuns(m_fields->runsToSave);
     }
 
+    cutoutPlaytime();
+
     auto session = StatsManager::getCurrentSession();
-    session->playtime.insert(session->playtime.end(), m_fields->sessionPlaytime.begin(), m_fields->sessionPlaytime.end());
+    session->data.playtimeGeneral += m_fields->timePassedGeneral;
+    session->data.playtimeDead += m_fields->timePassedDead;
+    session->data.playtimePaused += m_fields->timePassedPaused;
     (void)StatsManager::setSession(*session, m_level, session->sessionStartDate, false);
-    StatsManager::currentFrom0.playtime.insert(StatsManager::currentFrom0.playtime.end(), m_fields->sessionPlaytime.begin(), m_fields->sessionPlaytime.end());
+    StatsManager::currentFrom0.playtimeGeneral += m_fields->timePassedGeneral;
+    StatsManager::currentFrom0.playtimeDead += m_fields->timePassedDead;
+    StatsManager::currentFrom0.playtimePaused += m_fields->timePassedPaused;
     (void)StatsManager::setGeneral(StatsManager::currentFrom0, m_level);
 
 

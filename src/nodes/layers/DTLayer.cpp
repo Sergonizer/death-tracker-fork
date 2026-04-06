@@ -385,15 +385,6 @@ bool DTLayer::init(GJGameLevel* const& level) {
     );
     m_buttonMenu->addChild(calculatorBtn);
 
-    testList = FloatingList::create({80, 100});
-    testList->setCallback([&](const int& id){
-        geode::Notification::create(fmt::format("Clicked item with id: {}", id), NotificationIcon::Info)->show();
-    });
-    testList->addItem({1, "hello yay :D"});
-    testList->addItem({2, "stuff", "goldFont.fnt"});
-    testList->addItem({3, "ya", "bigFont.fnt", "GJ_button_04.png"});
-    this->addChild(testList);
-
     return true;
 }
 
@@ -909,22 +900,6 @@ int DTLayer::stoi(std::string_view str) {
 }
 float DTLayer::stof(std::string_view str) {
     return utils::numFromString<float>(str).unwrapOr(0);
-}
-
-std::string DTLayer::workingTime(int value){
-    if(value < 0) return fmt::format("NA ({})", value);
-    if(value == 0) return "NA";
-
-    int hours = value / 3600;
-    int minutes = (value % 3600) / 60;
-    int seconds = value % 60;
-
-    std::string res;
-    if(hours > 0) res += fmt::format("{}h ", hours);
-    if(hours > 0 || minutes > 0) res += fmt::format("{}m ", minutes);
-    res += fmt::format("{}s", seconds);
-
-    return res;
 }
 
 float DTLayer::timeForLevelString(const std::string& levelString) {
@@ -1786,7 +1761,7 @@ void DTLayer::modifyRun(int startPer, int amount, std::optional<int> sessionNumb
         if (sessionRes.isErr()) return;
         auto session = sessionRes.unwrap();
 
-        if (!processRun(session.deaths)) return;
+        if (!processRun(session.data.deaths)) return;
 
         auto setSessionRes = StatsManager::setSession(session, it->second, it->first, false);
         if (setSessionRes.isErr()) log::error("{}", setSessionRes.unwrapErr());
@@ -1850,7 +1825,7 @@ void DTLayer::modifyRun(int startPer, int endPer, int amount, std::optional<int>
         if (sessionRes.isErr()) return;
         auto session = sessionRes.unwrap();
 
-        if (!processRun(session.runs)) return;
+        if (!processRun(session.data.runs)) return;
 
         auto setSessionRes = StatsManager::setSession(session, it->second, it->first, false);
         if (setSessionRes.isErr()) log::error("{}", setSessionRes.unwrapErr());
@@ -1908,7 +1883,7 @@ void DTLayer::modifyNewBest(int percent, bool makeTrue, std::optional<int> sessi
         if (sessionRes.isErr()) return;
         auto session = sessionRes.unwrap();
 
-        processBest(session.newBests);
+        processBest(session.data.newBests);
 
         auto setSessionRes = StatsManager::setSession(session, it->second, it->first, false);
         if (setSessionRes.isErr()) log::error("{}", setSessionRes.unwrapErr());
@@ -2057,7 +2032,7 @@ UpdateFuture DTLayer::onS0Key(){
     co_await arc::yield();
 
     std::string out;
-    if (!createDeathsString(session.deaths, Save::getSessionF0Customazations(), out, &session.newBests, "{sbc}")) 
+    if (!createDeathsString(session.data.deaths, Save::getSessionF0Customazations(), out, &session.data.newBests, "{sbc}")) 
         co_return Err("Failed to create session from0 deaths string");
 
     co_return Ok(out);
@@ -2071,7 +2046,7 @@ UpdateFuture DTLayer::onSRUNSKey(){
     co_await arc::yield();
 
     std::string out;
-    if (!createDeathsString(session.runs, Save::getRunsCustomazations(), out))
+    if (!createDeathsString(session.data.runs, Save::getRunsCustomazations(), out))
         co_return Err("Failed to create session run deaths string");
 
     co_return Ok(out);
@@ -2197,8 +2172,8 @@ UpdateFuture DTLayer::onAPTSALLSKey(){
     auto session = sessionRes.unwrap();
 
     Deaths deaths;
-    StatsManager::mergeMapsAdd(deaths, session.deaths);
-    StatsManager::mergeMapsAdd(deaths, session.runs);
+    StatsManager::mergeMapsAdd(deaths, session.data.deaths);
+    StatsManager::mergeMapsAdd(deaths, session.data.runs);
 
     co_await arc::yield();
 
@@ -2211,7 +2186,7 @@ UpdateFuture DTLayer::onAPTSF0Key(){
 
     co_await arc::yield();
 
-    co_return Ok(StatsManager::workingTime(calcPlaytime(session.deaths)));
+    co_return Ok(StatsManager::workingTime(calcPlaytime(session.data.deaths)));
 }
 UpdateFuture DTLayer::onAPTSRUNSKey(){
     auto sessionRes = loadSessionFromSave();
@@ -2220,7 +2195,7 @@ UpdateFuture DTLayer::onAPTSRUNSKey(){
 
     co_await arc::yield();
 
-    co_return Ok(StatsManager::workingTime(calcPlaytime(session.runs)));
+    co_return Ok(StatsManager::workingTime(calcPlaytime(session.data.runs)));
 }
 
 Result<Session> DTLayer::loadSessionFromSave(std::optional<int> sessionIndex){
@@ -2353,8 +2328,8 @@ UpdateFuture DTLayer::onSAttKey(){
         }
     };
 
-    co_await deathsCalc(session.deaths);
-    co_await deathsCalc(session.runs);
+    co_await deathsCalc(session.data.deaths);
+    co_await deathsCalc(session.data.runs);
     
     co_return Ok(std::to_string(attempts));
 }
@@ -2371,160 +2346,44 @@ void DTLayer::foreachLinkedLevel(geode::Function<void(LevelData&)> onLevelVisit)
 }
 
 UpdateFuture DTLayer::onPTALLSKey(){
-    if (m_MyLevelStats.isErr()) co_return Err("Failed to calculate playtime");
-    auto myStats = m_MyLevelStats.unwrap();
-    if (myStats.from0.isErr()) co_return Err("No deaths saved!");
-    auto myFrom0Stats = myStats.from0.unwrap();
-
-    auto linkedLevelsCopy = linkedLevelsData;
-
-    std::vector<Playtime_pair> playtime{};
-
-    playtime.insert(playtime.end(), myFrom0Stats.playtime.begin(), myFrom0Stats.playtime.end());
-
-    for (const auto& levelData : linkedLevelsCopy)
-    {
-        co_await arc::yield();
-        if (levelData.from0.isErr() || levelData.levelKey == myStats.levelKey) continue;
-        auto levelFrom0Stats = levelData.from0.unwrap();
-        playtime.insert(playtime.end(),levelFrom0Stats.playtime.begin(), levelFrom0Stats.playtime.end());
-    }
-
-    long long playtimeVal{};
-
-    for (const auto& playtime_pair : playtime) {
-        if (!playtime_pair.end.has_value()) continue;
-        playtimeVal += playtime_pair.end.value() - playtime_pair.start;
-    }
-
-    auto pt = StatsManager::workingTime(playtimeVal);
-    co_return Ok(pt);
+    co_return co_await getPlaytimeFor([](GeneralData const& data){
+        return data.playtimeGeneral.playtimeF0 + data.playtimeGeneral.playtimeRuns;
+    }, false);
 }
 
 // currently same as PTALLSKey since theres no difference between playtime on runs and playtime from 0
 // TODO: make distinguishment between runs and from 0 playtime? remove key?
 UpdateFuture DTLayer::onPTF0SKey() {
-    if (m_MyLevelStats.isErr()) co_return Err("Failed to calculate from 0 playtime");
-    auto myStats = m_MyLevelStats.unwrap();
-    if (myStats.from0.isErr()) co_return Err("No deaths saved!");
-    auto myFrom0Stats = myStats.from0.unwrap();
-
-    auto linkedLevelsCopy = linkedLevelsData;
-
-    std::vector<Playtime_pair> playtime{};
-    playtime.insert(playtime.end(), myFrom0Stats.playtime.begin(), myFrom0Stats.playtime.end());
-
-    for (const auto& levelData : linkedLevelsCopy)
-    {
-        co_await arc::yield();
-        if (levelData.from0.isErr() || levelData.levelKey == myStats.levelKey) continue;
-        auto levelFrom0Stats = levelData.from0.unwrap();
-        playtime.insert(playtime.end(),levelFrom0Stats.playtime.begin(), levelFrom0Stats.playtime.end());
-    }
-
-    long long playtimeVal{};
-
-    for (const auto& playtime_pair : playtime) {
-        if (!playtime_pair.end.has_value()) continue;
-        playtimeVal += playtime_pair.end.value() - playtime_pair.start;
-    }
-
-    co_return Ok(StatsManager::workingTime(playtimeVal));
+    co_return co_await getPlaytimeFor([](GeneralData const& data){
+        return data.playtimeGeneral.playtimeF0;
+    }, false);
 }
 
 // same thing here, no distinction between playtime from 0 and playtime from runs
 UpdateFuture DTLayer::onPTRUNSKey() {
-    if (m_MyLevelStats.isErr()) co_return Err("Failed to calculate runs playtime");
-    auto myStats = m_MyLevelStats.unwrap();
-    if (myStats.from0.isErr()) co_return Err("No deaths saved!");
-    auto myFrom0Stats = myStats.from0.unwrap();
-
-    auto linkedLevelsCopy = linkedLevelsData;
-
-    std::vector<Playtime_pair> playtime{};
-    playtime.insert(playtime.end(), myFrom0Stats.playtime.begin(), myFrom0Stats.playtime.end());
-    std::vector<Section> validSections{};
-    for (const auto& section : myStats.metadata.sections)
-    {
-        if (!section.isValid()) continue;
-
-        validSections.push_back(section);
-    }
-    
-    if (validSections.size() <= 1) co_return Err("Not enough sections!");
-
-    Deaths deaths{};
-    StatsManager::mergeMapsAdd(deaths, myFrom0Stats.runs);
-    StatsManager::mergeMapsAdd(deaths, myFrom0Stats.deaths);
-
-    for (const auto& levelData : linkedLevelsCopy)
-    {
-        co_await arc::yield();
-        if (levelData.from0.isErr() || levelData.levelKey == myStats.levelKey) continue;
-        auto levelFrom0Stats = levelData.from0.unwrap();
-        playtime.insert(playtime.end(), levelFrom0Stats.playtime.begin(), levelFrom0Stats.playtime.end());
-    }
-
-    long long playtimeVal{};
-
-    for (const auto& playtime_pair : playtime) {
-        if (!playtime_pair.end.has_value()) continue;
-        playtimeVal += playtime_pair.end.value() - playtime_pair.start;
-    }
-
-    co_return Ok(StatsManager::workingTime(playtimeVal));
+    co_return co_await getPlaytimeFor([](GeneralData const& data){
+        return data.playtimeGeneral.playtimeRuns;
+    }, false);
 }
 
 UpdateFuture DTLayer::onPTSALLSKey() {
-    auto sessionRes = loadSessionFromSave();
-    if (sessionRes.isErr()) co_return Err("{}", sessionRes.unwrapErr());
-    auto session = sessionRes.unwrap();
-
-    co_await arc::yield();
-
-    long long playtimeVal{};
-
-    for (const auto& playtime_pair : session.playtime) {
-        if (!playtime_pair.end.has_value()) continue;
-        playtimeVal += playtime_pair.end.value() - playtime_pair.start;
-    }
-
-    co_return Ok(StatsManager::workingTime(playtimeVal));
+    co_return co_await getPlaytimeFor([](GeneralData const& data){
+        return data.playtimeGeneral.playtimeF0 + data.playtimeGeneral.playtimeRuns;
+    }, true);
 }
 
 // again, no difference between playtime from 0 and playtime from runs, consider removing?
 UpdateFuture DTLayer::onPTSF0Key() {
-    auto sessionRes = loadSessionFromSave();
-    if (sessionRes.isErr()) co_return Err("{}", sessionRes.unwrapErr());
-    auto session = sessionRes.unwrap();
-
-    co_await arc::yield();
-
-    long long playtimeVal{};
-
-    for (const auto& playtime_pair : session.playtime) {
-        if (!playtime_pair.end.has_value()) continue;
-        playtimeVal += playtime_pair.end.value() - playtime_pair.start;
-    }
-
-    co_return Ok(StatsManager::workingTime(playtimeVal));
+    co_return co_await getPlaytimeFor([](GeneralData const& data){
+        return data.playtimeGeneral.playtimeF0;
+    }, true);
 }
 
 // again, no difference between playtime from 0 and playtime from runs, consider removing?
 UpdateFuture DTLayer::onPTSRUNSKey() {
-    auto sessionRes = loadSessionFromSave();
-    if (sessionRes.isErr()) co_return Err("{}", sessionRes.unwrapErr());
-    auto session = sessionRes.unwrap();
-
-    co_await arc::yield();
-
-    long long playtimeVal{};
-
-    for (const auto& playtime_pair : session.playtime) {
-        if (!playtime_pair.end.has_value()) continue;
-        playtimeVal += playtime_pair.end.value() - playtime_pair.start;
-    }
-    co_return Ok(StatsManager::workingTime(playtimeVal));
+    co_return co_await getPlaytimeFor([](GeneralData const& data){
+        return data.playtimeGeneral.playtimeRuns;
+    }, true);
 }
 
 UpdateFuture DTLayer::onSectionKey(){
@@ -2647,10 +2506,39 @@ UpdateFuture DTLayer::onSectionKey(){
 }
 
 void DTLayer::onCalculator(CCObject*){
-    //CalculatorPopup::create()->show();
+    CalculatorPopup::create()->show();
+}
 
-    if (testList->isOpened())
-        testList->close();
-    else
-        testList->open();
+UpdateFuture DTLayer::getPlaytimeFor(geode::Function<uint64_t(GeneralData const&)>&& dataGetter, bool session){
+    if (!session){
+        if (m_MyLevelStats.isErr()) co_return Err("Failed to calculate playtime");
+        auto myStats = m_MyLevelStats.unwrap();
+        if (myStats.from0.isErr()) co_return Err("No deaths saved!");
+        auto myFrom0Stats = myStats.from0.unwrap();
+
+        auto linkedLevelsCopy = linkedLevelsData;
+
+        uint64_t alltime = dataGetter(myFrom0Stats);
+
+        for (const auto& levelData : linkedLevelsCopy)
+        {
+            co_await arc::yield();
+            if (levelData.from0.isErr() || levelData.levelKey == myStats.levelKey) continue;
+            auto levelFrom0Stats = levelData.from0.unwrap();
+            alltime += dataGetter(levelFrom0Stats);
+        }
+
+        co_return Ok(StatsManager::workingTime(alltime));
+    }
+    else{
+        auto sessionRes = loadSessionFromSave();
+        if (sessionRes.isErr()) co_return Err("{}", sessionRes.unwrapErr());
+        auto session = sessionRes.unwrap();
+
+        co_await arc::yield();
+
+        co_return Ok(StatsManager::workingTime(
+            dataGetter(session.data)
+        ));
+    }
 }

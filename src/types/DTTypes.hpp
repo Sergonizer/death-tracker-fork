@@ -18,73 +18,32 @@ struct Run_s{
 };
 typedef struct Run_s Run;
 
-typedef struct Playtime_pair {
-    long long start;
-    std::optional<long long> end;
+typedef struct PlaytimePair {
+    uint64_t playtimeF0;
+    uint64_t playtimeRuns;
 
-    Playtime_pair(long long _start, std::optional<long long> _end) : start(_start), end(_end){}
-
-    Playtime_pair() = default;
-} Playtime_pair;
+    PlaytimePair& operator+=(const PlaytimePair& other) {
+        playtimeF0 += other.playtimeF0;
+        playtimeRuns += other.playtimeRuns;
+        return *this;
+    }
+    
+} PlaytimePair;
 
 template <>
-struct matjson::Serialize<Playtime_pair> {
-    static Result<Playtime_pair> fromJson(const matjson::Value& value) {
-        Playtime_pair session;
-        GEODE_UNWRAP_INTO(session.start, value["start"].as<long long>());
-        GEODE_UNWRAP_INTO(auto tempEnd, value["end"].as<long long>());
-        if (tempEnd == -1) session.end = std::nullopt;
-        else session.end = tempEnd;
-        
-        return Ok(session);
+struct matjson::Serialize<PlaytimePair> {
+    static Result<PlaytimePair> fromJson(const matjson::Value& value) {
+        PlaytimePair pair;
+        GEODE_UNWRAP_INTO(pair.playtimeF0, value["playtimeF0"].as<uint64_t>());
+        GEODE_UNWRAP_INTO(pair.playtimeRuns, value["playtimeRuns"].as<uint64_t>());
+
+        return Ok(pair);
     }
 
-    static matjson::Value toJson(const Playtime_pair& value) {
+    static matjson::Value toJson(const PlaytimePair& value) {
         matjson::Value obj = matjson::makeObject({
-            { "start", value.start },
-            { "end", value.end.has_value() ? value.end.value() : -1 },
-        });
-        return obj;
-    }
-};
-
-typedef struct {
-    std::string ownerLevelKey;
-    long long lastPlayed;
-    Deaths deaths;
-    Deaths runs;
-    NewBests newBests;
-    int currentBest;
-    long long sessionStartDate;
-    std::vector<Playtime_pair> playtime;
-} Session;
-
-template <>
-struct matjson::Serialize<Session> {
-    static Result<Session> fromJson(const matjson::Value& value) {
-        Session session;
-        GEODE_UNWRAP_INTO(session.lastPlayed, value["lastPlayed"].as<long long>());
-        GEODE_UNWRAP_INTO(session.deaths, value["deaths"].as<Deaths>());
-        GEODE_UNWRAP_INTO(session.runs, value["runs"].as<Deaths>());
-        GEODE_UNWRAP_INTO(session.newBests, value["newBests"].as<NewBests>());
-        GEODE_UNWRAP_INTO(session.currentBest, value["currentBest"].asInt());
-        GEODE_UNWRAP_INTO(session.sessionStartDate, value["sessionStartDate"].as<long long>());
-        if (value.contains("playtime")) {
-            GEODE_UNWRAP_INTO(session.playtime, value["playtime"].as<std::vector<Playtime_pair>>());
-        }
-
-        return Ok(session);
-    }
-
-    static matjson::Value toJson(const Session& value) {
-        matjson::Value obj = matjson::makeObject({
-            { "lastPlayed", value.lastPlayed },
-            { "deaths", value.deaths },
-            { "runs", value.runs },
-            { "newBests", value.newBests },
-            { "currentBest", value.currentBest },
-            { "sessionStartDate", value.sessionStartDate },
-            {"playtime", value.playtime}
+            { "playtimeF0", value.playtimeF0 },
+            { "playtimeRuns", value.playtimeRuns }
         });
         return obj;
     }
@@ -95,7 +54,9 @@ typedef struct {
     Deaths runs;
     NewBests newBests;
     int currentBest;
-    std::vector<Playtime_pair> playtime;
+    PlaytimePair playtimeGeneral;
+    PlaytimePair playtimePaused;
+    PlaytimePair playtimeDead;
 } GeneralData;
 
 template <>
@@ -107,9 +68,16 @@ struct matjson::Serialize<GeneralData> {
         GEODE_UNWRAP_INTO(stats.runs, value["runs"].as<Deaths>());
         GEODE_UNWRAP_INTO(stats.newBests, value["newBests"].as<NewBests>());
         GEODE_UNWRAP_INTO(stats.currentBest, value["currentBest"].asInt());
-        if (value.contains("playtime")) {
-            GEODE_UNWRAP_INTO(stats.playtime, value["playtime"].as<std::vector<Playtime_pair>>());
+        if (value.contains("playtimeGeneral")) {
+            GEODE_UNWRAP_INTO(stats.playtimeGeneral, value["playtimeGeneral"].as<PlaytimePair>());
         }
+        if (value.contains("playtimePaused")) {
+            GEODE_UNWRAP_INTO(stats.playtimePaused, value["playtimePaused"].as<PlaytimePair>());
+        }
+        if (value.contains("playtimeDead")) {
+            GEODE_UNWRAP_INTO(stats.playtimeDead, value["playtimeDead"].as<PlaytimePair>());
+        }
+
         return Ok(stats);
     }
 
@@ -119,7 +87,63 @@ struct matjson::Serialize<GeneralData> {
             { "runs", value.runs },
             { "newBests", value.newBests },
             { "currentBest", value.currentBest },
-            {"playtime", value.playtime}
+            { "playtimeGeneral", value.playtimeGeneral },
+            { "playtimePaused", value.playtimePaused },
+            { "playtimeDead", value.playtimeDead }
+        });
+        return obj;
+    }
+};
+
+typedef struct {
+    std::string ownerLevelKey;
+    long long lastPlayed;
+    long long sessionStartDate;
+    GeneralData data;
+} Session;
+
+template <>
+struct matjson::Serialize<Session> {
+    static Result<Session> fromJson(const matjson::Value& value) {
+        Session session;
+        GEODE_UNWRAP_INTO(session.lastPlayed, value["lastPlayed"].as<long long>());
+        GEODE_UNWRAP_INTO(session.sessionStartDate, value["sessionStartDate"].as<long long>());
+        
+        if (value.contains("currentBest")) {
+            GEODE_UNWRAP_INTO(session.data.currentBest, value["currentBest"].asInt());
+        }
+        if (value.contains("newBests")) {
+            GEODE_UNWRAP_INTO(session.data.newBests, value["newBests"].as<NewBests>());
+        }
+        if (value.contains("deaths")) {
+            GEODE_UNWRAP_INTO(session.data.deaths, value["deaths"].as<Deaths>());
+        }
+        if (value.contains("runs")) {
+            GEODE_UNWRAP_INTO(session.data.runs, value["runs"].as<Deaths>());
+        }
+
+        if (value.contains("playtimeGeneral")) {
+            GEODE_UNWRAP_INTO(session.data.playtimeGeneral, value["playtimeGeneral"].as<PlaytimePair>());
+        }
+        if (value.contains("playtimePaused")) {
+            GEODE_UNWRAP_INTO(session.data.playtimePaused, value["playtimePaused"].as<PlaytimePair>());
+        }
+        if (value.contains("playtimeDead")) {
+            GEODE_UNWRAP_INTO(session.data.playtimeDead, value["playtimeDead"].as<PlaytimePair>());
+        }
+
+        if (value.contains("data")){
+            GEODE_UNWRAP_INTO(session.data, value["data"].as<GeneralData>());
+        }
+
+        return Ok(session);
+    }
+
+    static matjson::Value toJson(const Session& value) {
+        matjson::Value obj = matjson::makeObject({
+            { "lastPlayed", value.lastPlayed },
+            { "sessionStartDate", value.sessionStartDate },
+            { "data", value.data }
         });
         return obj;
     }

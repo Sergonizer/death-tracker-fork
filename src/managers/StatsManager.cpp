@@ -447,12 +447,12 @@ void StatsManager::logDeath(const int& percent, bool instantSave) {
 
     auto session = StatsManager::getCurrentSession();
     if (session != nullptr){
-        session->deaths[percentKey]++;
+        session->data.deaths[percentKey]++;
         log::info("logging death {} to session {}", percentKey, session->sessionStartDate);
 
-        if (session && percent > session->currentBest) {
-            session->currentBest = percent;
-            session->newBests.insert(percent);
+        if (session && percent > session->data.currentBest) {
+            session->data.currentBest = percent;
+            session->data.newBests.insert(percent);
         }
     }
 
@@ -499,7 +499,7 @@ void StatsManager::logRun(const Run& run, bool instantSave) {
     );
 
     currentFrom0.runs[runKey]++;
-    session->runs[runKey]++;
+    session->data.runs[runKey]++;
     
     if (instantSave){
         (void)StatsManager::setGeneral(currentFrom0, currentLevel);
@@ -644,11 +644,13 @@ Session* StatsManager::getCurrentSession() {
     // create the new session
     auto session = Session {
         .lastPlayed = -1,
-        .deaths = {},
-        .runs = {},
-        .newBests = {},
-        .currentBest = -1,
-        .sessionStartDate = StatsManager::getNowSeconds()
+        .sessionStartDate = StatsManager::getNowSeconds(),
+        .data = GeneralData{
+            .deaths = {},
+            .runs = {},
+            .newBests = {},
+            .currentBest = -1,
+        }
     };
 
     if (setSession(session, currentLevel, session.sessionStartDate, true).isErr()){
@@ -883,6 +885,24 @@ std::string StatsManager::workingTime(long long value){
     return stream.str();
 }
 
+std::string StatsManager::workingTime(uint64_t nanoseconds) {
+    if (nanoseconds == 0) return "NA";
+
+    uint64_t totalSeconds = nanoseconds / 1'000'000'000ULL;
+    log::info("mili {} | {}", nanoseconds, totalSeconds);
+
+    uint64_t hours = totalSeconds / 3600;
+    uint64_t minutes = (totalSeconds % 3600) / 60;
+    uint64_t seconds = totalSeconds % 60;
+
+    std::ostringstream stream;
+    if (hours > 0) stream << hours << "h ";
+    if (minutes > 0) stream << minutes << "m ";
+    stream << seconds << "s";
+
+    return stream.str();
+}
+
 void StatsManager::updateCurrentSessionLastPlayed(){
     if (currentLevel == nullptr) {
         log::error("Failed to update current session last played");
@@ -1030,10 +1050,10 @@ Result<> StatsManager::convertV2SaveToV3(const std::string& levelKey){
 
         v3Session.ownerLevelKey = levelKey;
         v3Session.lastPlayed = v2session.lastPlayed;
-        v3Session.deaths = v2session.deaths;
-        v3Session.runs = v2session.runs;
-        v3Session.newBests = v2session.newBests;
-        v3Session.currentBest = v2session.currentBest;
+        v3Session.data.deaths = v2session.deaths;
+        v3Session.data.runs = v2session.runs;
+        v3Session.data.newBests = v2session.newBests;
+        v3Session.data.currentBest = v2session.currentBest;
         v3Session.sessionStartDate = v2session.sessionStartDate;
 
         if (setSession(v3Session, levelKey, v3Session.sessionStartDate, false).isErr()) return Err("Failed to write V3 session! session sd: {}", v3Session.sessionStartDate);

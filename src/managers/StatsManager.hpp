@@ -152,6 +152,7 @@ public:
     //better info calc :)
     //converts time to a working time string
     static std::string workingTime(long long value);
+    static std::string workingTime(uint64_t nanoseconds);
 
     template<typename K, typename V>
     static void mergeMapsAdd(std::map<K, V>& target, const std::map<K, V>& source);
