@@ -56,7 +56,7 @@ bool DTPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
     if (session == nullptr){
         StatsManager::scheduleCreateNewSession(true);
         DTPlayLayer::updateSessionLastPlayed();
-        // log::info("first session created");
+        //log::info("first session created");
         return true;
     }
 
@@ -76,7 +76,9 @@ bool DTPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
             case -1: {
                 // returns true if a new session
                 // was created during this game launch
+                //log::info("has played lvl?");
                 if (StatsManager::hasPlayedLevel()) break;
+                //log::info("ya i no p[lay yet]");
 
                     m_fields->isSessionExpired = true;
                     StatsManager::scheduleCreateNewSession(true);
@@ -112,21 +114,63 @@ void DTPlayLayer::checkpointActivated(CheckpointGameObject* checkpt) {
 }
 #endif
 
-void DTPlayLayer::startPlaytime() {
-    time_t timestamp;
+void DTPlayLayer::cutoutPlaytime() {
+    if (!m_fields->startTime.has_value()) return;
 
-    m_fields->sessionPlaytime.emplace_back(time(&timestamp), std::nullopt);
+    auto now = std::chrono::steady_clock::now();
+    uint64_t timeSpent = std::chrono::duration_cast<std::chrono::nanoseconds>(now - m_fields->startTime.value()).count();
+    m_fields->startTime = now;
+    
+    if (m_fields->currentRun.start == 0){
+        if (m_isPaused || m_fields->levelBeaten){
+            m_fields->timePassedPaused.playtimeF0 += timeSpent;
+            // log::info("added playtime from 0 paused");
+        }
+        else if (m_fields->lastOneDied){
+            m_fields->timePassedDead.playtimeF0 += timeSpent;
+            // log::info("added playtime from 0 dead");
+        }
+        else{
+            m_fields->timePassedGeneral.playtimeF0 += timeSpent;
+            // log::info("added playtime from 0 general");
+        }
+    }
+    else{
+        if (m_isPaused || m_fields->levelBeaten){
+            m_fields->timePassedPaused.playtimeRuns += timeSpent;
+            // log::info("added playtime runs paused");
+        }
+        else if (m_fields->lastOneDied){
+            m_fields->timePassedDead.playtimeRuns += timeSpent;
+            // log::info("added playtime runs dead");
+        }
+        else{
+            m_fields->timePassedGeneral.playtimeRuns += timeSpent;
+            // log::info("added playtime runs general");
+        }
+    }
+
+
+    //log::info("playing for {}", m_fields->timePassed / 1000000000.0);
 }
 
-void DTPlayLayer::endPlaytime() {
-    time_t timestamp;
+void DTPlayLayer::discardPlaytime() {
+    if (!m_fields->startTime.has_value()) return;
+    
+    m_fields->startTime = std::chrono::steady_clock::now();
 
-    if (!m_fields->sessionPlaytime.size()) return;
+    //log::info("discarded playtime");
+}
 
-    m_fields->sessionPlaytime[m_fields->sessionPlaytime.size() - 1].end = time(&timestamp);
+void DTPlayLayer::startupPlaytime() {
+    m_fields->startTime = std::chrono::steady_clock::now();
+
+    //log::info("startup playtime");
 }
 
 void DTPlayLayer::resetLevel() {
+    cutoutPlaytime();
+
     if (m_fields->lastOneDied){
         m_fields->lastOneDied = false;
     }
@@ -145,7 +189,7 @@ void DTPlayLayer::resetLevel() {
     PlayLayer::resetLevel();
     //log::info("PlayLayer::resetLevel()");
 
-    startPlaytime();
+    m_fields->levelBeaten = false;
 
     m_fields->hasRespawned = true;
 
@@ -163,7 +207,7 @@ void DTPlayLayer::destroyPlayer(PlayerObject* player, GameObject* p1) {
     if (!m_fields->hasRespawned) return;
     m_fields->hasRespawned = false;
 
-    endPlaytime();
+    cutoutPlaytime();
 
     if (DTPlayLayer::disableCompletedLevelTracking()) return;
 
@@ -218,8 +262,6 @@ void DTPlayLayer::levelComplete() {
     if (!m_fields->hasRespawned) return;
     m_fields->hasRespawned = false;
 
-    endPlaytime();
-
     // disable tracking deaths on completed levels
     if (DTPlayLayer::disableCompletedLevelTracking()) return;
 
@@ -251,22 +293,35 @@ void DTPlayLayer::removeAllCheckpoints() {
 
 void DTPlayLayer::resume() {
     // if remove pauses is on
-    if (!m_player1->m_isDead)
-        DTPlayLayer::startPlaytime();
+    DTPlayLayer::cutoutPlaytime();
     PlayLayer::resume();
 }
 
 void DTPlayLayer::pauseGame(bool unfocused) {
-
-
     // if remove pauses
-    if (!m_player1->m_isDead)
-        DTPlayLayer::endPlaytime();
+    if (!m_fields->levelBeaten)
+        DTPlayLayer::cutoutPlaytime();
 
+    m_fields->didJustPause = true;
     PlayLayer::pauseGame(unfocused);
+    m_fields->didJustPause = false;
 }
 
-void DTPlayLayer::onQuit() {
+//tysm eclips menu ur awesome and mega goated :fire:
+float DTPlayLayer::getActualProgress(GJBaseGameLayer* game) {
+    float percent;
+    if (game->m_level->m_timestamp > 0) {
+        percent = static_cast<float>(game->m_gameState.m_levelTime * 240.f) / game->m_level->m_timestamp * 100.f;
+    } else {
+        percent = game->m_player1->getPositionX() / game->m_levelLength * 100.f;
+    }
+    return std::clamp(percent, 0.f, 100.f);
+}
+
+void DTPlayLayer::onExit(){
+    PlayLayer::onExit();
+    if (m_fields->didJustPause) return;
+
     if (m_fields->fzeroToSave.size()){
         StatsManager::logDeaths(m_fields->fzeroToSave);
     }
@@ -275,12 +330,16 @@ void DTPlayLayer::onQuit() {
         StatsManager::logRuns(m_fields->runsToSave);
     }
 
-    DTPlayLayer::endPlaytime();
+    cutoutPlaytime();
 
     auto session = StatsManager::getCurrentSession();
-    session->playtime.insert(session->playtime.end(), m_fields->sessionPlaytime.begin(), m_fields->sessionPlaytime.end());
+    session->data.playtimeGeneral += m_fields->timePassedGeneral;
+    session->data.playtimeDead += m_fields->timePassedDead;
+    session->data.playtimePaused += m_fields->timePassedPaused;
     (void)StatsManager::setSession(*session, m_level, session->sessionStartDate, false);
-    StatsManager::currentFrom0.playtime.insert(StatsManager::currentFrom0.playtime.end(), m_fields->sessionPlaytime.begin(), m_fields->sessionPlaytime.end());
+    StatsManager::currentFrom0.playtimeGeneral += m_fields->timePassedGeneral;
+    StatsManager::currentFrom0.playtimeDead += m_fields->timePassedDead;
+    StatsManager::currentFrom0.playtimePaused += m_fields->timePassedPaused;
     (void)StatsManager::setGeneral(StatsManager::currentFrom0, m_level);
 
 
@@ -293,17 +352,26 @@ void DTPlayLayer::onQuit() {
     DTPlayLayer::updateSessionLastPlayed();
 
     StatsManager::setCurrentLevel(nullptr);
-
-    PlayLayer::onQuit();
 }
 
-//tysm eclips menu ur awesome and mega goated :fire:
-float DTPlayLayer::getActualProgress(GJBaseGameLayer* game) {
-    float percent;
-    if (game->m_level->m_timestamp > 0) {
-        percent = static_cast<float>(game->m_gameState.m_levelTime * 240.f) / game->m_level->m_timestamp * 100.f;
-    } else {
-        percent = game->m_player1->getPositionX() / game->m_levelLength * 100.f;
-    }
-    return std::clamp(percent, 0.f, 100.f);
+void DTPlayLayer::startGame(){
+    PlayLayer::startGame();
+
+    startupPlaytime();
+}
+
+void DTPlayLayer::playEndAnimationToPos(cocos2d::CCPoint position){
+    PlayLayer::playEndAnimationToPos(position);
+
+    cutoutPlaytime();
+
+    m_fields->levelBeaten = true;
+}
+
+void DTPlayLayer::playPlatformerEndAnimationToPos(cocos2d::CCPoint position, bool instant){
+    PlayLayer::playPlatformerEndAnimationToPos(position, instant);
+
+    cutoutPlaytime();
+
+    m_fields->levelBeaten = true;
 }

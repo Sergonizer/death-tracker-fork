@@ -63,3 +63,21 @@ void SpecialKey::onUpdateCompleted(UpdateFuture::Output val){
 void SpecialKey::cancel(){
     updateListener.cancel();
 }
+
+bool SpecialKey::doesRefreshWith(const std::string& other){
+    return toRefreshWith.contains(other);
+}
+
+void SpecialKey::refreshWith(const std::string& other){
+    if (toRefreshWith.contains(other)) return;
+
+    toRefreshWith.insert(other);
+}
+
+void SpecialKey::refreshWith(const std::set<std::string>& others){
+    for (const auto& other : others)
+    {
+        refreshWith(other);
+    }
+    
+}

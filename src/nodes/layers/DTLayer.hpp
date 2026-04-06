@@ -157,7 +157,6 @@ class DTLayer : public Popup {
         float timeForLevelString(const std::string& levelString);
         int stoi(std::string_view str);
         float stof(std::string_view str);
-        std::string workingTime(int value);
 
         LayoutColumn* addColumn(std::optional<DTColumnInfo> info = std::nullopt);
         void addColumnBtnClicked(CCObject*);
@@ -211,9 +210,9 @@ class DTLayer : public Popup {
         
         UpdateFuture onSectionKey();
 
+        UpdateFuture getPlaytimeFor(geode::Function<uint64_t(GeneralData const&)>&& dataGetter, bool session);
+
         std::optional<float> cachedLevelLength;
 
         void onCalculator(CCObject*);
-
-        FloatingList* testList = nullptr;
 };

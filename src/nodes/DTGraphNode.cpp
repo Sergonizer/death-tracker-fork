@@ -351,7 +351,7 @@ void DTGraphNode::getSessionDeaths(){
         return;
     }
 
-    this->deaths = sessionRes.unwrap().deaths;
+    this->deaths = sessionRes.unwrap().data.deaths;
 }
 
 void DTGraphNode::getSessionRuns(){
@@ -362,5 +362,5 @@ void DTGraphNode::getSessionRuns(){
         return;
     }
 
-    this->deaths = sessionRes.unwrap().runs;
+    this->deaths = sessionRes.unwrap().data.runs;
 }

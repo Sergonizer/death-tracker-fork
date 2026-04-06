@@ -3,12 +3,9 @@
 #include <Geode/Geode.hpp>
 #include <nodes/SwitcherButton.hpp>
 
-using namespace geode::prelude;
+#include <nodes/CalculatorMode.hpp>
 
-struct CalcMode{
-    std::string modeName;
-    std::string modeDescription;
-};
+using namespace geode::prelude;
 
 class CalculatorPopup : public Popup {
     protected:
@@ -19,9 +16,25 @@ class CalculatorPopup : public Popup {
 
     private:
 
-        std::vector<CalcMode> modes;
+        std::vector<CalculatorMode*> modes;
 
         SwitcherButton* modeButton;
 
+        int currentMode;
+
         void onModeInfo(CCObject*);
+
+        void varsChanged(std::string const& vars);
+        void onCalc(std::string const& calculation);
+
+        void addMode(CalculatorMode* mode);
+
+        std::string currentVars;
+        std::optional<std::string> currentCalc = std::nullopt;
+
+        void updateText();
+        TextInput* calcBG;
+
+        void onCalcBtn(CCObject*);
+        CCMenuItemSpriteExtra* calcBtn;
 };
