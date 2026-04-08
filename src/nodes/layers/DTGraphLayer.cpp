@@ -94,7 +94,7 @@ bool DTGraphLayer::init() {
     SessionSelectionLabel->setPositionY(-graphsScroll->getContentHeight() - 5 - SessionSelectionLabel->getScaledContentHeight() / 2);
     graphsPage->addChild(SessionSelectionLabel);
 
-    sessionSelector = SessionSelector::create(DTLayer::get()->sessionsOrder.size());
+    sessionSelector = SessionSelector::create(DTLayer::get()->getCurrentGrouping().grouping.size());
     sessionSelector->setCurrentCount(DTLayer::get()->getCurrentSelectedSession());
     sessionSelector->setScale(0.45f);
     sessionSelector->setPositionY(SessionSelectionLabel->getPositionY() - SessionSelectionLabel->getScaledContentHeight() / 2 - sessionSelector->getScaledContentHeight() / 2);

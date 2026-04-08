@@ -38,7 +38,13 @@ class DTLayer : public Popup {
 
         Result<LevelData> m_MyLevelStats = Err("");
         std::vector<LevelData> linkedLevelsData{};
-        std::map<long long, std::string, std::greater<long long>> sessionsOrder{};
+        SessionCategory sessionsOrder{};
+        SessionCategory daySGroup{};
+        SessionCategory weekSGroup{};
+        SessionCategory monthSGroup{};
+        int currentGrouping = -3;
+        SessionCategory& getCurrentGrouping();
+
 
         void show() override;
 
@@ -53,6 +59,7 @@ class DTLayer : public Popup {
         virtual void keyBackClicked() override;
 
         void UpdateDeathRelatedStrings();
+        void updateStaticGroupings();
 
         std::map<std::string, std::shared_ptr<SpecialKey>> specialStrings{};
         void addSpecialString(const std::shared_ptr<SpecialKey>& key);
@@ -209,6 +216,8 @@ class DTLayer : public Popup {
         UpdateFuture onSAttKey();
         
         UpdateFuture onSectionKey();
+
+        UpdateFuture onSessionDateKey();
 
         UpdateFuture getPlaytimeFor(geode::Function<uint64_t(GeneralData const&)>&& dataGetter, bool session);
 

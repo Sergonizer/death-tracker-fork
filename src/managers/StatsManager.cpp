@@ -660,6 +660,20 @@ Session* StatsManager::getCurrentSession() {
     }
 
     StatsManager::currentSession = session;
+
+    auto meta = getMetadata(currentLevel).unwrapOrDefault();
+
+    for (const auto& linked : meta.linkedLevels)
+    {
+        if (linked == levelKeyRes.unwrap() || m_playedLevels.contains(linked)) continue;
+
+        m_playedLevels.insert(linked);
+
+        if (setSession(session, linked, session.sessionStartDate, true).isErr()){
+
+        }
+    }
+    
     return currentSession;
 }
 

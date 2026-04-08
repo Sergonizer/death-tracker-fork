@@ -49,7 +49,7 @@ struct matjson::Serialize<PlaytimePair> {
     }
 };
 
-typedef struct {
+typedef struct GeneralData {
     Deaths deaths;
     Deaths runs;
     NewBests newBests;
@@ -57,6 +57,22 @@ typedef struct {
     PlaytimePair playtimeGeneral;
     PlaytimePair playtimePaused;
     PlaytimePair playtimeDead;
+
+
+    GeneralData& operator+=(const GeneralData& other) {
+        for (auto& [key, val] : other.deaths) {
+            deaths[key] += val;
+        }
+        for (auto& [key, val] : other.runs) {
+            runs[key] += val;
+        }
+        newBests.insert(other.newBests.begin(), other.newBests.end());
+        currentBest = other.currentBest > currentBest ? other.currentBest : currentBest;
+        playtimeGeneral += other.playtimeGeneral;
+        playtimePaused += other.playtimePaused;
+        playtimeDead += other.playtimeDead;
+        return *this;
+    }
 } GeneralData;
 
 template <>
@@ -99,6 +115,7 @@ typedef struct {
     std::string ownerLevelKey;
     long long lastPlayed;
     long long sessionStartDate;
+    long long groupID;
     GeneralData data;
 } Session;
 
@@ -191,6 +208,100 @@ struct matjson::Serialize<Section> {
     }
 };
 
+typedef struct SessionGrouping {
+    std::map<long long, std::set<std::string>, std::greater<long long>> group;
+} SessionGrouping;
+
+template <>
+struct matjson::Serialize<std::map<long long, std::set<std::string>, std::greater<long long>>> {
+    static Result<std::map<long long, std::set<std::string>, std::greater<long long>>> fromJson(const matjson::Value& value) {
+
+        std::map<long long, std::set<std::string>, std::greater<long long>> resMap;
+        auto objRes = value.as<std::map<std::string, std::set<std::string>>>().unwrapOr(std::map<std::string, std::set<std::string>>{});
+        for (auto const& [strKey, strSet] : objRes) {
+            auto res = geode::utils::numFromString<long long>(strKey);
+            if (res.isErr()) continue;
+            resMap.insert({res.unwrap(), strSet});
+        }
+
+        return Ok(resMap);
+    }
+
+    static matjson::Value toJson(const std::map<long long, std::set<std::string>, std::greater<long long>>& value) {
+        std::map<std::string, std::set<std::string>> obj;
+        for (auto const& kv : value) {
+            obj[std::to_string(kv.first)] = kv.second;
+        }
+        return matjson::Value(obj);
+    }
+};
+
+template <>
+struct matjson::Serialize<SessionGrouping> {
+    static Result<SessionGrouping> fromJson(const matjson::Value& value) {
+        SessionGrouping grouping;
+        GEODE_UNWRAP_INTO(grouping.group, value["group"].as<std::map<long long, std::set<std::string>, std::greater<long long>>>());
+
+        return Ok(grouping);
+    }
+
+    static matjson::Value toJson(const SessionGrouping& value) {
+        matjson::Value obj = matjson::makeObject({
+            { "group", value.group }
+        });
+        return obj;
+    }
+};
+
+template <>
+struct matjson::Serialize<std::map<long long, SessionGrouping, std::greater<long long>>> {
+    static Result<std::map<long long, SessionGrouping, std::greater<long long>>> fromJson(const matjson::Value& value) {
+
+        std::map<long long, SessionGrouping, std::greater<long long>> resMap;
+        auto objRes = value.as<std::map<std::string, SessionGrouping>>().unwrapOr(std::map<std::string, SessionGrouping>{});
+        for (auto const& [strKey, sessionGrouping] : objRes) {
+            auto res = geode::utils::numFromString<long long>(strKey);
+            if (res.isErr()) continue;
+            resMap.insert({res.unwrap(), sessionGrouping});
+        }
+
+        return Ok(resMap);
+    }
+
+    static matjson::Value toJson(const std::map<long long, SessionGrouping, std::greater<long long>>& value) {
+        std::map<std::string, SessionGrouping> obj;
+        for (auto const& kv : value) {
+            obj[std::to_string(kv.first)] = kv.second;
+        }
+        return matjson::Value(obj);
+    }
+};
+
+typedef struct SessionCategory {
+    std::string groupName;
+    std::map<long long, SessionGrouping, std::greater<long long>> grouping;
+} SessionCategory;
+
+template <>
+struct matjson::Serialize<SessionCategory> {
+    static Result<SessionCategory> fromJson(const matjson::Value& value) {
+        SessionCategory category;
+        GEODE_UNWRAP_INTO(category.groupName, value["groupName"].asString());
+        GEODE_UNWRAP_INTO(category.grouping, value["grouping"].as<std::map<long long, SessionGrouping, std::greater<long long>>>());
+
+        return Ok(category);
+    }
+
+    static matjson::Value toJson(const SessionCategory& value) {
+        matjson::Value obj = matjson::makeObject({
+            { "groupName", value.groupName },
+            { "grouping", value.grouping }
+        });
+        return obj;
+    }
+};
+
+
 typedef struct LevelMetadeta {
     std::map<int, int> runsToShow{};
     bool showAnyRun = true;
@@ -207,6 +318,7 @@ typedef struct LevelMetadeta {
     std::optional<int> autoSessionsToBackupAmount = -1;
     std::vector<Section> sections{};
     bool hasGottenDataFromPT = false;
+    std::vector<SessionCategory> sessionGroups;
 } LevelMetadeta;
 
 template <>
@@ -281,6 +393,9 @@ struct matjson::Serialize<LevelMetadeta> {
         if (value.contains("hasGottenDataFromPT")){
             GEODE_UNWRAP_INTO(stats.hasGottenDataFromPT, value["hasGottenDataFromPT"].asBool());
         }
+        if (value.contains("sessionGroups")){
+            GEODE_UNWRAP_INTO(stats.sessionGroups, value["sessionGroups"].as<std::vector<SessionCategory>>());
+        }
 
         return Ok(stats);
     }
@@ -301,7 +416,8 @@ struct matjson::Serialize<LevelMetadeta> {
             { "autoBackupLevelStats", value.autoBackupLevelStats },
             { "autoSessionsToBackupAmount", value.autoSessionsToBackupAmount == std::nullopt ? -2 : value.autoSessionsToBackupAmount.value() },
             { "sections", value.sections },
-            { "hasGottenDataFromPT", value.hasGottenDataFromPT }
+            { "hasGottenDataFromPT", value.hasGottenDataFromPT },
+            { "sessionGroups", value.sessionGroups }
         });
         return obj;
     }

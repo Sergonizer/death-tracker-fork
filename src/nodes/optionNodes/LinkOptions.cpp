@@ -414,6 +414,14 @@ void LinkOptions::updateScrollsContent(){
     linkedScroll->m_contentLayer->removeAllChildrenWithCleanup(true);
     playedScroll->m_contentLayer->removeAllChildrenWithCleanup(true);
 
+    if (currentLinkedPage == 0){
+        auto cell = LevelLinkCell::create(linkedScroll->m_contentLayer->getContentWidth(), myStats.levelKey, myStats.metadata);    
+        cell->setAlignment(true);
+        cell->setEnabledAndFade(false);
+        
+        linkedScroll->m_contentLayer->addChild(cell, -1);
+    }
+
     auto addCellsAsChildren = [&](CCNode* parent, const std::set<const LinkData*, LevelMetaNameCompare>& setToUse, int pageNum, bool alignToLeft){
         auto it = setToUse.begin();
         std::advance(it, pageNum * LinkOptions::PER_PAGE_COUNT);

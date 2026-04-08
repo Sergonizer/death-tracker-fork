@@ -22,6 +22,7 @@ bool LevelLinkCell::init(float width, const std::string& levelKey, const LevelMe
     bg->setAnchorPoint({0, 0});
     bg->setScale(.5f);
     bg->setContentSize(this->getContentSize() / bg->getScale());
+    bg->setCascadeOpacityEnabled(true);
     this->addChild(bg);
 
     auto arrowBtnSpr = CCSprite::createWithSpriteFrameName("GJ_arrow_01_001.png");
@@ -35,18 +36,21 @@ bool LevelLinkCell::init(float width, const std::string& levelKey, const LevelMe
 
     diffSpr = GJDifficultySprite::create(data.difficulty, GJDifficultyName::Long);
     diffSpr->setScale(.5f);
+    diffSpr->setCascadeOpacityEnabled(true);
     this->addChild(diffSpr);
 
     title = CCLabelBMFont::create(data.levelName.c_str(), "bigFont.fnt");
     title->setScale(.4f);
     titleWidth = width - diffSpr->getScaledContentWidth() - arrowBtn->getContentWidth() - 20;
     title->setWidth(titleWidth);
+    title->setCascadeOpacityEnabled(true);
     this->addChild(title);
 
     att = CCLabelBMFont::create(fmt::format("{} attempts | levelID: {}", data.attempts, levelKey).c_str(), "chatFont.fnt");
     att->setScale(.5f);
     attWidth = width - diffSpr->getScaledContentWidth() - arrowBtn->getContentWidth() - 20;
     att->setWidth(attWidth);
+    att->setCascadeOpacityEnabled(true);
     this->addChild(att);
 
     setAlignment(false);
@@ -89,4 +93,9 @@ void LevelLinkCell::onArrow(CCObject*){
     if (callback == NULL) return;
 
     callback(levelKey, isAlignedLeft);
+}
+
+void LevelLinkCell::setEnabledAndFade(bool b){
+    this->setOpacity(b ? 255 : 120);
+    this->setEnabled(b);
 }

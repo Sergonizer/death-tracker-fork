@@ -154,7 +154,7 @@ bool DTLayer::init(GJGameLevel* const& level) {
     );
     bottomMenu->addChild(graphBtn);
 
-    sessionSelector = SessionSelector::create(sessionsOrder.size());
+    sessionSelector = SessionSelector::create(getCurrentGrouping().grouping.size());
     sessionSelector->setCallback([&](int newSession){ onSessionSelected(newSession, true); });
     sessionSelector->setScale(.75f);
     sessionSelector->setPosition({m_size.width / 2, 20});
@@ -602,6 +602,12 @@ void DTLayer::populateSpecialStrings(){
     sectionKey->refreshWith(runsKey->getKey());
     sectionKey->setUpdateFunction(BIND_UPDATE_FUNC(DTLayer::onSectionKey));
     addSpecialString(sectionKey);
+
+    auto sdateKey = std::make_shared<SpecialKey>("sdate", "Adds the date of the current session grouping");
+    sdateKey->refreshWith(sessionFrom0Key->getKey());
+    sdateKey->refreshWith(sessionRunsKey->getKey());
+    sdateKey->setUpdateFunction(BIND_UPDATE_FUNC(DTLayer::onSessionDateKey));
+    addSpecialString(sdateKey);
 }
 
 void DTLayer::UpdateSharedStats(){
@@ -612,7 +618,8 @@ void DTLayer::UpdateSharedStats(){
     auto sharedStats = m_MyLevelStats.unwrap();
 
     linkedLevelsData.clear();
-    sessionsOrder.clear();
+    sessionsOrder.grouping.clear();
+    sessionsOrder.groupName = "None";
 
     std::set<std::string> linkedLevels{};
     std::map<std::string, LevelData> visitedLevels{};
@@ -642,14 +649,24 @@ void DTLayer::UpdateSharedStats(){
 
     for (const auto& [_, level] : visitedLevels){
         std::for_each(level.sessionNames.begin(), level.sessionNames.end(), [&](long long key) {
-            this->sessionsOrder.emplace(key, level.levelKey);
+            if (this->sessionsOrder.grouping.contains(key)){
+                if (!this->sessionsOrder.grouping[key].group[key].contains(level.levelKey))
+                    this->sessionsOrder.grouping[key].group[key].insert(level.levelKey);
+            }
+            else{
+                SessionGrouping grouping{};
+                grouping.group.insert({key, {level.levelKey}});
+                this->sessionsOrder.grouping.insert({key, grouping});
+            }
         });
 
         linkedLevelsData.push_back(level);
     }
 
     if (sessionSelector != nullptr)
-        sessionSelector->setMaximumCount(sessionsOrder.size(), false);
+        sessionSelector->setMaximumCount(sessionsOrder.grouping.size(), false);
+
+    updateStaticGroupings();
 
     UpdateDeathRelatedStrings();
 }
@@ -725,6 +742,45 @@ void DTLayer::UpdateDeathRelatedStrings(){
         if (key->getKey() == "general" || key->getKey() == "s0" || key->getKey() == "runs" || key->getKey() == "sruns")
             key->updateContent();
     }
+}
+
+void DTLayer::updateStaticGroupings(){
+    daySGroup.groupName = "Day";
+    daySGroup.grouping.clear();
+    weekSGroup.groupName = "Week";
+    weekSGroup.grouping.clear();
+    monthSGroup.groupName = "Month";
+    monthSGroup.grouping.clear();
+
+    for (const auto& [date, group] : sessionsOrder.grouping)
+    {
+        for (const auto& [date, lvls] : group.group)
+        {
+            auto coolerDate = std::chrono::sys_seconds{std::chrono::seconds(date)};
+
+            auto startOfDay = std::chrono::system_clock::to_time_t(std::chrono::floor<std::chrono::days>(coolerDate));
+            auto startOfWeek = std::chrono::system_clock::to_time_t(std::chrono::floor<std::chrono::weeks>(coolerDate));
+            auto startOfMonth = std::chrono::system_clock::to_time_t(std::chrono::floor<std::chrono::months>(coolerDate));
+            
+            if (!daySGroup.grouping.contains(startOfDay)){
+                SessionGrouping grouping{};
+                daySGroup.grouping.insert({startOfDay, grouping});
+            }
+            daySGroup.grouping[startOfDay].group.insert({date, lvls});
+
+            if (!weekSGroup.grouping.contains(startOfWeek)){
+                SessionGrouping grouping{};
+                weekSGroup.grouping.insert({startOfWeek, grouping});
+            }
+            weekSGroup.grouping[startOfWeek].group.insert({date, lvls});
+
+            if (!monthSGroup.grouping.contains(startOfMonth)){
+                SessionGrouping grouping{};
+                monthSGroup.grouping.insert({startOfMonth, grouping});
+            }
+            monthSGroup.grouping[startOfMonth].group.insert({date, lvls});
+        }
+    }  
 }
 
 bool DTLayer::createDeathsString(const Deaths& deaths, const stringCustomazations& custom, std::string& out, NewBests* const newBests, const std::string& newBestColoring, bool ignoreExtraSettings){
@@ -828,10 +884,10 @@ int DTLayer::getCurrentSelectedSession(){
 }
 
 void DTLayer::onSessionSelected(int sessionNum, bool updateContent){
-    auto it = sessionsOrder.begin();
+    auto it = getCurrentGrouping().grouping.begin();
     std::advance(it, sessionNum - 1);
 
-    if (it == sessionsOrder.end()) return;
+    if (it == getCurrentGrouping().grouping.end()) return;
 
     if (sessionNum - 1 == currentSession) return;
     currentSession = sessionNum - 1;
@@ -1747,6 +1803,7 @@ void DTLayer::modifyRun(int startPer, int amount, std::optional<int> sessionNumb
         }
 
         auto newNum = data[runStr] + amount;
+        log::info("{} | {} | {}", amount, data[runStr], newNum);
 
         if (newNum <= 0){
             data.erase(runStr);
@@ -1759,18 +1816,49 @@ void DTLayer::modifyRun(int startPer, int amount, std::optional<int> sessionNumb
     };
 
     if (sessionNumber.has_value()){
-        auto it = sessionsOrder.begin();
+        auto it = getCurrentGrouping().grouping.begin();
         std::advance(it, sessionNumber.value() - 1);
 
-        if (it == sessionsOrder.end()) return;
+        if (it == getCurrentGrouping().grouping.end()) return;
 
-        auto sessionRes = StatsManager::getSession(it->second, it->first);
-        if (sessionRes.isErr()) return;
-        auto session = sessionRes.unwrap();
+        std::optional<Session> session = std::nullopt;
+        std::string keyToUse;
 
-        if (!processRun(session.data.deaths)) return;
+        std::optional<Session> firstOKSess = std::nullopt;
+        std::string firstOKSessLvlKey;
 
-        auto setSessionRes = StatsManager::setSession(session, it->second, it->first, false);
+        for (const auto& [SDate, lvlKey] : it->second.group)
+        {
+            for (const auto& lvlKey : lvlKey)
+            {
+                auto sessionRes = StatsManager::getSession(lvlKey, SDate);
+                if (sessionRes.isErr()) continue;
+                auto currSess = sessionRes.unwrap();
+
+                if (!firstOKSess.has_value()){
+                    firstOKSess = currSess;
+                    firstOKSessLvlKey = lvlKey;
+                }
+
+                if (!currSess.data.deaths.contains(std::to_string(startPer))) continue;
+
+                session = currSess;
+                keyToUse = lvlKey;
+
+                break;
+            }
+        }
+
+        if (!session.has_value()){
+            session = firstOKSess;
+            keyToUse = firstOKSessLvlKey;
+        }
+        
+        if (!session.has_value()) return;
+
+        if (!processRun(session.value().data.deaths)) return;
+
+        auto setSessionRes = StatsManager::setSession(session.value(), keyToUse, it->first, false);
         if (setSessionRes.isErr()) log::error("{}", setSessionRes.unwrapErr());
     }
     else{
@@ -1784,9 +1872,10 @@ void DTLayer::modifyRun(int startPer, int amount, std::optional<int> sessionNumb
             return;
         }
 
+        //log::info("pros linked");
         for (auto& linkedLevel : linkedLevelsData)
         {
-            if (linkedLevel.from0.isErr()) continue;
+            if (linkedLevel.from0.isErr() || linkedLevel.levelKey == stats.levelKey) continue;
             auto& linkedLevelFrom0Stats = linkedLevel.from0.unwrap();
 
             if (processRun(linkedLevelFrom0Stats.deaths)){
@@ -1823,18 +1912,49 @@ void DTLayer::modifyRun(int startPer, int endPer, int amount, std::optional<int>
     };
 
     if (sessionNumber.has_value()){
-        auto it = sessionsOrder.begin();
+        auto it = getCurrentGrouping().grouping.begin();
         std::advance(it, sessionNumber.value() - 1);
 
-        if (it == sessionsOrder.end()) return;
+        if (it == getCurrentGrouping().grouping.end()) return;
 
-        auto sessionRes = StatsManager::getSession(it->second, it->first);
-        if (sessionRes.isErr()) return;
-        auto session = sessionRes.unwrap();
+        std::optional<Session> session = std::nullopt;
+        std::string keyToUse;
 
-        if (!processRun(session.data.runs)) return;
+        std::optional<Session> firstOKSess = std::nullopt;
+        std::string firstOKSessLvlKey;
 
-        auto setSessionRes = StatsManager::setSession(session, it->second, it->first, false);
+        for (const auto& [SDate, lvlKey] : it->second.group)
+        {
+            for (const auto& lvlKey : lvlKey)
+            {
+                auto sessionRes = StatsManager::getSession(lvlKey, SDate);
+                if (sessionRes.isErr()) continue;
+                auto currSess = sessionRes.unwrap();
+
+                if (!firstOKSess.has_value()){
+                    firstOKSess = currSess;
+                    firstOKSessLvlKey = lvlKey;
+                }
+
+                if (!currSess.data.runs.contains(fmt::format("{}-{}", startPer, endPer))) continue;
+
+                session = currSess;
+                keyToUse = lvlKey;
+
+                break;
+            }
+        }
+
+        if (!session.has_value()){
+            session = firstOKSess;
+            keyToUse = firstOKSessLvlKey;
+        }
+        
+        if (!session.has_value()) return;
+
+        if (!processRun(session.value().data.runs)) return;
+
+        auto setSessionRes = StatsManager::setSession(session.value(), keyToUse, it->first, false);
         if (setSessionRes.isErr()) log::error("{}", setSessionRes.unwrapErr());
     }
     else{
@@ -1850,7 +1970,7 @@ void DTLayer::modifyRun(int startPer, int endPer, int amount, std::optional<int>
 
         for (auto& linkedLevel : linkedLevelsData)
         {
-            if (linkedLevel.from0.isErr()) continue;
+            if (linkedLevel.from0.isErr() || linkedLevel.levelKey == stats.levelKey) continue;
             auto& linkedLevelFrom0Stats = linkedLevel.from0.unwrap();
 
             if (processRun(linkedLevelFrom0Stats.runs)){
@@ -1881,18 +2001,49 @@ void DTLayer::modifyNewBest(int percent, bool makeTrue, std::optional<int> sessi
     };
 
     if (sessionNumber.has_value()){
-        auto it = sessionsOrder.begin();
+        auto it = getCurrentGrouping().grouping.begin();
         std::advance(it, sessionNumber.value() - 1);
 
-        if (it == sessionsOrder.end()) return;
+        if (it == getCurrentGrouping().grouping.end()) return;
 
-        auto sessionRes = StatsManager::getSession(it->second, it->first);
-        if (sessionRes.isErr()) return;
-        auto session = sessionRes.unwrap();
+        std::optional<Session> session = std::nullopt;
+        std::string keyToUse;
 
-        processBest(session.data.newBests);
+        std::optional<Session> firstOKSess = std::nullopt;
+        std::string firstOKSessLvlKey;
 
-        auto setSessionRes = StatsManager::setSession(session, it->second, it->first, false);
+        for (const auto& [SDate, lvlKey] : it->second.group)
+        {
+            for (const auto& lvlKey : lvlKey)
+            {
+                auto sessionRes = StatsManager::getSession(lvlKey, SDate);
+                if (sessionRes.isErr()) continue;
+                auto currSess = sessionRes.unwrap();
+
+                if (!firstOKSess.has_value()){
+                    firstOKSess = currSess;
+                    firstOKSessLvlKey = lvlKey;
+                }
+
+                if (!currSess.data.newBests.contains(percent)) continue;
+
+                session = currSess;
+                keyToUse = lvlKey;
+
+                break;
+            }
+        }
+
+        if (!session.has_value()){
+            session = firstOKSess;
+            keyToUse = firstOKSessLvlKey;
+        }
+        
+        if (!session.has_value()) return;
+
+        processBest(session.value().data.newBests);
+
+        auto setSessionRes = StatsManager::setSession(session.value(), keyToUse, it->first, false);
         if (setSessionRes.isErr()) log::error("{}", setSessionRes.unwrapErr());
     }
     else{
@@ -1908,7 +2059,7 @@ void DTLayer::modifyNewBest(int percent, bool makeTrue, std::optional<int> sessi
 
         for (auto& linkedLevel : linkedLevelsData)
         {
-            if (linkedLevel.from0.isErr()) continue;
+            if (linkedLevel.from0.isErr() || linkedLevel.levelKey == stats.levelKey) continue;
             auto& linkedLevelFrom0Stats = linkedLevel.from0.unwrap();
 
             if (processBest(linkedLevelFrom0Stats.newBests)){
@@ -2206,18 +2357,44 @@ UpdateFuture DTLayer::onAPTSRUNSKey(){
 }
 
 Result<Session> DTLayer::loadSessionFromSave(std::optional<int> sessionIndex){
-    if (!sessionsOrder.size()) return Err("No sessions saved!");
+    if (!getCurrentGrouping().grouping.size()) return Err("No sessions saved!");
     int i = sessionIndex.has_value() ? sessionIndex.value() : sessionSelector->getCurrentCount();
 
-    if (i == 0 || i > sessionsOrder.size())
+    if (i == 0 || i > getCurrentGrouping().grouping.size())
         return Err("Failed to get session, not in range");
 
-    auto it = sessionsOrder.begin();
+    auto it = getCurrentGrouping().grouping.begin();
     std::advance(it, i - 1);
 
-    auto levelKey = it->second;
+    Result<Session> sess = Err("");
 
-    return StatsManager::getSession(levelKey, it->first);
+    for (const auto& [SDate, lvlKeys] : it->second.group)
+    {
+        for (const auto& lvlKey : lvlKeys)
+        {
+            auto sessionRes = StatsManager::getSession(lvlKey, SDate);
+            if (sessionRes.isErr()){
+                sess = Err(sessionRes.unwrapErr());
+                break;
+            }
+
+            if (sess.isErr()){
+                sess = Ok(sessionRes.unwrap());
+            }
+            else{
+                auto& overallRef = sess.unwrap();
+
+                overallRef.data += sessionRes.unwrap().data;
+            }
+        }
+    }
+
+    if (sess.isOk()){
+        auto& sessRef = sess.unwrap();
+        sessRef.groupID = it->first;
+    }
+        
+    return sess;
 }
 
 UpdateFuture DTLayer::onRunsTo100Key(){
@@ -2546,4 +2723,32 @@ UpdateFuture DTLayer::getPlaytimeFor(geode::Function<uint64_t(GeneralData const&
             dataGetter(session.data)
         ));
     }
+}
+
+SessionCategory& DTLayer::getCurrentGrouping(){
+    if (m_MyLevelStats.isErr()) return sessionsOrder;
+    auto& myStats = m_MyLevelStats.unwrap();
+
+    if (currentGrouping == -3) return daySGroup;
+    if (currentGrouping == -2) return weekSGroup;
+    if (currentGrouping == -1) return monthSGroup;
+
+    if (!myStats.metadata.sessionGroups.size() || currentGrouping < 0 || currentGrouping >= myStats.metadata.sessionGroups.size()) return sessionsOrder;
+
+    return myStats.metadata.sessionGroups[currentGrouping];
+}
+
+UpdateFuture DTLayer::onSessionDateKey(){
+    auto sessionRes = loadSessionFromSave();
+    if (sessionRes.isErr()) co_return Err("{}", sessionRes.unwrapErr());
+
+    auto session = sessionRes.unwrap();
+
+    co_await arc::yield();
+
+    auto tp = std::chrono::system_clock::from_time_t(session.groupID);
+
+    std::string dateStr = fmt::format("{:%m/%d/%Y} {:%I:%M%p}", tp, tp);
+
+    co_return Ok(dateStr);
 }

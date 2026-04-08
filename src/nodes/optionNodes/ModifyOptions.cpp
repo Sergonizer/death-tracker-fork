@@ -48,7 +48,7 @@ bool ModifyOptions::setup(){
 
     int sessionAmount = 1;
     if  (dtLayer != nullptr){
-        sessionAmount = dtLayer->sessionsOrder.size();
+        sessionAmount = dtLayer->getCurrentGrouping().grouping.size();
     }
 
     sessionSelector = SessionSelector::create(sessionAmount);

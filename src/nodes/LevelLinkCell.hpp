@@ -13,6 +13,8 @@ class LevelLinkCell : public CCMenu {
 
         void setCallback(geode::Function<void(const std::string& levelKey, bool isLeftAligned)> callback);
 
+        void setEnabledAndFade(bool b);
+
     private:
         bool init(float width, const std::string& levelKey, const LevelMetadeta& data);
 
