@@ -53,6 +53,8 @@ bool DTLayer::init(GJGameLevel* const& level) {
         notif->setZOrder(101);
     }
 
+    StatsManager::transferPlaytimeFromPT(m_MyLevelStats, level);
+
     if (m_MyLevelStats.isOk()){
         auto stats = m_MyLevelStats.unwrap();
         stats.metadata.levelName = level->m_levelName;
@@ -386,8 +388,6 @@ bool DTLayer::init(GJGameLevel* const& level) {
     );
     m_buttonMenu->addChild(calculatorBtn);
 
-    DTLayer::transferPlaytimeFromPT();
-
     return true;
 }
 
@@ -484,67 +484,7 @@ void DTLayer::addSpecialString(const std::shared_ptr<SpecialKey>& key){
 }
 
 void DTLayer::transferPlaytimeFromPT() {
-    auto ptPath = Mod::get()->getSaveDir().parent_path() / "nanew.playtime-tracker" / "leveldata.json";
-
-    if (!exists(ptPath) || !m_MyLevelStats.isOk()) return;
-
-    auto& stats = m_MyLevelStats.unwrap();
-
-    if (stats.metadata.hasGottenDataFromPT) return;
-
-    std::string levelID = std::to_string(m_Level->m_levelID.value());
-    if (m_Level->m_levelType == GJLevelType::Editor) levelID = "Editor-" + levelID;
-
-    auto ptObj = file::readFromJson<matjson::Value>(ptPath).unwrapOrDefault();
-
-    if (ptObj[levelID].isNull()) return;
-
-    uint64_t overallPT = 0;
-
-    for (auto session : ptObj[levelID]["sessions"]) {
-        if (!session[0][0].isNumber()) continue;
-
-        for (const auto& dtSession : sessionsOrder) {
-            if (dtSession.first != session[0][0].as<long long>().unwrap()) continue;
-
-            auto realSessRes = StatsManager::getSession(stats.levelKey, dtSession.first);
-            if (realSessRes.isErr()) continue;
-            auto realSess = realSessRes.unwrap();
-
-            for (auto ptPair : session) {
-
-                auto endT = ptPair[1].as<long long>();
-                auto startT = ptPair[0].as<long long>();
-                if (endT.isErr() || startT.isErr()) continue;
-
-                realSess.data.playtimeGeneral.playtimeF0 += (endT.unwrap() - startT.unwrap()) * 1000000000LL;
-
-                break;
-            }
-
-            (void)StatsManager::setSession(realSess, stats.levelKey, dtSession.first, false);
-        }
-
-        for (auto ptPair : session) {
-
-            auto endT = ptPair[1].as<long long>();
-            auto startT = ptPair[0].as<long long>();
-            if (endT.isErr() || startT.isErr()) continue;
-
-            overallPT += (endT.unwrap() - startT.unwrap());
-        }
-    }
-    //TODO: write to main general deaths
-
-    if (stats.from0.isOk()){
-        auto& f0 = stats.from0.unwrap();
-        f0.playtimeGeneral.playtimeF0 += overallPT * 1000000000LL;
-
-        (void)StatsManager::setGeneral(f0, stats.levelKey);
-    }
-
-    stats.metadata.hasGottenDataFromPT = true;
-    (void)StatsManager::setMetadata(stats.metadata, stats.levelKey);
+    
 }
 
 void DTLayer::populateSpecialStrings(){

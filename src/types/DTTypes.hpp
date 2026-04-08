@@ -206,7 +206,7 @@ typedef struct LevelMetadeta {
     bool autoBackupLevelStats = true;
     std::optional<int> autoSessionsToBackupAmount = -1;
     std::vector<Section> sections{};
-    bool hasGottenDataFromPT;
+    bool hasGottenDataFromPT = false;
 } LevelMetadeta;
 
 template <>

@@ -40,6 +40,11 @@ bool DTPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
         metadata.levelName = level->m_levelName;
         metadata.attempts = level->m_attempts;
         metadata.difficulty = StatsManager::getDifficulty(level);
+
+        if (!metadata.hasGottenDataFromPT){
+            metadata.hasGottenDataFromPT = StatsManager::transferPlaytimeFromPT(level);
+        }
+
         (void)StatsManager::setMetadata(metadata, level);
         
         metaRes = Ok(metadata);
@@ -333,10 +338,12 @@ void DTPlayLayer::onExit(){
     cutoutPlaytime();
 
     auto session = StatsManager::getCurrentSession();
-    session->data.playtimeGeneral += m_fields->timePassedGeneral;
-    session->data.playtimeDead += m_fields->timePassedDead;
-    session->data.playtimePaused += m_fields->timePassedPaused;
-    (void)StatsManager::setSession(*session, m_level, session->sessionStartDate, false);
+    if (session != nullptr){
+        session->data.playtimeGeneral += m_fields->timePassedGeneral;
+        session->data.playtimeDead += m_fields->timePassedDead;
+        session->data.playtimePaused += m_fields->timePassedPaused;
+        (void)StatsManager::setSession(*session, m_level, session->sessionStartDate, false);
+    }
     StatsManager::currentFrom0.playtimeGeneral += m_fields->timePassedGeneral;
     StatsManager::currentFrom0.playtimeDead += m_fields->timePassedDead;
     StatsManager::currentFrom0.playtimePaused += m_fields->timePassedPaused;

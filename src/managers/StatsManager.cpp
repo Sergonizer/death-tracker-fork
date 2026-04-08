@@ -161,6 +161,7 @@ Result<GeneralData> StatsManager::getGeneral(const std::string& levelKey){
 
 Result<LevelData> StatsManager::getLevelData(GJGameLevel* const level){
     GEODE_UNWRAP_INTO(auto levelKey, StatsManager::getLevelKey(level));
+
     return getLevelData(levelKey);
 }
 Result<LevelData> StatsManager::getLevelData(const std::string& levelKey){
@@ -1090,4 +1091,93 @@ std::vector<std::string> StatsManager::allV3FileLevelKeys(){
     }
 
     return toReturn;
+}
+
+bool StatsManager::transferPlaytimeFromPT(GJGameLevel* level){
+    auto data = getLevelData(level);
+
+    return transferPlaytimeFromPT(data, level);
+}
+
+bool StatsManager::transferPlaytimeFromPT(geode::Result<LevelData>& data, GJGameLevel* level){
+    auto ptPath = Mod::get()->getSaveDir().parent_path() / "nanew.playtime-tracker" / "leveldata.json";
+
+    if (!exists(ptPath)) return false;
+
+    if (data.isErr()){
+        LevelData newData;
+        newData.levelKey = StatsManager::getLevelKey(level).unwrap();
+        data = Ok(newData);
+    }
+
+    auto& stats = data.unwrap();
+
+    if (stats.metadata.hasGottenDataFromPT) return false;
+
+    stats.metadata.hasGottenDataFromPT = true;
+    (void)StatsManager::setMetadata(stats.metadata, stats.levelKey);
+
+    std::string levelID = std::to_string(level->m_levelID.value());
+    if (level->m_levelType == GJLevelType::Editor) levelID = "Editor-" + levelID;
+
+    auto ptObj = file::readFromJson<matjson::Value>(ptPath).unwrapOrDefault();
+
+    if (ptObj[levelID].isNull()) return true;
+
+    uint64_t overallPT = 0;
+
+    for (auto session : ptObj[levelID]["sessions"]) {
+        if (!session[0][0].isNumber()) continue;
+
+        for (const auto& dtSession : stats.sessionNames) {
+            if (dtSession != session[0][0].as<long long>().unwrap()) continue;
+
+            auto realSessRes = StatsManager::getSession(stats.levelKey, dtSession);
+            if (realSessRes.isErr()) continue;
+            auto realSess = realSessRes.unwrap();
+
+            for (auto ptPair : session) {
+
+                auto endT = ptPair[1].as<long long>();
+                auto startT = ptPair[0].as<long long>();
+                if (endT.isErr() || startT.isErr()) continue;
+
+                realSess.data.playtimeGeneral.playtimeF0 += (endT.unwrap() - startT.unwrap()) * 1000000000LL;
+
+                break;
+            }
+
+            (void)StatsManager::setSession(realSess, stats.levelKey, dtSession, false);
+        }
+
+        //log::info("found playtime for level");
+
+        for (auto ptPair : session) {
+
+            //log::info("adding session");
+
+            auto endT = ptPair[1].as<long long>();
+            auto startT = ptPair[0].as<long long>();
+            if (endT.isErr() || startT.isErr()) continue;
+
+            overallPT += (endT.unwrap() - startT.unwrap());
+        }
+    }
+    //TODO: write to main general deaths
+
+    if (overallPT != 0){
+        if (stats.from0.isErr()){
+            GeneralData gData{};
+            stats.from0 = Ok(gData);
+        }
+
+        if (stats.from0.isOk()){
+            auto& f0 = stats.from0.unwrap();
+            f0.playtimeGeneral.playtimeF0 += overallPT * 1000000000LL;
+
+            (void)StatsManager::setGeneral(f0, stats.levelKey);
+        }
+    }
+
+    return true;
 }

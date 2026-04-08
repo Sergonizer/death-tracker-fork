@@ -156,6 +156,9 @@ public:
 
     template<typename K, typename V>
     static void mergeMapsAdd(std::map<K, V>& target, const std::map<K, V>& source);
+
+    static bool transferPlaytimeFromPT(GJGameLevel* level);
+    static bool transferPlaytimeFromPT(geode::Result<LevelData>& data, GJGameLevel* level);
 };
 
 template<typename K, typename V>
