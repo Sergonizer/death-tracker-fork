@@ -74,6 +74,7 @@ void FloatingList::addItem(const FloatingListItem& text){
         this,
         menu_selector(FloatingList::itemClicked)
     );
+    buttonItem->setTag(text.id);
 
     auto menu = CCMenu::createWithItem(buttonItem);
     menu->setContentSize({
@@ -152,4 +153,14 @@ void FloatingList::setOpenDirection(bool openUpwards){
         scrollLayer->setAnchorPoint({0.5f, 1});
         scrollLayer->setPositionY(this->getContentHeight());
     }
+}
+
+std::optional<FloatingListItem> FloatingList::getItemForID(int id){
+    for (const auto& [btn, item] : itemIds)
+    {
+        if (btn->getTag() == id)
+            return item;
+    }
+    
+    return std::nullopt;
 }

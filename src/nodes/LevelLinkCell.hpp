@@ -14,6 +14,7 @@ class LevelLinkCell : public CCMenu {
         void setCallback(geode::Function<void(const std::string& levelKey, bool isLeftAligned)> callback);
 
         void setEnabledAndFade(bool b);
+        bool isEnabledAndFade() const { return enabledAndFade; }
 
     private:
         bool init(float width, const std::string& levelKey, const LevelMetadeta& data);
@@ -32,4 +33,6 @@ class LevelLinkCell : public CCMenu {
         float titleWidth;
         CCLabelBMFont* att;
         float attWidth;
+
+        bool enabledAndFade = true;
 };

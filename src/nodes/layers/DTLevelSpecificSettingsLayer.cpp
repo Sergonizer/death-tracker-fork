@@ -61,8 +61,8 @@ bool DTLevelSpecificSettingsLayer::init() {
     pages->addChild(DTLevelSpecificSettingsLayer::createPageBtn("Link", LinkOptions::create(ccp(m_size.width - 10, seperator->getPositionY() - 10))));
     pages->addChild(DTLevelSpecificSettingsLayer::createSeperator());
     pages->addChild(DTLevelSpecificSettingsLayer::createPageBtn("Section", SectionOptions::create(ccp(m_size.width - 10, seperator->getPositionY() - 10))));
-    pages->addChild(DTLevelSpecificSettingsLayer::createSeperator());
-    pages->addChild(DTLevelSpecificSettingsLayer::createPageBtn("Session", SessionOptions::create(ccp(m_size.width - 10, seperator->getPositionY() - 10))));
+    // pages->addChild(DTLevelSpecificSettingsLayer::createSeperator());
+    // pages->addChild(DTLevelSpecificSettingsLayer::createPageBtn("Session", SessionOptions::create(ccp(m_size.width - 10, seperator->getPositionY() - 10))));
 
     pages->updateLayout();
     

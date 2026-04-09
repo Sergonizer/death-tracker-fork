@@ -98,4 +98,6 @@ void LevelLinkCell::onArrow(CCObject*){
 void LevelLinkCell::setEnabledAndFade(bool b){
     this->setOpacity(b ? 255 : 120);
     this->setEnabled(b);
+
+    enabledAndFade = b;
 }

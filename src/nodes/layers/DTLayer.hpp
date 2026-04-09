@@ -42,7 +42,7 @@ class DTLayer : public Popup {
         SessionCategory daySGroup{};
         SessionCategory weekSGroup{};
         SessionCategory monthSGroup{};
-        int currentGrouping = -3;
+        int currentGrouping = -4;
         SessionCategory& getCurrentGrouping();
 
 
@@ -224,4 +224,9 @@ class DTLayer : public Popup {
         std::optional<float> cachedLevelLength;
 
         void onCalculator(CCObject*);
+        void onGroups(CCObject*);
+        void onGroupSelected(int const& id);
+
+        FloatingList* groupsList;
+        CCMenuItemSpriteExtra* groupsBtn;
 };

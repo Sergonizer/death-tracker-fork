@@ -124,11 +124,11 @@ bool DTLayer::init(GJGameLevel* const& level) {
     m_mainLayer->addChild(shadow);
 
     bottomMenu = CCMenu::create();
-    bottomMenu->setContentSize({m_size.width - 15, height / 2.5f});
+    bottomMenu->setContentSize({m_size.width - 20, height / 2.5f});
     bottomMenu->setAnchorPoint({.5f, .5f});
-    bottomMenu->setPosition(bottomMenu->getContentSize() / 2 + ccp(0, 7.5f));
+    bottomMenu->setPosition(ccp(m_size.width, height / 2.5f) / 2 + ccp(0, 7.5f));
     bottomMenu->setLayout(SimpleAxisLayout::create(Axis::Row)
-        ->setGap(-15)
+        ->setGap(10)
         ->setMainAxisScaling(AxisScaling::ScaleDown)
         ->setCrossAxisScaling(AxisScaling::ScaleDown)
         ->setMainAxisAlignment(MainAxisAlignment::Even)
@@ -154,17 +154,42 @@ bool DTLayer::init(GJGameLevel* const& level) {
     );
     bottomMenu->addChild(graphBtn);
 
+    auto calculatorSpr = CCSprite::createWithSpriteFrameName("caluclator.png"_spr);
+    auto calculatorBtnSpr = CCSprite::create("GJ_button_01.png");
+    calculatorSpr->setPosition(calculatorBtnSpr->getContentSize() / 2);
+    calculatorSpr->setScale(.9f);
+    calculatorBtnSpr->addChild(calculatorSpr);
+    auto calculatorBtn = CCMenuItemSpriteExtra::create(
+        calculatorBtnSpr,
+        this,
+        menu_selector(DTLayer::onCalculator)
+    );
+    bottomMenu->addChild(calculatorBtn);
+
     sessionSelector = SessionSelector::create(getCurrentGrouping().grouping.size());
     sessionSelector->setCallback([&](int newSession){ onSessionSelected(newSession, true); });
     sessionSelector->setScale(.75f);
     sessionSelector->setPosition({m_size.width / 2, 20});
-    m_mainLayer->addChild(sessionSelector);
-
-    auto fixerNode = CCNode::create();
-    fixerNode->setContentWidth(sessionSelector->getContentWidth() / 2);
-    bottomMenu->addChild(fixerNode);
+    bottomMenu->addChild(sessionSelector);
 
     onSessionSelected(1, false);
+
+    auto groupsBtnSpr = ButtonSprite::create(
+        sessionsOrder.groupName.c_str(),
+        100,
+        100,
+        1,
+        false,
+        "bigFont.fnt", 
+        "GJ_button_04.png"
+    );
+    groupsBtnSpr->setScale(.75f);
+    groupsBtn = CCMenuItemSpriteExtra::create(
+        groupsBtnSpr,
+        this,
+        menu_selector(DTLayer::onGroups)
+    );
+    bottomMenu->addChild(groupsBtn);
 
     auto editLayoutBtnSprBG = CCSprite::createWithSpriteFrameName("GJ_plainBtn_001.png");
     editLayoutBtnSpr = CCSprite::createWithSpriteFrameName("layout_button.png"_spr);
@@ -235,6 +260,44 @@ bool DTLayer::init(GJGameLevel* const& level) {
     this->scheduleUpdate();
 
     bottomMenu->updateLayout();
+
+    groupsList = FloatingList::create({
+        groupsBtn->getScaledContentWidth(),
+        120
+    });
+    groupsList->setZOrder(2);
+    groupsList->addItems({
+        FloatingListItem{
+            .id = -4,
+            .text = sessionsOrder.groupName,
+            .BGTexture = "GJ_button_04.png"
+        },
+        FloatingListItem{
+            .id = -3,
+            .text = daySGroup.groupName,
+            .BGTexture = "GJ_button_05.png"
+        },
+        FloatingListItem{
+            .id = -2,
+            .text = weekSGroup.groupName,
+            .BGTexture = "GJ_button_05.png"
+        },
+        FloatingListItem{
+            .id = -1,
+            .text = monthSGroup.groupName,
+            .BGTexture = "GJ_button_05.png"
+        },
+    });
+    groupsList->setCallback([&](auto id){
+        this->onGroupSelected(id);
+    });
+    groupsList->setAnchorPoint({.5f, 0});
+    m_mainLayer->addChild(groupsList);
+    groupsList->setPosition(
+        groupsList->getParent()->convertToNodeSpace(
+            groupsBtn->convertToWorldSpace({groupsBtn->getContentWidth() / 2,groupsBtn->getContentHeight()})
+        )
+    );
 
     editLayoutMenu = CCMenu::create();
     editLayoutMenu->setEnabled(false);
@@ -378,15 +441,6 @@ bool DTLayer::init(GJGameLevel* const& level) {
     editLayoutMenu->addChild(layoutInfo);
 
     scrollLayer->setVisible(false);
-
-    auto calculatorBtnSpr = CCSprite::createWithSpriteFrameName("GJ_ngBtn_001.png");
-    calculatorBtnSpr->setScale(.75f);
-    auto calculatorBtn = CCMenuItemSpriteExtra::create(
-        calculatorBtnSpr,
-        this,
-        menu_selector(DTLayer::onCalculator)
-    );
-    m_buttonMenu->addChild(calculatorBtn);
 
     return true;
 }
@@ -2751,4 +2805,38 @@ UpdateFuture DTLayer::onSessionDateKey(){
     std::string dateStr = fmt::format("{:%m/%d/%Y} {:%I:%M%p}", tp, tp);
 
     co_return Ok(dateStr);
+}
+
+void DTLayer::onGroups(CCObject*){
+    if (groupsList->isOpened())
+        groupsList->close();
+    else
+        groupsList->open();
+}
+
+void DTLayer::onGroupSelected(int const& id){
+    groupsList->close();
+
+    currentGrouping = id;
+    specialStrings["s0"]->updateContent();
+    specialStrings["sruns"]->updateContent();
+
+    auto opt = groupsList->getItemForID(id);
+
+    auto newSpr = ButtonSprite::create(
+        opt.value().text.c_str(),
+        100,
+        100,
+        1,
+        false,
+        opt.value().font.c_str(), 
+        opt.value().BGTexture.c_str()
+    );
+    newSpr->setScale(.75f);
+
+    groupsBtn->setSprite(newSpr);
+
+    bottomMenu->updateLayout();
+
+    sessionSelector->setMaximumCount(getCurrentGrouping().grouping.size(), true);
 }

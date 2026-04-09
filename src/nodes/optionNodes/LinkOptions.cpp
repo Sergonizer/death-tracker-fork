@@ -238,13 +238,13 @@ void LinkOptions::onOpened(){
     linkedScroll->getChildByID("bg")->runAction(CCFadeTo::create(fadeTime, 150));
     playedScroll->getChildByID("bg")->runAction(CCFadeTo::create(fadeTime, 150));
 
-    for (const auto& child : CCArrayExt<CCMenu*>(linkedScroll->m_contentLayer->getChildren())){
-        child->setEnabled(true);
-        child->runAction(CCFadeTo::create(fadeTime, 255));
+    for (const auto& child : CCArrayExt<LevelLinkCell*>(linkedScroll->m_contentLayer->getChildren())){
+        child->setEnabled(child->isEnabledAndFade());
+        child->runAction(CCFadeTo::create(fadeTime, child->isEnabledAndFade() ? 255 : 120));
     }
-    for (const auto& child : CCArrayExt<CCMenu*>(playedScroll->m_contentLayer->getChildren())){
-        child->setEnabled(true);
-        child->runAction(CCFadeTo::create(fadeTime, 255));
+    for (const auto& child : CCArrayExt<LevelLinkCell*>(playedScroll->m_contentLayer->getChildren())){
+        child->setEnabled(child->isEnabledAndFade());
+        child->runAction(CCFadeTo::create(fadeTime, child->isEnabledAndFade() ? 255 : 120));
     }
 
     playedScroll->setMouseEnabled(true);

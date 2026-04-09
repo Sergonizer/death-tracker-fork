@@ -28,6 +28,8 @@ class FloatingList : public CCNode {
 
         bool isOpened() const { return isOpen; }
 
+        std::optional<FloatingListItem> getItemForID(int id);
+
     private:
         bool init(CCSize const& size, bool startOpen);
 
