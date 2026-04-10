@@ -133,4 +133,6 @@ class DTLabel : public CCMenu {
 
         bool isBeingEdited = false;
         bool isHovering;
+
+        float doubleClickTimer = .2f;
 };

@@ -6,8 +6,6 @@
 void DTEndLevelLayer::customSetup(){
     EndLevelLayer::customSetup();
 
-    log::info("custom setupaaa");
-
     if (!Settings::getCompleteMenuEnabled()) return;
 
     auto s = CCSprite::createWithSpriteFrameName("GJ_plainBtn_001.png");

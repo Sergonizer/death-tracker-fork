@@ -316,8 +316,24 @@ void DTLabel::toggleExpand(CCObject*){
 }
 
 bool DTLabel::ccTouchBegan(CCTouch* touch, CCEvent* event) {
-    if (!isEditable) return false;
     auto touchInSpace = this->convertTouchToNodeSpace(touch);
+    if (!isEditable){
+        if (labelTitleBG->boundingBox().containsPoint(touchInSpace)) {
+
+            if (labelTitleBG->getActionByTag(1) != nullptr){
+                clipboard::write(labelText->getText());
+                Notification::create(fmt::format("Copied text from {}", info.labelName), NotificationIcon::Success)->show();
+                return false;
+            }
+
+            auto timerSeq = CCDelayTime::create(doubleClickTimer);
+            timerSeq->setTag(1);
+            
+            labelTitleBG->runAction(timerSeq);
+        }
+
+        return false;
+    }
 
     if (leftExpandLine->boundingBox().containsPoint(touchInSpace)){
         leftExpandLine->setVisible(true);
