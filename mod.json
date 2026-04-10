@@ -144,7 +144,7 @@
 			"name": "Complete Menu Button",
 			"description": "Adds the tracker button to the level complete screen.",
 			"type": "bool",
-			"default": false
+			"default": true
 		},
 		"enter-new-line":{
 			"type": "keybind",
