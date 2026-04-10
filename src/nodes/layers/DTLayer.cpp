@@ -11,6 +11,8 @@
 #include <arc/task/Yield.hpp>
 #include <arc/time/Sleep.hpp>
 
+#include <utils/Settings.hpp>
+
 float DTLayer::transitionTime = .35f;
 
 bool ColumnComperator::operator()(LayoutColumn* a, LayoutColumn* b) const {
@@ -745,6 +747,16 @@ void DTLayer::keyBackClicked(){
 }
 
 void DTLayer::onClose(CCObject* sender){
+    if (m_MyLevelStats.isOk() && Settings::getAutoBackupEnabled() && Settings::getAutoBackupAtDTExit()){
+        if (m_MyLevelStats.unwrap().metadata.autoBackup){
+            (void)StatsManager::addBackup(
+                m_MyLevelStats.unwrap().levelKey,
+                Settings::getAutoBackupGeneral(),
+                Settings::getAutoBackupSessionAmount()
+            );
+        }
+    }
+
     organizationListener.cancel();
 
     for (auto& [_, key] : specialStrings) {

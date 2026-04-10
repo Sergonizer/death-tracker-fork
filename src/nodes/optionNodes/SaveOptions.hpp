@@ -15,7 +15,6 @@ class SaveOptions : public OptionsNode, public FLAlertLayerProtocol {
 
         void onDelete(CCObject*);
         void onBackup(CCObject*);
-        void onAutoBackupsSettings(CCObject*);
         void onExport(CCObject*);
         void onImport(CCObject*);
 
@@ -24,8 +23,6 @@ class SaveOptions : public OptionsNode, public FLAlertLayerProtocol {
         void createChoiceAlert(const std::string& title, const std::string& desc, const std::string& btn1, const std::string& btn2, geode::Function<void(bool)> callback);
         std::map<FLAlertLayer*, geode::Function<void(bool)>> choiceAlertsMap{};
 
-        SimpleToggler* ultimitedBackupsToggler;
-        TextInput* maxBackupsInput;
         ScrollLayer* backupsScrollLayer;
 
         void onBackupRevert(BackupCell* cell);

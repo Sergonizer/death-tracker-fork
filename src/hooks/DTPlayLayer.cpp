@@ -349,6 +349,18 @@ void DTPlayLayer::onExit(){
     StatsManager::currentFrom0.playtimePaused += m_fields->timePassedPaused;
     (void)StatsManager::setGeneral(StatsManager::currentFrom0, m_level);
 
+    auto lvlKey = StatsManager::getLevelKey(m_level);
+    if (lvlKey.isOk() && Settings::getAutoBackupEnabled() && Settings::getAutoBackupAtLvlExit()){
+        auto metaRes = StatsManager::getMetadata(lvlKey.unwrap());
+        if (metaRes.isOk() && metaRes.unwrap().autoBackup){
+            (void)StatsManager::addBackup(
+                lvlKey.unwrap(),
+                Settings::getAutoBackupGeneral(),
+                Settings::getAutoBackupSessionAmount()
+            );
+        }
+    }
+
 
     // log::info("PlayLayer::onQuit()");
 

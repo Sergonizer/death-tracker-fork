@@ -312,10 +312,7 @@ typedef struct LevelMetadeta {
     int hideUpto = 0;
     int realEndPercent = 100;
     bool resetAsDeath = false;
-    std::optional<int> maxBackupsAmount = 4;
     bool autoBackup = true;
-    bool autoBackupLevelStats = true;
-    std::optional<int> autoSessionsToBackupAmount = -1;
     std::vector<Section> sections{};
     bool hasGottenDataFromPT = false;
     std::vector<SessionCategory> sessionGroups;
@@ -373,19 +370,8 @@ struct matjson::Serialize<LevelMetadeta> {
         GEODE_UNWRAP_INTO(stats.hideUpto, value["hideUpto"].asInt());
         GEODE_UNWRAP_INTO(stats.realEndPercent, value["realEndPercent"].asInt());
         GEODE_UNWRAP_INTO(stats.resetAsDeath, value["resetAsDeath"].asBool());
-        if (value.contains("maxBackupsAmount")){
-            GEODE_UNWRAP_INTO(auto maxBackupsAmountRes, value["maxBackupsAmount"].asInt());
-            stats.maxBackupsAmount = maxBackupsAmountRes == -1 ? std::nullopt : std::make_optional(maxBackupsAmountRes);
-        }
         if (value.contains("autoBackup")){
             GEODE_UNWRAP_INTO(stats.autoBackup, value["autoBackup"].asBool());
-        }
-        if (value.contains("autoBackupLevelStats")){
-            GEODE_UNWRAP_INTO(stats.autoBackupLevelStats, value["autoBackupLevelStats"].asBool());
-        }
-        if (value.contains("autoSessionsToBackupAmount")){
-            GEODE_UNWRAP_INTO(auto autoSessionsToBackupAmountRes, value["autoSessionsToBackupAmount"].asInt());
-            stats.autoSessionsToBackupAmount = autoSessionsToBackupAmountRes == -2 ? std::nullopt : std::make_optional(autoSessionsToBackupAmountRes);
         }
         if (value.contains("sections")){
             GEODE_UNWRAP_INTO(stats.sections, value["sections"].as<std::vector<Section>>());
@@ -411,10 +397,7 @@ struct matjson::Serialize<LevelMetadeta> {
             { "hideUpto", value.hideUpto },
             { "realEndPercent", value.realEndPercent },
             { "resetAsDeath", value.resetAsDeath },
-            { "maxBackupsAmount", value.maxBackupsAmount == std::nullopt ? -1 : value.maxBackupsAmount.value() },
             { "autoBackup", value.autoBackup },
-            { "autoBackupLevelStats", value.autoBackupLevelStats },
-            { "autoSessionsToBackupAmount", value.autoSessionsToBackupAmount == std::nullopt ? -2 : value.autoSessionsToBackupAmount.value() },
             { "sections", value.sections },
             { "hasGottenDataFromPT", value.hasGottenDataFromPT },
             { "sessionGroups", value.sessionGroups }

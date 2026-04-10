@@ -316,14 +316,16 @@ Result<> StatsManager::addBackup(const std::string& levelKey, bool saveLevelStat
             return Err("Failed to backup level stats!");
     }
 
-    if (metadata.maxBackupsAmount != std::nullopt){
+    auto backupsAmount = Settings::getMaxBackupAmount();
+
+    if (backupsAmount != std::nullopt){
         auto count = getBackupsCount(levelKey);
 
-        if (count.size() > metadata.maxBackupsAmount.value()){
+        if (count.size() > backupsAmount.value()){
             int index = 0;
             for (const auto& backupName : count)
             {
-                if (index == count.size() - metadata.maxBackupsAmount.value()) break;
+                if (index == count.size() - backupsAmount.value()) break;
 
                 (void)deleteBackup(levelKey, backupName);
 

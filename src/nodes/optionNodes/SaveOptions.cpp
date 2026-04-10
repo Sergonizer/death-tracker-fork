@@ -76,16 +76,6 @@ bool SaveOptions::setup(){
     autoBackupToggler->setPosition(backupBtn->getPosition() - ccp(0, backupBtn->getContentWidth() / 2 + autoBackupToggler->getContentWidth() / 2 + 5));
     this->addChild(autoBackupToggler);
 
-    auto autoBackupsSettingsBtnSpr = CCSprite::createWithSpriteFrameName("GJ_optionsBtn_001.png");
-    autoBackupsSettingsBtnSpr->setScale(.5f);
-    auto autoBackupsSettingsBtn = CCMenuItemSpriteExtra::create(
-        autoBackupsSettingsBtnSpr,
-        this,
-        menu_selector(SaveOptions::onAutoBackupsSettings)
-    );
-    autoBackupsSettingsBtn->setPosition(autoBackupToggler->getPosition() - ccp(autoBackupToggler->getContentWidth() / 2 + autoBackupsSettingsBtn->getContentWidth() / 2 + 5, 0));
-    this->addChild(autoBackupsSettingsBtn);
-
     auto autoBackupsLabel = CCLabelBMFont::create("Auto Backups", "bigFont.fnt");
     autoBackupsLabel->setScale(.6f);
     autoBackupsLabel->setWidth(size.width / 2 - autoBackupToggler->getContentWidth());
@@ -93,73 +83,11 @@ bool SaveOptions::setup(){
     autoBackupsLabel->setPosition(autoBackupToggler->getPosition() + ccp(autoBackupToggler->getContentWidth() / 2 + 5, 0));
     this->addChild(autoBackupsLabel);
 
-    auto maxBackupsLabel = CCLabelBMFont::create("Max Allowed Backups", "bigFont.fnt");
-    maxBackupsLabel->setScale(.6f);
-    maxBackupsLabel->setWidth(size.width / 2);
-    maxBackupsLabel->setAlignment(CCTextAlignment::kCCTextAlignmentCenter);
-    maxBackupsLabel->setPosition({size.width - size.width / 4, autoBackupToggler->getPositionY() - autoBackupToggler->getContentHeight() / 2 - maxBackupsLabel->getContentHeight() / 2});
-    this->addChild(maxBackupsLabel);
-
-    maxBackupsInput = TextInput::create(75, "amount", "gjFont17.fnt");
-    maxBackupsInput->setPosition(maxBackupsLabel->getPosition() - ccp(0, maxBackupsLabel->getContentHeight() / 2 + maxBackupsInput->getContentHeight() / 2));
-    maxBackupsInput->setWidth(75);
-    maxBackupsInput->setCommonFilter(CommonFilter::Uint);
-    maxBackupsInput->setString(
-        (DTLayer::get()->m_MyLevelStats.isOk() ? 
-            (DTLayer::get()->m_MyLevelStats.unwrap().metadata.maxBackupsAmount.has_value() ? 
-                std::to_string(DTLayer::get()->m_MyLevelStats.unwrap().metadata.maxBackupsAmount.value())
-                : "Unlimited"
-            ) 
-            : "0"
-        ).c_str()
-    );
-    this->addChild(maxBackupsInput);
-
-    ultimitedBackupsToggler = SimpleToggler::create(
-        CCSprite::createWithSpriteFrameName("GJ_checkOff_001.png"),
-        CCSprite::createWithSpriteFrameName("GJ_checkOn_001.png"),
-        .6f,
-        !DTLayer::get()->m_MyLevelStats.isErr() && !DTLayer::get()->m_MyLevelStats.unwrap().metadata.maxBackupsAmount.has_value()
-    );
-    ultimitedBackupsToggler->setPosition(maxBackupsInput->getPosition() + ccp(maxBackupsInput->getContentWidth() / 2 + ultimitedBackupsToggler->getContentWidth() / 2 + 5, 0));
-    maxBackupsInput->setPositionX(maxBackupsInput->getPositionX() - ultimitedBackupsToggler->getContentWidth() / 2);
-    ultimitedBackupsToggler->setPositionX(ultimitedBackupsToggler->getPositionX() - ultimitedBackupsToggler->getContentWidth() / 2);
-    ultimitedBackupsToggler->setCallback([&](bool toggled){
-        if (DTLayer::get()->m_MyLevelStats.isErr()) return;
-
-        auto& stats = DTLayer::get()->m_MyLevelStats.unwrap();
-        if (toggled){
-            stats.metadata.maxBackupsAmount = std::nullopt;
-            maxBackupsInput->setString("Unlimited");
-            maxBackupsInput->setEnabled(false);
-
-            (void)StatsManager::setMetadata(stats.metadata, stats.levelKey);
-        } else {
-            maxBackupsInput->setString("2", true);
-            maxBackupsInput->setEnabled(true);
-        }
-    });
-    this->addChild(ultimitedBackupsToggler);
-
-    maxBackupsInput->setCallback([&](auto newstr){
-        if (DTLayer::get()->m_MyLevelStats.isErr()) return;
-
-        auto& stats = DTLayer::get()->m_MyLevelStats.unwrap();
-
-        auto numRes = geode::utils::numFromString<int>(newstr);
-        if (numRes.isErr()) return;
-        int num = numRes.unwrap();
-        stats.metadata.maxBackupsAmount = num;
-
-        (void)StatsManager::setMetadata(stats.metadata, stats.levelKey);
-    });
-
-
     auto backupsScrollLabel = CCLabelBMFont::create("Backups", "bigFont.fnt");
     backupsScrollLabel->setScale(.6f);
     backupsScrollLabel->setWidth(size.width / 2);
     backupsScrollLabel->setAlignment(CCTextAlignment::kCCTextAlignmentCenter);
-    backupsScrollLabel->setPosition({maxBackupsLabel->getPositionX(), maxBackupsInput->getPositionY() - maxBackupsInput->getContentHeight() / 2 - backupsScrollLabel->getContentHeight() / 2 - 5});
+    backupsScrollLabel->setPosition({autoBackupsLabel->getPositionX() + autoBackupsLabel->getScaledContentWidth() / 2, autoBackupsLabel->getPositionY() - autoBackupsLabel->getContentHeight() / 2 - backupsScrollLabel->getContentHeight() / 2 - 5});
     this->addChild(backupsScrollLabel);
 
     backupsScrollLayer = ScrollLayer::create({size.width / 2 - 10, backupsScrollLabel->getPositionY() - backupsScrollLabel->getContentHeight() / 2 - 5});
@@ -241,8 +169,6 @@ bool SaveOptions::setup(){
         child->setEnabled(false);
     }
     
-    Dev::fadeTextInput(maxBackupsInput, false, 0);
-
     backupsScrollLayer->setMouseEnabled(false);
 
     return true;
@@ -259,11 +185,6 @@ void SaveOptions::onOpened(){
     }
 
     backupsScrollLayer->setMouseEnabled(true);
-
-    if (maxBackupsInput->getString() == "Unlimited") maxBackupsInput->setEnabled(false);
-    else maxBackupsInput->setEnabled(true);
-
-    Dev::fadeTextInput(maxBackupsInput, true, fadeTime, false);
 }
 void SaveOptions::onClosed(){
     float fadeTime = .2f;
@@ -276,8 +197,6 @@ void SaveOptions::onClosed(){
     }
 
     backupsScrollLayer->setMouseEnabled(false);
-
-    Dev::fadeTextInput(maxBackupsInput, false, fadeTime);
 }
 
 void SaveOptions::onDelete(CCObject*){
@@ -305,10 +224,6 @@ void SaveOptions::onBackup(CCObject*){
     });
 
     popup->show();
-}
-
-void SaveOptions::onAutoBackupsSettings(CCObject*){
-
 }
 
 

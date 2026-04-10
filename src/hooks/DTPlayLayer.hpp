@@ -22,7 +22,7 @@ class $modify(DTPlayLayer, PlayLayer) {
 
         std::vector<int> fzeroToSave{};
         std::vector<Run> runsToSave{};
-
+        
         bool levelBeaten = false;
     };
 

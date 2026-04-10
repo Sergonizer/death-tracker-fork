@@ -8,7 +8,7 @@
     },
 	"id": "elohmrow.death_tracker",
 	"name": "Death Tracker",
-	"version": "v3.0.0-beta.9",
+	"version": "v3.0.0-beta.10",
 	"developer": "abb2k",
 	"description": "Tracks your deaths at every percentage",
 	"links": {
@@ -29,29 +29,16 @@
 	},
 	"tags": ["utility", "interface", "offline"],
 	"settings": {
+		"functionallity-title":{
+			"type": "title",
+			"name": "Functionallity"
+		},
 		"session-method": {
 			"name": "Session Method",
 			"description": "Determines when a session should end.\n<cy>Exit level</c> - Ends when exiting the level.\n<cy>Exit Game</c> - Ends when exiting the game.\n<cy>Exit Game</c> - End after a set amount of seconds pass (Session Length).",
 			"type": "string",
 			"default": "Exit level",
 			"one-of": ["Exit level", "Exit game"]
-		},
-		"check-for-old":{
-			"name": "Convert old saves",
-			"description": "This is used to convert old saves from death tracker V2 to V3",
-			"type": "custom:button-type-dt"
-		},
-		"pause-menu": {
-			"name": "Pause Menu Button",
-			"description": "Adds the tracker button to the pause menu.",
-			"type": "bool",
-			"default": true
-		},
-		"left-menu": {
-			"name": "Left Menu Button",
-			"description": "Moves the death tracker button to the left menu of the level page.",
-			"type": "bool",
-			"default": false
 		},
 		"late-save": {
 			"name": "Late Save",
@@ -65,16 +52,99 @@
 			"type": "bool",
 			"default": false
 		},
-		"practice-zero-deaths": {
-			"name": "Enable 0% Practice Mode Deaths",
-			"description": "Deaths will be shown instead of runs from 0% in practice mode.",
+		"bakcups-title":{
+			"type": "title",
+			"name": "Backups"
+		},
+		"backups-unlimited":{
 			"type": "bool",
-			"default": true
+			"default": false,
+			"name": "Unlimited Backups",
+			"description": "Remove/Add the limit for how many of the most recent backups should be saved"
+		},
+		"backups-max-amount":{
+			"type": "int",
+			"default": 5,
+			"min": 1,
+			"name": "Max Auto Backups",
+			"description": "The limit of how many backups will be saved before old ones are deleted",
+			"enable-if": "!backups-unlimited"
+		},
+		"auto-bakcups-title":{
+			"type": "title",
+			"name": "Auto Backups"
+		},
+		"auto-backups-enabled":{
+			"type": "bool",
+			"default": true,
+			"name": "Auto Backups Enabled",
+			"description": "Enable/Disable auto backups on all levels"
+		},
+		"auto-backups-general":{
+			"type": "bool",
+			"default": true,
+			"name": "Auto Backup General",
+			"description": "Whether to backup the general (not session) data when creating a backup automatically",
+			"enable-if": "auto-backups-enabled"
+		},
+		"auto-backups-sessions-all":{
+			"type": "bool",
+			"default": true,
+			"name": "Auto Backup All Sessions",
+			"description": "Whether to backup all sessions of a level when creating a backup automatically. if diabled you can set the specific amount of sessions you wanna save in the \"Backup Sessions Amount\" setting",
+			"enable-if": "auto-backups-enabled"
+		},
+		"auto-backups-sessions-amount":{
+			"type": "int",
+			"min": 0,
+			"default": 2,
+			"name": "Auto Backup Sessions Amount",
+			"description": "How many of the most recent sessions should be saved in a automatically created backup",
+			"enable-if": "auto-backups-enabled && !auto-backups-sessions-all"
+		},
+		"auto-backup-at-lvl-exit":{
+			"type": "bool",
+			"default": true,
+			"name": "Auto Backup at level exit",
+			"description": "Create a backup whenever exiting a level",
+			"enable-if": "auto-backups-enabled"
+		},
+		"auto-backup-at-dt-exit":{
+			"type": "bool",
+			"default": true,
+			"name": "Auto Backup at death tracker menu exit",
+			"description": "Create a backup whenever exiting the death tracker menu",
+			"enable-if": "auto-backups-enabled"
+		},
+		"save-title":{
+			"type": "title",
+			"name": "Save"
+		},
+		"check-for-old":{
+			"name": "Convert old saves",
+			"description": "This is used to convert old saves from death tracker V2 to V3",
+			"type": "custom:button-type-dt"
 		},
 		"save-path-new": {
 			"type": "folder",
 			"name": "Save Path",
 			"default": "{mod_save_dir}/levels"
+		},
+		"customazation-title":{
+			"type": "title",
+			"name": "Customazation"
+		},
+		"pause-menu": {
+			"name": "Pause Menu Button",
+			"description": "Adds the tracker button to the pause menu.",
+			"type": "bool",
+			"default": true
+		},
+		"complete-menu": {
+			"name": "Complete Menu Button",
+			"description": "Adds the tracker button to the level complete screen.",
+			"type": "bool",
+			"default": false
 		},
 		"enter-new-line":{
 			"type": "keybind",
