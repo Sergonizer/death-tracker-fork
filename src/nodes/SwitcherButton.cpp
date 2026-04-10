@@ -29,6 +29,7 @@ SwitcherButton* SwitcherButton::createWithSpriteFrameName(CCSize size, const std
 bool SwitcherButton::init(CCSize size, CCScale9Sprite* bgSpr, const std::vector<std::string>& options){
     mySpr = bgSpr;
     mySpr->setContentSize(size);
+    mySpr->setCascadeOpacityEnabled(true);
 
     this->options = options;
 
@@ -36,6 +37,7 @@ bool SwitcherButton::init(CCSize size, CCScale9Sprite* bgSpr, const std::vector<
 
     textLabel = CCLabelBMFont::create("", "goldFont.fnt");
     textLabel->setPosition(mySpr->getContentSize() / 2 + ccp(0, 1.5f));
+    textLabel->setCascadeOpacityEnabled(true);
     mySpr->addChild(textLabel);
 
     setTextForCurrentOption();

@@ -5,6 +5,7 @@
 #include <nodes/SimpleToggler.hpp>
 #include <nodes/DTLabel.hpp>
 #include <nodes/SessionSelector.hpp>
+#include <nodes/SwitcherButton.hpp>
 
 using namespace geode::prelude;
 
@@ -15,31 +16,53 @@ class ModifyOptions : public OptionsNode {
     private:
         virtual bool setup();
 
-        SimpleToggler* TypeToggler;
-
-        void onLevelView(CCObject*);
-        void onRunsView(CCObject*);
-        CCMenuItemSpriteExtra* from0ViewBtn;
-        CCMenuItemSpriteExtra* runViewBtn;
-
         DTLabel* myLabel;
 
         void update(float dt);
         ScrollLayer* previewScroll;
-        void updatePreviewName(bool categotyIsSession);
+        void updatePreviewName(bool categotyIsSession, bool f0State);
 
         void addPlusMinusBtns(CCNode* around, bool flip, geode::Function<void(bool isPlus)> callback, float scale);
         void onPlusMinusBtn(CCObject* sender);
         std::map<CCNode*, std::pair<CCMenuItemSpriteExtra*, CCMenuItemSpriteExtra*>> holdersOfPlusMinusBtns{};
         std::map<CCMenuItemSpriteExtra*, std::shared_ptr<geode::Function<void(bool isPlus)>>> plusMinusCallbacks{};
         CCScale9Sprite* previewBG;
+        CCScale9Sprite* selectionBG;
+        CCScale9Sprite* runsBG;
+        CCScale9Sprite* f0BG;
+        CCScale9Sprite* nbBG;
+
+        CCLabelBMFont* runLabel;
+        CCLabelBMFont* addRunSeperator;
+        CCLabelBMFont* runAmountLabel;
+        CCLabelBMFont* NBLabel;
+        CCLabelBMFont* f0AmountLabel;
+        CCLabelBMFont* f0Label;
+
+        TextInput* addNewBestInput;
+        TextInput* addPercentInput;
+        TextInput* f0AmountInput;
+        TextInput* addRunEndInput;
+        TextInput* addRunStartInput;
+        TextInput* runAmountInput;
 
         SessionSelector* sessionSelector;
         Scrollbar* scrollbar;
 
-        int currAmount = 1;
+        int currF0Amount = 1;
+        int currRunsAmount = 1;
 
-        TextInput* amountInput;
+        int currentF0ToAdd = 0;
+        
+        int currentStartRunToAdd = 0;
+        int currentEndRunToAdd = 0;
+
+        int currentNBToAdd = 0;
+
+        SwitcherButton* sessLvlSwitcher;
+
+        void removeNB(CCObject*);
+        void addNB(CCObject*);
 
     public:
         virtual void onOpened();

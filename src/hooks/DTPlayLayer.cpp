@@ -89,20 +89,6 @@ bool DTPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
                     StatsManager::scheduleCreateNewSession(true);
                     break;
                 }
-
-            // // reset session based on session.lastPlayed
-            // default: {
-            //         auto now = StatsManager::getNowSeconds();
-
-            //     // reset if the time since lastPlayed
-            //     // is longer than the session length
-            //     if (now - session->lastPlayed > sessionLength) {
-            //         m_fields->isSessionExpired = true;
-            //         StatsManager::scheduleCreateNewSession(true);
-            //     }
-
-            //     break;
-            // }
         }
     }
 

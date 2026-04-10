@@ -171,6 +171,8 @@ void DTLevelSpecificSettingsLayer::switchPage(CCObject* sender){
 
     auto senderNode = static_cast<CCNode*>(sender);
 
+    if (currentPage == pages[sender]) return;
+
     DTLevelSpecificSettingsLayer::sendUnderlineTo(senderNode);
 
     if (currentPage != nullptr)
