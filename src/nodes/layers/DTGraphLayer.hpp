@@ -49,8 +49,6 @@ class DTGraphLayer : public Popup, public TextInputDelegate, public GraphPointDe
         GraphHolder* graph;
 
         ScrollLayer* graphsScroll;
-        TextInput* runSelectInput;
-        SessionSelector* sessionSelector;
 
         void onAddGraph(CCObject*);
 
@@ -96,8 +94,4 @@ class DTGraphLayer : public Popup, public TextInputDelegate, public GraphPointDe
         std::set<GraphPointDisplay*, GraphPointDisplayPtrCompare> displays{};
 
         bool holdingShift;
-
-        FloatingList* runsFloatList;
-
-        void onRunSelectHelper(CCObject*);
     };

@@ -1,5 +1,4 @@
 #include "GraphHolder.hpp"
-#include <nodes/layers/DTLayer.hpp>
 
 GraphHolder* GraphHolder::create(const CCSize& scaling){
     auto ret = new GraphHolder();
@@ -311,18 +310,19 @@ void GraphHolder::addGraph(const DTGraphInfo& graph){
     CCSize size = (heigherCorner - lowerCorner - inGraphOffset);
 
     auto graphNode = DTGraphNode::create();
-    graphNode->selector = sessionSelector;
     graphNode->setInfo(graph);
     graphNode->delegate = delegate;
     graphNode->setScaling(size);
     graphContainer->addChild(graphNode);
     allGraphs.insert({graph.name, graphNode});
 }
+
 DTGraphNode* GraphHolder::getGraphNode(const std::string& graphName){
     if (!allGraphs.contains(graphName)) return nullptr;
 
     return allGraphs[graphName];
 }
+
 void GraphHolder::removeGraph(const std::string& graphName){
     if (!allGraphs.contains(graphName)) return;
 

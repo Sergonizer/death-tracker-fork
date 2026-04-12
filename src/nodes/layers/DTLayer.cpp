@@ -185,6 +185,7 @@ bool DTLayer::init(GJGameLevel* const& level) {
         "bigFont.fnt", 
         "GJ_button_04.png"
     );
+    groupsBtnSpr->setCascadeOpacityEnabled(true);
     groupsBtnSpr->setScale(.75f);
     groupsBtn = CCMenuItemSpriteExtra::create(
         groupsBtnSpr,
@@ -849,7 +850,7 @@ void DTLayer::updateStaticGroupings(){
     }  
 }
 
-bool DTLayer::createDeathsString(const Deaths& deaths, const stringCustomazations& custom, std::string& out, NewBests* const newBests, const std::string& newBestColoring, bool ignoreExtraSettings){
+bool DTLayer::createDeathsString(const Deaths& deaths, const stringCustomazations& custom, std::string& out, NewBests* const newBests, const ccColor3B& newBestColoring, bool ignoreExtraSettings){
     out = "";
     if (m_MyLevelStats.isErr()) return false;
     auto myMetadata = m_MyLevelStats.unwrap().metadata;
@@ -903,8 +904,8 @@ bool DTLayer::createDeathsString(const Deaths& deaths, const stringCustomazation
                 continue;
 
             if (newBests != nullptr && newBests->contains(runSplit.end)){
-                nbDeColor = "{\\color}";
-                nbColor = newBestColoring;
+                nbDeColor = "</wave></color>";
+                nbColor = fmt::format("<color={}><wave>", cc3bToHexString(newBestColoring));
             }
         }
 
@@ -931,9 +932,9 @@ bool DTLayer::createDeathsString(const Deaths& deaths, const stringCustomazation
         );
 
         //old coloring
-        //out += fmt::format("{}{}{}{}", nbColor, format, nbDeColor, custom.seperator);
-        auto toAdd = fmt::format("{}{}", format, custom.seperator);
-        out += toAdd;
+        out += fmt::format("{}{}{}{}", nbColor, format, nbDeColor, custom.seperator);
+        // auto toAdd = fmt::format("{}{}", format, custom.seperator);
+        // out += toAdd;
     }
 
     if (out == "")
@@ -2053,12 +2054,12 @@ void DTLayer::modifyNewBest(int percent, bool makeTrue, std::optional<int> sessi
 
     auto processBest = [&, percent, makeTrue](NewBests& bests) -> bool {
         if (makeTrue){
-            if (!bests.contains(percent)) return false;
+            if (bests.contains(percent)) return true;
 
             bests.insert(percent);
         }
         else{
-            if (bests.contains(percent)) return false;
+            if (!bests.contains(percent)) return true;
 
             bests.erase(percent);
         }
@@ -2184,7 +2185,7 @@ UpdateFuture DTLayer::onGeneralKey(){
     }
 
     std::string out;
-    if (!createDeathsString(sharedDeaths, Save::getFrom0Customazations(), out, &sharedNBs, "{nbc}"))
+    if (!createDeathsString(sharedDeaths, Save::getFrom0Customazations(), out, &sharedNBs, Save::getNewBestColor()))
         co_return Err("Failed to create from0 deaths string");
 
     co_return Ok(out);
@@ -2256,7 +2257,7 @@ UpdateFuture DTLayer::onS0Key(){
     co_await arc::yield();
 
     std::string out;
-    if (!createDeathsString(session.data.deaths, Save::getSessionF0Customazations(), out, &session.data.newBests, "{sbc}")) 
+    if (!createDeathsString(session.data.deaths, Save::getSessionF0Customazations(), out, &session.data.newBests, Save::getSessionBestColor()))
         co_return Err("Failed to create session from0 deaths string");
 
     co_return Ok(out);
@@ -2844,6 +2845,7 @@ void DTLayer::onGroupSelected(int const& id){
         opt.value().font.c_str(), 
         opt.value().BGTexture.c_str()
     );
+    newSpr->setCascadeOpacityEnabled(true);
     newSpr->setScale(.75f);
 
     groupsBtn->setSprite(newSpr);

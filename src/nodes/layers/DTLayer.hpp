@@ -128,7 +128,7 @@ class DTLayer : public Popup {
 
         std::set<DTLabel*> keyListeners{};
 
-        bool createDeathsString(const Deaths& deaths, const stringCustomazations& custom, std::string& out, NewBests* const newBests = nullptr, const std::string& newBestColoring = "", bool ignoreExtraSettings = false);
+        bool createDeathsString(const Deaths& deaths, const stringCustomazations& custom, std::string& out, NewBests* const newBests = nullptr, const ccColor3B& newBestColoring = {255, 255, 255}, bool ignoreExtraSettings = false);
 
         int currentSession;
 

@@ -69,7 +69,7 @@ bool DTGraphLayer::init() {
     graphOptionsPage->setScaleY(0);
     m_mainLayer->addChild(graphOptionsPage);
 
-    graphsScroll = ScrollLayer::create({70, m_size.height - 90});
+    graphsScroll = ScrollLayer::create({70, m_size.height - 40});
     graphsScroll->ignoreAnchorPointForPosition(false);
     graphsScroll->setAnchorPoint({.5f, 1});
     graphsScroll->m_contentLayer->setLayout(ColumnLayout::create()
@@ -89,95 +89,6 @@ bool DTGraphLayer::init() {
     scrollBG->setZOrder(-1);
     graphsPage->addChild(scrollBG);
 
-    auto SessionSelectionLabel = CCLabelBMFont::create("Session", "bigFont.fnt");
-    SessionSelectionLabel->setScale(0.3f);
-    SessionSelectionLabel->setPositionY(-graphsScroll->getContentHeight() - 5 - SessionSelectionLabel->getScaledContentHeight() / 2);
-    graphsPage->addChild(SessionSelectionLabel);
-
-    sessionSelector = SessionSelector::create(DTLayer::get()->getCurrentGrouping().grouping.size());
-    sessionSelector->setCurrentCount(DTLayer::get()->getCurrentSelectedSession());
-    sessionSelector->setScale(0.45f);
-    sessionSelector->setPositionY(SessionSelectionLabel->getPositionY() - SessionSelectionLabel->getScaledContentHeight() / 2 - sessionSelector->getScaledContentHeight() / 2);
-    sessionSelector->setCallback([&](auto _){
-        graph->sendUpdateToGraphOfType(DTGraphCoverage::SessionCover);
-        graph->sendUpdateToGraphOfType(DTGraphCoverage::SessionRunsCover);
-    });
-    graphsPage->addChild(sessionSelector);
-
-    graph->sessionSelector = sessionSelector;
-
-    auto runSelectInputLabel = CCLabelBMFont::create("Run Percent", "bigFont.fnt");
-    runSelectInputLabel->setScale(0.3f);
-    runSelectInputLabel->setPositionY(sessionSelector->getPositionY() - 5 - runSelectInputLabel->getScaledContentHeight() / 2 - sessionSelector->getScaledContentHeight() / 2);
-    graphsPage->addChild(runSelectInputLabel);
-
-    runSelectInput = TextInput::create(120, "Run %");
-    runSelectInput->setCommonFilter(CommonFilter::Uint);
-    runSelectInput->setScale(0.45f);
-    runSelectInput->setPositionY(runSelectInputLabel->getPositionY() - runSelectInput->getScaledContentHeight() / 2 - runSelectInputLabel->getScaledContentHeight() / 2);
-    runSelectInput->setCallback([&](const auto& newStr){
-        auto toNumRes = utils::numFromString<int>(newStr);
-        if (toNumRes.isErr()) return;
-        int num = toNumRes.unwrap();
-
-        if (num > 100){
-            runSelectInput->setString("100");
-            num = 100;
-        }
-
-        graph->setToAllGraphs([num](DTGraphNode* node){
-            node->runPercent = num;
-        });
-
-        graph->sendUpdateToGraphOfType(DTGraphCoverage::GeneralRunsCover);
-        graph->sendUpdateToGraphOfType(DTGraphCoverage::SessionRunsCover);
-    });
-    graphsPage->addChild(runSelectInput);
-
-    auto runSelectHelperTopSpr = CCSprite::createWithSpriteFrameName("edit_findBtn_001.png");
-    auto runSelectHelperSpr = ButtonSprite::create(
-        runSelectHelperTopSpr,
-        runSelectHelperTopSpr->getContentHeight(),
-        runSelectHelperTopSpr->getContentHeight(),
-        runSelectHelperTopSpr->getContentHeight(),
-        1.25f,
-        false,
-        "GJ_button_04.png",
-        true
-    );
-    runSelectHelperSpr->setScale(0.4f);
-    auto runSelectHelperBtn = CCMenuItemSpriteExtra::create(
-        runSelectHelperSpr,
-        this,
-        menu_selector(DTGraphLayer::onRunSelectHelper)
-    );
-    runSelectHelperBtn->setPosition(runSelectInput->getPosition() + ccp(runSelectInput->getScaledContentWidth() / 2 + 10, 0));
-    graphsPage->addChild(runSelectHelperBtn);
-
-    runsFloatList = FloatingList::create({runSelectInput->getScaledContentWidth(), 100});
-    runsFloatList->setPosition(runSelectInput->getPosition() + ccp(0, runSelectInput->getScaledContentHeight() / 2 + 5));
-    runsFloatList->setAnchorPoint({.5f, 0});
-
-    std::vector<FloatingListItem> runItems{};
-    if (DTLayer::get()->m_MyLevelStats.isOk()){
-        auto& levelStats = DTLayer::get()->m_MyLevelStats.unwrap();
-        for (const auto& run : levelStats.metadata.runsToShow)
-        {
-            runItems.push_back(FloatingListItem{
-                .id = run.first,
-                .text = fmt::format("{}%", run.first)
-            });
-        }
-    }
-
-    runsFloatList->addItems(runItems);
-    runsFloatList->setCallback([&](const int& id){
-        runSelectInput->setString(std::to_string(id), true);
-
-        runsFloatList->close();
-    });
-    graphsPage->addChild(runsFloatList);
-
     auto addGraphBtnSpr = CCSprite::createWithSpriteFrameName("GJ_plus3Btn_001.png");
     auto addGraphBtn = CCMenuItemSpriteExtra::create(
         addGraphBtnSpr,
@@ -194,7 +105,7 @@ bool DTGraphLayer::init() {
         addGraph(currGraph);
     }
 
-    auto sideTutorial = TutorialButton::create(.6f, "graphs-side", [&, runSelectInputLabel, SessionSelectionLabel](DTTutorialLayer* tl){
+    auto sideTutorial = TutorialButton::create(.6f, "graphs-side", [&](DTTutorialLayer* tl){
         tl->appendDialogue("This is where you can manage your graphs!", TutorialCharacterFace::TCFNormal)
             ->appendDialogue("These are the graphs you have available", TutorialCharacterFace::TCFNormal)
             ->joinTransform(TutorialBoxPlacement::TBPRight, .75f)
@@ -235,18 +146,13 @@ bool DTGraphLayer::init() {
             tl->joinHighlight(cell->getChildByID("type-switcher"));
             tl->joinHighlight(cell->getChildByID("type-label"));
         }
-        tl->appendDialogue("You can choose which session the session graphs show using this session switcher", TutorialCharacterFace::TCFNormal)
-            ->joinHighlight(sessionSelector)
-            ->joinHighlight(SessionSelectionLabel)
-            ->joinTransform(TutorialBoxPlacement::TBPBottomRight, .75f)
-            ->appendDialogue("And choose which run the run graphs would display using the run input!", TutorialCharacterFace::TCFNormal)
-            ->joinHighlight(runSelectInput)
-            ->joinHighlight(runSelectInputLabel)
-            ->appendDialogue("The number you input would be the starting percent of the run you wanna see!", TutorialCharacterFace::TCFNormal)
-            ->joinHighlight(runSelectInput)
-            ->joinHighlight(runSelectInputLabel)
-            ->appendDialogue("Thats about it! Enjoy using graphs!", TutorialCharacterFace::TCFNormal)
-            ->joinTransform(TutorialBoxPlacement::TBPCenter, 1);
+        // tl->appendDialogue("You can choose which session the session graphs show using this session switcher", TutorialCharacterFace::TCFNormal)
+        //     ->joinTransform(TutorialBoxPlacement::TBPBottomRight, .75f)
+        //     ->appendDialogue("And choose which run the run graphs would display using the run input!", TutorialCharacterFace::TCFNormal)
+        //     ->appendDialogue("The number you input would be the starting percent of the run you wanna see!", TutorialCharacterFace::TCFNormal)
+        //     ->joinHighlight(runSelectInput)
+        //     ->appendDialogue("Thats about it! Enjoy using graphs!", TutorialCharacterFace::TCFNormal)
+        //     ->joinTransform(TutorialBoxPlacement::TBPCenter, 1);
     });
     sideTutorial->setPositionX(-graphsScroll->getContentWidth() / 2 + 2.5f);
     graphsPage->addChild(sideTutorial);
@@ -723,13 +629,15 @@ void DTGraphLayer::addGraph(const DTGraphInfo& info){
         if (graphNode == nullptr){
             graphNode = graph->getGraphNode(cell->oldName);
             changeName = true;
-            
         }
 
         if (graphNode == nullptr) return;
 
         if (changeName)
             graph->changeGraphName(cell->oldName, cell->getinfo().name);
+
+        if (graphNode->getInfo().has_value() && cell->getinfo().coverage != graphNode->getInfo().value().coverage)
+            graphsScroll->m_contentLayer->updateLayout();
 
         graphNode->setInfo(cell->getinfo());
         saveAllGraphs();
@@ -764,9 +672,26 @@ void DTGraphLayer::addGraph(const DTGraphInfo& info){
         saveAllGraphs();
     };
 
+    graphCell->onNewSession = [&](GraphCell* cell, auto newSession){
+        auto graphNode = graph->getGraphNode(cell->getinfo().name);
+
+        graphNode->sessionToShow = std::move(newSession);
+
+        graphNode->updateDeaths();
+    };
+
+    graphCell->onNewRun = [&](GraphCell* cell, auto newRun){
+        auto graphNode = graph->getGraphNode(cell->getinfo().name);
+
+        graphNode->runPercent = newRun;
+
+        graphNode->updateDeaths();
+    };
+
     graphsScroll->m_contentLayer->addChild(graphCell);
 
     graph->addGraph(info);
+    graphCell->resendSession();
     
     graphsScroll->m_contentLayer->updateLayout();
 
@@ -824,14 +749,13 @@ void DTGraphLayer::openOptionsFor(GraphCell* cell){
     editedGraph = cell;
     graphsScroll->setTouchEnabled(false);
     graphsScroll->setMouseEnabled(false);
-    sessionSelector->setEnabled(false);
-    runSelectInput->setEnabled(false);
+    // sessionSelector->setEnabled(false);
+    // runSelectInput->setEnabled(false);
     for (const auto& child : CCArrayExt<GraphCell*>(graphsScroll->m_contentLayer->getChildren()))
     {
         child->setEnabled(false);
     }
     
-
     graphOptionsPage->setEnabled(true);
     nameInput->setEnabled(true);
     thicknessBaseInput->setEnabled(true);
@@ -968,8 +892,8 @@ void DTGraphLayer::closeOptionsTab(){
     ));
 
     graphsScroll->setTouchEnabled(true);
-    sessionSelector->setEnabled(true);
-    runSelectInput->setEnabled(true);
+    // sessionSelector->setEnabled(true);
+    // runSelectInput->setEnabled(true);
     for (const auto& child : CCArrayExt<GraphCell*>(graphsScroll->m_contentLayer->getChildren()))
     {
         child->setEnabled(true);
@@ -992,14 +916,5 @@ void DTGraphLayer::FLAlert_Clicked(FLAlertLayer* layer, bool btn2){
         editedGraph = std::nullopt;
 
         closeOptionsTab();
-    }
-}
-
-void DTGraphLayer::onRunSelectHelper(CCObject*){
-    if (runsFloatList->isOpened()){
-        runsFloatList->close();
-    }
-    else{
-        runsFloatList->open();
     }
 }

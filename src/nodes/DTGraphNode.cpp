@@ -65,7 +65,6 @@ void DTGraphNode::setInfo(const DTGraphInfo& info){
 void DTGraphNode::updateDeaths(){
     if (!this->info.has_value()) return;
 
-
     switch (this->info.value().coverage)
     {
     case DTGraphCoverage::GeneralCover :
@@ -344,23 +343,19 @@ void DTGraphNode::getGeneralRuns(){
 }
 
 void DTGraphNode::getSessionDeaths(){
-    auto sessionRes = DTLayer::get()->loadSessionFromSave(selector->getCurrentCount());
-
-    if (sessionRes.isErr()){
+    if (!sessionToShow.has_value()){
         this->deaths.clear();
         return;
     }
 
-    this->deaths = sessionRes.unwrap().data.deaths;
+    this->deaths = sessionToShow.value().data.deaths;
 }
 
 void DTGraphNode::getSessionRuns(){
-    auto sessionRes = DTLayer::get()->loadSessionFromSave(selector->getCurrentCount());
-
-    if (sessionRes.isErr()){
+    if (!sessionToShow.has_value()){
         this->deaths.clear();
         return;
     }
 
-    this->deaths = sessionRes.unwrap().data.runs;
+    this->deaths = sessionToShow.value().data.runs;
 }

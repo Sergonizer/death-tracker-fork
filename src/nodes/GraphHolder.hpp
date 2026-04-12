@@ -25,8 +25,6 @@ class GraphHolder : public CCNode {
 
         void setToAllGraphs(geode::Function<void(DTGraphNode*)> graphSetFunction);
 
-        SessionSelector* sessionSelector;
-
         void sendUpdateToGraphOfType(DTGraphCoverage coverage);
 
         GraphPointDelegate* delegate;

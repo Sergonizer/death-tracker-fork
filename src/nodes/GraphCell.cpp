@@ -1,5 +1,7 @@
 #include "GraphCell.hpp"
+
 #include <managers/StatsManager.hpp>
+#include <nodes/layers/DTLayer.hpp>
 
 GraphCell* GraphCell::create(float width, const DTGraphInfo& graphInfo){
     auto ret = new GraphCell();
@@ -19,11 +21,19 @@ bool GraphCell::init(float width, const DTGraphInfo& graphInfo){
 
     this->graphInfo = graphInfo;
 
-    auto bg = CCScale9Sprite::create("square01_001.png");
-    bg->setAnchorPoint({0, 0});
+    everythingParent = CCMenu::create();
+    everythingParent->setAnchorPoint({0, 1});
+    everythingParent->setPositionX(0);
+    this->addChild(everythingParent);
+
+    bg = CCScale9Sprite::create("square01_001.png");
+    bg->setAnchorPoint({0, 1});
     bg->setScale(.2f);
     bg->setContentSize((this->getContentSize() - ccp(0, 2.5f)) / bg->getScale());
-    this->addChild(bg);
+    bg->setPositionY(bg->getScaledContentHeight());
+    everythingParent->addChild(bg);
+
+    everythingParent->setContentSize(bg->getScaledContentSize());
 
     label = SimpleTextArea::create(graphInfo.name, "bigFont.fnt");
     label->setScale(.25f);
@@ -31,7 +41,7 @@ bool GraphCell::init(float width, const DTGraphInfo& graphInfo){
     label->setPosition(ccp(0 + 3, this->getContentHeight() - 5));
     label->setWidth(width - 10);
     label->setAlignment(CCTextAlignment::kCCTextAlignmentLeft);
-    this->addChild(label);
+    everythingParent->addChild(label);
 
     outerColor = CCSprite::create("circle.png");
     outerColor->setColor({graphInfo.outlineColor.r, graphInfo.outlineColor.g, graphInfo.outlineColor.b});
@@ -67,13 +77,13 @@ bool GraphCell::init(float width, const DTGraphInfo& graphInfo){
     enableToggleBtn->setCallback([&](auto state){
         setEnabledInfo(state, false, true);
     });
-    this->addChild(enableToggleBtn);
+    everythingParent->addChild(enableToggleBtn);
 
     auto bgCircle = CCSprite::create("circle.png");
     bgCircle->setColor({0,0,0});
     bgCircle->setPosition(enableToggleBtn->getPosition());
     bgCircle->setScale(1.7f);
-    this->addChild(bgCircle);
+    everythingParent->addChild(bgCircle);
 
     this->setZOrder(graphInfo.orderPos);
 
@@ -90,7 +100,7 @@ bool GraphCell::init(float width, const DTGraphInfo& graphInfo){
         width - arrowDown->getContentWidth() / 2 - 4,
         10
     });
-    this->addChild(arrowDown);
+    everythingParent->addChild(arrowDown);
 
     auto arrowUpSpr = CCSprite::createWithSpriteFrameName("GJ_arrow_01_001.png");
     arrowUpSpr->setScale(.2f);
@@ -105,7 +115,7 @@ bool GraphCell::init(float width, const DTGraphInfo& graphInfo){
         arrowDown->getPositionX(),
         arrowDown->getPositionY() + arrowUp->getContentHeight() / 2 + arrowDown->getContentHeight() / 2 + 1
     });
-    this->addChild(arrowUp);
+    everythingParent->addChild(arrowUp);
 
     auto settingBtnSpr = CCSprite::createWithSpriteFrameName("GJ_optionsBtn_001.png");
     settingBtnSpr->setScale(.25f);
@@ -117,7 +127,7 @@ bool GraphCell::init(float width, const DTGraphInfo& graphInfo){
     settingBtn->setID("settings-btn");
     settingBtn->setScale(12 / settingBtn->getContentHeight());
     settingBtn->setPosition({enableToggleBtn->getPositionX(), enableToggleBtn->getPositionY() - enableToggleBtn->getContentHeight() / 2 - settingBtn->getContentHeight() / 2});
-    this->addChild(settingBtn);
+    everythingParent->addChild(settingBtn);
 
     typeSwitcher = OptionSwitcher<DTGraphType>::create(90, {
         {DTGraphType::Passrate, "Passrate"},
@@ -132,7 +142,7 @@ bool GraphCell::init(float width, const DTGraphInfo& graphInfo){
         setType(value);
     });
     typeSwitcher->setValue(graphInfo.type, false);
-    this->addChild(typeSwitcher);
+    everythingParent->addChild(typeSwitcher);
     
     auto typeSwitcherLabel = CCLabelBMFont::create("Type:", "bigFont.fnt");
     typeSwitcherLabel->setScale(.25f);
@@ -141,7 +151,91 @@ bool GraphCell::init(float width, const DTGraphInfo& graphInfo){
         typeSwitcher->getScaledContentHeight() + typeSwitcherLabel->getScaledContentHeight() / 2
     ));
     typeSwitcherLabel->setID("type-label");
-    this->addChild(typeSwitcherLabel); 
+    everythingParent->addChild(typeSwitcherLabel);
+
+    extrasContainer = CCNode::create();
+    extrasContainer->setContentSize({width / 1.2f, 80});
+    extrasContainer->setPosition({0, 0});
+    extrasContainer->setLayout(SimpleAxisLayout::create(Axis::Column)
+        ->setMainAxisAlignment(MainAxisAlignment::Start)
+        ->setCrossAxisScaling(AxisScaling::None)
+        ->setMainAxisScaling(AxisScaling::Scale)
+    );
+    extrasContainer->setAnchorPoint({.5f, 1});
+    extrasContainer->setPositionX(width / 2);
+    everythingParent->addChild(extrasContainer);
+
+    sessionContainer = CCNode::create();
+    sessionContainer->setVisible(false);
+    extrasContainer->addChild(sessionContainer);
+    
+    sessionSelectorLabel = CCLabelBMFont::create("Session", "bigFont.fnt");
+    sessionSelectorLabel->setScale(.4f);
+    sessionSelectorLabel->setAnchorPoint({.5f, 1});
+    sessionContainer->addChild(sessionSelectorLabel);
+
+    sessionSelector = SessionSelector::create(DTLayer::get()->sessionSelector->getMaximumCount());
+    sessionSelector->setEnabled(false);
+    sessionSelector->setScale(.45f);
+    sessionSelector->setAnchorPoint({.5f, 0});
+    sessionSelector->setCallback([&](auto sessionIndex){
+        sendNewSession(sessionIndex);
+    });
+    sessionContainer->addChild(sessionSelector);
+
+    sessionContainer->setContentSize({width, sessionSelector->getScaledContentHeight() + sessionSelectorLabel->getScaledContentHeight() + 5});
+    sessionSelectorLabel->setPosition({
+        sessionContainer->getContentWidth() / 2,
+        sessionContainer->getContentHeight()
+    });
+    sessionSelector->setPosition({
+        sessionContainer->getContentWidth() / 2,
+        0
+    });
+
+    runContainer = CCMenu::create();
+    runContainer->setVisible(false);
+    extrasContainer->addChild(runContainer);
+    
+    runLabel = CCLabelBMFont::create("Run Start %", "bigFont.fnt");
+    runLabel->setScale(.3f);
+    runLabel->setAnchorPoint({.5f, 1});
+    runContainer->addChild(runLabel);
+
+    runInput = TextInput::create(width / 1.1f, "run%");
+    runInput->setEnabled(false);
+    runInput->setScale(.7f);
+    runInput->setAnchorPoint({.5f, 0});
+    runInput->setCommonFilter(CommonFilter::Uint);
+    runInput->setCallback([&](auto str){
+        auto numRes = utils::numFromString<int>(str);
+        int num = 0;
+        if (numRes.isOk())
+            num = numRes.unwrap();
+
+        if (num > 100){
+            num = 100;
+            runInput->setString("100");
+        }
+        
+        if (onNewRun != NULL)
+            onNewRun(this, num);
+    });
+    runContainer->addChild(runInput);
+
+    runContainer->setContentSize({width, runInput->getScaledContentHeight() + runLabel->getScaledContentHeight() + 5});
+    runLabel->setPosition({
+        runContainer->getContentWidth() / 2,
+        runContainer->getContentHeight()
+    });
+    runInput->setPosition({
+        runContainer->getContentWidth() / 2,
+        0
+    });
+
+    extrasContainer->updateLayout();
+
+    checkForOptVisibilityChange();
 
     return true;
 }
@@ -175,6 +269,7 @@ bool GraphCell::setName(const std::string& name){
 }
 void GraphCell::setCoverage(DTGraphCoverage coverage){
     graphInfo.coverage = coverage;
+    checkForOptVisibilityChange();
     onInfoChanged(true);
 }
 void GraphCell::setType(DTGraphType type){
@@ -231,4 +326,96 @@ void GraphCell::deleteMe(){
     this->removeMeAndCleanup();
     
     onDeleted(graphInfo);
+}
+
+void GraphCell::setSessionOptionsVisible(bool visible){
+    int sizeScaler = 0;
+
+    if (visible && !sessionContainer->isVisible()){
+        sessionContainer->setVisible(true);
+
+        sizeScaler = 1;
+    }
+    else if (!visible && sessionContainer->isVisible()){
+        sessionContainer->setVisible(false);
+
+        sizeScaler = -1;
+    }
+
+    extrasContainer->updateLayout();
+
+    if (sizeScaler != 0)
+        this->setContentHeight(
+            this->getContentHeight() +
+            sessionContainer->getScaledContentHeight() * sizeScaler
+        );
+
+    everythingParent->setPositionY(this->getContentHeight() - everythingParent->getScaledContentHeight());
+    bg->setContentSize((this->getContentSize() + ccp(0, 2.5f)) / bg->getScale());
+}
+void GraphCell::setRunOptionsVisible(bool visible){
+    int sizeScaler = 0;
+
+    if (visible && !runContainer->isVisible()){
+        runContainer->setVisible(true);
+
+        sizeScaler = 1;
+
+    }
+    else if (!visible && runContainer->isVisible()){
+        runContainer->setVisible(false);
+        
+        sizeScaler = -1;
+    }
+
+    extrasContainer->updateLayout();
+
+    if (sizeScaler != 0)
+        this->setContentHeight(
+            this->getContentHeight() +
+            runContainer->getScaledContentHeight() * sizeScaler
+        );
+
+    everythingParent->setPositionY(this->getContentHeight() - everythingParent->getScaledContentHeight());
+    bg->setContentSize((this->getContentSize() + ccp(0, 2.5f)) / bg->getScale());
+}
+
+void GraphCell::checkForOptVisibilityChange(){
+    bool makeSessionVisible = true;
+    bool makeRunVisible = true;
+
+    if (graphInfo.coverage == DTGraphCoverage::GeneralCover){
+        makeSessionVisible = false;
+        makeRunVisible = false;
+    }
+    else if (graphInfo.coverage == DTGraphCoverage::GeneralRunsCover){
+        makeSessionVisible = false;
+    }
+    else if (graphInfo.coverage == DTGraphCoverage::SessionCover){
+        makeRunVisible = false;
+    }
+
+    setSessionOptionsVisible(makeSessionVisible);
+    setRunOptionsVisible(makeRunVisible);
+}
+
+void GraphCell::sendNewSession(int index){
+    if (!(graphInfo.coverage == DTGraphCoverage::SessionCover || graphInfo.coverage == DTGraphCoverage::SessionRunsCover)) return;
+
+    auto session = DTLayer::get()->loadSessionFromSave(index);
+    std::optional<Session> sessionOpt = session.isOk() ? std::make_optional(session.unwrap()) : std::nullopt;
+    
+    if (onNewSession != NULL)
+        onNewSession(this, std::move(sessionOpt));
+}
+
+void GraphCell::resendSession(){
+    sendNewSession(sessionSelector->getCurrentCount());
+}
+
+void GraphCell::setEnabled(bool value){
+    CCMenu::setEnabled(value);
+
+    runInput->setEnabled(value);
+    sessionSelector->setEnabled(value);
 }

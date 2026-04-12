@@ -6,6 +6,7 @@
 #include <utils/CCResizeWidthTo.hpp>
 #include <utils/CCTextAreaTintTo.hpp>
 #include <utils/CCTextAreaFadeTo.hpp>
+#include <utils/CCWaveAction.hpp>
 
 #include <regex>
 #include <arc/task/Yield.hpp>
@@ -69,7 +70,7 @@ bool DTLabel::init(const DTLabelInfo& info){
     labelTextContainer->setZOrder(1);
     this->addChild(labelTextContainer);
 
-    labelText = SimpleTextArea::create("", info.font, info.scale);
+    labelText = RichTextArea::create("", info.font, info.scale);
     labelText->setID("text");
     labelText->setAnchorPoint({.5f, 1});
     labelText->setAlignment(info.horizontalAlignment);
@@ -77,6 +78,48 @@ bool DTLabel::init(const DTLabelInfo& info){
     labelText->setWidth(this->getContentWidth() - textCornerOffset);
     setLabelText(info.text);
     labelTextContainer->addChild(labelText);
+
+    labelText->registerRichTextKey(std::make_shared<RichTextKey<std::tuple<float, float, float, float>>>(
+        "wave",
+        [](std::string value) -> Result<std::tuple<float, float, float, float>> {
+            float speed = 1;
+            float distanceY = 5;
+            float distanceX = 0;
+            float offsetPerIndex = .3f;
+
+            auto splitStr = utils::string::split(value, ",");
+            if (splitStr.size() >= 1){
+                auto speedRes = geode::utils::numFromString<float>(splitStr[0]);
+                if (speedRes.isOk()) speed = speedRes.unwrap();
+            }
+            if (splitStr.size() >= 2){
+                auto distanceYRes = geode::utils::numFromString<float>(splitStr[1]);
+                if (distanceYRes.isOk()) distanceY = distanceYRes.unwrap();
+            }
+            if (splitStr.size() >= 3){
+                auto distanceXRes = geode::utils::numFromString<float>(splitStr[2]);
+                if (distanceXRes.isOk()) distanceX = distanceXRes.unwrap();
+            }
+            if (splitStr.size() >= 4){
+                auto offsetPerIndexRes = geode::utils::numFromString<float>(splitStr[3]);
+                if (offsetPerIndexRes.isOk()) offsetPerIndex = offsetPerIndexRes.unwrap();
+            }
+
+            return Ok(std::make_tuple(speed, distanceY, distanceX, offsetPerIndex));
+        },
+        [](std::tuple<float, float, float, float> const& value, cocos2d::CCFontSprite* sprite, int localIndex, int charIndex) {
+            sprite->runAction(
+                CCRepeatForever::create(
+                    CCWaveAction::create(
+                        std::get<0>(value),
+                        std::get<2>(value),
+                        std::get<1>(value),
+                        std::get<3>(value) * localIndex
+                    )
+                )
+            );
+        }
+    ));
 
     auto textHeight = 0.0f;
     if (!info.isExpanded) textHeight = 0;
@@ -589,7 +632,7 @@ arc::Future<std::optional<std::string>> DTLabel::modifyKeys(){
     auto text = co_await async::waitForMainThread<std::string>([self = this]() -> std::string {
         if (!self) return "";
         self->loadingCircle->setVisible(true);
-        return self->labelText->getText();
+        return self->labelText->getRawText();
     });
     if (!text.has_value()) {
         co_return std::nullopt;

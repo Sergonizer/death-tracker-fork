@@ -23,7 +23,7 @@ class DTGraphNode : public CCNode {
             return info;
         };
 
-        SessionSelector* selector = nullptr;
+        std::optional<Session> sessionToShow = std::nullopt;
 
         int runPercent;
 

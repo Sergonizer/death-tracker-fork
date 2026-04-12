@@ -4,6 +4,7 @@
 #include <types/DTTypes.hpp>
 #include <nodes/SimpleToggler.hpp>
 #include <nodes/OptionSwitcher.hpp>
+#include <nodes/SessionSelector.hpp>
 
 using namespace geode::prelude;
 
@@ -23,6 +24,9 @@ class GraphCell : public CCMenu {
         geode::Function<bool(const std::string&, GraphCell*)> canChangeNameTo;
 
         geode::Function<void(DTGraphInfo)> onDeleted;
+        
+        geode::Function<void(GraphCell* cell, std::optional<Session>)> onNewSession = NULL;
+        geode::Function<void(GraphCell* cell, int)> onNewRun = NULL;
 
         std::string oldName;
 
@@ -40,13 +44,18 @@ class GraphCell : public CCMenu {
         void onInfoChanged(bool updateGraph);
 
         void setEnabledInfo(bool b, bool changeToggler, bool callback);
+        void setEnabled(bool value);
         
         void deleteMe();
+
+        void resendSession();
 
     private:
         bool init(float width, const DTGraphInfo& graphInfo);
         
-        DTGraphInfo graphInfo;        
+        DTGraphInfo graphInfo; 
+        
+        CCScale9Sprite* bg;
 
         OptionSwitcher<DTGraphType>* typeSwitcher;
         SimpleToggler* enableToggleBtn;
@@ -54,7 +63,25 @@ class GraphCell : public CCMenu {
         CCSprite* outerColor;
         CCSprite* innerColor;
 
+        CCMenu* everythingParent;
+
         void onArrowUp(CCObject*);
         void onArrowDown(CCObject*);
         void onOptions(CCObject*);
+
+        void checkForOptVisibilityChange();
+
+        void setSessionOptionsVisible(bool visible);
+        void setRunOptionsVisible(bool visible);
+
+        CCNode* sessionContainer;
+        CCMenu* runContainer;
+        CCLabelBMFont* sessionSelectorLabel;
+        SessionSelector* sessionSelector;
+        CCLabelBMFont* runLabel;
+        TextInput* runInput;
+
+        CCNode* extrasContainer;
+
+        void sendNewSession(int index);
 };
