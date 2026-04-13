@@ -5,13 +5,6 @@
 
 using namespace geode::prelude;
 
-// TODO NEXT TIME:
-//  
-//
-//
-//
-//
-
 class StatsManager {
 private:
     static std::set<std::string> m_playedLevels;

@@ -112,18 +112,20 @@ void ImportPopup::onFromDT(CCObject*){
             if (!pickOpt.has_value()) return;
             auto pick = pickOpt.value();
 
-            auto zipRes = file::Unzip::create(pick);
-            if (zipRes.isErr()){
-                log::error("{}", zipRes.unwrapErr());
+            file::createDirectory(StatsManager::m_savesFolderPath / "importTemp");
+
+            auto res = file::Unzip::intoDir(pick, StatsManager::m_savesFolderPath / "importTemp");
+
+            if (res.isErr()){
+                log::error("{}", res.unwrapErr());
+                Notification::create("Failed to unzip file!", NotificationIcon::Error)->show();
+                std::filesystem::remove_all(StatsManager::m_savesFolderPath / "importTemp");
                 return;
             }
-            auto zip = std::move(zipRes).unwrap();
-
-            for (const auto& entry : zip.getEntries())
-            {
-                log::info("{}", entry.string());
-            }
             
+            auto importRes = StatsManager::importFrom(StatsManager::m_savesFolderPath / "importTemp");
+
+            std::filesystem::remove_all(StatsManager::m_savesFolderPath / "importTemp");
         }
     );
 }
