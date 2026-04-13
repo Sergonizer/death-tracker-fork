@@ -1,4 +1,5 @@
 #include "ImportPopup.hpp"
+#include <nodes/layers/DTLayer.hpp>
 
 ImportPopup* ImportPopup::create() {
     auto ret = new ImportPopup();
@@ -85,8 +86,75 @@ bool ImportPopup::init() {
 }
 
 void ImportPopup::onFromDT(CCObject*){
+    auto dtLayer = DTLayer::get();
+    if (dtLayer == nullptr || dtLayer->m_MyLevelStats.isErr()) return;
 
+    fileListener.spawn(
+        file::pick(file::PickMode::OpenFile, file::FilePickOptions{
+            .filters = {
+                file::FilePickOptions::Filter{
+                    .description = "Death Tracker file",
+                    .files = {
+                        "*.dt"
+                    }
+                }
+            }
+        }),
+        [&](file::PickResult result){
+            auto dtLayer = DTLayer::get();
+            if (dtLayer == nullptr || dtLayer->m_MyLevelStats.isErr()) return;
+
+            if (result.isErr()){
+                log::error("{}", result.unwrapErr());
+                return;
+            }
+            auto pickOpt = result.unwrap();
+            if (!pickOpt.has_value()) return;
+            auto pick = pickOpt.value();
+
+            auto zipRes = file::Unzip::create(pick);
+            if (zipRes.isErr()){
+                log::error("{}", zipRes.unwrapErr());
+                return;
+            }
+            auto zip = std::move(zipRes).unwrap();
+
+            for (const auto& entry : zip.getEntries())
+            {
+                log::info("{}", entry.string());
+            }
+            
+        }
+    );
 }
 void ImportPopup::onFromText(CCObject*){
-    
+    auto dtLayer = DTLayer::get();
+    if (dtLayer == nullptr || dtLayer->m_MyLevelStats.isErr()) return;
+
+    fileListener.spawn(
+        file::pick(file::PickMode::OpenFile, file::FilePickOptions{
+            .filters = {
+                file::FilePickOptions::Filter{
+                    .description = "Text file",
+                    .files = {
+                        "*.txt"
+                    }
+                }
+            }
+        }),
+        [&](file::PickResult result){
+            auto dtLayer = DTLayer::get();
+            if (dtLayer == nullptr || dtLayer->m_MyLevelStats.isErr()) return;
+
+            if (result.isErr()){
+                log::error("{}", result.unwrapErr());
+                return;
+            }
+            auto pickOpt = result.unwrap();
+            if (!pickOpt.has_value()) return;
+            auto pick = pickOpt.value();
+
+
+        }
+    );
 }

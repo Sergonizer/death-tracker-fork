@@ -364,10 +364,22 @@ void SaveOptions::saveToDT(){
 
             auto zip = std::move(zipFileRes).unwrap();
 
-            auto didFileWrite = zip.addAllFrom(toZip);
-            if (didFileWrite.isErr()){
-                Notification::create("Failed to write zip file!", NotificationIcon::Error)->show();
-                return;
+            for (const auto& entry : std::filesystem::directory_iterator(toZip)) {
+                Result<> didFileWrite = Err("");
+                
+                if (entry.path().filename() == "backups") continue;
+
+                if (std::filesystem::is_directory(entry)){
+                    didFileWrite = zip.addAllFrom(entry);
+                }
+                else {
+                    didFileWrite = zip.addFrom(entry);
+                }
+
+                if (didFileWrite.isErr()){
+                    Notification::create("Failed to write zip file!", NotificationIcon::Error)->show();
+                    return;
+                }
             }
         }
     );
