@@ -22,7 +22,7 @@ bool GraphCell::init(float width, const DTGraphInfo& graphInfo){
     this->graphInfo = graphInfo;
 
     everythingParent = CCMenu::create();
-    everythingParent->setAnchorPoint({0, 1});
+    everythingParent->setAnchorPoint({0, 0});
     everythingParent->setPositionX(0);
     this->addChild(everythingParent);
 
@@ -233,6 +233,53 @@ bool GraphCell::init(float width, const DTGraphInfo& graphInfo){
         0
     });
 
+    auto runSelectHelperTopSpr = CCSprite::createWithSpriteFrameName("edit_findBtn_001.png");
+    auto runSelectHelperSpr = ButtonSprite::create(
+        runSelectHelperTopSpr,
+        runSelectHelperTopSpr->getContentHeight(),
+        runSelectHelperTopSpr->getContentHeight(),
+        runSelectHelperTopSpr->getContentHeight(),
+        1.25f,
+        false,
+        "GJ_button_04.png",
+        true
+    );
+    runSelectHelperSpr->setScale(0.4f);
+    auto runSelectHelperBtn = CCMenuItemSpriteExtra::create(
+        runSelectHelperSpr,
+        this,
+        menu_selector(GraphCell::onRunSelectHelper)
+    );
+    runSelectHelperBtn->setPosition(runInput->getPosition() + ccp(runInput->getScaledContentWidth() / 2 + 1, runInput->getScaledContentHeight() / 2));
+    runContainer->addChild(runSelectHelperBtn);
+
+    runInput->setPositionX(runInput->getPositionX() - runSelectHelperBtn->getContentWidth() / 2 - 1);
+
+    runsFloatList = FloatingList::create({runInput->getScaledContentWidth(), 100});
+    runsFloatList->setPosition(runInput->getPosition() + ccp(0, runInput->getScaledContentHeight() + 5));
+    runsFloatList->setAnchorPoint({.5f, 0});
+    runsFloatList->setZOrder(2);
+
+    std::vector<FloatingListItem> runItems{};
+    if (DTLayer::get()->m_MyLevelStats.isOk()){
+        auto& levelStats = DTLayer::get()->m_MyLevelStats.unwrap();
+        for (const auto& run : levelStats.metadata.runsToShow)
+        {
+            runItems.push_back(FloatingListItem{
+                .id = run.first,
+                .text = fmt::format("{}%", run.first)
+            });
+        }
+    }
+
+    runsFloatList->addItems(runItems);
+    runsFloatList->setCallback([&](const int& id){
+        runInput->setString(std::to_string(id), true);
+
+        runsFloatList->close();
+    });
+    runContainer->addChild(runsFloatList);
+
     extrasContainer->updateLayout();
 
     checkForOptVisibilityChange();
@@ -418,4 +465,13 @@ void GraphCell::setEnabled(bool value){
 
     runInput->setEnabled(value);
     sessionSelector->setEnabled(value);
+}
+
+void GraphCell::onRunSelectHelper(CCObject*){
+    if (runsFloatList->isOpened()){
+        runsFloatList->close();
+    }
+    else{
+        runsFloatList->open();
+    }
 }

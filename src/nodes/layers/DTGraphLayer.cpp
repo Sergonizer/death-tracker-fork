@@ -692,6 +692,8 @@ void DTGraphLayer::addGraph(const DTGraphInfo& info){
 
     graph->addGraph(info);
     graphCell->resendSession();
+    graphCell->setEnabled(true);
+    graphCell->setAnchorPoint({.5f, 1});
     
     graphsScroll->m_contentLayer->updateLayout();
 

@@ -5,6 +5,7 @@
 #include <nodes/SimpleToggler.hpp>
 #include <nodes/OptionSwitcher.hpp>
 #include <nodes/SessionSelector.hpp>
+#include <nodes/FloatingList.hpp>
 
 using namespace geode::prelude;
 
@@ -84,4 +85,8 @@ class GraphCell : public CCMenu {
         CCNode* extrasContainer;
 
         void sendNewSession(int index);
+
+        FloatingList* runsFloatList;
+
+        void onRunSelectHelper(CCObject*);
 };
