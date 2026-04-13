@@ -3,6 +3,7 @@
 #include <nodes/layers/DTLevelSpecificSettingsLayer.hpp>
 #include <utils/Dev.hpp>
 #include <nodes/layers/CreateBackupPopup.hpp>
+#include <nodes/layers/ImportPopup.hpp>
 
 /*
 -- auto backup settings --
@@ -315,9 +316,59 @@ void SaveOptions::updateBackupsList(){
 }
 
 void SaveOptions::onExport(CCObject*){
-
+    saveToDT();
 }
 
 void SaveOptions::onImport(CCObject*){
+    ImportPopup::create()->show();
+}
 
+void SaveOptions::saveToDT(){
+    auto dtLayer = DTLayer::get();
+    if (dtLayer == nullptr || dtLayer->m_MyLevelStats.isErr()) return;
+
+    filepicklistener.spawn(
+        file::pick(file::PickMode::SaveFile, file::FilePickOptions{
+            .defaultPath = dtLayer->m_MyLevelStats.unwrap().metadata.levelName + ".dt",
+            .filters = {
+                file::FilePickOptions::Filter{
+                    .description = "Death Tracker file",
+                    .files = {
+                        "*.dt"
+                    }
+                }
+            }
+        }),
+        [&](file::PickResult result){
+            auto dtLayer = DTLayer::get();
+            if (dtLayer == nullptr || dtLayer->m_MyLevelStats.isErr()) return;
+
+            if (result.isErr()){
+                log::error("{}", result.unwrapErr());
+                return;
+            }
+            auto pickOpt = result.unwrap();
+            if (!pickOpt.has_value()) return;
+            auto pick = pickOpt.value();
+
+            pick = pick.replace_extension(".dt");
+
+            auto toZip = StatsManager::m_savesFolderPath / dtLayer->m_MyLevelStats.unwrap().levelKey;
+
+            auto zipFileRes = geode::utils::file::Zip::create(pick);
+            if (zipFileRes.isErr()){
+                Notification::create("Failed to create zip file!", NotificationIcon::Error)->show();
+                log::error("{}", zipFileRes.unwrapErr());
+                return;
+            }
+
+            auto zip = std::move(zipFileRes).unwrap();
+
+            auto didFileWrite = zip.addAllFrom(toZip);
+            if (didFileWrite.isErr()){
+                Notification::create("Failed to write zip file!", NotificationIcon::Error)->show();
+                return;
+            }
+        }
+    );
 }

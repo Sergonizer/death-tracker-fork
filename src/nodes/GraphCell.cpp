@@ -156,6 +156,7 @@ bool GraphCell::init(float width, const DTGraphInfo& graphInfo){
     extrasContainer = CCNode::create();
     extrasContainer->setContentSize({width / 1.2f, 80});
     extrasContainer->setPosition({0, 0});
+    extrasContainer->setZOrder(2);
     extrasContainer->setLayout(SimpleAxisLayout::create(Axis::Column)
         ->setMainAxisAlignment(MainAxisAlignment::Start)
         ->setCrossAxisScaling(AxisScaling::None)
@@ -258,7 +259,6 @@ bool GraphCell::init(float width, const DTGraphInfo& graphInfo){
     runsFloatList = FloatingList::create({runInput->getScaledContentWidth(), 100});
     runsFloatList->setPosition(runInput->getPosition() + ccp(0, runInput->getScaledContentHeight() + 5));
     runsFloatList->setAnchorPoint({.5f, 0});
-    runsFloatList->setZOrder(2);
 
     std::vector<FloatingListItem> runItems{};
     if (DTLayer::get()->m_MyLevelStats.isOk()){
