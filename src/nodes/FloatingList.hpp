@@ -12,7 +12,7 @@ struct FloatingListItem {
     std::string BGTexture = "GJ_button_01.png";
 };
 
-class FloatingList : public CCNode {
+class FloatingList : public CCNode, public CCTouchDelegate {
     public:
         static FloatingList* create(CCSize const& size, bool startOpen = false);
 
@@ -39,6 +39,8 @@ class FloatingList : public CCNode {
 
         void setItemEnabled(bool isEnabled);
 
+        bool ccTouchBegan(CCTouch *pTouch, CCEvent *pEvent);
+
         std::map<CCMenuItemSpriteExtra*, FloatingListItem> itemIds{};
 
         ScrollLayer* scrollLayer;
@@ -49,4 +51,8 @@ class FloatingList : public CCNode {
         float elementOffset = 5;
 
         bool isOpen = false;
+
+        CCNode* clickArea;
+
+        ~FloatingList();
 };

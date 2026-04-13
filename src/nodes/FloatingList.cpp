@@ -12,6 +12,7 @@ FloatingList* FloatingList::create(CCSize const& size, bool startOpen){
 }
 
 bool FloatingList::init(CCSize const& size, bool startOpen){
+    CCTouchDispatcher::get()->addPrioTargetedDelegate(this, 0, false);
     if (!CCNode::init()) return false;
 
     this->isOpen = startOpen;
@@ -52,6 +53,15 @@ bool FloatingList::init(CCSize const& size, bool startOpen){
     scrollbar->setPositionY(scrollLayer->getContentHeight() / 2);
     scrollbar->setScaleY(0);
     this->addChild(scrollbar);
+
+    clickArea = CCNode::create();
+    clickArea->setPosition(scrollLayer->getContentSize() / 2);
+    clickArea->setAnchorPoint({.5f, .5f});
+    clickArea->setContentSize(size + ccp(
+        40,
+        40
+    ));
+    this->addChild(clickArea);
     
     scrollbar->setTouchEnabled(startOpen);
 
@@ -84,7 +94,7 @@ void FloatingList::addItem(const FloatingListItem& text){
     });
     buttonItem->setPosition(menu->getContentSize() / 2);
 
-    auto itemBG = CCScale9Sprite::create("square02_001.png");
+    auto itemBG = CCScale9Sprite::create("square02_small.png");
     itemBG->setContentSize(menu->getContentSize());
     itemBG->setOpacity(150);
     itemBG->setPosition(menu->getContentSize() / 2);
@@ -168,4 +178,24 @@ std::optional<FloatingListItem> FloatingList::getItemForID(int id){
     }
     
     return std::nullopt;
+}
+
+bool FloatingList::ccTouchBegan(CCTouch *pTouch, CCEvent *pEvent){
+    auto area = clickArea->convertTouchToNodeSpace(pTouch);
+
+    if (isOpen){
+        if (!(area.x >= 0 && 
+            area.y >= 0 && 
+            area.x <= clickArea->getContentWidth() && 
+            area.y <= clickArea->getContentHeight()
+        )){
+            close();
+        }
+    }
+    
+    return false;
+}
+
+FloatingList::~FloatingList(){
+    CCTouchDispatcher::get()->removeDelegate(this);
 }
