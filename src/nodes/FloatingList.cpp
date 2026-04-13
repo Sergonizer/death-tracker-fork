@@ -32,7 +32,7 @@ bool FloatingList::init(CCSize const& size, bool startOpen){
     );
     scrollLayer->setScaleY(startOpen ? 1 : 0);
 
-    auto listBG = CCScale9Sprite::create("square02_001.png");
+    auto listBG = CCScale9Sprite::create("square02_small.png");
     listBG->setContentSize(size);
     listBG->setOpacity(100);
     listBG->setPosition(size / 2);
@@ -48,9 +48,10 @@ bool FloatingList::init(CCSize const& size, bool startOpen){
 
     scrollbar = Scrollbar::create(scrollLayer);
     scrollbar->ignoreAnchorPointForPosition(false);
-    scrollbar->setPositionX(scrollLayer->getContentWidth() - 4);
+    scrollbar->setPositionX(scrollLayer->getContentWidth() + 4);
     scrollbar->setPositionY(scrollLayer->getContentHeight() / 2);
-    scrollLayer->addChild(scrollbar);
+    scrollbar->setScaleY(0);
+    this->addChild(scrollbar);
     
     scrollbar->setTouchEnabled(startOpen);
 
@@ -108,6 +109,8 @@ void FloatingList::open(){
 
     scrollLayer->stopAllActions();
     scrollLayer->runAction(CCEaseInOut::create(CCScaleTo::create(0.1f, 1, 1), 2));
+    scrollbar->stopAllActions();
+    scrollbar->runAction(CCEaseInOut::create(CCScaleTo::create(0.1f, 1, 1), 2));
 
     setItemEnabled(true);
 
@@ -120,6 +123,8 @@ void FloatingList::close(){
 
     scrollLayer->stopAllActions();
     scrollLayer->runAction(CCEaseInOut::create(CCScaleTo::create(0.1f, 1, 0), 2));
+    scrollbar->stopAllActions();
+    scrollbar->runAction(CCEaseInOut::create(CCScaleTo::create(0.1f, 1, 0), 2));
 
     setItemEnabled(false);
 

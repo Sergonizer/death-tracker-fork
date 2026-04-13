@@ -125,11 +125,17 @@ bool DTLayer::init(GJGameLevel* const& level) {
     shadow->setOpacity(100);
     m_mainLayer->addChild(shadow);
 
-    bottomMenu = CCMenu::create();
-    bottomMenu->setContentSize({m_size.width - 20, height / 2.5f});
-    bottomMenu->setAnchorPoint({.5f, .5f});
-    bottomMenu->setPosition(ccp(m_size.width, height / 2.5f) / 2 + ccp(0, 7.5f));
-    bottomMenu->setLayout(SimpleAxisLayout::create(Axis::Row)
+    sessionSelector = SessionSelector::create(getCurrentGrouping().grouping.size());
+    sessionSelector->setCallback([&](int newSession){ onSessionSelected(newSession, true); });
+    sessionSelector->setScale(.75f);
+    sessionSelector->setPosition({m_size.width / 2, 20});
+    m_mainLayer->addChild(sessionSelector);
+
+    bottomLeftMenu = CCMenu::create();
+    bottomLeftMenu->setContentSize({m_size.width / 2 - sessionSelector->getScaledContentWidth() / 2 - 10, height / 2.5f});
+    bottomLeftMenu->setAnchorPoint({0, .5f});
+    bottomLeftMenu->setPosition(ccp(10, height / 2.5f  / 2) + ccp(0, 7.5f));
+    bottomLeftMenu->setLayout(SimpleAxisLayout::create(Axis::Row)
         ->setGap(10)
         ->setMainAxisScaling(AxisScaling::ScaleDown)
         ->setCrossAxisScaling(AxisScaling::ScaleDown)
@@ -137,8 +143,23 @@ bool DTLayer::init(GJGameLevel* const& level) {
         ->setMinRelativeScale(std::nullopt)
         ->setMaxRelativeScale(std::nullopt)
     );
-    bottomMenu->setID("bottom-menu");
-    m_mainLayer->addChild(bottomMenu);
+    bottomLeftMenu->setID("bottom-left-menu");
+    m_mainLayer->addChild(bottomLeftMenu);
+
+    bottomRightMenu = CCMenu::create();
+    bottomRightMenu->setContentSize({m_size.width / 2 - sessionSelector->getScaledContentWidth() / 2 - 10, height / 2.5f});
+    bottomRightMenu->setAnchorPoint({1, .5f});
+    bottomRightMenu->setPosition(ccp(m_size.width - 10, height / 2.5f  / 2) + ccp(0, 7.5f));
+    bottomRightMenu->setLayout(SimpleAxisLayout::create(Axis::Row)
+        ->setGap(10)
+        ->setMainAxisScaling(AxisScaling::ScaleDown)
+        ->setCrossAxisScaling(AxisScaling::ScaleDown)
+        ->setMainAxisAlignment(MainAxisAlignment::Even)
+        ->setMinRelativeScale(std::nullopt)
+        ->setMaxRelativeScale(std::nullopt)
+    );
+    bottomRightMenu->setID("bottom-right-menu");
+    m_mainLayer->addChild(bottomRightMenu);
 
     auto levelSpecificOptionsSpr = CCSprite::createWithSpriteFrameName("GJ_creatorBtn_001.png");
     auto levelSpecificOptionsBtn = CCMenuItemSpriteExtra::create(
@@ -146,7 +167,7 @@ bool DTLayer::init(GJGameLevel* const& level) {
         this,
         menu_selector(DTLayer::onLSOClicked)
     );
-    bottomMenu->addChild(levelSpecificOptionsBtn);
+    bottomLeftMenu->addChild(levelSpecificOptionsBtn);
 
     auto graphBtnSpr = CCSprite::createWithSpriteFrameName("graph_button.png"_spr);
     auto graphBtn = CCMenuItemSpriteExtra::create(
@@ -154,7 +175,7 @@ bool DTLayer::init(GJGameLevel* const& level) {
         this,
         menu_selector(DTLayer::graphBtnClicked)
     );
-    bottomMenu->addChild(graphBtn);
+    bottomLeftMenu->addChild(graphBtn);
 
     auto calculatorSpr = CCSprite::createWithSpriteFrameName("caluclator.png"_spr);
     auto calculatorBtnSpr = CCSprite::create("GJ_button_01.png");
@@ -166,13 +187,7 @@ bool DTLayer::init(GJGameLevel* const& level) {
         this,
         menu_selector(DTLayer::onCalculator)
     );
-    bottomMenu->addChild(calculatorBtn);
-
-    sessionSelector = SessionSelector::create(getCurrentGrouping().grouping.size());
-    sessionSelector->setCallback([&](int newSession){ onSessionSelected(newSession, true); });
-    sessionSelector->setScale(.75f);
-    sessionSelector->setPosition({m_size.width / 2, 20});
-    bottomMenu->addChild(sessionSelector);
+    bottomLeftMenu->addChild(calculatorBtn);
 
     onSessionSelected(1, false);
 
@@ -186,13 +201,18 @@ bool DTLayer::init(GJGameLevel* const& level) {
         "GJ_button_04.png"
     );
     groupsBtnSpr->setCascadeOpacityEnabled(true);
-    groupsBtnSpr->setScale(.75f);
+    groupsBtnSpr->setScale(.45f);
     groupsBtn = CCMenuItemSpriteExtra::create(
         groupsBtnSpr,
         this,
         menu_selector(DTLayer::onGroups)
     );
-    bottomMenu->addChild(groupsBtn);
+
+    auto groupsHolder = CCMenu::create();
+    groupsHolder->setContentSize(ccp(45, 0));
+    groupsBtn->setPosition(groupsHolder->getContentSize() / 2);
+    bottomRightMenu->addChild(groupsHolder);
+    groupsHolder->addChild(groupsBtn);
 
     auto editLayoutBtnSprBG = CCSprite::createWithSpriteFrameName("GJ_plainBtn_001.png");
     editLayoutBtnSpr = CCSprite::createWithSpriteFrameName("layout_button.png"_spr);
@@ -205,7 +225,7 @@ bool DTLayer::init(GJGameLevel* const& level) {
         menu_selector(DTLayer::onEditLayout)
     );
     editLayoutBtn->setPosition(scrollLayer->getPosition() + scrollLayer->getContentSize());
-    bottomMenu->addChild(editLayoutBtn);
+    bottomRightMenu->addChild(editLayoutBtn);
 
     auto settingsBtnSpr = CCSprite::createWithSpriteFrameName("GJ_optionsBtn_001.png");
     settingsBtnSpr->setScale(.75f);
@@ -215,7 +235,7 @@ bool DTLayer::init(GJGameLevel* const& level) {
         menu_selector(DTLayer::onSettings)
     );
     settingsBtn->setPosition({m_size.width - 3.f, 3.f});
-    bottomMenu->addChild(settingsBtn);
+    bottomRightMenu->addChild(settingsBtn);
 
     columnHolder = CCMenu::create();
     columnHolder->setAnchorPoint({0, 1});
@@ -262,7 +282,8 @@ bool DTLayer::init(GJGameLevel* const& level) {
 
     this->scheduleUpdate();
 
-    bottomMenu->updateLayout();
+    bottomRightMenu->updateLayout();
+    bottomLeftMenu->updateLayout();
 
     groupsList = FloatingList::create({
         groupsBtn->getScaledContentWidth(),
@@ -345,7 +366,9 @@ bool DTLayer::init(GJGameLevel* const& level) {
             ->joinTransform(TutorialBoxPlacement::TBPCenter)
             ->appendDialogue("You also have many options <cy>at the bottom</c> here!", TutorialCharacterFace::TCFNormal)
             ->joinTransform(TutorialBoxPlacement::TBPCenter, .75f)
-            ->joinHighlight(bottomMenu)
+            ->joinHighlight(bottomRightMenu)
+            ->joinHighlight(bottomLeftMenu)
+            ->joinHighlight(sessionSelector)
             ->appendDialogue("There's the <cy>level options</c> which allow you to change may things about how you <cr>track/display your data</c>", TutorialCharacterFace::TCFNormal)
             ->joinHighlight(levelSpecificOptionsBtn)
             ->joinTransform(TutorialBoxPlacement::TBPLeft, .75f)
@@ -474,9 +497,14 @@ void DTLayer::onEditLayout(CCObject*){
         }
     }
 
-    bottomMenu->setEnabled(false);
-    bottomMenu->stopAllActions();
-    bottomMenu->runAction(CCFadeTo::create(.15f, 0));
+    bottomLeftMenu->setEnabled(false);
+    bottomLeftMenu->stopAllActions();
+    bottomLeftMenu->runAction(CCFadeTo::create(.15f, 0));
+
+    bottomRightMenu->setEnabled(false);
+    bottomRightMenu->stopAllActions();
+    bottomRightMenu->runAction(CCFadeTo::create(.15f, 0));
+
     m_buttonMenu->setEnabled(false);
     m_buttonMenu->stopAllActions();
     m_buttonMenu->runAction(CCFadeTo::create(.15f, 0));
@@ -1815,9 +1843,14 @@ void DTLayer::exitLayoutEditing(){
         }
     }
 
-    bottomMenu->setEnabled(true);
-    bottomMenu->stopAllActions();
-    bottomMenu->runAction(CCFadeTo::create(.15f, 255));
+    bottomLeftMenu->setEnabled(true);
+    bottomLeftMenu->stopAllActions();
+    bottomLeftMenu->runAction(CCFadeTo::create(.15f, 255));
+
+    bottomRightMenu->setEnabled(true);
+    bottomRightMenu->stopAllActions();
+    bottomRightMenu->runAction(CCFadeTo::create(.15f, 255));
+
     m_buttonMenu->setEnabled(true);
     m_buttonMenu->stopAllActions();
     m_buttonMenu->runAction(CCFadeTo::create(.15f, 255));
@@ -2846,11 +2879,12 @@ void DTLayer::onGroupSelected(int const& id){
         opt.value().BGTexture.c_str()
     );
     newSpr->setCascadeOpacityEnabled(true);
-    newSpr->setScale(.75f);
+    newSpr->setScale(.45f);
 
     groupsBtn->setSprite(newSpr);
 
-    bottomMenu->updateLayout();
+    bottomLeftMenu->updateLayout();
+    bottomRightMenu->updateLayout();
 
     sessionSelector->setMaximumCount(getCurrentGrouping().grouping.size(), true);
 }

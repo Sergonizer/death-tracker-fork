@@ -175,7 +175,8 @@ class DTLayer : public Popup {
         CCMenuItemSpriteExtra* addColumnButton;
         CCSprite* editLayoutBtnSpr;
 
-        CCMenu* bottomMenu;
+        CCMenu* bottomLeftMenu;
+        CCMenu* bottomRightMenu;
         CCMenu* editLayoutMenu;
         TutorialButton* layoutInfo;
         ButtonSprite* discardChangesButtonSpr;
