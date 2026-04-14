@@ -113,6 +113,8 @@ class DTLayer : public Popup {
 
         void foreachLinkedLevel(geode::Function<void(LevelData&)> onLevelVisit);
 
+        bool createDeathsString(const Deaths& deaths, const LevelMetadeta& meta, const stringCustomazations& custom, std::string& out, std::optional<NewBests> const newBests = std::nullopt, const ccColor3B& newBestColoring = {255, 255, 255}, bool ignoreExtraSettings = false);
+
     private:
         
         LayoutOptionsLayer* layoutOptionsLayer = nullptr;
@@ -128,7 +130,7 @@ class DTLayer : public Popup {
 
         std::set<DTLabel*> keyListeners{};
 
-        bool createDeathsString(const Deaths& deaths, const stringCustomazations& custom, std::string& out, NewBests* const newBests = nullptr, const ccColor3B& newBestColoring = {255, 255, 255}, bool ignoreExtraSettings = false);
+        bool createDeathsString(const Deaths& deaths, const stringCustomazations& custom, std::string& out, std::optional<NewBests> const newBests = std::nullopt, const ccColor3B& newBestColoring = {255, 255, 255}, bool ignoreExtraSettings = false);
 
         int currentSession;
 

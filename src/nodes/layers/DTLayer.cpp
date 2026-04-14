@@ -878,11 +878,18 @@ void DTLayer::updateStaticGroupings(){
     }  
 }
 
-bool DTLayer::createDeathsString(const Deaths& deaths, const stringCustomazations& custom, std::string& out, NewBests* const newBests, const ccColor3B& newBestColoring, bool ignoreExtraSettings){
+bool DTLayer::createDeathsString(const Deaths& deaths, const stringCustomazations& custom, std::string& out, std::optional<NewBests> const newBests, const ccColor3B& newBestColoring, bool ignoreExtraSettings){
     out = "";
     if (m_MyLevelStats.isErr()) return false;
-    auto myMetadata = m_MyLevelStats.unwrap().metadata;
 
+    auto toReturn = createDeathsString(deaths, m_MyLevelStats.unwrap().metadata, custom, out, newBests, newBestColoring, ignoreExtraSettings);
+
+    return toReturn;
+}
+
+bool DTLayer::createDeathsString(const Deaths& deaths, const LevelMetadeta& meta, const stringCustomazations& custom, std::string& out, std::optional<NewBests> const newBests, const ccColor3B& newBestColoring, bool ignoreExtraSettings){
+    out = "";
+    
     std::vector<std::pair<std::string, int>> deathVec(deaths.begin(), deaths.end());
     std::sort(deathVec.begin(), deathVec.end(), [](const auto& a, const auto& b){
         auto runARes = StatsManager::splitRunKey(a.first);
@@ -918,9 +925,9 @@ bool DTLayer::createDeathsString(const Deaths& deaths, const stringCustomazation
         std::string nbDeColor = "";
         std::string nbColor = "";
 
-        if (includeRunStart && !ignoreExtraSettings && !myMetadata.showAnyRun){
-            if (myMetadata.runsToShow.contains(runSplit.start)){
-                if (myMetadata.runsToShow[runSplit.start] > runSplit.end)
+        if (includeRunStart && !ignoreExtraSettings && !meta.showAnyRun){
+            if (meta.runsToShow.contains(runSplit.start)){
+                if (meta.runsToShow.at(runSplit.start) > runSplit.end)
                     continue;
             }
             else{
@@ -928,10 +935,10 @@ bool DTLayer::createDeathsString(const Deaths& deaths, const stringCustomazation
             }
         }
         else if (!includeRunStart && !ignoreExtraSettings){
-            if (myMetadata.hideUpto > runSplit.end)
+            if (meta.hideUpto > runSplit.end)
                 continue;
 
-            if (newBests != nullptr && newBests->contains(runSplit.end)){
+            if (newBests.has_value() && newBests.value().contains(runSplit.end)){
                 nbDeColor = "</wave></color>";
                 nbColor = fmt::format("<color={}><wave>", cc3bToHexString(newBestColoring));
             }
@@ -2218,7 +2225,7 @@ UpdateFuture DTLayer::onGeneralKey(){
     }
 
     std::string out;
-    if (!createDeathsString(sharedDeaths, Save::getFrom0Customazations(), out, &sharedNBs, Save::getNewBestColor()))
+    if (!createDeathsString(sharedDeaths, Save::getFrom0Customazations(), out, sharedNBs, Save::getNewBestColor()))
         co_return Err("Failed to create from0 deaths string");
 
     co_return Ok(out);
@@ -2290,7 +2297,7 @@ UpdateFuture DTLayer::onS0Key(){
     co_await arc::yield();
 
     std::string out;
-    if (!createDeathsString(session.data.deaths, Save::getSessionF0Customazations(), out, &session.data.newBests, Save::getSessionBestColor()))
+    if (!createDeathsString(session.data.deaths, Save::getSessionF0Customazations(), out, session.data.newBests, Save::getSessionBestColor()))
         co_return Err("Failed to create session from0 deaths string");
 
     co_return Ok(out);

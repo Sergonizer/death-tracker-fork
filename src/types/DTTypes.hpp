@@ -411,6 +411,8 @@ struct LevelData {
     LevelMetadeta metadata;
     Result<GeneralData> from0 = Err("Not loaded");
     std::set<long long> sessionNames;
+
+    LevelData() = default;
 };
 
 struct BackupLevelData {

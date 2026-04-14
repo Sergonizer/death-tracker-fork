@@ -7,12 +7,16 @@ using namespace geode::prelude;
 
 class ImportCompletePopup : public Popup {
     protected:
-        bool init(LevelData data, std::vector<Session> const& sessions);
+        bool init(LevelData&& data, std::vector<Session> const& sessions);
 
     public:
-        static ImportCompletePopup* create(LevelData const& data, std::vector<Session> const& sessions);
+        static ImportCompletePopup* create(LevelData&& data, std::vector<Session> const& sessions);
 
     private:
         LevelData data;
         std::vector<Session> sessions;
+
+        void update(float dt);
+
+        ScrollLayer* generalView;
 };

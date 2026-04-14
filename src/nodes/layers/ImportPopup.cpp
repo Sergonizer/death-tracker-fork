@@ -113,7 +113,7 @@ void ImportPopup::onFromDT(CCObject*){
             if (!pickOpt.has_value()) return;
             auto pick = pickOpt.value();
 
-            auto tempDir = StatsManager::m_savesFolderPath / "importTemp";
+            auto tempDir = Mod::get()->getSaveDir() / "importTemp";
 
             (void)file::createDirectory(tempDir);
 
