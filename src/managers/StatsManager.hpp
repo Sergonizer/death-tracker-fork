@@ -41,12 +41,16 @@ public:
 
     static Result<LevelMetadeta> getMetadata(GJGameLevel* const level);
     static Result<LevelMetadeta> getMetadata(const std::string& levelKey);
+    static Result<LevelMetadeta> getMetadata(const std::filesystem::path& path);
     static Result<Session> getSession(GJGameLevel* const level, long long sessionTime);
     static Result<Session> getSession(const std::string& levelKey, long long sessionTime);
+    static Result<Session> getSession(const std::filesystem::path& path, long long sessionTime);
     static Result<GeneralData> getGeneral(GJGameLevel* const level);
     static Result<GeneralData> getGeneral(const std::string& levelKey);
+    static Result<GeneralData> getGeneral(const std::filesystem::path& path);
     static Result<LevelData> getLevelData(GJGameLevel* const level);
     static Result<LevelData> getLevelData(const std::string& levelKey);
+    static Result<LevelData> getLevelData(const std::filesystem::path& path);
     static Result<BackupLevelData> getBackupData(const std::string& levelKey, long long backupName);
 
     static Result<> setMetadata(const LevelMetadeta& stats, GJGameLevel* const level);
@@ -61,6 +65,7 @@ public:
 
     static Result<std::set<long long>> getAllSessionTimesForLevel(GJGameLevel* const level);
     static std::set<long long> getAllSessionTimesForLevel(const std::string& levelKey);
+    static std::set<long long> getAllSessionTimesForLevel(const std::filesystem::path& path);
 
     static std::set<long long> getBackupsCount(const std::string& levelKey);
     static uintmax_t getBackupFileSize(const std::string& levelKey, long long backupName);

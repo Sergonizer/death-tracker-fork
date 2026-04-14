@@ -119,7 +119,11 @@ Result<LevelMetadeta> StatsManager::getMetadata(GJGameLevel* const level){
     return getMetadata(levelKey);
 }
 Result<LevelMetadeta> StatsManager::getMetadata(const std::string& levelKey){
-    auto levelSaveFilePath = m_savesFolderPath / levelKey / StatsManager::METADATA_FILE_NAME;
+    return getMetadata(m_savesFolderPath / levelKey);
+}
+
+Result<LevelMetadeta> StatsManager::getMetadata(const std::filesystem::path& path){
+    auto levelSaveFilePath = path / StatsManager::METADATA_FILE_NAME;
 
     if (!std::filesystem::exists(levelSaveFilePath))
         return Err("1 (no stats exist for level!)");
@@ -134,7 +138,11 @@ Result<Session> StatsManager::getSession(GJGameLevel* const level, long long ses
     return getSession(levelKey, sessionTime);
 }
 Result<Session> StatsManager::getSession(const std::string& levelKey, long long sessionTime){
-    auto levelSaveFilePath = m_savesFolderPath / levelKey / StatsManager::SESSIONS_DIR_NAME / (std::to_string(sessionTime) + ".dt");
+    return getSession(m_savesFolderPath / levelKey, sessionTime);
+}
+
+Result<Session> StatsManager::getSession(const std::filesystem::path& path, long long sessionTime){
+    auto levelSaveFilePath = path / StatsManager::SESSIONS_DIR_NAME / (std::to_string(sessionTime) + ".dt");
 
     if (!std::filesystem::exists(levelSaveFilePath))
         return Err("1 (no stats exist for level!)");
@@ -149,7 +157,11 @@ Result<GeneralData> StatsManager::getGeneral(GJGameLevel* const level){
     return getGeneral(levelKey);
 }
 Result<GeneralData> StatsManager::getGeneral(const std::string& levelKey){
-    auto levelSaveFilePath = m_savesFolderPath / levelKey / StatsManager::FROM0_FILE_NAME;
+    return getGeneral(m_savesFolderPath / levelKey);
+}
+
+Result<GeneralData> StatsManager::getGeneral(const std::filesystem::path& path){
+    auto levelSaveFilePath = path / StatsManager::FROM0_FILE_NAME;
 
     if (!std::filesystem::exists(levelSaveFilePath))
         return Err("1 (no stats exist for level!)");
@@ -170,6 +182,16 @@ Result<LevelData> StatsManager::getLevelData(const std::string& levelKey){
     data.from0 = StatsManager::getGeneral(levelKey);
     data.sessionNames = StatsManager::getAllSessionTimesForLevel(levelKey);
     data.levelKey = levelKey;
+
+    return Ok(data);
+}
+
+Result<LevelData> StatsManager::getLevelData(const std::filesystem::path& path){
+    LevelData data;
+    GEODE_UNWRAP_INTO(data.metadata, StatsManager::getMetadata(path));
+    data.from0 = StatsManager::getGeneral(path);
+    data.sessionNames = StatsManager::getAllSessionTimesForLevel(path);
+    data.levelKey = data.levelKey;
 
     return Ok(data);
 }
@@ -944,7 +966,11 @@ Result<std::set<long long>> StatsManager::getAllSessionTimesForLevel(GJGameLevel
 }
 
 std::set<long long> StatsManager::getAllSessionTimesForLevel(const std::string& levelKey){
-    auto levelSaveFilePath = m_savesFolderPath / levelKey / StatsManager::SESSIONS_DIR_NAME;
+    return getAllSessionTimesForLevel(m_savesFolderPath / levelKey);
+}
+
+std::set<long long> StatsManager::getAllSessionTimesForLevel(const std::filesystem::path& path){
+    auto levelSaveFilePath = path / StatsManager::SESSIONS_DIR_NAME;
 
     if (!std::filesystem::exists(levelSaveFilePath)) return {};
 

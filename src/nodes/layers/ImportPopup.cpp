@@ -1,5 +1,6 @@
 #include "ImportPopup.hpp"
 #include <nodes/layers/DTLayer.hpp>
+#include <nodes/layers/ImportCompletePopup.hpp>
 
 ImportPopup* ImportPopup::create() {
     auto ret = new ImportPopup();
@@ -112,20 +113,36 @@ void ImportPopup::onFromDT(CCObject*){
             if (!pickOpt.has_value()) return;
             auto pick = pickOpt.value();
 
-            file::createDirectory(StatsManager::m_savesFolderPath / "importTemp");
+            auto tempDir = StatsManager::m_savesFolderPath / "importTemp";
 
-            auto res = file::Unzip::intoDir(pick, StatsManager::m_savesFolderPath / "importTemp");
+            (void)file::createDirectory(tempDir);
+
+            auto res = file::Unzip::intoDir(pick, tempDir);
 
             if (res.isErr()){
                 log::error("{}", res.unwrapErr());
                 Notification::create("Failed to unzip file!", NotificationIcon::Error)->show();
-                std::filesystem::remove_all(StatsManager::m_savesFolderPath / "importTemp");
+                std::filesystem::remove_all(tempDir);
                 return;
             }
             
-            auto importRes = StatsManager::importFrom(StatsManager::m_savesFolderPath / "importTemp");
+            auto lvlDataRes = StatsManager::getLevelData(tempDir);
+            if (lvlDataRes.isOk()){
+                auto lvlData = std::move(lvlDataRes).unwrap();
 
-            std::filesystem::remove_all(StatsManager::m_savesFolderPath / "importTemp");
+                std::vector<Session> sessions;
+
+                for (const auto& sessionDate : lvlData.sessionNames)
+                {
+                    auto session = StatsManager::getSession(tempDir, sessionDate);
+                    if (session.isOk())
+                        sessions.push_back(session.unwrap());
+                }
+                
+                ImportCompletePopup::create(std::move(lvlData), std::move(sessions))->show();
+            }
+
+            std::filesystem::remove_all(tempDir);
         }
     );
 }
