@@ -15,6 +15,7 @@ class $modify(DTPlayLayer, PlayLayer) {
         bool lastOneDied = false;
 
         bool nolcip = false;
+        CCObject* disabledCheat = nullptr;
 
         bool didJustPause = false;
         PlaytimePair timePassedGeneral;
@@ -34,6 +35,7 @@ class $modify(DTPlayLayer, PlayLayer) {
 
     /* hooks
     ========== */
+    static void onModify(auto& self);
 
     bool init(GJGameLevel* level, bool p1, bool p2);
 

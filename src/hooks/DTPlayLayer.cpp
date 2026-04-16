@@ -19,8 +19,9 @@ void DTPlayLayer::updateSessionLastPlayed() {
 
 /* hooks
 ========== */
-static void onModify(auto& self) {
+void DTPlayLayer::onModify(auto& self) {
     (void)self.setHookPriority("PlayLayer::levelComplete", -9999);
+    (void)self.setHookPriorityPre("PlayLayer::destroyPlayer", Priority::First);
 }
 
 bool DTPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
@@ -111,6 +112,8 @@ void DTPlayLayer::cutoutPlaytime() {
     auto now = std::chrono::steady_clock::now();
     uint64_t timeSpent = std::chrono::duration_cast<std::chrono::nanoseconds>(now - m_fields->startTime.value()).count();
     m_fields->startTime = now;
+
+    if (!isLegal()) return;
     
     if (m_fields->currentRun.start == 0){
         if (m_isPaused || m_fields->levelBeaten){
@@ -190,13 +193,18 @@ void DTPlayLayer::resetLevel() {
         m_fields->currentRun.start = m_fields->currentRun.end;
 
     m_fields->nolcip = false;
+    m_fields->disabledCheat = nullptr;
 }
 
 void DTPlayLayer::destroyPlayer(PlayerObject* player, GameObject* p1) {
     PlayLayer::destroyPlayer(player, p1);
 
-    if (!m_fields->nolcip && !player->m_isDead && !m_levelEndAnimationStarted)
+    if (!m_fields->disabledCheat)
+        m_fields->disabledCheat = p1;
+    if (!m_fields->nolcip && m_fields->disabledCheat != p1 && !player->m_isDead && !m_levelEndAnimationStarted){
+        // log::info("we clip");
         m_fields->nolcip = true;
+    }
 
     if (!player->m_isDead) return;
  
@@ -220,7 +228,7 @@ void DTPlayLayer::destroyPlayer(PlayerObject* player, GameObject* p1) {
 
 void DTPlayLayer::saveRun(){
     if (!isLegal()) return;
-    
+
     if (!Settings::getLateSaveEnabled()){
         if (m_fields->currentRun.start == 0 && !m_isPracticeMode){
             StatsManager::logDeath(m_fields->currentRun.end);
@@ -281,6 +289,9 @@ void DTPlayLayer::levelComplete() {
         m_fields->currentRun.end++;
         
     saveRun();
+
+    m_fields->nolcip = false;
+    m_fields->disabledCheat = nullptr;
 }
 
 void DTPlayLayer::removeAllCheckpoints() {
