@@ -179,11 +179,11 @@ void DTGraphNode::updateGraphContent(){
             }
 
             if (myPoint.x == 100)
-                endPointIndex = points.size();
+                endPointIndex = static_cast<int>(points.size());
 
             if (!secondPercentPoint && firstAfterSecondPoint == -1 && myPoint.x > 2){
                 firstAfterSecondPoint = myPoint.x;
-                firstAfterSecondPointIndex = points.size();
+                firstAfterSecondPointIndex = static_cast<int>(points.size());
             }
 
             if (myPoint.x == 1)
