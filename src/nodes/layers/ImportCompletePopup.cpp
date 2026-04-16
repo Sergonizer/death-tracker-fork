@@ -1,5 +1,6 @@
 #include "ImportCompletePopup.hpp"
 #include <nodes/layers/DTLayer.hpp>
+#include <nodes/SessionCell.hpp>
 
 ImportCompletePopup* ImportCompletePopup::create(LevelData&& data, std::vector<Session> const& sessions) {
     auto ret = new ImportCompletePopup();
@@ -51,6 +52,12 @@ bool ImportCompletePopup::init(LevelData&& _data, std::vector<Session> const& _s
         m_size.width - 5,
         m_size.height - (m_size.height - m_title->getPositionY()) - m_title->getScaledContentHeight()
     });
+    sessionView->m_contentLayer->setLayout(ColumnLayout::create()
+        ->setAutoGrowAxis(sessionView->getContentHeight())
+        ->setAxisAlignment(AxisAlignment::End)
+        ->setCrossAxisAlignment(AxisAlignment::Center)
+        ->setCrossAxisOverflow(false)
+    );
     m_mainLayer->addChild(sessionView);
 
     auto sessionViewBG = CCScale9Sprite::create("square02_small.png");
@@ -108,6 +115,14 @@ bool ImportCompletePopup::init(LevelData&& _data, std::vector<Session> const& _s
     label->setExpandable(false);
     label->setContentWidth(generalView->getContentWidth());
     generalView->m_contentLayer->addChild(label);
+
+    for (const auto& session : sessions)
+    {
+        sessionView->m_contentLayer->addChild(SessionCell::create(sessionView->getContentWidth(), session));
+    }
+    
+    sessionView->m_contentLayer->updateLayout();
+
 
     scheduleUpdate();
 
