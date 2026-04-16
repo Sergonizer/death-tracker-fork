@@ -112,8 +112,6 @@ void DTPlayLayer::cutoutPlaytime() {
     auto now = std::chrono::steady_clock::now();
     uint64_t timeSpent = std::chrono::duration_cast<std::chrono::nanoseconds>(now - m_fields->startTime.value()).count();
     m_fields->startTime = now;
-
-    if (!isLegal()) return;
     
     if (m_fields->currentRun.start == 0){
         if (m_isPaused || m_fields->levelBeaten){
