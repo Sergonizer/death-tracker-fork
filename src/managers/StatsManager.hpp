@@ -74,6 +74,7 @@ public:
 
     static Result<> deleteLevelStats(const std::string& levelKey);
     static Result<> deleteBackup(const std::string& levelKey, long long backupName);
+    static Result<> deleteAllSessions(const std::string& levelKey);
 
     static Result<> convertV2SaveToV3(const std::string& levelKey);
     static std::vector<std::string> allV2FileLevelKeys();

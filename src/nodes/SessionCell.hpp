@@ -10,7 +10,7 @@ class SessionCell : public CCMenu {
     public:
         static SessionCell* create(float width, Session const& session);
 
-        Session getSection() const { 
+        Session getSession() const { 
             return session; 
         }
 

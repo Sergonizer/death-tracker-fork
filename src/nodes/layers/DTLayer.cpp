@@ -42,33 +42,8 @@ bool DTLayer::init(GJGameLevel* const& level) {
     // ================================== //
     // loading data
 
+    CleanGetStats();
 
-    m_MyLevelStats = StatsManager::getLevelData(m_Level);
-    if (m_MyLevelStats.isErr() && m_MyLevelStats.unwrapErr().size() && m_MyLevelStats.unwrapErr()[0] == '1'){
-        LevelData newData;
-        newData.levelKey = StatsManager::getLevelKey(level).unwrap();
-        m_MyLevelStats = Ok(newData);
-    }
-    else if (m_MyLevelStats.isErr()){
-        auto notif = geode::Notification::create(fmt::format("Failed to load DT level data! {}", m_MyLevelStats.unwrapErr()), NotificationIcon::Error, 3);
-        notif->show();
-        notif->setZOrder(101);
-    }
-
-    StatsManager::transferPlaytimeFromPT(m_MyLevelStats, level);
-
-    if (m_MyLevelStats.isOk()){
-        auto stats = m_MyLevelStats.unwrap();
-        stats.metadata.levelName = level->m_levelName;
-        stats.metadata.attempts = level->m_attempts;
-        stats.metadata.difficulty = StatsManager::getDifficulty(level);
-        (void)StatsManager::setMetadata(stats.metadata, stats.levelKey);
-        m_MyLevelStats = Ok(stats);
-    }
-
-    StatsManager::setCurrentLevel(level);
-
-    DTLayer::UpdateSharedStats();
     // ================================== //
 
     /*
@@ -2894,4 +2869,33 @@ void DTLayer::onGroupSelected(int const& id){
     bottomRightMenu->updateLayout();
 
     sessionSelector->setMaximumCount(getCurrentGrouping().grouping.size(), true);
+}
+
+void DTLayer::CleanGetStats(){
+    m_MyLevelStats = StatsManager::getLevelData(m_Level);
+    if (m_MyLevelStats.isErr() && m_MyLevelStats.unwrapErr().size() && m_MyLevelStats.unwrapErr()[0] == '1'){
+        LevelData newData;
+        newData.levelKey = StatsManager::getLevelKey(m_Level).unwrap();
+        m_MyLevelStats = Ok(newData);
+    }
+    else if (m_MyLevelStats.isErr()){
+        auto notif = geode::Notification::create(fmt::format("Failed to load DT level data! {}", m_MyLevelStats.unwrapErr()), NotificationIcon::Error, 3);
+        notif->show();
+        notif->setZOrder(101);
+    }
+
+    StatsManager::transferPlaytimeFromPT(m_MyLevelStats, m_Level);
+
+    if (m_MyLevelStats.isOk()){
+        auto stats = m_MyLevelStats.unwrap();
+        stats.metadata.levelName = m_Level->m_levelName;
+        stats.metadata.attempts = m_Level->m_attempts;
+        stats.metadata.difficulty = StatsManager::getDifficulty(m_Level);
+        (void)StatsManager::setMetadata(stats.metadata, stats.levelKey);
+        m_MyLevelStats = Ok(stats);
+    }
+
+    StatsManager::setCurrentLevel(m_Level);
+
+    DTLayer::UpdateSharedStats();
 }

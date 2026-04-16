@@ -115,6 +115,7 @@ class DTLayer : public Popup {
 
         bool createDeathsString(const Deaths& deaths, const LevelMetadeta& meta, const stringCustomazations& custom, std::string& out, std::optional<NewBests> const newBests = std::nullopt, const ccColor3B& newBestColoring = {255, 255, 255}, bool ignoreExtraSettings = false);
 
+        void CleanGetStats();
     private:
         
         LayoutOptionsLayer* layoutOptionsLayer = nullptr;

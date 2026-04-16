@@ -61,12 +61,12 @@ bool SessionCell::init(float width, Session const& session){
     toggler = SimpleToggler::create(
         CCSprite::createWithSpriteFrameName("GJ_checkOff_001.png"),
         CCSprite::createWithSpriteFrameName("GJ_checkOn_001.png"),
-        .3f,
+        .4f,
         true
     );
     toggler->setPosition({
         this->getContentWidth() - toggler->getContentWidth() / 2 - 5,
-        this->getContentHeight() / 2
+        this->getContentHeight() - toggler->getContentHeight() / 2 - 5
     });
     toggler->setCallback([&](auto state){
         selected = state;

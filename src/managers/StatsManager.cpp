@@ -748,6 +748,17 @@ Result<> StatsManager::deleteBackup(const std::string& levelKey, long long backu
     return Err("Cant delete backup because level save file does not exist: " + levelSaveFilePath.string());
 }
 
+Result<> StatsManager::deleteAllSessions(const std::string& levelKey){
+    auto levelSaveFilePath = m_savesFolderPath / levelKey / StatsManager::SESSIONS_DIR_NAME;
+
+    if (std::filesystem::is_directory(levelSaveFilePath)){
+        if (std::filesystem::remove_all(levelSaveFilePath) == static_cast<std::uintmax_t>(-1)) return Err("Failed to delete sessions folder!");
+        return Ok();
+    }
+
+    return Err("Cant delete sessions because level save file does not exist: " + levelSaveFilePath.string());
+}
+
 Result<std::tuple<NewBests, int>> StatsManager::calcNewBests(GJGameLevel* const& level) {
     NewBests newBests{};
     std::stringstream bestsStream(level->m_personalBests);
