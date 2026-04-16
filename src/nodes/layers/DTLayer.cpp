@@ -1141,6 +1141,11 @@ void DTLayer::organizeLayout(){
     organizationListener.spawn(
         organizeLayoutTask(),
         [this](organizationFuture::Output result){
+            
+            if (scrollLayer->isAtMinZoom())
+                scrollLayer->zoomBy(0.001f);
+
+
             float fixedhighest = result.highestColumn - (isEditingLayout ? 0 : LayoutColumn::topHeight + LayoutColumn::addNewBtnOffset * 2);
             for (const auto& column : columns){
                 column->setContentHeight(fixedhighest);

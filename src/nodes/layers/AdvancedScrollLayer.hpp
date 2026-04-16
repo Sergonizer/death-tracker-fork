@@ -83,6 +83,9 @@ class AdvancedScrollLayer : public CCLayer {
 
         void zoomToMinimum();
         void zoomToMaximum();
+        bool isAtMaxZoom();
+        bool isAtMinZoom();
+
 
         float getCurrentZoom();
 

@@ -419,6 +419,29 @@ void AdvancedScrollLayer::zoomToMaximum(){
     zoomTo(minZoom);
 }
 
+bool AdvancedScrollLayer::isAtMaxZoom(){
+    float minAmount = minZoom;
+
+    if (zoomParent->getContentHeight() * minAmount < this->getContentHeight()) minAmount = this->getContentHeight() / zoomParent->getContentHeight();
+    if (zoomParent->getContentWidth() * minAmount < this->getContentWidth()) minAmount = this->getContentWidth() / zoomParent->getContentWidth();
+    if (minAmount > minZoom) minAmount = minZoom;
+    if (minAmount < maxZoom) minAmount = maxZoom;
+
+    return zoomParent->getScale() == minAmount;
+}
+
+bool AdvancedScrollLayer::isAtMinZoom(){
+    float maxAmount = maxZoom;
+
+    if (zoomParent->getContentHeight() * maxAmount < this->getContentHeight()) maxAmount = this->getContentHeight() / zoomParent->getContentHeight();
+    if (zoomParent->getContentWidth() * maxAmount < this->getContentWidth()) maxAmount = this->getContentWidth() / zoomParent->getContentWidth();
+    if (maxAmount > minZoom) maxAmount = minZoom;
+    if (maxAmount < maxZoom) maxAmount = maxZoom;
+
+    return zoomParent->getScale() == maxAmount;
+}
+
+
 float AdvancedScrollLayer::getCurrentZoom(){
     return zoomParent->getScale();
 }
