@@ -188,10 +188,15 @@ void DTPlayLayer::resetLevel() {
         m_fields->currentRun.start = getActualProgress(this);
     else
         m_fields->currentRun.start = m_fields->currentRun.end;
+
+    m_fields->nolcip = false;
 }
 
 void DTPlayLayer::destroyPlayer(PlayerObject* player, GameObject* p1) {
     PlayLayer::destroyPlayer(player, p1);
+
+    if (!m_fields->nolcip && !player->m_isDead && !m_levelEndAnimationStarted)
+        m_fields->nolcip = true;
 
     if (!player->m_isDead) return;
  
@@ -214,6 +219,8 @@ void DTPlayLayer::destroyPlayer(PlayerObject* player, GameObject* p1) {
 }
 
 void DTPlayLayer::saveRun(){
+    if (!isLegal()) return;
+    
     if (!Settings::getLateSaveEnabled()){
         if (m_fields->currentRun.start == 0 && !m_isPracticeMode){
             StatsManager::logDeath(m_fields->currentRun.end);
@@ -379,4 +386,12 @@ void DTPlayLayer::playPlatformerEndAnimationToPos(cocos2d::CCPoint position, boo
     cutoutPlaytime();
 
     m_fields->levelBeaten = true;
+}
+
+bool DTPlayLayer::isLegal(){
+    if (Settings::getSafeMode()) return false;
+
+    if (Settings::getNoclipDetect() && (m_fields->nolcip || m_isIgnoreDamageEnabled || m_ignoreDamage)) return false;
+
+    return true;
 }

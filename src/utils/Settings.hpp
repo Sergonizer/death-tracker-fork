@@ -19,4 +19,6 @@ public:
     static std::optional<int> getAutoBackupSessionAmount();
     static bool getAutoBackupAtLvlExit();
     static bool getAutoBackupAtDTExit();
+    static bool getSafeMode();
+    static bool getNoclipDetect();
 };

@@ -46,6 +46,18 @@
 			"type": "bool",
 			"default": false
 		},
+		"safe-mode": {
+			"name": "Safe Mode",
+			"description": "Will prevent ANY form of death tracking",
+			"type": "bool",
+			"default": false
+		},
+		"noclip-detect": {
+			"name": "Noclip Detection",
+			"description": "Will prevent deaths from tracking when using noclip",
+			"type": "bool",
+			"default": true
+		},
 		"disable-tracking-completed-levels": {
 			"name": "Disable Tracking Completed Levels",
 			"description": "Disables tracking on completed online levels.",

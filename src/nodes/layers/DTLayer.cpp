@@ -1141,7 +1141,6 @@ void DTLayer::organizeLayout(){
     organizationListener.spawn(
         organizeLayoutTask(),
         [this](organizationFuture::Output result){
-            
             if (scrollLayer->isAtMinZoom())
                 scrollLayer->zoomBy(0.001f);
 

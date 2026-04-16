@@ -59,3 +59,11 @@ bool Settings::getAutoBackupAtLvlExit(){
 bool Settings::getAutoBackupAtDTExit(){
     return Mod::get()->getSettingValue<bool>("auto-backup-at-dt-exit");
 }
+
+bool Settings::getSafeMode(){
+    return Mod::get()->getSettingValue<bool>("safe-mode");
+}
+
+bool Settings::getNoclipDetect(){
+    return Mod::get()->getSettingValue<bool>("noclip-detect");
+}

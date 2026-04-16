@@ -14,6 +14,8 @@ class $modify(DTPlayLayer, PlayLayer) {
 
         bool lastOneDied = false;
 
+        bool nolcip = false;
+
         bool didJustPause = false;
         PlaytimePair timePassedGeneral;
         PlaytimePair timePassedDead;
@@ -70,4 +72,6 @@ class $modify(DTPlayLayer, PlayLayer) {
     void playEndAnimationToPos(cocos2d::CCPoint position);
 
     void playPlatformerEndAnimationToPos(cocos2d::CCPoint position, bool instant);
+
+    bool isLegal();
 };
