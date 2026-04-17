@@ -662,7 +662,7 @@ void DTLayer::populateSpecialStrings(){
     sF0AttKey->setUpdateFunction(BIND_UPDATE_FUNC(DTLayer::onSF0AttKey));
     addSpecialString(sF0AttKey);
 
-    auto sRunsAttKey = std::make_shared<SpecialKey>("sf0att", "Adds your runs attempt count for the selected session");
+    auto sRunsAttKey = std::make_shared<SpecialKey>("srunsatt", "Adds your runs attempt count for the selected session");
     sRunsAttKey->refreshWith(sessionRunsKey->getKey());
     sRunsAttKey->setUpdateFunction(BIND_UPDATE_FUNC(DTLayer::onSRunsAttKey));
     addSpecialString(sRunsAttKey);
