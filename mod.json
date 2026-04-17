@@ -52,9 +52,9 @@
 			"type": "bool",
 			"default": false
 		},
-		"noclip-detect": {
-			"name": "Noclip Detection",
-			"description": "Will prevent deaths from tracking when using noclip",
+		"cheat-detect": {
+			"name": "Cheat Detection",
+			"description": "Will prevent deaths from tracking when using noclip or speedhack (mostly accurate)",
 			"type": "bool",
 			"default": true
 		},

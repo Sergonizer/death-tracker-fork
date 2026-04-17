@@ -64,6 +64,6 @@ bool Settings::getSafeMode(){
     return Mod::get()->getSettingValue<bool>("safe-mode");
 }
 
-bool Settings::getNoclipDetect(){
-    return Mod::get()->getSettingValue<bool>("noclip-detect");
+bool Settings::getCheatDetect(){
+    return Mod::get()->getSettingValue<bool>("cheat-detect");
 }

@@ -13,9 +13,20 @@ class $modify(DTPlayLayer, PlayLayer) {
         Run currentRun;
 
         bool lastOneDied = false;
-
+        
         bool nolcip = false;
+        bool speedhack = false;
         CCObject* disabledCheat = nullptr;
+        std::optional<std::chrono::steady_clock::time_point> speedhackCompare;
+        float ratioSum = 0.0f;
+        int frameCount = 0;
+        
+        std::chrono::steady_clock::time_point lastSampleTime = std::chrono::steady_clock::now();
+        const float sampleDurationSeconds = 0.1f;
+        const int averagesToMeasure = 5;
+        std::vector<float> lastAverages{};
+
+        float speedhackThreshold = 0.05f;
 
         bool didJustPause = false;
         PlaytimePair timePassedGeneral;
@@ -76,4 +87,6 @@ class $modify(DTPlayLayer, PlayLayer) {
     void playPlatformerEndAnimationToPos(cocos2d::CCPoint position, bool instant);
 
     bool isLegal();
+
+    void checkDelta(float delta);
 };

@@ -20,5 +20,5 @@ public:
     static bool getAutoBackupAtLvlExit();
     static bool getAutoBackupAtDTExit();
     static bool getSafeMode();
-    static bool getNoclipDetect();
+    static bool getCheatDetect();
 };

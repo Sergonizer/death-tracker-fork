@@ -68,7 +68,7 @@ bool ImportPopup::init() {
     auto fromDTBtnC1 = m_mainLayer->convertToNodeSpace(fromDTBtn->convertToWorldSpace({0, 0}));
     auto fromDTBtnC2 = m_mainLayer->convertToNodeSpace(fromDTBtn->convertToWorldSpace(fromDTBtn->getContentSize()));
 
-    auto fromDTLabel = CCLabelBMFont::create("To DT File", "bigFont.fnt");
+    auto fromDTLabel = CCLabelBMFont::create("From DT File", "bigFont.fnt");
     fromDTLabel->setScale(.5f);
     fromDTLabel->setPosition((fromDTBtnC1 + fromDTBtnC2) / 2 + ccp(0, fromDTBtnC2.y - fromDTBtnC1.y) / 2);
     fromDTLabel->setAnchorPoint({.5f, 0});

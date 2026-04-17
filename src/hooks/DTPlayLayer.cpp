@@ -95,6 +95,8 @@ bool DTPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
 
     DTPlayLayer::updateSessionLastPlayed();
 
+    schedule(schedule_selector(DTPlayLayer::checkDelta));
+
     return true;
 }
 
@@ -112,6 +114,8 @@ void DTPlayLayer::cutoutPlaytime() {
     auto now = std::chrono::steady_clock::now();
     uint64_t timeSpent = std::chrono::duration_cast<std::chrono::nanoseconds>(now - m_fields->startTime.value()).count();
     m_fields->startTime = now;
+
+    if (Settings::getSafeMode()) return;
     
     if (m_fields->currentRun.start == 0){
         if (m_isPaused || m_fields->levelBeaten){
@@ -191,6 +195,7 @@ void DTPlayLayer::resetLevel() {
         m_fields->currentRun.start = m_fields->currentRun.end;
 
     m_fields->nolcip = false;
+    m_fields->speedhack = false;
     m_fields->disabledCheat = nullptr;
 }
 
@@ -225,6 +230,7 @@ void DTPlayLayer::destroyPlayer(PlayerObject* player, GameObject* p1) {
 }
 
 void DTPlayLayer::saveRun(){
+    if (Settings::getSafeMode()) return;
     if (!isLegal()) return;
 
     if (!Settings::getLateSaveEnabled()){
@@ -289,6 +295,7 @@ void DTPlayLayer::levelComplete() {
     saveRun();
 
     m_fields->nolcip = false;
+    m_fields->speedhack = false;
     m_fields->disabledCheat = nullptr;
 }
 
@@ -398,9 +405,57 @@ void DTPlayLayer::playPlatformerEndAnimationToPos(cocos2d::CCPoint position, boo
 }
 
 bool DTPlayLayer::isLegal(){
-    if (Settings::getSafeMode()) return false;
-
-    if (Settings::getNoclipDetect() && (m_fields->nolcip || m_isIgnoreDamageEnabled || m_ignoreDamage)) return false;
+    if (Settings::getCheatDetect() && (m_fields->nolcip || m_isIgnoreDamageEnabled || m_ignoreDamage || m_fields->speedhack)) return false;
 
     return true;
+}
+
+void DTPlayLayer::checkDelta(float delta) {
+    auto now = std::chrono::steady_clock::now();
+
+    if (!m_fields->speedhackCompare.has_value()) {
+        m_fields->speedhackCompare = now;
+        m_fields->lastSampleTime = now;
+        return;
+    }
+
+    std::chrono::duration<float> elapsed = now - m_fields->speedhackCompare.value();
+    float realDt = elapsed.count();
+    m_fields->speedhackCompare = now;
+
+    if (realDt <= 0.00001f) return;
+
+    float ratio = delta / realDt;
+    m_fields->ratioSum += ratio;
+    m_fields->frameCount++;
+
+    std::chrono::duration<float> timeSinceLastSample = now - m_fields->lastSampleTime;
+    
+    if (timeSinceLastSample.count() >= m_fields->sampleDurationSeconds) {
+        if (m_fields->frameCount > 0) {
+            float averageRatio = m_fields->ratioSum / static_cast<float>(m_fields->frameCount);
+            m_fields->lastAverages.push_back(averageRatio);
+
+            if (m_fields->lastAverages.size() >= m_fields->averagesToMeasure) {
+                int badLooks = 0;
+                for (float avg : m_fields->lastAverages) {
+                    if (std::abs(1.0f - avg) > m_fields->speedhackThreshold) {
+                        badLooks++;
+                    }
+                }
+
+                if (badLooks == m_fields->averagesToMeasure) {
+                    log::warn("Speedhack Detected!");
+
+                    m_fields->speedhack = true;
+                }
+
+                m_fields->lastAverages.clear();
+            }
+        }
+
+        m_fields->ratioSum = 0.0f;
+        m_fields->frameCount = 0;
+        m_fields->lastSampleTime = now;
+    }
 }
