@@ -30,7 +30,8 @@ bool SpecialKeyCell::init(std::shared_ptr<SpecialKey> key, geode::Function<void(
     keyText->setPosition({2, this->getContentHeight() / 2 + 3});
     keyText->setAlignment(CCTextAlignment::kCCTextAlignmentLeft);
     keyText->setAnchorPoint({0, .45f});
-    keyText->setScale(.45f);
+    float wantedScale = 41 / keyText->getContentWidth();
+    keyText->setScale(.45f > wantedScale ? wantedScale : .45f);
     this->addChild(keyText);
 
     auto descriptionText = SimpleTextArea::create(key->getDescription().c_str(), "chatFont.fnt", .45f);

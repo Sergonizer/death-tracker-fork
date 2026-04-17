@@ -2989,7 +2989,7 @@ UpdateFuture DTLayer::onLevelRunsKey() {
         if (finalCounts[i] > 0) {
             if (foundAny) toReturn += "{nl}";
             
-            toReturn += fmt::format("{} runs {}x", i, static_cast<uint64_t>(finalCounts[i]));
+            toReturn += fmt::format("{} runs X{}", i, static_cast<uint64_t>(finalCounts[i]));
             foundAny = true;
         }
     }
