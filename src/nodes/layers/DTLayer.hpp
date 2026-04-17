@@ -161,8 +161,6 @@ class DTLayer : public Popup {
 
         void onSettings(CCObject*);
 
-        void transferPlaytimeFromPT();
-
         //better info time calc :)
         uint64_t timeInMs();
         std::string decodeBase64Gzip(const std::string& input);
@@ -242,6 +240,9 @@ class DTLayer : public Popup {
 
         UpdateFuture onRunsTo100Key();
         UpdateFuture onBestRunsKey();
+
+        UpdateFuture onSessionRunsTo100Key();
+        UpdateFuture onSessionBestRunsKey();
         
         UpdateFuture onSectionKey();
 

@@ -543,10 +543,6 @@ void DTLayer::addSpecialString(const std::shared_ptr<SpecialKey>& key){
     key->updateContent();
 }
 
-void DTLayer::transferPlaytimeFromPT() {
-    
-}
-
 void DTLayer::populateSpecialStrings(){
     auto nlKey = std::make_shared<SpecialKey>("nl", "Adds a new line");
     nlKey->setUpdateFunction(BIND_UPDATE_FUNC(DTLayer::onNLKey));
@@ -636,8 +632,22 @@ void DTLayer::populateSpecialStrings(){
     addSpecialString(runsTo100Key);
 
     auto bRunsKey = std::make_shared<SpecialKey>("bruns", "Adds all your best runs from each percent");
+    bRunsKey->refreshWith(generalKey->getKey());
+    bRunsKey->refreshWith(runsKey->getKey());
     bRunsKey->setUpdateFunction(BIND_UPDATE_FUNC(DTLayer::onBestRunsKey));
     addSpecialString(bRunsKey);
+
+    auto sessionRunsTo100Key = std::make_shared<SpecialKey>("srt100", "Adds all your runs to 100 this session");
+    sessionRunsTo100Key->refreshWith(sessionFrom0Key->getKey());
+    sessionRunsTo100Key->refreshWith(sessionRunsKey->getKey());
+    sessionRunsTo100Key->setUpdateFunction(BIND_UPDATE_FUNC(DTLayer::onSessionRunsTo100Key));
+    addSpecialString(sessionRunsTo100Key);
+
+    auto sessionBRunsKey = std::make_shared<SpecialKey>("sbruns", "Adds all your best runs from each percent this session");
+    sessionBRunsKey->refreshWith(sessionFrom0Key->getKey());
+    sessionBRunsKey->refreshWith(sessionRunsKey->getKey());
+    sessionBRunsKey->setUpdateFunction(BIND_UPDATE_FUNC(DTLayer::onSessionBestRunsKey));
+    addSpecialString(sessionBRunsKey);
 
     auto sAttKey = std::make_shared<SpecialKey>("satt", "Adds your attempt count for the selected session");
     sAttKey->refreshWith({
@@ -2530,7 +2540,7 @@ UpdateFuture DTLayer::onRunsTo100Key(){
         return map;
     }, false));
 
-    if (m_MyLevelStats.isErr()) co_return Err("Failed to calculate runs playtime");
+    if (m_MyLevelStats.isErr()) co_return Err("Failed getting runs to 100");
 
     Deaths to100Deaths{};
 
@@ -2597,6 +2607,81 @@ UpdateFuture DTLayer::onBestRunsKey(){
     std::string out;
     if (!createDeathsString(bestRunDeaths, Save::getRunsCustomazations(), out))
         co_return Err("Failed best runs string");
+
+    co_return Ok(out);
+}
+
+UpdateFuture DTLayer::onSessionRunsTo100Key(){
+    GEODE_CO_UNWRAP_INTO(auto deaths, co_await getTFor<Deaths>([](GeneralData const& data){
+        auto runs = data.runs;
+        StatsManager::mergeMapsAdd(runs, data.deaths);
+        return runs;
+    },
+    NULL, true));
+
+    if (m_MyLevelStats.isErr()) co_return Err("Failed getting session runs to 100");
+
+    Deaths to100Deaths{};
+
+    for (const auto& death : deaths)
+    {
+        co_await arc::yield();
+        auto splitRunRes = StatsManager::splitRunKey(death.first);
+        if (splitRunRes.isErr()) continue;
+        auto splitRun = splitRunRes.unwrap();
+
+        if (splitRun.end != 100) continue;
+
+        to100Deaths.insert(death);
+    }
+
+    std::string out;
+    if (!createDeathsString(to100Deaths, Save::getRunsCustomazations(), out))
+        co_return Err("Failed to create session runs to 100 string");
+
+    co_return Ok(out);
+}
+
+UpdateFuture DTLayer::onSessionBestRunsKey(){
+    GEODE_CO_UNWRAP_INTO(auto deaths, co_await getTFor<Deaths>([](GeneralData const& data){
+        auto runs = data.runs;
+        StatsManager::mergeMapsAdd(runs, data.deaths);
+        return runs;
+    },
+    NULL, true));
+
+    std::map<int, int> bestRuns{};
+
+    for (const auto& death : deaths)
+    {
+        co_await arc::yield();
+        auto splitRunRes = StatsManager::splitRunKey(death.first);
+        if (splitRunRes.isErr()) continue;
+        auto splitRun = splitRunRes.unwrap();
+
+        if (!bestRuns.contains(splitRun.start))
+            bestRuns.insert({splitRun.start, splitRun.end});
+        else if (bestRuns[splitRun.start] < splitRun.end){
+            bestRuns[splitRun.start] = splitRun.end;
+        }
+    }
+
+    Deaths bestRunDeaths{};
+
+    for (const auto& [bestRunStart, bestRunEnd] : bestRuns)
+    {
+        co_await arc::yield();
+        auto runStringRes = StatsManager::createRunKey(Run{bestRunStart, bestRunEnd});
+        if (runStringRes.isErr()) continue;
+        auto runString = runStringRes.unwrap();
+        if (!deaths.contains(runString)) continue;
+
+        bestRunDeaths.insert({runString, deaths[runString]});
+    }
+
+    std::string out;
+    if (!createDeathsString(bestRunDeaths, Save::getRunsCustomazations(), out))
+        co_return Err("Failed best session runs string");
 
     co_return Ok(out);
 }

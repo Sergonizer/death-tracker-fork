@@ -1216,7 +1216,6 @@ bool StatsManager::transferPlaytimeFromPT(geode::Result<LevelData>& data, GJGame
             overallPT += (endT.unwrap() - startT.unwrap());
         }
     }
-    //TODO: write to main general deaths
 
     if (overallPT != 0){
         if (stats.from0.isErr()){
