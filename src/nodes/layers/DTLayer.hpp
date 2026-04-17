@@ -13,6 +13,8 @@
 #include <nodes/FloatingList.hpp>
 
 using namespace geode::prelude;
+template<class T>
+using GetTFuture = arc::Future<Result<T>>;
 
 struct ColumnComperator {
     bool operator() (LayoutColumn* a, LayoutColumn* b) const;
@@ -193,10 +195,17 @@ class DTLayer : public Popup {
         UpdateFuture onATTKey();
         UpdateFuture onLVLNKey();
         UpdateFuture onGeneralKey();
-        UpdateFuture onDTATTKey();
         UpdateFuture onRUNSKey();
         UpdateFuture onS0Key();
         UpdateFuture onSRUNSKey();
+
+        UpdateFuture onDTATTKey();
+        UpdateFuture onDTF0ATTKey();
+        UpdateFuture onDTRunsATTKey();
+
+        UpdateFuture onSAttKey();
+        UpdateFuture onSF0AttKey();
+        UpdateFuture onSRunsAttKey();
         
         long long calcPlaytime(const Deaths& deaths);
         
@@ -207,7 +216,7 @@ class DTLayer : public Popup {
         UpdateFuture onAPTSF0Key();
         UpdateFuture onAPTSRUNSKey();
 
-
+        //playtime
         UpdateFuture onPTALLSKey();
         UpdateFuture onPTF0SKey();
         UpdateFuture onPTRUNSKey();
@@ -215,15 +224,34 @@ class DTLayer : public Popup {
         UpdateFuture onPTSF0Key();
         UpdateFuture onPTSRUNSKey();
 
+        //dead playtime
+        UpdateFuture onDeadPTALLSKey();
+        UpdateFuture onDeadPTF0SKey();
+        UpdateFuture onDeadPTRUNSKey();
+        UpdateFuture onDeadPTSALLSKey();
+        UpdateFuture onDeadPTSF0Key();
+        UpdateFuture onDeadPTSRUNSKey();
+        
+        //paused playtime
+        UpdateFuture onPausedPTALLSKey();
+        UpdateFuture onPausedPTF0SKey();
+        UpdateFuture onPausedPTRUNSKey();
+        UpdateFuture onPausedPTSALLSKey();
+        UpdateFuture onPausedPTSF0Key();
+        UpdateFuture onPausedPTSRUNSKey();
+
         UpdateFuture onRunsTo100Key();
         UpdateFuture onBestRunsKey();
-        UpdateFuture onSAttKey();
         
         UpdateFuture onSectionKey();
 
         UpdateFuture onSessionDateKey();
 
         UpdateFuture getPlaytimeFor(geode::Function<uint64_t(GeneralData const&)>&& dataGetter, bool session);
+        UpdateFuture getAttemptsFor(geode::Function<unsigned long long(GeneralData const&, geode::FunctionRef<unsigned long long(const Deaths&)> const&)>&& dataGetter, bool session);
+
+        template<class T>
+        GetTFuture<T> getTFor(geode::Function<T(GeneralData const&)>&& dataGetter, geode::Function<T(T const&, T const&)>&& combineFunc, bool session);
 
         std::optional<float> cachedLevelLength;
 
