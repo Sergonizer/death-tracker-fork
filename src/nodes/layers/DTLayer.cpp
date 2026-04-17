@@ -754,6 +754,12 @@ void DTLayer::populateSpecialStrings(){
     sdateKey->refreshWith(sessionRunsKey->getKey());
     sdateKey->setUpdateFunction(BIND_UPDATE_FUNC(DTLayer::onSessionDateKey));
     addSpecialString(sdateKey);
+
+    auto lvlRunsKey = std::make_shared<SpecialKey>("lvlruns", "Gets how many times you completed the level in x runs");
+    lvlRunsKey->refreshWith(generalKey->getKey());
+    lvlRunsKey->refreshWith(runsKey->getKey());
+    lvlRunsKey->setUpdateFunction(BIND_UPDATE_FUNC(DTLayer::onLevelRunsKey));
+    addSpecialString(lvlRunsKey);
 }
 
 void DTLayer::UpdateSharedStats(){
@@ -2921,6 +2927,78 @@ UpdateFuture DTLayer::onSectionKey(){
 
 void DTLayer::onCalculator(CCObject*){
     CalculatorPopup::create()->show();
+}
+
+UpdateFuture DTLayer::onLevelRunsKey() {
+    GEODE_CO_UNWRAP_INTO(auto deaths, co_await getTFor<Deaths>([](GeneralData const& data){
+        auto runs = data.runs;
+        StatsManager::mergeMapsAdd(runs, data.deaths);
+        return runs;
+    },
+    [](auto const& a, auto const& b){
+        auto map = a;
+        StatsManager::mergeMapsAdd(map, b);
+        return map;
+    }, false));
+
+    const int max = 4;
+    std::vector<Run> validRuns;
+
+    for (auto const& [key, count] : deaths) {
+        auto res = StatsManager::splitRunKey(key);
+        if (res.isOk()) {
+            Run run = res.unwrap();
+            if (run.start <= -1) run.start = 0;
+            if (count > 0 && run.end > run.start) {
+                validRuns.push_back(run);
+            }
+        }
+        co_await arc::yield();
+    }
+
+    std::sort(validRuns.begin(), validRuns.end(), [](const Run& a, const Run& b) {
+        return std::tie(a.start, a.end) < std::tie(b.start, b.end);
+    });
+    validRuns.erase(std::unique(validRuns.begin(), validRuns.end(), [](const Run& a, const Run& b) {
+        return a.start == b.start && a.end == b.end;
+    }), validRuns.end());
+
+    std::map<int, std::array<uint64_t, max + 1>> dp;
+    dp[0][0] = 1;
+
+    for (int currentPercent = 0; currentPercent < 100; ++currentPercent) {
+        if (dp.find(currentPercent) == dp.end()) continue;
+
+        for (const auto& run : validRuns) {
+            if (run.start <= currentPercent && run.end > currentPercent) {
+                int target = std::min(run.end, 100);
+                for (int i = 0; i < max; ++i) {
+                    if (dp[currentPercent][i] > 0) {
+                        dp[target][i + 1] += dp[currentPercent][i];
+                    }
+                }
+            }
+        }
+    }
+
+    auto& finalCounts = dp[100];
+    std::string toReturn = "";
+    bool foundAny = false;
+
+    for (int i = 1; i <= max; ++i) {
+        if (finalCounts[i] > 0) {
+            if (foundAny) toReturn += "{nl}";
+            
+            toReturn += fmt::format("{} runs {}x", i, static_cast<uint64_t>(finalCounts[i]));
+            foundAny = true;
+        }
+    }
+
+    if (!foundAny) {
+        co_return Ok("Level not done in " + std::to_string(max) + " runs or less.");
+    }
+
+    co_return Ok(toReturn);
 }
 
 UpdateFuture DTLayer::getPlaytimeFor(geode::Function<uint64_t(GeneralData const&)>&& dataGetter, bool session){

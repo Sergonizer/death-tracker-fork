@@ -248,6 +248,8 @@ class DTLayer : public Popup {
 
         UpdateFuture onSessionDateKey();
 
+        UpdateFuture onLevelRunsKey();
+
         UpdateFuture getPlaytimeFor(geode::Function<uint64_t(GeneralData const&)>&& dataGetter, bool session);
         UpdateFuture getAttemptsFor(geode::Function<unsigned long long(GeneralData const&, geode::FunctionRef<unsigned long long(const Deaths&)> const&)>&& dataGetter, bool session);
 
