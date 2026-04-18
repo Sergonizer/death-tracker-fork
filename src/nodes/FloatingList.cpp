@@ -12,7 +12,6 @@ FloatingList* FloatingList::create(CCSize const& size, bool startOpen){
 }
 
 bool FloatingList::init(CCSize const& size, bool startOpen){
-    CCTouchDispatcher::get()->addPrioTargetedDelegate(this, 0, false);
     if (!CCNode::init()) return false;
 
     this->isOpen = startOpen;
@@ -196,6 +195,12 @@ bool FloatingList::ccTouchBegan(CCTouch *pTouch, CCEvent *pEvent){
     return false;
 }
 
-FloatingList::~FloatingList(){
+void FloatingList::onEnter(){
+    CCNode::onEnter();
+    CCTouchDispatcher::get()->addPrioTargetedDelegate(this, 0, false);
+}
+
+void FloatingList::onExit(){
+    CCNode::onExit();
     CCTouchDispatcher::get()->removeDelegate(this);
 }

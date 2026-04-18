@@ -43,6 +43,7 @@ bool BackupCell::init(float width, const std::string& levelKey, const long long 
         this,
         menu_selector(BackupCell::onRevert)
     );
+    revertBtn->setID("revert-btn");
     revertBtn->setPosition({width - revertBtn->getContentWidth() / 2 - 5, this->getContentHeight() / 1.5f});
     this->addChild(revertBtn);
 
@@ -54,6 +55,7 @@ bool BackupCell::init(float width, const std::string& levelKey, const long long 
         this,
         menu_selector(BackupCell::onDelete)
     );
+    deleteBackupBtn->setID("delete-btn");
     deleteBackupBtn->setPosition({revertBtn->getPositionX(), this->getContentHeight() / 3.0f - 1});
     this->addChild(deleteBackupBtn);
 

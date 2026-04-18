@@ -95,8 +95,6 @@ bool DTPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
 
     DTPlayLayer::updateSessionLastPlayed();
 
-    schedule(schedule_selector(DTPlayLayer::checkDelta));
-
     return true;
 }
 
@@ -410,6 +408,12 @@ bool DTPlayLayer::isLegal(){
     return true;
 }
 
+void DTPlayLayer::postUpdate(float dt){
+    checkDelta(dt);
+
+    PlayLayer::postUpdate(dt);
+}
+
 void DTPlayLayer::checkDelta(float delta) {
     auto now = std::chrono::steady_clock::now();
 
@@ -439,7 +443,7 @@ void DTPlayLayer::checkDelta(float delta) {
             if (m_fields->lastAverages.size() >= m_fields->averagesToMeasure) {
                 int badLooks = 0;
                 for (float avg : m_fields->lastAverages) {
-                    if (std::abs(1.0f - avg) > m_fields->speedhackThreshold) {
+                    if (std::abs(1.0f * m_fields->currentTimeWarp - avg) > m_fields->speedhackThreshold) {
                         badLooks++;
                     }
                 }
@@ -458,4 +462,16 @@ void DTPlayLayer::checkDelta(float delta) {
         m_fields->frameCount = 0;
         m_fields->lastSampleTime = now;
     }
+}
+
+void DTPlayLayer::updateTimeWarp(float timeWarp){
+    PlayLayer::updateTimeWarp(timeWarp);
+
+    m_fields->currentTimeWarp = timeWarp;
+    log::info("current warp is {}", m_fields->currentTimeWarp);
+
+    m_fields->lastSampleTime = std::chrono::steady_clock::now();
+    m_fields->lastAverages.clear();
+    m_fields->ratioSum = 0.0f;
+    m_fields->frameCount = 0;
 }

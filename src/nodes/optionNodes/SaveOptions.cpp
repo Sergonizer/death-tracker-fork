@@ -163,12 +163,16 @@ bool SaveOptions::setup(){
             ->joinHighlight(backupsScrollLayer)
             ->appendDialogue("On each backup you have some info", TutorialCharacterFace::TCFNormalTilted)
             ->joinPreviousHighlight()
-            ->appendDialogue("A revert button for overriding your current save with the backup", TutorialCharacterFace::TCFNormal)
+            ->appendDialogue("A revert button for overriding your current save with the backup", TutorialCharacterFace::TCFNormal);
         for (const auto& backupCell : backupsScrollLayer->m_contentLayer->getChildrenExt<BackupCell*>())
         {
-            
+            tutorialLayer->joinHighlight(backupCell->getChildByID("revert-btn"));
         }
-        
+        tutorialLayer->appendDialogue("And a trashcan button for deleting a backup!", TutorialCharacterFace::TCFHappy);
+        for (const auto& backupCell : backupsScrollLayer->m_contentLayer->getChildrenExt<BackupCell*>())
+        {
+            tutorialLayer->joinHighlight(backupCell->getChildByID("delete-btn"));
+        }
     });
     saveBackupsInfo->setPosition(backupsScrollLabel->getPosition() + ccp(backupsScrollLabel->getScaledContentWidth() / 2 + saveBackupsInfo->getScaledContentWidth() / 2, 0));
     this->addChild(saveBackupsInfo);

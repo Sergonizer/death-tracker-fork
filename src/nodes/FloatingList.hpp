@@ -39,7 +39,7 @@ class FloatingList : public CCNode, public CCTouchDelegate {
 
         void setItemEnabled(bool isEnabled);
 
-        bool ccTouchBegan(CCTouch *pTouch, CCEvent *pEvent);
+        bool ccTouchBegan(CCTouch *pTouch, CCEvent *pEvent) override;
 
         std::map<CCMenuItemSpriteExtra*, FloatingListItem> itemIds{};
 
@@ -54,5 +54,6 @@ class FloatingList : public CCNode, public CCTouchDelegate {
 
         CCNode* clickArea;
 
-        ~FloatingList();
+        void onEnter() override;
+        void onExit() override;
 };

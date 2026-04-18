@@ -25,6 +25,7 @@ class $modify(DTPlayLayer, PlayLayer) {
         const float sampleDurationSeconds = 0.1f;
         const int averagesToMeasure = 5;
         std::vector<float> lastAverages{};
+        float currentTimeWarp = 1;
 
         float speedhackThreshold = 0.05f;
 
@@ -88,5 +89,9 @@ class $modify(DTPlayLayer, PlayLayer) {
 
     bool isLegal();
 
+    void postUpdate(float dt);
+
     void checkDelta(float delta);
+
+    void updateTimeWarp(float timeWarp);
 };
