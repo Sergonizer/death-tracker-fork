@@ -468,7 +468,6 @@ void DTPlayLayer::updateTimeWarp(float timeWarp){
     PlayLayer::updateTimeWarp(timeWarp);
 
     m_fields->currentTimeWarp = timeWarp;
-    log::info("current warp is {}", m_fields->currentTimeWarp);
 
     m_fields->lastSampleTime = std::chrono::steady_clock::now();
     m_fields->lastAverages.clear();

@@ -705,14 +705,26 @@ void DTLayer::populateSpecialStrings(){
     addSpecialString(ptrunKey);
 
     auto ptsallKey = std::make_shared<SpecialKey>("ptsgen", "Adds your total accurate calculated session playtime");
+    ptsallKey->refreshWith({
+        sessionFrom0Key->getKey(),
+        sessionRunsKey->getKey()
+    });
     ptsallKey->setUpdateFunction(BIND_UPDATE_FUNC(DTLayer::onPTSALLSKey));
     addSpecialString(ptsallKey);
 
     auto ptsf0Key = std::make_shared<SpecialKey>("ptsf0", "Adds your total accurate calculated session playtime from 0");
+    ptsf0Key->refreshWith({
+        sessionFrom0Key->getKey(),
+        sessionRunsKey->getKey()
+    });
     ptsf0Key->setUpdateFunction(BIND_UPDATE_FUNC(DTLayer::onPTSF0Key));
     addSpecialString(ptsf0Key);
 
     auto ptsrunKey = std::make_shared<SpecialKey>("ptsruns", "Adds your total accurate calculated session playtime in runs");
+    ptsrunKey->refreshWith({
+        sessionFrom0Key->getKey(),
+        sessionRunsKey->getKey()
+    });
     ptsrunKey->setUpdateFunction(BIND_UPDATE_FUNC(DTLayer::onPTSRUNSKey));
     addSpecialString(ptsrunKey);
     
@@ -730,14 +742,26 @@ void DTLayer::populateSpecialStrings(){
     addSpecialString(dptrunKey);
 
     auto dptsallKey = std::make_shared<SpecialKey>("dptsgen", "Adds your total dead accurate calculated session playtime");
+    dptsallKey->refreshWith({
+        sessionFrom0Key->getKey(),
+        sessionRunsKey->getKey()
+    });
     dptsallKey->setUpdateFunction(BIND_UPDATE_FUNC(DTLayer::onDeadPTSALLSKey));
     addSpecialString(dptsallKey);
 
     auto dptsf0Key = std::make_shared<SpecialKey>("dptsf0", "Adds your total dead accurate calculated session playtime from 0");
+    dptsf0Key->refreshWith({
+        sessionFrom0Key->getKey(),
+        sessionRunsKey->getKey()
+    });
     dptsf0Key->setUpdateFunction(BIND_UPDATE_FUNC(DTLayer::onDeadPTSF0Key));
     addSpecialString(dptsf0Key);
 
     auto dptsrunKey = std::make_shared<SpecialKey>("dptsruns", "Adds your total dead accurate calculated session playtime in runs");
+    dptsrunKey->refreshWith({
+        sessionFrom0Key->getKey(),
+        sessionRunsKey->getKey()
+    });
     dptsrunKey->setUpdateFunction(BIND_UPDATE_FUNC(DTLayer::onDeadPTSRUNSKey));
     addSpecialString(dptsrunKey);
     
@@ -755,14 +779,26 @@ void DTLayer::populateSpecialStrings(){
     addSpecialString(pptrunKey);
 
     auto pptsallKey = std::make_shared<SpecialKey>("pptsgen", "Adds your total paused accurate calculated session playtime");
+    pptsallKey->refreshWith({
+        sessionFrom0Key->getKey(),
+        sessionRunsKey->getKey()
+    });
     pptsallKey->setUpdateFunction(BIND_UPDATE_FUNC(DTLayer::onPausedPTSALLSKey));
     addSpecialString(pptsallKey);
 
     auto pptsf0Key = std::make_shared<SpecialKey>("pptsf0", "Adds your total paused accurate calculated session playtime from 0");
+    pptsf0Key->refreshWith({
+        sessionFrom0Key->getKey(),
+        sessionRunsKey->getKey()
+    });
     pptsf0Key->setUpdateFunction(BIND_UPDATE_FUNC(DTLayer::onPausedPTSF0Key));
     addSpecialString(pptsf0Key);
 
     auto pptsrunKey = std::make_shared<SpecialKey>("pptsruns", "Adds your total paused accurate calculated session playtime in runs");
+    pptsrunKey->refreshWith({
+        sessionFrom0Key->getKey(),
+        sessionRunsKey->getKey()
+    });
     pptsrunKey->setUpdateFunction(BIND_UPDATE_FUNC(DTLayer::onPausedPTSRUNSKey));
     addSpecialString(pptsrunKey);
 
@@ -2338,15 +2374,7 @@ UpdateFuture DTLayer::onS0Key(){
     GEODE_CO_UNWRAP_INTO(auto sessioNDeaths, co_await getTFor<std::pair<Deaths, NewBests>>([](GeneralData const& data){
         return std::make_pair(data.deaths, data.newBests);
     },
-    [](auto const& a, auto const& b){
-        auto map = a.first;
-        StatsManager::mergeMapsAdd(map, b.first);
-
-        auto nbs = a.second;
-        nbs.insert(b.second.begin(), b.second.end());
-
-        return std::make_pair(map, nbs);
-    }, false));
+    NULL, true));
 
     std::string out;
     if (!createDeathsString(sessioNDeaths.first, Save::getSessionF0Customazations(), out, sessioNDeaths.second, Save::getSessionBestColor()))

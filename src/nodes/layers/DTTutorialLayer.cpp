@@ -278,13 +278,16 @@ void DTTutorialLayer::onProgress(DialogObject* dObject){
         retainedSprites.insert(glow);
 
         glow->setOpacity(0);
-        auto fadeSeq = CCSequence::create(
-            CCDelayTime::create(delayTime),
-            CCFadeTo::create(.5f, 255),
-            nullptr
-        );
-        fadeSeq->setTag(14);
-        glow->runAction(fadeSeq);
+        CCSequence* fadeSeq;
+        if (nodeIsVisible(highlightTarget)){
+            fadeSeq = CCSequence::create(
+                CCDelayTime::create(delayTime),
+                CCFadeTo::create(.5f, 255),
+                nullptr
+            );
+            fadeSeq->setTag(14);
+            glow->runAction(fadeSeq);
+        }
         glow->setTag(2);
 
         prevHighlights.insert({glow, highlightTarget});
@@ -319,13 +322,15 @@ void DTTutorialLayer::onProgress(DialogObject* dObject){
         );
         label->setScale(textInfo.size);
         label->setOpacity(0);
-        fadeSeq = CCSequence::create(
-            CCDelayTime::create(delayTime),
-            CCFadeTo::create(.5f, 255),
-            nullptr
-        );
-        fadeSeq->setTag(14);
-        label->runAction(fadeSeq);
+        if (nodeIsVisible(highlightTarget)){
+            fadeSeq = CCSequence::create(
+                CCDelayTime::create(delayTime),
+                CCFadeTo::create(.5f, 255),
+                nullptr
+            );
+            fadeSeq->setTag(14);
+            label->runAction(fadeSeq);
+        }
         this->addChild(label);
 
         textsForHighlights.insert({glow, label});

@@ -156,20 +156,23 @@ bool SaveOptions::setup(){
     saveOverallInfo->setPosition(size - saveOverallInfo->getScaledContentSize() / 2 + ccp(2, 2));
     this->addChild(saveOverallInfo);
 
-    auto saveBackupsInfo = TutorialButton::create(.75f, "save-backup", [&](DTTutorialLayer* tutorialLayer){
+    auto saveBackupsInfo = TutorialButton::create(.75f, "save-backup", [&, backupsScrollLabel](DTTutorialLayer* tutorialLayer){
         tutorialLayer->appendDialogue("Here you have a list of all your backups for this level", TutorialCharacterFace::TCFNormal)
-            ->joinTransform(TutorialBoxPlacement::TBPBottomRight, .75f)
+            ->joinTransform(TutorialBoxPlacement::TBPBottomLeft, .65f)
             ->joinHighlight(backupsScrollLabel)
             ->joinHighlight(backupsScrollLayer)
-            ->appendDialogue("On each backup you have some info", TutorialCharacterFace::TCFNormalTilted)
-            ->joinPreviousHighlight()
-            ->appendDialogue("A revert button for overriding your current save with the backup", TutorialCharacterFace::TCFNormal);
-        for (const auto& backupCell : backupsScrollLayer->m_contentLayer->getChildrenExt<BackupCell*>())
+            ->appendDialogue("On each backup you have some info", TutorialCharacterFace::TCFNormalTilted);
+        for (const auto& backupCell : backupsScrollLayer->m_contentLayer->getChildrenExt<CCNode*>())
+        {
+            tutorialLayer->joinHighlight(backupCell);
+        }
+        tutorialLayer->appendDialogue("A <cp>revert</c> button for <cr>overriding</c> your current save with the backup", TutorialCharacterFace::TCFNormal);
+        for (const auto& backupCell : backupsScrollLayer->m_contentLayer->getChildrenExt<CCNode*>())
         {
             tutorialLayer->joinHighlight(backupCell->getChildByID("revert-btn"));
         }
-        tutorialLayer->appendDialogue("And a trashcan button for deleting a backup!", TutorialCharacterFace::TCFHappy);
-        for (const auto& backupCell : backupsScrollLayer->m_contentLayer->getChildrenExt<BackupCell*>())
+        tutorialLayer->appendDialogue("And a <cr>trashcan</c> button for <cr>deleting</c> a backup!", TutorialCharacterFace::TCFHappy);
+        for (const auto& backupCell : backupsScrollLayer->m_contentLayer->getChildrenExt<CCNode*>())
         {
             tutorialLayer->joinHighlight(backupCell->getChildByID("delete-btn"));
         }
