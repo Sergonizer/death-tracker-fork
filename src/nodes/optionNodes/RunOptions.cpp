@@ -219,54 +219,68 @@ bool RunOptions::setup(){
         emptyPer->setScale(1.5f);
         this->addChild(emptyPer);
 
-        tutorial->appendDialogue("In here you can manage which runs you want to see! to clear up clutter!", TutorialCharacterFace::TCFNormal)
-            ->appendDialogue("First you have \"Show any run\", this will tell death tracker to display all the runs you have done", TutorialCharacterFace::TCFNormal)
+        tutorial->appendDialogue("In here you can manage which runs you want to see! to clear up clutter!", TutorialCharacterFace::TCFHappy)
+            ->appendDialogue("Because sometimes it becomes hard to find the death you want", TutorialCharacterFace::TCFBored)
+            ->appendDialogue("First you have <cy>\"Show any run\"</c>, this will tell death tracker to <cg>display all the runs</c> you have done", TutorialCharacterFace::TCFNormal)
             ->joinTransform(TutorialBoxPlacement::TBPRight, .75f)
             ->joinHighlight(TARToggler)
             ->joinHighlight(TARLabel)
-            ->appendDialogue("if this is enabled, the runs you pick below will not effect anything.", TutorialCharacterFace::TCFNormal)
+            ->appendDialogue("if this is enabled, the runs you pick below <cd>will not effect anything</c>.", TutorialCharacterFace::TCFNormal)
             ->joinHighlight(TARToggler)
             ->joinHighlight(TARLabel)
-            ->appendDialogue("Now for addding runs you have this text input and button", TutorialCharacterFace::TCFNormal)
+            ->appendDialogue("Now for addding runs you have this <cc>text input</c> and <cg>button</c>", TutorialCharacterFace::TCFHappy)
             ->joinTransform(TutorialBoxPlacement::TBPBottomRight, .75f)
             ->joinHighlight(runAdditionInput)
             ->joinHighlight(plusBtn)
-            ->appendDialogue("You write the percentage you wanna see into the text input", TutorialCharacterFace::TCFNormal)
+            ->appendDialogue("You write the <cy>starting percentage</c> of the run you wanna see into the <cc>text input</c>", TutorialCharacterFace::TCFNormal)
             ->joinHighlight(runAdditionInput)
-            ->appendDialogue("And click the plus button to confirm and add that percent to your list of showen percentages!", TutorialCharacterFace::TCFNormal)
+            ->appendDialogue("And click the <cg>plus button</c> to confirm and add that percent to your list of showen percentages!", TutorialCharacterFace::TCFHappy)
             ->joinHighlight(plusBtn)
-            ->appendDialogue("If you have \"Show any run\" disabled, you will only see the runs that start from any percentage on this list!", TutorialCharacterFace::TCFNormal)
+            ->appendDialogue("If you have <cy>\"Show any run\"</c> <cr>disabled</c>, you will <cj>only see the runs that start from any percentage on this list</c>!", TutorialCharacterFace::TCFNormalTilted)
             ->joinTransform(TutorialBoxPlacement::TBPTopRight, .75f)
             ->joinHighlight(runsScrollLayer)
             ->appendDialogue("In this list you have a few options per percent", TutorialCharacterFace::TCFNormal)
             ->joinHighlight(runsScrollLayer)
-            ->appendDialogue("You can remove the percent from the list", TutorialCharacterFace::TCFNormal)
+            ->appendDialogue("You can <cr>remove</c> the percent from the list", TutorialCharacterFace::TCFNormal)
             ->joinTransform(TutorialBoxPlacement::TBPTop, .75f)
             ->joinHighlight(emptyPer->getChildByID("btn"))
             ->joinCallback([emptyPer](){emptyPer->show();}, true)
-            ->appendDialogue("And you can edit the \"Max to Hide\" percent.", TutorialCharacterFace::TCFNormal)
+            ->appendDialogue("And you can edit the <cy>\"Max to Hide\"</c> percent.", TutorialCharacterFace::TCFNormalTilted)
             ->joinHighlight(emptyPer->getSilderBG())
             ->joinHighlight(emptyPer->getSilderHandle())
             ->joinHighlight(emptyPer->getChildByID("mth-label"))
             ->joinHighlight(emptyPer->getChildByID("mth-input"))
-            ->appendDialogue("The number you input here will hide any run thats between that number and the original percentage.", TutorialCharacterFace::TCFNormal)
+            ->appendDialogue("The number you input here will <cy>hide any run</c> thats between <cp>that number</c> and the <cd>original percentage</c>.", TutorialCharacterFace::TCFNormal)
             ->joinHighlight(emptyPer->getSilderBG())
             ->joinHighlight(emptyPer->getSilderHandle())
             ->joinHighlight(emptyPer->getChildByID("mth-label"))
             ->joinHighlight(emptyPer->getChildByID("mth-input"))
-            ->appendDialogue(fmt::format("For example, in this case it will hide all runs starting from {} and ending below {}", randomPer, randomMaxToHide), TutorialCharacterFace::TCFNormal)
+            ->appendDialogue(fmt::format("For example, in this case it will hide all runs <cd>starting from {}</c> and <cp>ending below {}</c>", randomPer, randomMaxToHide), TutorialCharacterFace::TCFNormal)
             ->joinHighlight(emptyPer->getChildByID("percent-label"))
             ->joinHighlight(emptyPer->getChildByID("mth-input"), 1.5f)
-            ->appendDialogue(fmt::format("So {}-{} wont be seen but {}-{} will be!", randomPer, randomMaxToHide - 2, randomPer, randomMaxToHide), TutorialCharacterFace::TCFNormal)
+            ->appendDialogue(fmt::format("So <cd>{}-{}</c> wont be seen but <cy>{}-{}</c> will be!", randomPer, randomMaxToHide - 2, randomPer, randomMaxToHide), TutorialCharacterFace::TCFHappy)
             ->joinHighlight(emptyPer->getChildByID("percent-label"))
             ->joinHighlight(emptyPer->getChildByID("mth-input"))
-            ->appendDialogue("Hope this feature helps you improve clutter in your death tracker! :D", TutorialCharacterFace::TCFNormal)
+            ->appendDialogue("Hope this feature helps you <cy>improve clutter</c> in your death tracker! :D", TutorialCharacterFace::TCFHappy)
             ->joinTransform(TutorialBoxPlacement::TBPCenter, 1)
             ->joinCallback([emptyPer](){emptyPer->hide();}, true)
             ->joinCallback([emptyPer](){emptyPer->removeMeAndCleanup();}, false);
     });
     runsHidingTutorial->setPosition(TARLabel->getPosition() + ccp(15 + TARLabel->getScaledContentWidth() / 2, 0));
     this->addChild(runsHidingTutorial);
+
+    auto runsOtherTutorial = TutorialButton::create(.75f, "run-overall", [&, HideUpToLabel, ResetAsDeathToggler, ResetAsDeathLabel](DTTutorialLayer* tutorial){
+        tutorial->appendDialogue("Here we have some extra settings for run managment", TutorialCharacterFace::TCFNormalTilted)
+            ->appendDialogue("We have <cy>\"Hide Up To\"</c>, which like <cy>\"Max to Hide\"</c> on runs, will hide all runs up to that percent but from 0", TutorialCharacterFace::TCFNormal)
+            ->joinTransform(TutorialBoxPlacement::TBPLeft, .70f)
+            ->joinHighlight(HidUpToInput)
+            ->joinHighlight(HideUpToLabel)
+            ->appendDialogue("And we also have <cy>\"Reset as death\"</c>! which makes resetting count as if you died, tracking it!", TutorialCharacterFace::TCFHappy)
+            ->joinHighlight(ResetAsDeathToggler)
+            ->joinHighlight(ResetAsDeathLabel);
+    });
+    runsOtherTutorial->setPosition(size + ccp(-15, -15));
+    this->addChild(runsOtherTutorial);
 
     this->setOpacity(0);
 

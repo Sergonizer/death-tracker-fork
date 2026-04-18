@@ -491,10 +491,72 @@ bool ModifyOptions::setup(){
 
     scheduleUpdate();
 
-    auto modiftyInfo = TutorialButton::create(1, "tbp", [&](DTTutorialLayer* tutorialLayer){
+    auto modiftyInfo = TutorialButton::create(.75f, "modify-overall", [&, addBtn, removeBtn, runF0Toggler, currentRunModeLabel](DTTutorialLayer* tutorialLayer){
+        tutorialLayer->appendDialogue("Here you are able to <cy>modify</c> your save file!", TutorialCharacterFace::TCFHappy)
+            ->appendDialogue("Here you have a <cf>preview</c> of how your save file <cy>currently</c> looks", TutorialCharacterFace::TCFNormal)
+            ->joinTransform(TutorialBoxPlacement::TBPLeft, .75f)
+            ->joinHighlight(previewBG)
+
+            ->appendDialogue("You can see <cs>what data</c> it currently displays in the <cl>labels title</c>", TutorialCharacterFace::TCFNormalTilted)
+            ->joinTransform(TutorialBoxPlacement::TBPTopLeft, .75f)
+            ->joinHighlight(myLabel->labelTitleBG)
+
+            ->appendDialogue("At the top you can <cy>edit what data you are going to edit!</c>", TutorialCharacterFace::TCFHappy)
+            ->joinTransform(TutorialBoxPlacement::TBPLeft, .75f)
+            ->joinHighlight(selectionBG)
+
+            ->appendDialogue("You can choose between <cy>general</c> level stats or <cy>session</c> stats", TutorialCharacterFace::TCFNormal)
+            ->joinHighlight(sessLvlSwitcher)
+
+            ->appendDialogue("You can choose between editing <cc>runs</c> or <cc>from 0</c> stats", TutorialCharacterFace::TCFNormalTilted)
+            ->joinHighlight(runF0Toggler)
+            ->joinHighlight(currentRunModeLabel)
+
+            ->appendDialogue("And you can switch between <co>sessions</c> using the session selector", TutorialCharacterFace::TCFNormal)
+            ->joinHighlight(sessionSelector)
+            ->joinTextToHighlight("Session Selector", .35f)
+
+            ->appendDialogue("The <cf>preview</c> will change according to your selection!", TutorialCharacterFace::TCFHappy)
+            ->joinTransform(TutorialBoxPlacement::TBPLeft, .75f)
+            ->joinHighlight(previewBG)
+
+            ->appendDialogue("At the bottom you have fields to <cg>add</c>/<cr>remove</c> data from your save!", TutorialCharacterFace::TCFHappy)
+            ->joinTransform(TutorialBoxPlacement::TBPTopLeft, .75f)
+            ->joinHighlight(runsBG)
+            ->joinHighlight(f0BG)
+            ->joinHighlight(nbBG)
+
+            ->appendDialogue("One for <cy>runs</c>", TutorialCharacterFace::TCFNormal)
+            ->joinHighlight(runsBG)
+
+            ->appendDialogue("One for <cy>from 0</c> progress", TutorialCharacterFace::TCFNormal)
+            ->joinHighlight(f0BG)
+
+            ->appendDialogue("And one for <cy>new bests</c>", TutorialCharacterFace::TCFNormal)
+            ->joinHighlight(nbBG)
+
+            ->appendDialogue("They all have <cc>input fields</c> to input percentages", TutorialCharacterFace::TCFNormal)
+            ->joinHighlight(addRunStartInput)
+            ->joinHighlight(addRunEndInput)
+            ->joinHighlight(addPercentInput)
+            ->joinHighlight(addNewBestInput)
+            
+            ->appendDialogue("And buttons for <cg>adding</c>/<cr>removing</c> the inputted data from the save file!", TutorialCharacterFace::TCFHappy)
+            ->joinHighlight(addBtn)
+            ->joinHighlight(removeBtn);
         
+        for (const auto& [btn, _] : plusMinusCallbacks)
+        {
+            tutorialLayer->joinHighlight(btn);
+        }
+        
+        tutorialLayer->appendDialogue("Some have an <cy>amount field</c> for inputting <cy>how any of x runs</c> to add at a time", TutorialCharacterFace::TCFNormal)
+            ->joinHighlight(f0AmountInput)
+            ->joinHighlight(runAmountInput)
+            ->appendDialogue("Enjoy editing your save file!", TutorialCharacterFace::TCFHappy)
+            ->joinTransform(TutorialBoxPlacement::TBPCenter, 1);
     });
-    modiftyInfo->setPosition(size);
+    modiftyInfo->setPosition(size - modiftyInfo->getScaledContentSize() / 2 + ccp(2, 2));
     this->addChild(modiftyInfo);
 
     this->setOpacity(0);

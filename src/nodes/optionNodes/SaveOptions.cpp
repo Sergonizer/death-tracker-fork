@@ -150,13 +150,24 @@ bool SaveOptions::setup(){
     importBtnLabel->setPosition(importBtn->getPosition() + ccp(importBtn->getContentWidth() / 2 + 5, 0));
     this->addChild(importBtnLabel);
 
-    auto saveOverallInfo = TutorialButton::create(1, "tbp", [&](DTTutorialLayer* tutorialLayer){
+    auto saveOverallInfo = TutorialButton::create(.75f, "save-overall", [&](DTTutorialLayer* tutorialLayer){
         
     });
-    saveOverallInfo->setPosition(size);
+    saveOverallInfo->setPosition(size - saveOverallInfo->getScaledContentSize() / 2 + ccp(2, 2));
     this->addChild(saveOverallInfo);
 
-    auto saveBackupsInfo = TutorialButton::create(1, "tbp", [&](DTTutorialLayer* tutorialLayer){
+    auto saveBackupsInfo = TutorialButton::create(.75f, "save-backup", [&](DTTutorialLayer* tutorialLayer){
+        tutorialLayer->appendDialogue("Here you have a list of all your backups for this level", TutorialCharacterFace::TCFNormal)
+            ->joinTransform(TutorialBoxPlacement::TBPBottomRight, .75f)
+            ->joinHighlight(backupsScrollLabel)
+            ->joinHighlight(backupsScrollLayer)
+            ->appendDialogue("On each backup you have some info", TutorialCharacterFace::TCFNormalTilted)
+            ->joinPreviousHighlight()
+            ->appendDialogue("A revert button for overriding your current save with the backup", TutorialCharacterFace::TCFNormal)
+        for (const auto& backupCell : backupsScrollLayer->m_contentLayer->getChildrenExt<BackupCell*>())
+        {
+            
+        }
         
     });
     saveBackupsInfo->setPosition(backupsScrollLabel->getPosition() + ccp(backupsScrollLabel->getScaledContentWidth() / 2 + saveBackupsInfo->getScaledContentWidth() / 2, 0));

@@ -329,7 +329,17 @@ bool DTLayer::init(GJGameLevel* const& level) {
     discardChangesButton->setPosition({-191, -140});
     editLayoutMenu->addChild(discardChangesButton);
 
-    auto mainInfo = TutorialButton::create(1, "main-overall", [&, levelSpecificOptionsBtn, graphBtn, editLayoutBtn, settingsBtn](DTTutorialLayer* tutorialLayer){
+    auto mainInfo = TutorialButton::create(
+        1,
+        "main-overall",
+        [
+            &,
+            levelSpecificOptionsBtn,
+            graphBtn,
+            editLayoutBtn,
+            settingsBtn,
+            calculatorBtn
+        ](DTTutorialLayer* tutorialLayer){
         tutorialLayer->appendDialogue("Welcome to the <cy>main death tracker page!</c>", TutorialCharacterFace::TCFHappy)
             ->appendDialogue("This is the <cy>main view</c> where you can view <cg>all your data!</c>", TutorialCharacterFace::TCFNormal)
             ->joinTransform(TutorialBoxPlacement::TBPBottom, .75f)
@@ -351,19 +361,32 @@ bool DTLayer::init(GJGameLevel* const& level) {
             ->appendDialogue("You have the <cg>graphs</c> which allow you to visually see your consistancy and other aspects of your data", TutorialCharacterFace::TCFNormalTilted)
             ->joinHighlight(graphBtn)
             ->joinTextToHighlight("graphs", .3f, TutorialTextPlacement::TTTop)
+
+            ->appendDialogue("Theres the <cy>calculator</c>, allowing you to see some extra data about your runs", TutorialCharacterFace::TCFNormal)
+            ->joinHighlight(calculatorBtn)
+            ->joinTransform(TutorialBoxPlacement::TBPCenter, .75f)
+            ->joinTextToHighlight("calculator", .3f, TutorialTextPlacement::TTTop)
+
             ->appendDialogue("You have the <co>session selector</c>, allowing you to choose which session to view", TutorialCharacterFace::TCFNormal)
             ->joinHighlight(sessionSelector)
-            ->joinTransform(TutorialBoxPlacement::TBPCenter, .75f)
             ->joinTextToHighlight("Session Selector", .3f, TutorialTextPlacement::TTTop)
+
             ->appendDialogue("The <cy>higher</c> the number, the <cr>older</c> the session! so <co>session 1</c> is the most recent and <co>the last</c> is the oldest!", TutorialCharacterFace::TCFHappy)
             ->joinHighlight(sessionSelector)
+
+            ->appendDialogue("There are the session groups! which allow you to group session by specific categories         ", TutorialCharacterFace::TCFNormal)
+            ->joinHighlight(groupsBtn)
+            ->joinTextToHighlight("Session Groups", .3f, TutorialTextPlacement::TTTop)
+
             ->appendDialogue("You also have the option to <cy>edit how your data is layed out</c> using this button!", TutorialCharacterFace::TCFNormal)
             ->joinHighlight(editLayoutBtn)
             ->joinTextToHighlight("Layout Editor", .3f, TutorialTextPlacement::TTTop)
             ->joinTransform(TutorialBoxPlacement::TBPRight, .75f)
+
             ->appendDialogue("And lastly you have quick access to the mod settings for death tracker right here!", TutorialCharacterFace::TCFNormalTilted)
             ->joinHighlight(settingsBtn)
             ->joinTextToHighlight("Mod Options", .3f, TutorialTextPlacement::TTTop)
+
             ->appendDialogue("Have fun playing around with the features!", TutorialCharacterFace::TCFHappy)
             ->joinTransform(TutorialBoxPlacement::TBPCenter);
     });

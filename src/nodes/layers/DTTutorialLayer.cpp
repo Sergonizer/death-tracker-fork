@@ -180,6 +180,8 @@ void DTTutorialLayer::onProgress(DialogObject* dObject){
 
         auto bg = static_cast<CCScale9Sprite*>(dialogueLayer->m_mainLayer->getChildren()->objectAtIndex(0));
 
+        float scaleMultiplier = allSegments[segmentIndex].boxScale.has_value() ? allSegments[segmentIndex].boxScale.value() : dialogueLayer->m_mainLayer->getScale();
+
         switch (allSegments[segmentIndex].alignment.value()) {
             case TutorialBoxPlacement::TBPCenter:
                 toMoveTo = CCPoint{winSize.width * 0.5F, winSize.height * 0.5F};
@@ -191,22 +193,22 @@ void DTTutorialLayer::onProgress(DialogObject* dObject){
                 toMoveTo = CCPoint{winSize.width * 0.5F, 70.F};
             break;
         case TutorialBoxPlacement::TBPLeft:
-                toMoveTo = CCPoint{bg->getContentWidth() / 2, winSize.height * 0.5F};
+                toMoveTo = CCPoint{bg->getContentWidth() * scaleMultiplier / 2, winSize.height * 0.5F};
             break;
         case TutorialBoxPlacement::TBPRight:
-                toMoveTo = CCPoint{winSize.width - bg->getContentWidth() / 2, winSize.height * 0.5F};
+                toMoveTo = CCPoint{winSize.width - bg->getContentWidth() * scaleMultiplier / 2, winSize.height * 0.5F};
             break;
         case TutorialBoxPlacement::TBPTopRight:
-                toMoveTo = CCPoint{winSize.width - bg->getContentWidth() / 2, (winSize.height - 50.F) - 20.F};
+                toMoveTo = CCPoint{winSize.width - bg->getContentWidth() * scaleMultiplier / 2, (winSize.height - 50.F) - 20.F};
             break;
         case TutorialBoxPlacement::TBPTopLeft:
-                toMoveTo = CCPoint{bg->getContentWidth() / 2, (winSize.height - 50.F) - 20.F};
+                toMoveTo = CCPoint{bg->getContentWidth() * scaleMultiplier / 2, (winSize.height - 50.F) - 20.F};
             break;
         case TutorialBoxPlacement::TBPBottomLeft:
-                toMoveTo = CCPoint{bg->getContentWidth() / 2, 70.F};
+                toMoveTo = CCPoint{bg->getContentWidth() * scaleMultiplier / 2, 70.F};
             break;
         case TutorialBoxPlacement::TBPBottomRight:
-                toMoveTo = CCPoint{winSize.width - bg->getContentWidth() / 2, 70.F};
+                toMoveTo = CCPoint{winSize.width - bg->getContentWidth() * scaleMultiplier / 2, 70.F};
             break;
         }
 
