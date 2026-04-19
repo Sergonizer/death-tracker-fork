@@ -585,6 +585,7 @@ void DTLayer::onEditLayout(CCObject*){
     editLayoutBtnSpr->runAction(CCFadeTo::create(.15f, 0));
 
     groupsHolder->setEnabled(false);
+    groupsList->close();
     
     colorChangeBG->stopActionByTag(2);
     auto fa = CCFadeTo::create(.15f, 255);
