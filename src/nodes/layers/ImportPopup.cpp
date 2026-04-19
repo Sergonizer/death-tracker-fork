@@ -56,11 +56,14 @@ bool ImportPopup::init() {
         "GJ_button_02.png",
         false
     );
+    fromTextBtnSpr->setCascadeOpacityEnabled(true);
     auto fromTextBtn = CCMenuItemSpriteExtra::create(
         fromTextBtnSpr,
         this,
         menu_selector(ImportPopup::onFromText)
     );
+    fromTextBtn->setEnabled(false);
+    fromTextBtn->setOpacity(120);
     menu->addChild(fromTextBtn);
 
     menu->updateLayout();
@@ -82,6 +85,12 @@ bool ImportPopup::init() {
     fromTextLabel->setPosition((fromTextBtnC1 + fromTextBtnC2) / 2 + ccp(0, fromTextBtnC2.y - fromTextBtnC1.y) / 2);
     fromTextLabel->setAnchorPoint({.5f, 0});
     m_mainLayer->addChild(fromTextLabel);
+
+    auto fromTextCSLabel = CCLabelBMFont::create("(coming soon)", "bigFont.fnt");
+    fromTextCSLabel->setScale(.25f);
+    fromTextCSLabel->setPosition((fromTextBtnC1 + fromTextBtnC2) / 2 - ccp(0, fromTextBtnC2.y - fromTextBtnC1.y) / 2);
+    fromTextCSLabel->setAnchorPoint({.5f, 1});
+    m_mainLayer->addChild(fromTextCSLabel);
 
     return true;
 }
