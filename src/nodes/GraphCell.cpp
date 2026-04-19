@@ -24,6 +24,7 @@ bool GraphCell::init(float width, const DTGraphInfo& graphInfo){
     everythingParent = CCMenu::create();
     everythingParent->setAnchorPoint({0, 0});
     everythingParent->setPositionX(0);
+    everythingParent->ignoreAnchorPointForPosition(false);
     this->addChild(everythingParent);
 
     bg = CCScale9Sprite::create("square01_001.png");
@@ -43,29 +44,30 @@ bool GraphCell::init(float width, const DTGraphInfo& graphInfo){
     label->setAlignment(CCTextAlignment::kCCTextAlignmentLeft);
     everythingParent->addChild(label);
 
-    outerColor = CCSprite::create("circle.png");
+    outerColor = CCSprite::createWithSpriteFrameName("menuCircleWhite.png");
     outerColor->setColor({graphInfo.outlineColor.r, graphInfo.outlineColor.g, graphInfo.outlineColor.b});
     outerColor->setOpacity(graphInfo.outlineColor.a);
 
-    innerColor = CCSprite::create("circle.png");
+    innerColor = CCSprite::createWithSpriteFrameName("menuCircleWhite.png");
     innerColor->setScale(.75f);
     innerColor->setPosition(outerColor->getContentSize() / 2);
     innerColor->setColor({graphInfo.color.r, graphInfo.color.g, graphInfo.color.b});
     innerColor->setOpacity(graphInfo.color.a);
     outerColor->addChild(innerColor);
 
-    auto disabledCircle = CCSprite::create("circle.png");
+    auto disabledCircle = CCSprite::createWithSpriteFrameName("menuCircleWhite.png");
+    disabledCircle->setScale(.4f);
     disabledCircle->setColor({ 84, 43, 43 });
 
     auto disabledCircleX = CCSprite::createWithSpriteFrameName("edit_delBtnSmall_001.png");
     disabledCircleX->setPosition(disabledCircle->getContentSize() / 2);
-    disabledCircleX->setScale(.4f);
+    //disabledCircleX->setScale(.4f);
     disabledCircle->addChild(disabledCircleX);
 
     enableToggleBtn = SimpleToggler::create(
         disabledCircle,
         outerColor,
-        1.5f,
+        .35f,
         graphInfo.isEnabled
     );
     enableToggleBtn->setPosition(label->getPosition() + ccp(
@@ -79,10 +81,10 @@ bool GraphCell::init(float width, const DTGraphInfo& graphInfo){
     });
     everythingParent->addChild(enableToggleBtn);
 
-    auto bgCircle = CCSprite::create("circle.png");
+    auto bgCircle = CCSprite::createWithSpriteFrameName("menuCircleWhite.png");
     bgCircle->setColor({0,0,0});
     bgCircle->setPosition(enableToggleBtn->getPosition());
-    bgCircle->setScale(1.7f);
+    bgCircle->setScale(.45f);
     everythingParent->addChild(bgCircle);
 
     this->setZOrder(graphInfo.orderPos);
