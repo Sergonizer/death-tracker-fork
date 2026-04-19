@@ -423,8 +423,8 @@ bool DTLayer::init(GJGameLevel* const& level) {
 
         index = 0;
         for (const auto& label : allLabels){
-            tutorialLayer->joinHighlight(label->leftExpandLine, .2f * index);
-            tutorialLayer->joinHighlight(label->rightExpandLine, .2f * index);
+            tutorialLayer->joinHighlight(label->leftExpandLine, .2f * index, false, false);
+            tutorialLayer->joinHighlight(label->rightExpandLine, .2f * index, false, false);
 
             index++;
         }
@@ -453,14 +453,14 @@ bool DTLayer::init(GJGameLevel* const& level) {
         }
 
         tutorialLayer
-            ->appendDialogue("One you are done can click the <cg>Apply Changes</c> button to save your changes", TutorialCharacterFace::TCFNormal)
+            ->appendDialogue("One you are done, you can click the <cg>Apply Changes</c> button to save your changes", TutorialCharacterFace::TCFNormal)
             ->joinHighlight(applyChangesButton)
             ->appendDialogue("Or delete all the changes you have made using the <cr>Discard Changes</c> button!", TutorialCharacterFace::TCFNormal)
             ->joinHighlight(discardChangesButton)
             ->appendDialogue("Feel free to play around and explore the different settings!", TutorialCharacterFace::TCFNormal)
             ->joinTransform(TutorialBoxPlacement::TBPCenter, 1);
     });
-    layoutInfo->setPosition({100, 128});
+    layoutInfo->setPosition({130, 128});
     layoutInfo->setOpacity(0);
     editLayoutMenu->addChild(layoutInfo);
 

@@ -49,7 +49,7 @@ struct TutorialSegment{
 
     CCNode* lastAddedHighlight;
 
-    std::map<CCNode*, std::pair<float, bool>> targetObjects{};
+    std::map<CCNode*, std::tuple<float, bool, bool>> targetObjects{};
     std::map<CCNode*, HighlightText> textForTargets{};
 };
 
@@ -65,12 +65,12 @@ class DTTutorialLayer : public CCLayer, public DialogDelegate {
         );
         DTTutorialLayer* appendDialogue(DialogObject* dialogue);
         DTTutorialLayer* joinTransform(TutorialBoxPlacement alignment, float boxScale = 1);
-        DTTutorialLayer* joinHighlight(CCNode* targetObject, float delayTime = 0, bool allowTouches = false);
+        DTTutorialLayer* joinHighlight(CCNode* targetObject, float delayTime = 0, bool allowTouches = false, bool ignoreDisabled = true);
         DTTutorialLayer* joinPreviousHighlight();
         DTTutorialLayer* joinTextToHighlight(const std::string& text, float size = 1, TutorialTextPlacement alignment = TutorialTextPlacement::TTTop);
         DTTutorialLayer* joinCallback(geode::Function<void()> callback, bool beforeDialogue);
 
-        DTTutorialLayer* insertHighlight(int dialogueIndex, CCNode* targetObject, float delayTime = 0, bool allowTouches = false);
+        DTTutorialLayer* insertHighlight(int dialogueIndex, CCNode* targetObject, float delayTime = 0, bool allowTouches = false, bool ignoreDisabled = true);
         DTTutorialLayer* insertJoinTextToHighlight(int dialogueIndex, const std::string& text, float size = 1, TutorialTextPlacement alignment = TutorialTextPlacement::TTTop);
         
         void show();

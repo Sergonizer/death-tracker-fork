@@ -60,15 +60,15 @@ DTTutorialLayer* DTTutorialLayer::joinTransform(TutorialBoxPlacement alignment, 
     return this;
 }
 
-DTTutorialLayer* DTTutorialLayer::joinHighlight(CCNode* targetObject, float delayTime, bool allowTouches){
-    return insertHighlight(allSegments.size() - 1, targetObject, delayTime, allowTouches);
+DTTutorialLayer* DTTutorialLayer::joinHighlight(CCNode* targetObject, float delayTime, bool allowTouches, bool ignoreDisabled){
+    return insertHighlight(allSegments.size() - 1, targetObject, delayTime, allowTouches, ignoreDisabled);
 }
 DTTutorialLayer* DTTutorialLayer::joinPreviousHighlight(){
     if (allSegments.size() - 2 <= 0) return this;
 
     for (const auto& [highlight, options] : allSegments[allSegments.size() - 2].targetObjects)
     {
-        insertHighlight(allSegments.size() - 1, highlight, options.first, options.second);
+        insertHighlight(allSegments.size() - 1, highlight, std::get<0>(options), std::get<1>(options), std::get<2>(options));
     }
     
     return this;
@@ -89,11 +89,11 @@ DTTutorialLayer* DTTutorialLayer::joinCallback(geode::Function<void()> callback,
     return this;
 }
 
-DTTutorialLayer* DTTutorialLayer::insertHighlight(int dialogueIndex, CCNode* targetObject, float delayTime, bool allowTouches){
+DTTutorialLayer* DTTutorialLayer::insertHighlight(int dialogueIndex, CCNode* targetObject, float delayTime, bool allowTouches, bool ignoreDisabled){
     if (targetObject == nullptr) return this;
     if (!allSegments.size() || allSegments.size() <= dialogueIndex) return this;
     
-    allSegments[dialogueIndex].targetObjects.insert({targetObject, {delayTime, allowTouches}});
+    allSegments[dialogueIndex].targetObjects.insert({targetObject, {delayTime, allowTouches, ignoreDisabled}});
 
     allSegments[dialogueIndex].lastAddedHighlight = targetObject;
 
@@ -251,7 +251,7 @@ void DTTutorialLayer::onProgress(DialogObject* dObject){
 
     for (const auto& [highlightTarget, dataPair] : allSegments[segmentIndex].targetObjects)
     {
-        auto& [delayTime, touchesAllowed] = dataPair;
+        auto& [delayTime, touchesAllowed, ignoreDisabled] = dataPair;
 
         auto glow = CCScale9Sprite::createWithSpriteFrameName("squareGlow.png"_spr);
 
@@ -279,7 +279,7 @@ void DTTutorialLayer::onProgress(DialogObject* dObject){
 
         glow->setOpacity(0);
         CCSequence* fadeSeq;
-        if (nodeIsVisible(highlightTarget)){
+        if (!ignoreDisabled || ignoreDisabled && nodeIsVisible(highlightTarget)){
             fadeSeq = CCSequence::create(
                 CCDelayTime::create(delayTime),
                 CCFadeTo::create(.5f, 255),
@@ -322,7 +322,7 @@ void DTTutorialLayer::onProgress(DialogObject* dObject){
         );
         label->setScale(textInfo.size);
         label->setOpacity(0);
-        if (nodeIsVisible(highlightTarget)){
+        if (!ignoreDisabled || ignoreDisabled && nodeIsVisible(highlightTarget)){
             fadeSeq = CCSequence::create(
                 CCDelayTime::create(delayTime),
                 CCFadeTo::create(.5f, 255),
