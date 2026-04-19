@@ -2,6 +2,7 @@
 #include <utils/Settings.hpp>
 #include <utils/Save.hpp>
 #include <nodes/TutorialButton.hpp>
+#include <nodes/SwitcherButton.hpp>
 
 DTGraphLayer* DTGraphLayer::create() {
     auto ret = new DTGraphLayer();
@@ -97,6 +98,18 @@ bool DTGraphLayer::init() {
     );
     addGraphBtn->setPositionX(graphsScroll->getContentWidth() / 2 - 7.5f);
     graphsPage->addChild(addGraphBtn);
+
+#if defined(GEODE_IS_MOBILE)
+    auto shiftSwitcher = SwitcherButton::create({scrollBG->getContentWidth(), 20}, "GJ_button_02.png", {"One Graph", "Multiple Graphs"});
+    shiftSwitcher->setOptionChangedCallback([&](auto opt){
+        holdingShift = opt == 1;
+    });
+    shiftSwitcher->setPosition({
+        0,
+        -m_size.height + shiftSwitcher->getContentHeight() + 10
+    });
+    graphsPage->addChild(shiftSwitcher);
+#endif
 
     auto graphsInfo = Save::getGraphs();
 
