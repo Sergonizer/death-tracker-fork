@@ -7,7 +7,7 @@
 
 using namespace geode::prelude;
 
-class LayoutOptionsLayer : public CCLayer {
+class LayoutOptionsLayer : public CCLayer, public SliderDelegate {
     public:
         static LayoutOptionsLayer* create(const CCSize& size);
 
@@ -86,4 +86,7 @@ class LayoutOptionsLayer : public CCLayer {
 
         TextInput* columnWidthInput;
         bool ignoreNextOrganization;
+
+        void sliderEnded(Slider* slider) override;
+        void sliderUpdate();
     };

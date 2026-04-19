@@ -202,6 +202,7 @@ bool LayoutOptionsLayer::init(const CCSize& size) {
     scaleSlider->setPositionX(fontSizeInput->getPositionX());
     scaleSlider->setID("font-size-slider");
     scaleSlider->setScaleX(.7f);
+    scaleSlider->m_delegate = this;
     labelSettingsNode->addChild(scaleSlider);
 
     alignmentMenu = CCMenu::create();
@@ -637,6 +638,12 @@ void LayoutOptionsLayer::onAlignmentChanged(CCObject* sender){
 }
 
 void LayoutOptionsLayer::scaleSliderChanged(CCObject*){
+    #if !defined(GEODE_IS_MOBILE)
+    sliderUpdate();
+    #endif
+}
+
+void LayoutOptionsLayer::sliderUpdate(){
     auto numValue = DTLabelInfo::MIN_MAX_SCALE.x + (DTLabelInfo::MIN_MAX_SCALE.y - DTLabelInfo::MIN_MAX_SCALE.x) * scaleSlider->getValue();
 
     editedLabel.value()->setFontSize(numValue);
@@ -851,4 +858,10 @@ void LayoutOptionsLayer::setAllInputs(CCNode* node, bool enabled){
         if (auto text = typeinfo_cast<TextInput*>(child))
             text->setEnabled(enabled);
     }
+}
+
+void LayoutOptionsLayer::sliderEnded(Slider* slider){
+    #if defined(GEODE_IS_MOBILE)
+    sliderUpdate();
+    #endif
 }
