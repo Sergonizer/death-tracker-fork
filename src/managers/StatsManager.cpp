@@ -1171,16 +1171,13 @@ bool StatsManager::transferPlaytimeFromPT(geode::Result<LevelData>& data, GJGame
     stats.metadata.hasGottenDataFromPT = true;
     (void)StatsManager::setMetadata(stats.metadata, stats.levelKey);
 
-    std::string levelID = std::to_string(level->m_levelID.value());
-    if (level->m_levelType == GJLevelType::Editor) levelID = "Editor-" + levelID;
-
     auto ptObj = file::readFromJson<matjson::Value>(ptPath).unwrapOrDefault();
 
-    if (ptObj[levelID].isNull()) return true;
+    if (ptObj.isNull()) return true;
 
     uint64_t overallPT = 0;
 
-    for (auto session : ptObj[levelID]["sessions"]) {
+    for (auto session : ptObj["sessions"]) {
         if (!session[0][0].isNumber()) continue;
 
         for (const auto& dtSession : stats.sessionNames) {
