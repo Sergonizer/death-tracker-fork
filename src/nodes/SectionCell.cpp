@@ -36,6 +36,7 @@ bool SectionCell::init(float width, const Section& section){
 
         if (this->onChanged) this->onChanged();
     });
+    nameInput->setID("name");
     nameInput->setFilter("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_#");
     this->addChild(nameInput);
 
@@ -75,6 +76,7 @@ bool SectionCell::init(float width, const Section& section){
 
         if (this->onChanged) this->onChanged();
     });
+    endPercentInput->setID("end-per");
     this->addChild(endPercentInput);
 
     auto runSeperator = CCLabelBMFont::create("-", "bigFont.fnt");
@@ -107,6 +109,7 @@ bool SectionCell::init(float width, const Section& section){
 
         if (this->onChanged) this->onChanged();
     });
+    startPercentInput->setID("start-per");
     this->addChild(startPercentInput);
 
     checkValidity();

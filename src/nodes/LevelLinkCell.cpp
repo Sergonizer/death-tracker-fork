@@ -32,6 +32,7 @@ bool LevelLinkCell::init(float width, const std::string& levelKey, const LevelMe
         this,
         menu_selector(LevelLinkCell::onArrow)
     );
+    arrowBtn->setID("arrow");
     this->addChild(arrowBtn);
 
     diffSpr = GJDifficultySprite::create(data.difficulty, GJDifficultyName::Long);

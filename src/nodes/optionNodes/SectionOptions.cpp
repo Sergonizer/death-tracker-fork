@@ -81,10 +81,28 @@ bool SectionOptions::setup(){
     addSectionBtn->setPosition(mainScroll->getPosition() + ccp(mainScroll->getScaledContentWidth() / 2, mainScroll->getScaledContentHeight() / 2));
     this->addChild(addSectionBtn);
 
-    auto sectionsInfo = TutorialButton::create(1, "tbp", [&](DTTutorialLayer* tutorialLayer){
-        
+    auto sectionsInfo = TutorialButton::create(.75f, "section-overall", [
+        &,
+        addSectionBtn
+    ](DTTutorialLayer* tutorialLayer){
+        tutorialLayer->appendDialogue("Here you can <cy>name</c> ranges of percentages as sections!", TutorialCharacterFace::TCFHappy)
+            ->appendDialogue("You can click the <cg>+</c> button to add a <cy>new section</c>", TutorialCharacterFace::TCFNormal)
+            ->joinTransform(TutorialBoxPlacement::TBPTop, .75f)
+            ->joinHighlight(addSectionBtn)
+            ->appendDialogue("Each section has a <cy>starting</c> and <cc>ending percent</c>", TutorialCharacterFace::TCFNormal);
+        for (const auto& child : mainScroll->m_contentLayer->getChildrenExt<CCMenu*>())
+        {
+            tutorialLayer->joinHighlight(child->getChildByID("start-per"))
+                ->joinHighlight(child->getChildByID("end-per"));
+        }
+        tutorialLayer->appendDialogue("And an input for the <cf>name</c> of the section", TutorialCharacterFace::TCFNormalTilted);
+        for (const auto& child : mainScroll->m_contentLayer->getChildrenExt<CCMenu*>())
+        {
+            tutorialLayer->joinHighlight(child->getChildByID("name"));
+        }
+        tutorialLayer->appendDialogue("And if a sections percent <cy>range is invalid</c>, the section will turn <cr>red</c>", TutorialCharacterFace::TCFNormal);
     });
-    sectionsInfo->setPosition(size);
+    sectionsInfo->setPosition(size - sectionsInfo->getScaledContentSize() / 2 + ccp(2, 2));
     this->addChild(sectionsInfo);
 
     for (const auto& cell : mainScroll->m_contentLayer->getChildrenExt<SectionCell*>())

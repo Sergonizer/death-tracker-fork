@@ -191,10 +191,46 @@ bool LinkOptions::setup(){
     loadingLabel->setAlignment(CCTextAlignment::kCCTextAlignmentCenter);
     parentLayer->addChild(loadingLabel);
 
-    auto linkInfo = TutorialButton::create(1, "tbp", [&](DTTutorialLayer* tutorialLayer){
-        
+    auto linkInfo = TutorialButton::create(.75f, "link-overall", [
+        &,
+        playedScrollBG,
+        linkedScrollBG,
+        idToggler,
+        idTogglerLabel
+    ](DTTutorialLayer* tutorialLayer){
+        tutorialLayer->appendDialogue("In this menu you can link your progress between levels!", TutorialCharacterFace::TCFHappy)
+            ->appendDialogue("Here you have a list of all the levels you <cy>have played</c> and tracked", TutorialCharacterFace::TCFNormal)
+            ->joinHighlight(playedScrollBG)
+            ->joinTransform(TutorialBoxPlacement::TBPTop, .75f)
+            ->appendDialogue("And a list of all levels you have <cc>linked</c> already", TutorialCharacterFace::TCFNormal)
+            ->joinHighlight(linkedScrollBG)
+            ->appendDialogue("Each levels has <cg>arrow</c> buttons to move that level <cy>between the two lists</c>", TutorialCharacterFace::TCFNormalTilted);
+        for (const auto& child : playedScroll->m_contentLayer->getChildrenExt<CCMenu*>())
+        {
+            if (!child->isEnabled()) continue;
+
+            tutorialLayer->joinHighlight(child->getChildByID("arrow"));
+        }
+        for (const auto& child : linkedScroll->m_contentLayer->getChildrenExt<CCMenu*>())
+        {
+            if (!child->isEnabled()) continue;
+            
+            tutorialLayer->joinHighlight(child->getChildByID("arrow"));
+        }
+        tutorialLayer->appendDialogue("Levels that are in the <cy>played</c> list arent linked", TutorialCharacterFace::TCFNormal)
+            ->joinHighlight(playedScrollBG)
+            ->appendDialogue("And levels that are in the <cc>linked</c> list arent linked!", TutorialCharacterFace::TCFHappy)
+            ->joinHighlight(linkedScrollBG)
+            ->appendDialogue("When viewing stats you will see the <cy>combined stats of all your linked levels</c>", TutorialCharacterFace::TCFNormal)
+            ->joinTransform(TutorialBoxPlacement::TBPCenter, 1)
+            ->appendDialogue("You also have a <cf>search bar</c> to search for the name of a level you would like to link", TutorialCharacterFace::TCFNormalTilted)
+            ->joinHighlight(searchBar)
+            ->joinTransform(TutorialBoxPlacement::TBPCenter, .75f)
+            ->appendDialogue("You can also search by a <cf>level ID</c> when toggling the <cy>\"ID\" checkbox</c>", TutorialCharacterFace::TCFHappy)
+            ->joinHighlight(idToggler)
+            ->joinHighlight(idTogglerLabel);
     });
-    linkInfo->setPosition(size);
+    linkInfo->setPosition(size - linkInfo->getScaledContentSize() / 2 + ccp(2, 2));
     this->addChild(linkInfo);
 
     this->setEnabled(false);
@@ -418,6 +454,10 @@ void LinkOptions::updateScrollsContent(){
         auto cell = LevelLinkCell::create(linkedScroll->m_contentLayer->getContentWidth(), myStats.levelKey, myStats.metadata);    
         cell->setAlignment(true);
         cell->setEnabledAndFade(false);
+        if (!this->isEnabled()){
+            cell->setEnabled(false);
+            cell->setOpacity(0);
+        }
         
         linkedScroll->m_contentLayer->addChild(cell, -1);
     }

@@ -150,8 +150,38 @@ bool SaveOptions::setup(){
     importBtnLabel->setPosition(importBtn->getPosition() + ccp(importBtn->getContentWidth() / 2 + 5, 0));
     this->addChild(importBtnLabel);
 
-    auto saveOverallInfo = TutorialButton::create(.75f, "save-overall", [&](DTTutorialLayer* tutorialLayer){
-        
+    auto saveOverallInfo = TutorialButton::create(.75f, "save-overall", [
+        &, 
+        backupBtnLabel, 
+        backupBtn, 
+        autoBackupsLabel, 
+        autoBackupToggler, 
+        exportBtn, 
+        exportBtnLabel,
+        importBtn,
+        importBtnLabel,
+        deleteBtn,
+        deleteBtnLabel
+    ](DTTutorialLayer* tutorialLayer){
+        tutorialLayer->appendDialogue("Here you have some options to manage your save", TutorialCharacterFace::TCFNormal)
+            ->appendDialogue("Here you are able to <cy>create backups</c> of your save", TutorialCharacterFace::TCFNormalTilted)
+            ->joinHighlight(backupBtn)
+            ->joinHighlight(backupBtnLabel)
+            ->joinTransform(TutorialBoxPlacement::TBPBottomRight, .75f)
+            ->appendDialogue("And also toggle <cy>auto backups</c> for this specific level!", TutorialCharacterFace::TCFHappy)
+            ->joinHighlight(autoBackupToggler)
+            ->joinHighlight(autoBackupsLabel)
+            ->appendDialogue("You can also <cp>export</c> your save to pass it around to another device", TutorialCharacterFace::TCFNormal)
+            ->joinHighlight(exportBtn)
+            ->joinHighlight(exportBtnLabel)
+            ->joinTransform(TutorialBoxPlacement::TBPBottomLeft, .75f)
+            ->appendDialogue("And also <cj>import</c> a save that someone else sent you!", TutorialCharacterFace::TCFHappy)
+            ->joinHighlight(importBtn)
+            ->joinHighlight(importBtnLabel)
+            ->appendDialogue("And lastly you are able to <cr>completely erase your save data</c> for this level", TutorialCharacterFace::TCFNormal)
+            ->joinHighlight(deleteBtn)
+            ->joinHighlight(deleteBtnLabel)
+            ->joinTransform(TutorialBoxPlacement::TBPLeft, .75f);
     });
     saveOverallInfo->setPosition(size - saveOverallInfo->getScaledContentSize() / 2 + ccp(2, 2));
     this->addChild(saveOverallInfo);
