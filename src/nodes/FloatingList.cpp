@@ -204,3 +204,10 @@ void FloatingList::onExit(){
     CCNode::onExit();
     CCTouchDispatcher::get()->removeDelegate(this);
 }
+
+void FloatingList::setEnabled(bool b){
+    for (const auto& [btn, _] : itemIds)
+    {
+        btn->setEnabled(b);
+    }
+}

@@ -535,6 +535,9 @@ void LayoutOptionsLayer::setEditedNodeTo(DTLabel* label) {
     switchToMenu(1);
 
     updateWrapModeBtnVisuals();
+
+    if (onEnter != NULL)
+        onEnter();
 }
 
 void LayoutOptionsLayer::setEditedNodeTo(LayoutColumn* column) {
@@ -558,6 +561,9 @@ void LayoutOptionsLayer::setEditedNodeTo(LayoutColumn* column) {
     columnWidthInput->setString(widthText);
 
     switchToMenu(2);
+
+    if (onEnter != NULL)
+        onEnter();
 }
 
 void LayoutOptionsLayer::close() {

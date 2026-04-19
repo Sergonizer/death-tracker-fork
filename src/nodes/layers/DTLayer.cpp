@@ -183,7 +183,7 @@ bool DTLayer::init(GJGameLevel* const& level) {
         menu_selector(DTLayer::onGroups)
     );
 
-    auto groupsHolder = CCMenu::create();
+    groupsHolder = CCMenu::create();
     groupsHolder->setContentSize(ccp(45, 0));
     groupsBtn->setPosition(groupsHolder->getContentSize() / 2);
     bottomRightMenu->addChild(groupsHolder);
@@ -345,19 +345,24 @@ bool DTLayer::init(GJGameLevel* const& level) {
             ->joinTransform(TutorialBoxPlacement::TBPBottom, .75f)
             ->joinHighlight(scrollLayer, 0, true)
             ->joinTextToHighlight("Main Scroll View", .5f, TutorialTextPlacement::TTTop)
+
             ->appendDialogue("You can hold <cg>control</c> and <cp>scroll</c> to zoom in! and <cc>shift</c> and <cp>scroll</c> to move side to side.", TutorialCharacterFace::TCFNormalTilted)
             ->joinHighlight(scrollLayer, 0, true)
+
             ->appendDialogue("Of course you can also scroll normally :D", TutorialCharacterFace::TCFHappy)
             ->joinTransform(TutorialBoxPlacement::TBPCenter)
+
             ->appendDialogue("You also have many options <cy>at the bottom</c> here!", TutorialCharacterFace::TCFNormal)
             ->joinTransform(TutorialBoxPlacement::TBPCenter, .75f)
             ->joinHighlight(bottomRightMenu)
             ->joinHighlight(bottomLeftMenu)
             ->joinHighlight(sessionSelector)
+
             ->appendDialogue("There's the <cy>level options</c> which allow you to change may things about how you <cr>track/display your data</c>", TutorialCharacterFace::TCFNormal)
             ->joinHighlight(levelSpecificOptionsBtn)
             ->joinTransform(TutorialBoxPlacement::TBPLeft, .75f)
             ->joinTextToHighlight("level options", .3f, TutorialTextPlacement::TTTop)
+
             ->appendDialogue("You have the <cg>graphs</c> which allow you to visually see your consistancy and other aspects of your data", TutorialCharacterFace::TCFNormalTilted)
             ->joinHighlight(graphBtn)
             ->joinTextToHighlight("graphs", .3f, TutorialTextPlacement::TTTop)
@@ -464,6 +469,76 @@ bool DTLayer::init(GJGameLevel* const& level) {
     layoutInfo->setOpacity(0);
     editLayoutMenu->addChild(layoutInfo);
 
+    colorChangeBG = CCScale9Sprite::create("GJ_square05.png");
+    colorChangeBG->setContentSize({100, 120});
+    colorChangeBG->setAnchorPoint({0, .5f});
+    colorChangeBG->setPosition(m_mainLayer->convertToNodeSpace({5, winSize.height / 2}));
+    colorChangeBG->setZOrder(101);
+    colorChangeBG->setOpacity(0);
+    colorChangeBG->setScale(.85f);
+    colorChangeBG->setCascadeOpacityEnabled(true);
+    m_mainLayer->addChild(colorChangeBG);
+
+    colorMenu = CCMenu::create();
+    colorMenu->setPosition({0, 0});
+    colorMenu->ignoreAnchorPointForPosition(false);
+    colorMenu->setContentSize({0, 0});
+    colorMenu->setEnabled(false);
+    colorMenu->setCascadeOpacityEnabled(true);
+    colorChangeBG->addChild(colorMenu);
+
+    auto newBestColorBtnSpr = CCSprite::createWithSpriteFrameName("GJ_colorBtn_001.png");
+    newBestColorBtnSpr->setColor(Save::getNewBestColor());
+    newBestColorBtnSpr->setScale(.75f);
+    newBestColorBtnSpr->setCascadeOpacityEnabled(true);
+    auto newBestColorBtn = CCMenuItemSpriteExtra::create(
+        newBestColorBtnSpr,
+        this,
+        menu_selector(DTLayer::onNewBestColor)
+    );
+    newBestColorBtn->setPosition({
+        colorChangeBG->getContentWidth() / 2,
+        colorChangeBG->getContentHeight() - newBestColorBtn->getContentHeight() / 2 - 20
+    });
+    colorMenu->addChild(newBestColorBtn);
+
+    auto newBestColorBtnLabel = CCLabelBMFont::create("New Best Color", "bigFont.fnt");
+    newBestColorBtnLabel->setScale(.3f);
+    newBestColorBtnLabel->setAnchorPoint({.5f, 0});
+    newBestColorBtnLabel->setCascadeOpacityEnabled(true);
+    newBestColorBtnLabel->setPosition(newBestColorBtn->getPosition() + ccp(
+        0,
+        newBestColorBtn->getContentHeight() / 2 + 1
+    ));
+    colorMenu->addChild(newBestColorBtnLabel);
+    
+    auto sessionBestColorBtnSpr = CCSprite::createWithSpriteFrameName("GJ_colorBtn_001.png");
+    sessionBestColorBtnSpr->setColor(Save::getSessionBestColor());
+    sessionBestColorBtnSpr->setScale(.75f);
+    sessionBestColorBtnSpr->setCascadeOpacityEnabled(true);
+    auto sessionBestColorBtn = CCMenuItemSpriteExtra::create(
+        sessionBestColorBtnSpr,
+        this,
+        menu_selector(DTLayer::onSessionBestColor)
+    );
+    sessionBestColorBtn->setPosition({
+        colorChangeBG->getContentWidth() / 2,
+        sessionBestColorBtn->getContentHeight() / 2 + 20
+    });
+    colorMenu->addChild(sessionBestColorBtn);
+
+    auto sessionBestColorBtnLabel = CCLabelBMFont::create("Session Best\nColor", "bigFont.fnt");
+    sessionBestColorBtnLabel->setScale(.3f);
+    sessionBestColorBtnLabel->setAnchorPoint({.5f, 0});
+    sessionBestColorBtnLabel->setAlignment(CCTextAlignment::kCCTextAlignmentCenter);
+    sessionBestColorBtnLabel->setCascadeOpacityEnabled(true);
+    sessionBestColorBtnLabel->setPosition(sessionBestColorBtn->getPosition() + ccp(
+        0,
+        sessionBestColorBtn->getContentHeight() / 2 + 1
+    ));
+    colorMenu->addChild(sessionBestColorBtnLabel);
+    colorMenu->setOpacity(0);
+
     scrollLayer->setVisible(false);
 
     return true;
@@ -508,6 +583,16 @@ void DTLayer::onEditLayout(CCObject*){
     m_buttonMenu->runAction(CCFadeTo::create(.15f, 0));
     editLayoutBtnSpr->stopAllActions();
     editLayoutBtnSpr->runAction(CCFadeTo::create(.15f, 0));
+
+    groupsHolder->setEnabled(false);
+    
+    colorChangeBG->stopActionByTag(2);
+    auto fa = CCFadeTo::create(.15f, 255);
+    fa->setTag(2);
+    colorChangeBG->runAction(fa);
+    colorMenu->stopAllActions();
+    colorMenu->runAction(CCFadeTo::create(.15f, 255));
+    colorMenu->setEnabled(true);
 
     editLayoutMenu->setEnabled(true);
     layoutInfo->stopAllActions();
@@ -1903,6 +1988,12 @@ void DTLayer::setOptionsLayerTo(DTLabel* label){
                 CCMoveBy::create(0.5f, ccp(-160, 0))
             )
         );
+
+        colorChangeBG->runAction(
+            CCEaseBackOut::create(
+                CCMoveBy::create(0.5f, ccp(-160, 0))
+            )
+        );
     }
 
     layoutOptionsLayer->setEditedNodeTo(label);
@@ -1920,6 +2011,12 @@ void DTLayer::setOptionsLayerTo(LayoutColumn* column){
                 CCMoveBy::create(0.5f, ccp(-160, 0))
             )
         );
+
+        colorChangeBG->runAction(
+            CCEaseBackOut::create(
+                CCMoveBy::create(0.5f, ccp(-160, 0))
+            )
+        );
     }
 
     layoutOptionsLayer->setEditedNodeTo(column);
@@ -1933,6 +2030,12 @@ void DTLayer::closeOptionsLayer(){
             )
         );
         layoutOptionsLayer->runAction(
+            CCEaseBackOut::create(
+                CCMoveBy::create(0.5f, ccp(160, 0))
+            )
+        );
+
+        colorChangeBG->runAction(
             CCEaseBackOut::create(
                 CCMoveBy::create(0.5f, ccp(160, 0))
             )
@@ -1964,7 +2067,7 @@ void DTLayer::exitLayoutEditing(){
     isEditingLayout = false;
 
     closeOptionsLayer();
-
+    
     std::set<DTLabel*> visitedLabels{};
 
     for (const auto& column : columns)
@@ -1993,6 +2096,16 @@ void DTLayer::exitLayoutEditing(){
     m_buttonMenu->runAction(CCFadeTo::create(.15f, 255));
     editLayoutBtnSpr->stopAllActions();
     editLayoutBtnSpr->runAction(CCFadeTo::create(.15f, 255));
+
+    groupsHolder->setEnabled(true);
+
+    colorChangeBG->stopActionByTag(2);
+    auto fa = CCFadeTo::create(.15f, 0);
+    fa->setTag(2);
+    colorChangeBG->runAction(fa);
+    colorMenu->stopAllActions();
+    colorMenu->runAction(CCFadeTo::create(.15f, 0));
+    colorMenu->setEnabled(false);
 
     editLayoutMenu->setEnabled(false);
     layoutInfo->stopAllActions();
@@ -3206,4 +3319,25 @@ void DTLayer::CleanGetStats(){
     StatsManager::setCurrentLevel(m_Level);
 
     DTLayer::UpdateSharedStats();
+}
+
+void DTLayer::onNewBestColor(CCObject* sender){
+    auto popup = ColorPickPopup::create(Save::getNewBestColor());
+    popup->setCallback([&](auto color){
+        Save::setNewBestColor({color.r, color.g, color.b});
+
+        specialStrings["general"]->updateContent();
+    });
+    popup->setColorTarget(static_cast<CCMenuItemSpriteExtra*>(sender)->getChildrenExt<CCSprite*>()[0]);
+    popup->show();
+}
+void DTLayer::onSessionBestColor(CCObject* sender){
+    auto popup = ColorPickPopup::create(Save::getSessionBestColor());
+    popup->setCallback([&](auto color){
+        Save::setSessionBestColor({color.r, color.g, color.b});
+
+        specialStrings["s0"]->updateContent();
+    });
+    popup->setColorTarget(static_cast<CCMenuItemSpriteExtra*>(sender)->getChildrenExt<CCSprite*>()[0]);
+    popup->show();
 }

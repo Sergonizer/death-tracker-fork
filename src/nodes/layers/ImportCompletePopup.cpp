@@ -14,6 +14,7 @@ ImportCompletePopup* ImportCompletePopup::create(LevelData&& data, std::vector<S
 
 bool ImportCompletePopup::init(LevelData&& _data, std::vector<Session> const& _sessions) {
     auto winSize = CCDirector::sharedDirector()->getWinSize();
+    // @geode-ignore(unknown-resource)
     if (!Popup::init(250, 250, "geode.loader/GE_square01.png"))
         return false;
     setTitle("Import Complete");

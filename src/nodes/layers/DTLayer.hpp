@@ -184,6 +184,8 @@ class DTLayer : public Popup {
         TutorialButton* layoutInfo;
         ButtonSprite* discardChangesButtonSpr;
         ButtonSprite* applyChangesButtonSpr;
+        CCScale9Sprite* colorChangeBG;
+        CCMenu* colorMenu;
         void onApplyLayoutChanges(CCObject*);
         void onDiscardLayoutChanges(CCObject*);
 
@@ -264,4 +266,8 @@ class DTLayer : public Popup {
 
         FloatingList* groupsList;
         CCMenuItemSpriteExtra* groupsBtn;
+        CCMenu* groupsHolder;
+
+        void onNewBestColor(CCObject*);
+        void onSessionBestColor(CCObject*);
 };

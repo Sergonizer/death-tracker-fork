@@ -21,6 +21,7 @@ class LayoutOptionsLayer : public CCLayer {
         }
 
         geode::Function<void()> onBackedOut = NULL;
+        geode::Function<void()> onEnter = NULL;
 
         void keyBackClicked() override;
 

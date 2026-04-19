@@ -30,6 +30,8 @@ class FloatingList : public CCNode, public CCTouchDelegate {
 
         std::optional<FloatingListItem> getItemForID(int id);
 
+        void setEnabled(bool b);
+
     private:
         bool init(CCSize const& size, bool startOpen);
 

@@ -14,6 +14,7 @@ ImportPopup* ImportPopup::create() {
 
 bool ImportPopup::init() {
     auto winSize = CCDirector::sharedDirector()->getWinSize();
+    // @geode-ignore(unknown-resource)
     if (!Popup::init(250, 150, "geode.loader/GE_square01.png"))
         return false;
     setTitle("Import");
@@ -30,6 +31,7 @@ bool ImportPopup::init() {
     m_mainLayer->addChild(menu);
 
     auto fromDTBtnSpr = ButtonSprite::create(
+        // @geode-ignore(unknown-resource)
         CCSprite::createWithSpriteFrameName("geode.loader/file.png"),
         50,
         50,
@@ -47,6 +49,7 @@ bool ImportPopup::init() {
     menu->addChild(fromDTBtn);
     
     auto fromTextBtnSpr = ButtonSprite::create(
+        // @geode-ignore(unknown-resource)
         CCSprite::createWithSpriteFrameName("geode.loader/changelog.png"),
         50,
         50,
