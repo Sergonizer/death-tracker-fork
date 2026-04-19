@@ -172,7 +172,7 @@ bool LinkOptions::setup(){
     parentLayer->setContentSize({0, 0});
     this->addChild(parentLayer);
 
-    loadingShadow = CCScale9Sprite::create("pixel.png");
+    loadingShadow = CCScale9Sprite::createWithSpriteFrameName("pixel.png"_spr);
     loadingShadow->setColor({0,0,0});
     loadingShadow->setOpacity(100);
     loadingShadow->setAnchorPoint({0,0});
