@@ -56,12 +56,11 @@ bool GraphCell::init(float width, const DTGraphInfo& graphInfo){
     outerColor->addChild(innerColor);
 
     auto disabledCircle = CCSprite::createWithSpriteFrameName("menuCircleWhite.png");
-    disabledCircle->setScale(.4f);
     disabledCircle->setColor({ 84, 43, 43 });
 
     auto disabledCircleX = CCSprite::createWithSpriteFrameName("edit_delBtnSmall_001.png");
     disabledCircleX->setPosition(disabledCircle->getContentSize() / 2);
-    //disabledCircleX->setScale(.4f);
+    disabledCircleX->setScale(1.65f);
     disabledCircle->addChild(disabledCircleX);
 
     enableToggleBtn = SimpleToggler::create(
@@ -71,7 +70,7 @@ bool GraphCell::init(float width, const DTGraphInfo& graphInfo){
         graphInfo.isEnabled
     );
     enableToggleBtn->setPosition(label->getPosition() + ccp(
-        enableToggleBtn->getContentWidth() / 2,
+        enableToggleBtn->getContentWidth() / 2 + 1,
         -label->getScaledContentHeight() - enableToggleBtn->getContentHeight() / 2 - 2
     ));
     enableToggleBtn->setZOrder(1);
@@ -84,7 +83,7 @@ bool GraphCell::init(float width, const DTGraphInfo& graphInfo){
     auto bgCircle = CCSprite::createWithSpriteFrameName("menuCircleWhite.png");
     bgCircle->setColor({0,0,0});
     bgCircle->setPosition(enableToggleBtn->getPosition());
-    bgCircle->setScale(.45f);
+    bgCircle->setScale(.4f);
     everythingParent->addChild(bgCircle);
 
     this->setZOrder(graphInfo.orderPos);
