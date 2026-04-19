@@ -161,7 +161,7 @@ bool DTLabel::init(const DTLabelInfo& info){
 
     float expandLineWidth = 3;
 
-    leftExpandLine = CCScale9Sprite::createWithSpriteFrameName("pixel.png"_spr);
+    leftExpandLine = CCScale9Sprite::createWithSpriteFrameName("dtpixel.png"_spr);
     leftExpandLine->setID("expand-line-left");
     leftExpandLine->setAnchorPoint({0, 1});
     leftExpandLine->setContentWidth(expandLineWidth);
@@ -169,7 +169,7 @@ bool DTLabel::init(const DTLabelInfo& info){
     leftExpandLine->setVisible(false);
     this->addChild(leftExpandLine);
 
-    rightExpandLine = CCScale9Sprite::createWithSpriteFrameName("pixel.png"_spr);
+    rightExpandLine = CCScale9Sprite::createWithSpriteFrameName("dtpixel.png"_spr);
     rightExpandLine->setID("expand-line-right");
     rightExpandLine->setAnchorPoint({1, 1});
     rightExpandLine->setContentWidth(expandLineWidth);

@@ -27,37 +27,37 @@ bool LayoutColumn::init(const DTColumnInfo& info, bool startVisible, float minHe
 
     this->minHeight = minHeight;
 
-    topSpr = CCScale9Sprite::createWithSpriteFrameName("pixel.png"_spr);
+    topSpr = CCScale9Sprite::createWithSpriteFrameName("dtpixel.png"_spr);
     topSpr->setID("top-spr");
     topSpr->setAnchorPoint({0, 1});
     this->addChild(topSpr);
 
-    bgSpr = CCScale9Sprite::createWithSpriteFrameName("pixel.png"_spr);
+    bgSpr = CCScale9Sprite::createWithSpriteFrameName("dtpixel.png"_spr);
     bgSpr->setID("bg-spr");
     bgSpr->setAnchorPoint({0, 1});
     bgSpr->setOpacity(bgOpacity);
     bgSpr->setVisible(false);
     this->addChild(bgSpr);
 
-    topBorder1 = CCScale9Sprite::createWithSpriteFrameName("pixel.png"_spr);
+    topBorder1 = CCScale9Sprite::createWithSpriteFrameName("dtpixel.png"_spr);
     topBorder1->setID("top-border-1");
     topBorder1->setAnchorPoint({0, 1});
     topBorder1->setColor({0,0,0});
     this->addChild(topBorder1);
 
-    topBorder2 = CCScale9Sprite::createWithSpriteFrameName("pixel.png"_spr);
+    topBorder2 = CCScale9Sprite::createWithSpriteFrameName("dtpixel.png"_spr);
     topBorder2->setID("top-border-2");
     topBorder2->setAnchorPoint({1, 1});
     topBorder2->setColor({0,0,0});
     this->addChild(topBorder2);
 
-    topBorder3 = CCScale9Sprite::createWithSpriteFrameName("pixel.png"_spr);
+    topBorder3 = CCScale9Sprite::createWithSpriteFrameName("dtpixel.png"_spr);
     topBorder3->setID("top-border-3");
     topBorder3->setAnchorPoint({0, 0});
     topBorder3->setColor({0,0,0});
     this->addChild(topBorder3);
 
-    bgSideBorder = CCScale9Sprite::createWithSpriteFrameName("pixel.png"_spr);
+    bgSideBorder = CCScale9Sprite::createWithSpriteFrameName("dtpixel.png"_spr);
     bgSideBorder->setID("bg-side-border");
     bgSideBorder->setAnchorPoint({1, 1});
     bgSideBorder->setColor({0,0,0});
