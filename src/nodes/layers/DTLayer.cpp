@@ -1859,7 +1859,8 @@ void DTLayer::unsubscribeToOrganizationEvent(CCNode* target){
 
 void DTLayer::setLayoutBy(const DTLayoutV3& layout)
 {
-    for (auto* column : columns)
+    auto columnsCopy = columns;
+    for (auto* column : columnsCopy)
     {
         column->destroyColumnAndCleanup();
     }
