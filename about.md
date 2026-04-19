@@ -1,12 +1,6 @@
 # Death Tracker
 
-Automatically tracks your normal mode deaths for every level you play.
-Click the skull button found on the level page to see your deaths!
 
-## Settings
-- Disable death tracking on completed online levels
-- Disable death tracking from start positions
-- Custom death tracking session lengths
 
 ## Special Thanks
 

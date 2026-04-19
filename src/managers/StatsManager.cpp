@@ -1153,7 +1153,8 @@ bool StatsManager::transferPlaytimeFromPT(GJGameLevel* level){
 }
 
 bool StatsManager::transferPlaytimeFromPT(geode::Result<LevelData>& data, GJGameLevel* level){
-    auto ptPath = Mod::get()->getSaveDir().parent_path() / "nanew.playtime-tracker" / "leveldata.json";
+    std::string lvlID = level->m_levelType == GJLevelType::Editor ? fmt::format("Editor-{}", EditorIDs::getID(level)) : std::to_string(level->m_levelID.value());
+    auto ptPath = Mod::get()->getSaveDir().parent_path() / "nanew.playtime-tracker" / "data" / (lvlID + ".json");
 
     if (!exists(ptPath)) return false;
 
