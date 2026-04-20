@@ -96,7 +96,8 @@ class DTLabel : public CCMenu {
         SimpleTextArea* labelTitleArea;
 
         CCNode* labelTextContainer;
-        RichTextArea* labelText;
+        //RichTextArea* labelText;
+        SimpleTextArea* labelText;
         float currentHeight;
 
         float normalBGOpacity = 150;

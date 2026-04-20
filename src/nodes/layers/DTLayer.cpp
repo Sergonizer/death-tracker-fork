@@ -429,6 +429,7 @@ bool DTLayer::init(GJGameLevel* const& level) {
     colorChangeBG->setZOrder(101);
     colorChangeBG->setOpacity(0);
     colorChangeBG->setScale(.85f);
+    colorChangeBG->setVisible(false);
     colorChangeBG->setCascadeOpacityEnabled(true);
     m_mainLayer->addChild(colorChangeBG);
 
@@ -1216,9 +1217,9 @@ bool DTLayer::createDeathsString(const Deaths& deaths, const LevelMetadeta& meta
         );
 
         //old coloring
-        out += fmt::format("{}{}{}{}", nbColor, format, nbDeColor, custom.seperator);
-        // auto toAdd = fmt::format("{}{}", format, custom.seperator);
-        // out += toAdd;
+        //out += fmt::format("{}{}{}{}", nbColor, format, nbDeColor, custom.seperator);
+        auto toAdd = fmt::format("{}{}", format, custom.seperator);
+        out += toAdd;
     }
 
     if (out == "")
