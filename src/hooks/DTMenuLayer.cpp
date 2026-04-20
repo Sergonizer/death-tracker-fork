@@ -7,7 +7,7 @@
 bool DTMenuLayer::init(){
     if (!MenuLayer::init()) return false;
 
-    if (Save::getLastOpenedVersion() != Mod::get()->getVersion().toNonVString()){
+    if (Save::getLastOpenedVersion() != Mod::get()->getVersion().toNonVString() && !Save::getDidConvertToV3()){
         arc::spawn(
             awaitOpening()
         );

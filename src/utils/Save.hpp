@@ -22,6 +22,9 @@ class Save {
         static bool getExportWOutLabels();
         static void setExportWOutLabels(const bool& b);
 
+        static bool getDidConvertToV3();
+        static void setDidConvertToV3(const bool& b);
+
         static std::string getLastOpenedVersion();
         static void setLastOpenedVersion(const std::string& verion);
 

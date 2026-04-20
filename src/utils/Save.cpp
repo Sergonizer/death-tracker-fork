@@ -41,6 +41,13 @@ void Save::setExportWOutLabels(const bool& b){
     Mod::get()->setSavedValue("ExportWLabels", b);
 }
 
+bool Save::getDidConvertToV3(){
+    return Mod::get()->getSavedValue<bool>("DidConvertToV3");
+}
+void Save::setDidConvertToV3(const bool& b){
+    Mod::get()->setSavedValue("DidConvertToV3", b);
+}
+
 std::string Save::getLastOpenedVersion(){
     return Mod::get()->getSavedValue<std::string>("LastOpenedVersion");
 }

@@ -1,5 +1,6 @@
 #include <nodes/layers/FileConversionLayer.hpp>
 #include <managers/StatsManager.hpp>
+#include <utils/Save.hpp>
 
 FileConversionLayer* FileConversionLayer::create(bool exitIfNone) {
     auto popup = new FileConversionLayer;
@@ -149,8 +150,10 @@ void FileConversionLayer::conversionComplete(ConversionFuture::Output output){
 }
 
 void FileConversionLayer::onClose(cocos2d::CCObject* sender){
-    if (didComplete)
+    if (didComplete){
+        Save::setDidConvertToV3(true);
         Popup::onClose(sender);
+    }
 }
 
 void FileConversionLayer::onStart(cocos2d::CCObject* sender){

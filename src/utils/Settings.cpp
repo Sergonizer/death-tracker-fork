@@ -48,7 +48,7 @@ bool Settings::getAutoBackupGeneral(){
 }
 
 std::optional<int> Settings::getAutoBackupSessionAmount(){
-    if (Mod::get()->getSettingValue<bool>("auto-backups-sessions-all")) return std::nullopt;
+    if (Mod::get()->getSettingValue<bool>("auto-backups-sessions-all")) return -1;
 
     return Mod::get()->getSettingValue<int>("auto-backups-sessions-amount");
 }

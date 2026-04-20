@@ -219,7 +219,7 @@ Result<BackupLevelData> StatsManager::getBackupData(const std::string& levelKey,
         std::set<long long> sessionDates{};
 
         for (const auto& entry : std::filesystem::directory_iterator(levelSaveFilePath / StatsManager::SESSIONS_DIR_NAME)) {
-            if (!entry.is_directory()) continue;
+            if (entry.is_directory()) continue;
 
             auto numRes = geode::utils::numFromString<long long>(entry.path().filename().string());
             if (numRes.isErr()) continue;
@@ -308,6 +308,7 @@ Result<> StatsManager::setGeneral(const GeneralData& stats, const std::string& l
 }
 
 Result<> StatsManager::addBackup(const std::string& levelKey, bool saveLevelStats, std::optional<int> sessionsToSave){
+    log::info("adding backup for level {} | {} | {}", levelKey, saveLevelStats, sessionsToSave);
     auto metaRes = getMetadata(levelKey);
     if (metaRes.isErr()) return Err("No level to back up! {}", metaRes.unwrapErr());
     auto metadata = metaRes.unwrap();

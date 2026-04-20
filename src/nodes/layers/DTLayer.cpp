@@ -55,6 +55,7 @@ bool DTLayer::init(GJGameLevel* const& level) {
     this->setID("dt-layer");
 
     if (Save::getLastOpenedVersion() != Mod::get()->getVersion().toNonVString()){
+        bool isNewPlayer = Save::getLastOpenedVersion() == "";
         Save::setLastOpenedVersion(Mod::get()->getVersion().toNonVString());
         // FLAlertLayer::create(nullptr, fmt::format("Death Tracker {} Changelog", Mod::get()->getVersion().toVString()).c_str(), fmt::format(
         //     "{}",
