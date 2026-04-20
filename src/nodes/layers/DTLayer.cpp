@@ -403,77 +403,6 @@ bool DTLayer::init(GJGameLevel* const& level) {
     mainInfo->setPosition(m_size);
     m_buttonMenu->addChild(mainInfo);
 
-    layoutInfo = TutorialButton::create(1, "layout-overall", [&, applyChangesButton, discardChangesButton](DTTutorialLayer* tutorialLayer){
-        tutorialLayer
-            ->appendDialogue("This is where you can <cg>Edit how death tracker looks!</c>", TutorialCharacterFace::TCFNormal)
-            ->appendDialogue("Here you have different labels! which can display any text you want!", TutorialCharacterFace::TCFNormal)
-            ->joinTransform(TutorialBoxPlacement::TBPBottom, .65f);
-
-        std::set<DTLabel*> allLabels{};
-
-        int index = 0;
-        for (const auto& column : columns)
-        {
-            for (const auto& [_, label] : column->labels)
-            {
-                if (allLabels.contains(label)) continue;
-
-                allLabels.insert(label);
-                tutorialLayer->joinHighlight(label->labelTitleBG, .1f * index);
-                index++;
-            }
-        }
-
-        tutorialLayer
-            ->appendDialogue("You can <cy>click</c> on them to enter the label settings", TutorialCharacterFace::TCFNormal)
-            ->joinPreviousHighlight()
-            ->appendDialogue("<cy>Drag them around</c> to move them", TutorialCharacterFace::TCFNormal)
-            ->joinPreviousHighlight()
-            ->appendDialogue("And also <cy>drag the edges</c> of the labels to <cg>expand</c> them", TutorialCharacterFace::TCFNormal);
-
-        index = 0;
-        for (const auto& label : allLabels){
-            tutorialLayer->joinHighlight(label->leftExpandLine, .2f * index, false, false);
-            tutorialLayer->joinHighlight(label->rightExpandLine, .2f * index, false, false);
-
-            index++;
-        }
-
-        tutorialLayer
-            ->appendDialogue("Every <cy>label</c> has to be attached to some <cp>column</c>", TutorialCharacterFace::TCFNormal)
-            ->joinTransform(TutorialBoxPlacement::TBPCenter, .65f);
-
-        index = 0;
-        for (const auto& column : columns)
-        {
-            tutorialLayer->joinHighlight(column->topSpr, .1f * index);
-            index++;
-        }
-
-        tutorialLayer
-            ->appendDialogue("Each <cp>column</c> can be <cy>clicked</c> to enter its settings", TutorialCharacterFace::TCFNormal)
-            ->joinPreviousHighlight()
-            ->appendDialogue("And can be <cg>expanded</c> when <cy>dragging its edges</c>", TutorialCharacterFace::TCFNormal);
-
-        index = 0;
-        for (const auto& column : columns)
-        {
-            tutorialLayer->joinHighlight(column->topBorder2, .2f * index);
-            index++;
-        }
-
-        tutorialLayer
-            ->appendDialogue("One you are done, you can click the <cg>Apply Changes</c> button to save your changes", TutorialCharacterFace::TCFNormal)
-            ->joinHighlight(applyChangesButton)
-            ->appendDialogue("Or delete all the changes you have made using the <cr>Discard Changes</c> button!", TutorialCharacterFace::TCFNormal)
-            ->joinHighlight(discardChangesButton)
-            ->appendDialogue("Feel free to play around and explore the different settings!", TutorialCharacterFace::TCFNormal)
-            ->joinTransform(TutorialBoxPlacement::TBPCenter, 1);
-    });
-    layoutInfo->setPosition({130, 128});
-    layoutInfo->setOpacity(0);
-    editLayoutMenu->addChild(layoutInfo);
-
     resetLayoutMenu = CCMenu::create();
     resetLayoutMenu->ignoreAnchorPointForPosition(false);
     resetLayoutMenu->setPosition({0, 0});
@@ -565,6 +494,82 @@ bool DTLayer::init(GJGameLevel* const& level) {
     colorMenu->setOpacity(0);
 
     scrollLayer->setVisible(false);
+
+    layoutInfo = TutorialButton::create(1, "layout-overall", [&, applyChangesButton, discardChangesButton, resetLayoutBtn](DTTutorialLayer* tutorialLayer){
+        tutorialLayer
+            ->appendDialogue("This is where you can <cg>Edit how death tracker looks!</c>", TutorialCharacterFace::TCFHappy)
+            ->appendDialogue("Here you have different labels! which can display any text you want!", TutorialCharacterFace::TCFNormal)
+            ->joinTransform(TutorialBoxPlacement::TBPBottom, .65f);
+
+        std::set<DTLabel*> allLabels{};
+
+        int index = 0;
+        for (const auto& column : columns)
+        {
+            for (const auto& [_, label] : column->labels)
+            {
+                if (allLabels.contains(label)) continue;
+
+                allLabels.insert(label);
+                tutorialLayer->joinHighlight(label->labelTitleBG, .1f * index);
+                index++;
+            }
+        }
+
+        tutorialLayer
+            ->appendDialogue("You can <cy>click</c> on them to enter the label settings", TutorialCharacterFace::TCFNormal)
+            ->joinPreviousHighlight()
+            ->appendDialogue("<cy>Drag them around</c> to move them", TutorialCharacterFace::TCFNormalTilted)
+            ->joinPreviousHighlight()
+            ->appendDialogue("And also <cy>drag the edges</c> of the labels to <cg>expand</c> them", TutorialCharacterFace::TCFNormal);
+
+        index = 0;
+        for (const auto& label : allLabels){
+            tutorialLayer->joinHighlight(label->leftExpandLine, .2f * index, false, false);
+            tutorialLayer->joinHighlight(label->rightExpandLine, .2f * index, false, false);
+
+            index++;
+        }
+
+        tutorialLayer
+            ->appendDialogue("Every <cy>label</c> has to be attached to some <cp>column</c>", TutorialCharacterFace::TCFNormalTilted)
+            ->joinTransform(TutorialBoxPlacement::TBPCenter, .65f);
+
+        index = 0;
+        for (const auto& column : columns)
+        {
+            tutorialLayer->joinHighlight(column->topSpr, .1f * index);
+            index++;
+        }
+
+        tutorialLayer
+            ->appendDialogue("Each <cp>column</c> can be <cy>clicked</c> to enter its settings", TutorialCharacterFace::TCFHappy)
+            ->joinPreviousHighlight()
+            ->appendDialogue("And can be <cg>expanded</c> when <cy>dragging its edges</c>", TutorialCharacterFace::TCFNormal);
+
+        index = 0;
+        for (const auto& column : columns)
+        {
+            tutorialLayer->joinHighlight(column->topBorder2, .2f * index);
+            index++;
+        }
+
+        tutorialLayer
+            ->appendDialogue("You can also edit the <cy>new best</c> and <co>session best</c> colors", TutorialCharacterFace::TCFNormal)
+            ->joinHighlight(colorChangeBG)
+            ->appendDialogue("One you are done, you can click the <cg>Apply Changes</c> button to save your changes", TutorialCharacterFace::TCFHappy)
+            ->joinHighlight(applyChangesButton)
+            ->appendDialogue("And if you <cr>regret your changes</c> you can either revert to the <cy>default layout</c> of the mod", TutorialCharacterFace::TCFNormal)
+            ->joinHighlight(resetLayoutBtn)
+            ->joinTextToHighlight("Default Layout", .35f, TutorialTextPlacement::TTTop)
+            ->appendDialogue("Or revert all the changes you have made using the <cr>Discard Changes</c> button!", TutorialCharacterFace::TCFNormal)
+            ->joinHighlight(discardChangesButton)
+            ->appendDialogue("Feel free to play around and explore the different settings!", TutorialCharacterFace::TCFHappy)
+            ->joinTransform(TutorialBoxPlacement::TBPCenter, 1);
+    });
+    layoutInfo->setPosition({130, 128});
+    layoutInfo->setOpacity(0);
+    editLayoutMenu->addChild(layoutInfo);
 
     return true;
 }
