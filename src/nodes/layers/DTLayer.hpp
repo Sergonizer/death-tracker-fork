@@ -275,4 +275,10 @@ class DTLayer : public Popup, public FLAlertLayerProtocol {
         void onResetLayout(CCObject*);
 
         void FLAlert_Clicked(FLAlertLayer* layer, bool btn2) override;
+
+        CCSprite* newBestColorBtnSpr;
+        CCSprite* sessionBestColorBtnSpr;
+
+        ccColor3B originalNewBestColor = {255, 255, 255};
+        ccColor3B originalSessionBestColor = {255, 255, 255};
 };

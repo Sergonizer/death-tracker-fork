@@ -512,7 +512,7 @@ bool DTLayer::init(GJGameLevel* const& level) {
     colorMenu->setCascadeOpacityEnabled(true);
     colorChangeBG->addChild(colorMenu);
 
-    auto newBestColorBtnSpr = CCSprite::createWithSpriteFrameName("GJ_colorBtn_001.png");
+    newBestColorBtnSpr = CCSprite::createWithSpriteFrameName("GJ_colorBtn_001.png");
     newBestColorBtnSpr->setColor(Save::getNewBestColor());
     newBestColorBtnSpr->setScale(.75f);
     newBestColorBtnSpr->setCascadeOpacityEnabled(true);
@@ -537,7 +537,7 @@ bool DTLayer::init(GJGameLevel* const& level) {
     ));
     colorMenu->addChild(newBestColorBtnLabel);
     
-    auto sessionBestColorBtnSpr = CCSprite::createWithSpriteFrameName("GJ_colorBtn_001.png");
+    sessionBestColorBtnSpr = CCSprite::createWithSpriteFrameName("GJ_colorBtn_001.png");
     sessionBestColorBtnSpr->setColor(Save::getSessionBestColor());
     sessionBestColorBtnSpr->setScale(.75f);
     sessionBestColorBtnSpr->setCascadeOpacityEnabled(true);
@@ -638,6 +638,11 @@ void DTLayer::onEditLayout(CCObject*){
     addColumnButton->stopAllActions();
     addColumnButton->runAction(CCFadeTo::create(.15f, 255));
     columnHolder->setEnabled(true);
+
+    originalNewBestColor = Save::getNewBestColor();
+    originalSessionBestColor = Save::getSessionBestColor();
+    newBestColorBtnSpr->setColor(originalNewBestColor);
+    sessionBestColorBtnSpr->setColor(originalSessionBestColor);
 
     scrollLayer->moveBy(ccp(0, -LayoutColumn::topHeight));
 
@@ -2088,7 +2093,13 @@ void DTLayer::onApplyLayoutChanges(CCObject*){
 }
 void DTLayer::onDiscardLayoutChanges(CCObject*){
 
+    Save::setNewBestColor(originalNewBestColor);
+    Save::setSessionBestColor(originalSessionBestColor);
+
     setLayoutBy(Save::getLayout());
+
+    specialStrings["general"]->updateContent();
+    specialStrings["s0"]->updateContent();
 
     exitLayoutEditing();
 }
@@ -3361,7 +3372,7 @@ void DTLayer::onNewBestColor(CCObject* sender){
 
         specialStrings["general"]->updateContent();
     });
-    popup->setColorTarget(static_cast<CCMenuItemSpriteExtra*>(sender)->getChildrenExt<CCSprite*>()[0]);
+    popup->setColorTarget(newBestColorBtnSpr);
     popup->show();
 }
 void DTLayer::onSessionBestColor(CCObject* sender){
@@ -3371,7 +3382,7 @@ void DTLayer::onSessionBestColor(CCObject* sender){
 
         specialStrings["s0"]->updateContent();
     });
-    popup->setColorTarget(static_cast<CCMenuItemSpriteExtra*>(sender)->getChildrenExt<CCSprite*>()[0]);
+    popup->setColorTarget(sessionBestColorBtnSpr);
     popup->show();
 }
 
