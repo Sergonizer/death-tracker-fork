@@ -426,7 +426,7 @@ struct DTLabelInfo_s {
     int maxPlacementRange;
     int layer;
     std::string labelName = "new label";
-    std::string text = "new label";
+    std::string text = "";
     std::string font = "bigFont.fnt";
     CCTextAlignment horizontalAlignment = CCTextAlignment::kCCTextAlignmentCenter;
     ccColor4B labelColor = {170, 170, 170, 255};

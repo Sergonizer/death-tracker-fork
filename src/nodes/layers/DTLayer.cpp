@@ -60,7 +60,14 @@ bool DTLayer::init(GJGameLevel* const& level) {
         Save::setLastOpenedVersion(Mod::get()->getVersion().toNonVString());
         Mod::get()->getVersion();
         if (!isNewPlayer){
-            ChangelogPopup::create()->show();
+            async::spawn(
+                []() -> arc::Future<> {
+                    co_await arc::yield();
+                },
+                [](){
+                    ChangelogPopup::create()->show();
+                }
+            );
         }
     }
 
@@ -555,8 +562,8 @@ bool DTLayer::init(GJGameLevel* const& level) {
         }
 
         tutorialLayer
-            ->appendDialogue("You can also edit the <cy>new best</c> and <co>session best</c> colors", TutorialCharacterFace::TCFNormal)
-            ->joinHighlight(colorChangeBG)
+            // ->appendDialogue("You can also edit the <cy>new best</c> and <co>session best</c> colors", TutorialCharacterFace::TCFNormal)
+            // ->joinHighlight(colorChangeBG)
             ->appendDialogue("One you are done, you can click the <cg>Apply Changes</c> button to save your changes", TutorialCharacterFace::TCFHappy)
             ->joinHighlight(applyChangesButton)
             ->appendDialogue("And if you <cr>regret your changes</c> you can either revert to the <cy>default layout</c> of the mod", TutorialCharacterFace::TCFNormal)

@@ -49,6 +49,7 @@ class DTGraphLayer : public Popup, public TextInputDelegate, public GraphPointDe
         GraphHolder* graph;
 
         ScrollLayer* graphsScroll;
+        Scrollbar* graphsScrollbar;
 
         void onAddGraph(CCObject*);
 
@@ -57,7 +58,7 @@ class DTGraphLayer : public Popup, public TextInputDelegate, public GraphPointDe
         void removeGraph(const std::string& graphName);
 
         void openOptionsFor(GraphCell* cell);
-        CCMenu* graphsPage;
+        CCNode* graphsPage;
         CCMenu* graphOptionsPage;
 
         void onColor(CCObject*);
@@ -94,4 +95,6 @@ class DTGraphLayer : public Popup, public TextInputDelegate, public GraphPointDe
         std::set<GraphPointDisplay*, GraphPointDisplayPtrCompare> displays{};
 
         bool holdingShift;
+
+        void updateGRapgCellLayout();
     };

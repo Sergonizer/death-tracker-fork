@@ -9,7 +9,7 @@
 
 using namespace geode::prelude;
 
-class GraphCell : public CCMenu {
+class GraphCell : public CCNode {
     public:
         static GraphCell* create(float width, const DTGraphInfo& graphInfo);
 
@@ -51,7 +51,7 @@ class GraphCell : public CCMenu {
         
         void resendSession();
         
-        CCMenu* everythingParent;
+        CCNode* everythingParent;
         CCLabelBMFont* sessionSelectorLabel;
         SessionSelector* sessionSelector;
         CCLabelBMFont* runLabel;

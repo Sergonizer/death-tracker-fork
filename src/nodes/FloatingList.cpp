@@ -31,6 +31,7 @@ bool FloatingList::init(CCSize const& size, bool startOpen){
         ->setGap(elementOffset)
     );
     scrollLayer->setScaleY(startOpen ? 1 : 0);
+    scrollLayer->setVisible(startOpen);
 
     auto listBG = CCScale9Sprite::create("square02_small.png");
     listBG->setContentSize(size);
@@ -117,7 +118,9 @@ void FloatingList::open(){
     scrollLayer->moveToTop();
 
     scrollLayer->stopAllActions();
+    scrollLayer->setVisible(true);
     scrollLayer->runAction(CCEaseInOut::create(CCScaleTo::create(0.1f, 1, 1), 2));
+    
     scrollbar->stopAllActions();
     scrollbar->runAction(CCEaseInOut::create(CCScaleTo::create(0.1f, 1, 1), 2));
 
@@ -131,7 +134,12 @@ void FloatingList::close(){
     isOpen = false;
 
     scrollLayer->stopAllActions();
-    scrollLayer->runAction(CCEaseInOut::create(CCScaleTo::create(0.1f, 1, 0), 2));
+    scrollLayer->runAction(CCSequence::create(
+        CCEaseInOut::create(CCScaleTo::create(0.1f, 1, 0), 2),
+        CCHide::create(),
+        nullptr
+    ));
+    
     scrollbar->stopAllActions();
     scrollbar->runAction(CCEaseInOut::create(CCScaleTo::create(0.1f, 1, 0), 2));
 

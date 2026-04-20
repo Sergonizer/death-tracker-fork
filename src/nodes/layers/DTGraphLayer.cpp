@@ -55,7 +55,7 @@ bool DTGraphLayer::init() {
     graphTutorial->setPosition(graph->getPosition() + graph->getContentSize() / 2 + ccp(10, 10));
     this->m_buttonMenu->addChild(graphTutorial);
 
-    graphsPage = CCMenu::create();
+    graphsPage = CCNode::create();
     graphsPage->setPositionX(55);
     graphsPage->setPositionY(m_size.height - 20);
     graphsPage->ignoreAnchorPointForPosition(false);
@@ -71,8 +71,7 @@ bool DTGraphLayer::init() {
     m_mainLayer->addChild(graphOptionsPage);
 
     graphsScroll = ScrollLayer::create({70, m_size.height - 40});
-    graphsScroll->ignoreAnchorPointForPosition(false);
-    graphsScroll->setAnchorPoint({.5f, 1});
+    graphsScroll->setPosition({-35, -(m_size.height - 40)});
     graphsScroll->m_contentLayer->setLayout(ColumnLayout::create()
         ->setGrowCrossAxis(true)
         ->setCrossAxisOverflow(false)
@@ -82,13 +81,25 @@ bool DTGraphLayer::init() {
     );
     graphsPage->addChild(graphsScroll);
 
+    graphsScrollbar = Scrollbar::create(graphsScroll);
+    graphsScrollbar->setPosition(graphsScroll->getPosition() + ccp(
+        -4,
+        graphsScroll->getScaledContentHeight() / 2 
+    ));
+    graphsScrollbar->ignoreAnchorPointForPosition(false);
+    graphsPage->addChild(graphsScrollbar);
+
     auto scrollBG = CCScale9Sprite::create("square02_001.png");
     scrollBG->setContentSize(graphsScroll->getContentSize() + ccp(5, 5));
-    scrollBG->setAnchorPoint({.5f,1});
-    scrollBG->setPosition(graphsScroll->getPosition());
+    scrollBG->setAnchorPoint({0.5f, 0.5f});
+    scrollBG->setPosition(graphsScroll->getPosition() + graphsScroll->getContentSize() / 2);
     scrollBG->setOpacity(100);
     scrollBG->setZOrder(-1);
     graphsPage->addChild(scrollBG);
+
+    auto addGraphMenu = CCMenu::create();
+    addGraphMenu->setPosition({0, 0});
+    graphsPage->addChild(addGraphMenu);
 
     auto addGraphBtnSpr = CCSprite::createWithSpriteFrameName("GJ_plus3Btn_001.png");
     auto addGraphBtn = CCMenuItemSpriteExtra::create(
@@ -97,7 +108,7 @@ bool DTGraphLayer::init() {
         menu_selector(DTGraphLayer::onAddGraph)
     );
     addGraphBtn->setPositionX(graphsScroll->getContentWidth() / 2 - 7.5f);
-    graphsPage->addChild(addGraphBtn);
+    addGraphMenu->addChild(addGraphBtn);
 
 #if defined(GEODE_IS_MOBILE)
     auto shiftSwitcher = SwitcherButton::create({scrollBG->getContentWidth(), 20}, "GJ_button_02.png", {"One Graph", "Multiple Graphs"});
@@ -108,7 +119,7 @@ bool DTGraphLayer::init() {
         0,
         -m_size.height + shiftSwitcher->getContentHeight() + 10
     });
-    graphsPage->addChild(shiftSwitcher);
+    addGraphMenu->addChild(shiftSwitcher);
 #endif
 
     auto graphsInfo = Save::getGraphs();
@@ -551,9 +562,7 @@ void DTGraphLayer::onClose(cocos2d::CCObject* sender) {
 void DTGraphLayer::update(float dt){
     auto mousePos = getMousePos();
 
-    CCRect graphsScrollRect = {graphsScroll->getPositionX(), graphsScroll->getPositionY(), graphsScroll->getScaledContentSize().width, graphsScroll->getScaledContentSize().height};
-
-    if (graphsScrollRect.containsPoint(graphsScroll->getParent()->convertToNodeSpace(mousePos))){
+    if (graphsScroll->boundingBox().containsPoint(graphsScroll->getParent()->convertToNodeSpace(mousePos))){
         graphsScroll->setMouseEnabled(true);
     }
     else {
@@ -637,7 +646,7 @@ void DTGraphLayer::addGraph(const DTGraphInfo& info){
             if (existingCellWithZ != nullptr) existingCellWithZ->setOrderPos(existingCellWithZ->getZOrder() + 1);
         }
 
-        graphsScroll->m_contentLayer->updateLayout();
+        updateGRapgCellLayout();
 
         saveAllGraphs();
     };
@@ -671,7 +680,7 @@ void DTGraphLayer::addGraph(const DTGraphInfo& info){
             graph->changeGraphName(cell->oldName, cell->getinfo().name);
 
         if (graphNode->getInfo().has_value() && cell->getinfo().coverage != graphNode->getInfo().value().coverage)
-            graphsScroll->m_contentLayer->updateLayout();
+            updateGRapgCellLayout();
 
         graphNode->setInfo(cell->getinfo());
         saveAllGraphs();
@@ -699,7 +708,7 @@ void DTGraphLayer::addGraph(const DTGraphInfo& info){
             indexZ++;
         }
 
-        graphsScroll->m_contentLayer->updateLayout();
+        updateGRapgCellLayout();
 
         graph->removeGraph(info.name);
         
@@ -727,9 +736,9 @@ void DTGraphLayer::addGraph(const DTGraphInfo& info){
     graph->addGraph(info);
     graphCell->resendSession();
     graphCell->setEnabled(true);
-    graphCell->setAnchorPoint({.5f, 1});
+    graphCell->setAnchorPoint({0,0});
     
-    graphsScroll->m_contentLayer->updateLayout();
+    updateGRapgCellLayout();
 
     saveAllGraphs();
 }
@@ -739,7 +748,7 @@ void DTGraphLayer::removeGraph(const std::string& graphName){
         if (cell->getinfo().name == graphName){
             cell->removeMeAndCleanup();
             graph->removeGraph(graphName);
-            graphsScroll->m_contentLayer->updateLayout();
+            updateGRapgCellLayout();
             break;
         }
     }
@@ -784,6 +793,7 @@ void DTGraphLayer::openOptionsFor(GraphCell* cell){
 
     editedGraph = cell;
     graphsScroll->setTouchEnabled(false);
+    graphsScrollbar->setTouchEnabled(false);
     graphsScroll->setMouseEnabled(false);
     // sessionSelector->setEnabled(false);
     // runSelectInput->setEnabled(false);
@@ -928,6 +938,7 @@ void DTGraphLayer::closeOptionsTab(){
     ));
 
     graphsScroll->setTouchEnabled(true);
+    graphsScrollbar->setTouchEnabled(true);
     // sessionSelector->setEnabled(true);
     // runSelectInput->setEnabled(true);
     for (const auto& child : CCArrayExt<GraphCell*>(graphsScroll->m_contentLayer->getChildren()))
@@ -953,4 +964,23 @@ void DTGraphLayer::FLAlert_Clicked(FLAlertLayer* layer, bool btn2){
 
         closeOptionsTab();
     }
+}
+
+void DTGraphLayer::updateGRapgCellLayout(){
+    std::set<CCNode*> invisible{};
+    for (const auto& child : graphsScroll->m_contentLayer->getChildrenExt<CCNode*>())
+    {
+        if (!child->isVisible()){
+            invisible.insert(child);
+            child->setVisible(true);
+        }
+    }
+    
+    graphsScroll->m_contentLayer->updateLayout();
+
+    for (const auto& child : invisible)
+    {
+        child->setVisible(false);
+    }
+    
 }

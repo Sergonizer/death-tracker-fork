@@ -15,13 +15,13 @@ GraphCell* GraphCell::create(float width, const DTGraphInfo& graphInfo){
 }
 
 bool GraphCell::init(float width, const DTGraphInfo& graphInfo){
-    if (!CCMenu::init()) return false;
+    if (!CCNode::init()) return false;
 
     this->setContentSize({width, 45});
 
     this->graphInfo = graphInfo;
 
-    everythingParent = CCMenu::create();
+    everythingParent = CCNode::create();
     everythingParent->setAnchorPoint({0, 0});
     everythingParent->setPositionX(0);
     everythingParent->ignoreAnchorPointForPosition(false);
@@ -35,6 +35,11 @@ bool GraphCell::init(float width, const DTGraphInfo& graphInfo){
     everythingParent->addChild(bg);
 
     everythingParent->setContentSize(bg->getScaledContentSize());
+
+    auto mainMenu = CCMenu::create();
+    mainMenu->setPosition({0, 0});
+    mainMenu->setZOrder(1);
+    everythingParent->addChild(mainMenu);
 
     label = SimpleTextArea::create(graphInfo.name, "bigFont.fnt");
     label->setScale(.25f);
@@ -75,10 +80,10 @@ bool GraphCell::init(float width, const DTGraphInfo& graphInfo){
     ));
     enableToggleBtn->setZOrder(1);
     enableToggleBtn->setID("toggle-btn");
-    enableToggleBtn->setCallback([&](auto state){
+    enableToggleBtn->setCallback([this](auto state){
         setEnabledInfo(state, false, true);
     });
-    everythingParent->addChild(enableToggleBtn);
+    mainMenu->addChild(enableToggleBtn);
 
     auto bgCircle = CCSprite::createWithSpriteFrameName("menuCircleWhite.png");
     bgCircle->setColor({0,0,0});
@@ -101,7 +106,7 @@ bool GraphCell::init(float width, const DTGraphInfo& graphInfo){
         width - arrowDown->getContentWidth() / 2 - 4,
         10
     });
-    everythingParent->addChild(arrowDown);
+    mainMenu->addChild(arrowDown);
 
     auto arrowUpSpr = CCSprite::createWithSpriteFrameName("GJ_arrow_01_001.png");
     arrowUpSpr->setScale(.2f);
@@ -116,7 +121,7 @@ bool GraphCell::init(float width, const DTGraphInfo& graphInfo){
         arrowDown->getPositionX(),
         arrowDown->getPositionY() + arrowUp->getContentHeight() / 2 + arrowDown->getContentHeight() / 2 + 1
     });
-    everythingParent->addChild(arrowUp);
+    mainMenu->addChild(arrowUp);
 
     auto settingBtnSpr = CCSprite::createWithSpriteFrameName("GJ_optionsBtn_001.png");
     settingBtnSpr->setScale(.25f);
@@ -128,7 +133,7 @@ bool GraphCell::init(float width, const DTGraphInfo& graphInfo){
     settingBtn->setID("settings-btn");
     settingBtn->setScale(12 / settingBtn->getContentHeight());
     settingBtn->setPosition({enableToggleBtn->getPositionX(), enableToggleBtn->getPositionY() - enableToggleBtn->getContentHeight() / 2 - settingBtn->getContentHeight() / 2});
-    everythingParent->addChild(settingBtn);
+    mainMenu->addChild(settingBtn);
 
     typeSwitcher = OptionSwitcher<DTGraphType>::create(90, {
         {DTGraphType::Passrate, "Passrate"},
@@ -139,11 +144,11 @@ bool GraphCell::init(float width, const DTGraphInfo& graphInfo){
     typeSwitcher->setAnchorPoint({.5f, 0});
     typeSwitcher->setPositionX(width / 2 + 2);
     typeSwitcher->setPositionY(6.5f);
-    typeSwitcher->setCallback([&](auto value){
+    typeSwitcher->setCallback([this](auto value){
         setType(value);
     });
     typeSwitcher->setValue(graphInfo.type, false);
-    everythingParent->addChild(typeSwitcher);
+    mainMenu->addChild(typeSwitcher);
     
     auto typeSwitcherLabel = CCLabelBMFont::create("Type:", "bigFont.fnt");
     typeSwitcherLabel->setScale(.25f);
@@ -462,7 +467,7 @@ void GraphCell::resendSession(){
 }
 
 void GraphCell::setEnabled(bool value){
-    CCMenu::setEnabled(value);
+    //CCMenu::setEnabled(value);
 
     runInput->setEnabled(value);
     sessionSelector->setEnabled(value);
