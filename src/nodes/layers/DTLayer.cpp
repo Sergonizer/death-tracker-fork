@@ -343,14 +343,14 @@ bool DTLayer::init(GJGameLevel* const& level) {
         tutorialLayer->appendDialogue("Welcome to the <cy>main death tracker page!</c>", TutorialCharacterFace::TCFHappy)
             ->appendDialogue("This is the <cy>main view</c> where you can view <cg>all your data!</c>", TutorialCharacterFace::TCFNormal)
             ->joinTransform(TutorialBoxPlacement::TBPBottom, .75f)
-            ->joinHighlight(scrollLayer, 0, true)
+            ->joinHighlight(scrollLayer)
             ->joinTextToHighlight("Main Scroll View", .5f, TutorialTextPlacement::TTTop)
 #if !defined(GEODE_IS_MOBILE)
             ->appendDialogue("You can hold <cg>control</c> and <cp>scroll</c> to zoom in! and <cc>shift</c> and <cp>scroll</c> to move side to side.", TutorialCharacterFace::TCFNormalTilted)
 #else
             ->appendDialogue("You can <cg>pinch</c> to zoom in! and <cc>swipe</c> to move side to side.", TutorialCharacterFace::TCFNormalTilted)
 #endif
-            ->joinHighlight(scrollLayer, 0, true)
+            ->joinHighlight(scrollLayer)
 
             ->appendDialogue("Of course you can also scroll normally :D", TutorialCharacterFace::TCFHappy)
             ->joinTransform(TutorialBoxPlacement::TBPCenter)
