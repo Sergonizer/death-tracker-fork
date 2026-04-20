@@ -1,9 +1,5 @@
 # Changelog
 
-## v3.0.0-beta.10
-- moew ya
-- change yay
-
 ## v2.4.6
 - iOS support
 
