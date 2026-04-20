@@ -247,7 +247,7 @@ bool GraphCell::init(float width, const DTGraphInfo& graphInfo){
         true
     );
     runSelectHelperSpr->setScale(0.4f);
-    auto runSelectHelperBtn = CCMenuItemSpriteExtra::create(
+    runSelectHelperBtn = CCMenuItemSpriteExtra::create(
         runSelectHelperSpr,
         this,
         menu_selector(GraphCell::onRunSelectHelper)

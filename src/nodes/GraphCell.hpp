@@ -48,9 +48,15 @@ class GraphCell : public CCMenu {
         void setEnabled(bool value);
         
         void deleteMe();
-
+        
         void resendSession();
-
+        
+        CCMenu* everythingParent;
+        CCLabelBMFont* sessionSelectorLabel;
+        SessionSelector* sessionSelector;
+        CCLabelBMFont* runLabel;
+        TextInput* runInput;
+        CCMenuItemSpriteExtra* runSelectHelperBtn;
     private:
         bool init(float width, const DTGraphInfo& graphInfo);
         
@@ -64,8 +70,6 @@ class GraphCell : public CCMenu {
         CCSprite* outerColor;
         CCSprite* innerColor;
 
-        CCMenu* everythingParent;
-
         void onArrowUp(CCObject*);
         void onArrowDown(CCObject*);
         void onOptions(CCObject*);
@@ -77,10 +81,8 @@ class GraphCell : public CCMenu {
 
         CCNode* sessionContainer;
         CCMenu* runContainer;
-        CCLabelBMFont* sessionSelectorLabel;
-        SessionSelector* sessionSelector;
-        CCLabelBMFont* runLabel;
-        TextInput* runInput;
+        
+        
 
         CCNode* extrasContainer;
 

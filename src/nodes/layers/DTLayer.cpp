@@ -345,8 +345,11 @@ bool DTLayer::init(GJGameLevel* const& level) {
             ->joinTransform(TutorialBoxPlacement::TBPBottom, .75f)
             ->joinHighlight(scrollLayer, 0, true)
             ->joinTextToHighlight("Main Scroll View", .5f, TutorialTextPlacement::TTTop)
-
+#if !defined(GEODE_IS_MOBILE)
             ->appendDialogue("You can hold <cg>control</c> and <cp>scroll</c> to zoom in! and <cc>shift</c> and <cp>scroll</c> to move side to side.", TutorialCharacterFace::TCFNormalTilted)
+#else
+            ->appendDialogue("You can <cg>pinch</c> to zoom in! and <cc>swipe</c> to move side to side.", TutorialCharacterFace::TCFNormalTilted)
+#endif
             ->joinHighlight(scrollLayer, 0, true)
 
             ->appendDialogue("Of course you can also scroll normally :D", TutorialCharacterFace::TCFHappy)
