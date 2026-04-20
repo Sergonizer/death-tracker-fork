@@ -27,7 +27,7 @@ struct organizationResult{
 
 using organizationFuture = arc::Future<organizationResult>;
 
-class DTLayer : public Popup {
+class DTLayer : public Popup, public FLAlertLayerProtocol {
     protected:
         bool init(GJGameLevel* const& Level);
 
@@ -270,4 +270,9 @@ class DTLayer : public Popup {
 
         void onNewBestColor(CCObject*);
         void onSessionBestColor(CCObject*);
+
+        CCMenu* resetLayoutMenu;
+        void onResetLayout(CCObject*);
+
+        void FLAlert_Clicked(FLAlertLayer* layer, bool btn2) override;
 };

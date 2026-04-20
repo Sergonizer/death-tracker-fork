@@ -474,6 +474,26 @@ bool DTLayer::init(GJGameLevel* const& level) {
     layoutInfo->setOpacity(0);
     editLayoutMenu->addChild(layoutInfo);
 
+    resetLayoutMenu = CCMenu::create();
+    resetLayoutMenu->ignoreAnchorPointForPosition(false);
+    resetLayoutMenu->setPosition({0, 0});
+    resetLayoutMenu->setContentSize({0, 0});
+    resetLayoutMenu->setCascadeOpacityEnabled(true);
+    resetLayoutMenu->setEnabled(false);
+    m_mainLayer->addChild(resetLayoutMenu);
+    
+    auto resetLayoutBtnSpr = CCSprite::createWithSpriteFrameName("GJ_replayBtn_001.png");
+    resetLayoutBtnSpr->setScale(.5f);
+    auto resetLayoutBtn = CCMenuItemSpriteExtra::create(
+        resetLayoutBtnSpr,
+        this,
+        menu_selector(DTLayer::onResetLayout)
+    );
+    resetLayoutBtn->setPosition({0, 0});
+    resetLayoutMenu->addChild(resetLayoutBtn);
+
+    resetLayoutMenu->setOpacity(0);
+
     colorChangeBG = CCScale9Sprite::create("GJ_square05.png");
     colorChangeBG->setContentSize({100, 120});
     colorChangeBG->setAnchorPoint({0, .5f});
@@ -599,6 +619,9 @@ void DTLayer::onEditLayout(CCObject*){
     colorMenu->stopAllActions();
     colorMenu->runAction(CCFadeTo::create(.15f, 255));
     colorMenu->setEnabled(true);
+    resetLayoutMenu->stopAllActions();
+    resetLayoutMenu->runAction(CCFadeTo::create(.15f, 255));
+    resetLayoutMenu->setEnabled(true);
 
     editLayoutMenu->setEnabled(true);
     layoutInfo->stopAllActions();
@@ -2113,6 +2136,9 @@ void DTLayer::exitLayoutEditing(){
     colorMenu->stopAllActions();
     colorMenu->runAction(CCFadeTo::create(.15f, 0));
     colorMenu->setEnabled(false);
+    resetLayoutMenu->stopAllActions();
+    resetLayoutMenu->runAction(CCFadeTo::create(.15f, 0));
+    resetLayoutMenu->setEnabled(false);
 
     editLayoutMenu->setEnabled(false);
     layoutInfo->stopAllActions();
@@ -3347,4 +3373,15 @@ void DTLayer::onSessionBestColor(CCObject* sender){
     });
     popup->setColorTarget(static_cast<CCMenuItemSpriteExtra*>(sender)->getChildrenExt<CCSprite*>()[0]);
     popup->show();
+}
+
+void DTLayer::onResetLayout(CCObject*){
+    FLAlertLayer::create(this, "Warning", "This will reset the layout back to the default layout!\nare you sure you want to do this?", "CANCEL", "OK")->show();
+}
+
+void DTLayer::FLAlert_Clicked(FLAlertLayer* layer, bool btn2){
+    if (!btn2) return;
+
+    setLayoutBy(Save::getDefaultLayout());
+    organizeLayout();
 }
