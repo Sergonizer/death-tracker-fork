@@ -12,6 +12,7 @@
 #include <arc/time/Sleep.hpp>
 
 #include <utils/Settings.hpp>
+#include <nodes/layers/ChangelogPopup.hpp>
 
 float DTLayer::transitionTime = .35f;
 
@@ -57,10 +58,10 @@ bool DTLayer::init(GJGameLevel* const& level) {
     if (Save::getLastOpenedVersion() != Mod::get()->getVersion().toNonVString()){
         bool isNewPlayer = Save::getLastOpenedVersion() == "";
         Save::setLastOpenedVersion(Mod::get()->getVersion().toNonVString());
-        // FLAlertLayer::create(nullptr, fmt::format("Death Tracker {} Changelog", Mod::get()->getVersion().toVString()).c_str(), fmt::format(
-        //     "{}",
-        //     "- <cg>iOS support</c>"
-        // ), "OK", nullptr, 415, false, 200, 0.75f)->show();
+        Mod::get()->getVersion();
+        if (!isNewPlayer){
+            ChangelogPopup::create()->show();
+        }
     }
 
     float height = 60;
