@@ -231,8 +231,7 @@ bool DTLayer::init(GJGameLevel* const& level) {
 
     setLayoutBy(Save::getLayout());
 
-    auto addColumnButtonSpr = CCSprite::create("GJ_button_01.png");
-    addColumnButtonSpr->setScale(.5f);
+    auto addColumnButtonSpr = CCSprite::createWithSpriteFrameName("GJ_plus3Btn_001.png");
     addColumnButton = CCMenuItemSpriteExtra::create(
         addColumnButtonSpr,
         this,

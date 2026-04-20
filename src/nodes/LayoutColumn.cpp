@@ -69,8 +69,8 @@ bool LayoutColumn::init(const DTColumnInfo& info, bool startVisible, float minHe
     menu->setEnabled(startVisible);
     this->addChild(menu);
 
-    auto addLabelBtnSpr = CCSprite::create("GJ_button_01.png");
-    addLabelBtnSpr->setScale(.5f);
+    auto addLabelBtnSpr = CCSprite::createWithSpriteFrameName("GJ_plus3Btn_001.png");
+    //addLabelBtnSpr->setScale(.5f);
     auto addLabelBtn = CCMenuItemSpriteExtra::create(
         addLabelBtnSpr,
         this,
