@@ -52,6 +52,7 @@ class GraphCell : public CCNode {
         void resendSession();
         
         CCNode* everythingParent;
+        CCMenu* mainMenu;
         CCLabelBMFont* sessionSelectorLabel;
         SessionSelector* sessionSelector;
         CCLabelBMFont* runLabel;

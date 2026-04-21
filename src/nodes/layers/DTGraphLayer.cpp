@@ -33,10 +33,14 @@ bool DTGraphLayer::init() {
     auto graphTutorial = TutorialButton::create(.6f, "grapg-overall", [&](DTTutorialLayer* tl){
         tl->appendDialogue("Welcome to the graph view!", TutorialCharacterFace::TCFNormal)
             ->appendDialogue("This is the main graphs view", TutorialCharacterFace::TCFNormal)
-            ->joinHighlight(graph->scrollLayer, 0, true)
+            ->joinHighlight(graph->scrollLayer)
             ->joinTransform(TutorialBoxPlacement::TBPBottomLeft, .5f)
+#if !defined(GEODE_IS_MOBILE)
             ->appendDialogue("You can hold <cg>control</c> and <cp>scroll</c> to zoom in! and <cc>shift</c> and <cp>scroll</c> to move side to side.", TutorialCharacterFace::TCFNormal)
-            ->joinHighlight(graph->scrollLayer, 0, true)
+#else
+            ->appendDialogue("You can <cg>pinch</c> to zoom in! and <cc>swipe</c> to move side to side.", TutorialCharacterFace::TCFNormal)
+#endif
+            ->joinHighlight(graph->scrollLayer)
             ->appendDialogue("You can also hover on any of the points in the graph to see their details!", TutorialCharacterFace::TCFNormal)
             ->joinCallback([&, tl](){
                 for (const auto& graphNode : graph->getAllGraphNodes())
@@ -144,41 +148,41 @@ bool DTGraphLayer::init() {
         for (const auto& cell : CCArrayExt<GraphCell*>(graphsScroll->m_contentLayer->getChildren()))
         {
             if (firstBtn == nullptr)
-                firstBtn = cell->everythingParent->getChildByID("toggle-btn");
-            tl->joinHighlight(cell->everythingParent->getChildByID("toggle-btn"));
+                firstBtn = cell->mainMenu->getChildByID("toggle-btn");
+            tl->joinHighlight(cell->mainMenu->getChildByID("toggle-btn"));
         }
         tl->appendDialogue("If you toggle a graph <cy>ON</c>, all others will be <cr>disabled</c>", TutorialCharacterFace::TCFNormal)
             ->joinHighlight(firstBtn)
             ->joinTextToHighlight(">", .5f, TutorialTextPlacement::TTLeft);
 #if !defined(GEODE_IS_MOBILE)
         tl->appendDialogue("Unless you hold <cy>SHIFT</c> while toggling to enable <cy>multiple graphs!</c>", TutorialCharacterFace::TCFHappy);
+        int index = 0;
+        for (const auto& cell : CCArrayExt<GraphCell*>(graphsScroll->m_contentLayer->getChildren()))
+        {
+            tl->joinHighlight(cell->mainMenu->getChildByID("toggle-btn"), index * .3f);
+            tl->joinTextToHighlight(std::to_string(index + 1), .5f, TutorialTextPlacement::TTLeft);
+            index++;
+        }
 #else
         tl->appendDialogue("Unless you hold click the <cf>bottom button</c> to switch to <cy>multiple graphs mode!</c>", TutorialCharacterFace::TCFHappy)
             ->joinHighlight(shiftSwitcher);
 #endif
-        int index = 0;
-        for (const auto& cell : CCArrayExt<GraphCell*>(graphsScroll->m_contentLayer->getChildren()))
-        {
-            tl->joinHighlight(cell->everythingParent->getChildByID("toggle-btn"), index * .3f);
-            tl->joinTextToHighlight(std::to_string(index + 1), .5f, TutorialTextPlacement::TTLeft);
-            index++;
-        }
         tl->appendDialogue("You can edit each graphs <cc>settings</c>", TutorialCharacterFace::TCFNormal);
         for (const auto& cell : CCArrayExt<GraphCell*>(graphsScroll->m_contentLayer->getChildren()))
         {
-            tl->joinHighlight(cell->everythingParent->getChildByID("settings-btn"));
+            tl->joinHighlight(cell->mainMenu->getChildByID("settings-btn"));
         }
         tl->appendDialogue("And you can also change their <cg>layering order</c> using the <cf>arrows</c> on the right!", TutorialCharacterFace::TCFHappy);
         for (const auto& cell : CCArrayExt<GraphCell*>(graphsScroll->m_contentLayer->getChildren()))
         {
-            tl->joinHighlight(cell->everythingParent->getChildByID("up-arrow"));
-            tl->joinHighlight(cell->everythingParent->getChildByID("down-arrow"));
+            tl->joinHighlight(cell->mainMenu->getChildByID("up-arrow"));
+            tl->joinHighlight(cell->mainMenu->getChildByID("down-arrow"));
         }
         tl->appendDialogue("You also have quick access to change the <cy>graphs type</c>, more on that in the graph settings page!", TutorialCharacterFace::TCFNormalTilted);
         for (const auto& cell : CCArrayExt<GraphCell*>(graphsScroll->m_contentLayer->getChildren()))
         {
-            tl->joinHighlight(cell->everythingParent->getChildByID("type-switcher"));
-            tl->joinHighlight(cell->everythingParent->getChildByID("type-label"));
+            tl->joinHighlight(cell->mainMenu->getChildByID("type-switcher"));
+            tl->joinHighlight(cell->mainMenu->getChildByID("type-label"));
         }
         tl->appendDialogue("You can choose which <co>session</c> the session graphs show using their <co>session switcher</c>", TutorialCharacterFace::TCFNormal)
             ->joinTransform(TutorialBoxPlacement::TBPBottomRight, .75f);
@@ -200,7 +204,7 @@ bool DTGraphLayer::init() {
             ->joinTransform(TutorialBoxPlacement::TBPCenter, 1);
     });
     sideTutorial->setPositionX(-graphsScroll->getContentWidth() / 2 + 2.5f);
-    graphsPage->addChild(sideTutorial);
+    addGraphMenu->addChild(sideTutorial);
 
 
     auto nameLabel = CCLabelBMFont::create("Name", "bigFont.fnt");

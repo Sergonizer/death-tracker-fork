@@ -1,20 +1,5 @@
 # Changelog
 
-## v3.0.0-beta.11
-- test changes\
-= we test
-- yay i  like ttests!\
-= yay! i think it works
-- nah no way .. :( it probably shows "No Changelog Found again.."\
-= hey dont be so negative!\
-= we got this
-- \>:( no ! i need a break this is taking too longg\
-= oof well ig i can do this on my own for a bit u can take a break
-- b-but i dont wanna do that :( id feel bad :((\
-= but its importent to take breaks !!1! and ur awesome and shouldnt tire yourself\
-= dont worry, i got this!
-- ummm well, ok i guess ill take a break
-
 ## v2.4.6
 - iOS support
 

@@ -36,7 +36,7 @@ bool GraphCell::init(float width, const DTGraphInfo& graphInfo){
 
     everythingParent->setContentSize(bg->getScaledContentSize());
 
-    auto mainMenu = CCMenu::create();
+    mainMenu = CCMenu::create();
     mainMenu->setPosition({0, 0});
     mainMenu->setZOrder(1);
     everythingParent->addChild(mainMenu);

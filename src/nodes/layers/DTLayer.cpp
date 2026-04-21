@@ -576,9 +576,11 @@ bool DTLayer::init(GJGameLevel* const& level) {
             ->appendDialogue("Feel free to play around and explore the different settings!", TutorialCharacterFace::TCFHappy)
             ->joinTransform(TutorialBoxPlacement::TBPCenter, 1);
     });
-    layoutInfo->setPosition({130, 128});
+    layoutInfo->setPosition(m_size);
     layoutInfo->setOpacity(0);
-    editLayoutMenu->addChild(layoutInfo);
+    auto layoutInfoMenu = CCMenu::createWithItem(layoutInfo);
+    layoutInfoMenu->setPosition({0, 0});
+    m_mainLayer->addChild(layoutInfoMenu);
 
     return true;
 }
