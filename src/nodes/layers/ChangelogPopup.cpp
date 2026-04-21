@@ -14,50 +14,66 @@ ChangelogPopup* ChangelogPopup::create() {
 bool ChangelogPopup::init() {
     auto winSize = CCDirector::sharedDirector()->getWinSize();
     // @geode-ignore(unknown-resource)
-    if (!Popup::init(200, 250, "geode.loader/GE_square01.png"))
+    if (!Popup::init(240, 250, "geode.loader/GE_square01.png"))
         return false;
     setTitle("Changelog");
     
 
-    auto changelog = Mod::get()->getMetadata().getChangelog().value_or("No changelog found!");
+    auto changelogOpt = Mod::get()->getMetadata().getChangelog();
     auto version = Mod::get()->getVersion();
-    std::string changes;
+    std::string changes = "-1";
 
-    bool validHeader = false;
-    for (auto line : string::split(changelog, "\n")) {
-        string::trimIP(line);
-        if (line.empty()) continue;
-        
-        auto it = line.begin();
-        switch (*it) {
-            case '#': {
-                while (it != line.end() && (*it == '#' || std::isspace(*it))) {
-                    it++;
-                }
-                auto parse = VersionInfo::parse(std::string(it, line.end()));
+    if (changelogOpt.has_value()){
+        auto changelog = changelogOpt.value();
 
-                if (parse.isErr()) continue;
+        bool validHeader = false;
+        for (auto line : string::split(changelog, "\n")) {
+            string::trimIP(line);
+            if (line.empty()) continue;
+            
+            auto it = line.begin();
+            switch (*it) {
+                case '#': {
+                    while (it != line.end() && (*it == '#' || std::isspace(*it))) {
+                        it++;
+                    }
+                    auto parse = VersionInfo::parse(std::string(it, line.end()));
 
-                auto ver = parse.unwrap();
+                    if (parse.isErr()) continue;
 
-                validHeader = version == ver;
-                if (validHeader)
-                    changes += "\n# " + ver.toNonVString() + "\n\n";
+                    auto ver = parse.unwrap();
 
-            } break;
+                    validHeader = version == ver;
+                    if (validHeader)
+                        changes = "\n# " + ver.toNonVString() + "\n\n";
 
-            default: {
-                if (changes.empty() || !validHeader) continue;
+                } break;
 
-                changes += line + "\n";
-            } break;
+                default: {
+                    if (changes.empty() || !validHeader) continue;
+
+                    changes += line + "\n";
+                } break;
+            }
         }
     }
 
-    auto textArea = MDTextArea::create(changes, m_size - ccp(15, 15 + m_title->getScaledContentHeight() / 2 + (m_size.height - m_title->getPositionY())));
+    if (changes == "-1") return false;
+
+    auto textArea = MDTextArea::create(changes, m_size - ccp(25, 15 + m_title->getScaledContentHeight() / 2 + (m_size.height - m_title->getPositionY())));
     m_mainLayer->addChildAtPosition(textArea, Anchor::Center);
     textArea->setPositionY(textArea->getPositionY() - m_title->getScaledContentHeight() / 2);
 
+    auto lower = CCSprite::createWithSpriteFrameName("geode.loader/mods-list-bottom-sapphire.png");
+    lower->setAnchorPoint({0, .5f});
+    lower->setScale(m_size.width / lower->getContentWidth());
+    m_mainLayer->addChild(lower);
+
+    auto jolly = CCSprite::createWithSpriteFrameName("happy.png"_spr);
+    jolly->setScale(.9f);
+    jolly->setPosition(m_size + ccp(3, 3));
+    jolly->setAnchorPoint({1, 1});
+    m_mainLayer->addChild(jolly);
 
     return true;
 }

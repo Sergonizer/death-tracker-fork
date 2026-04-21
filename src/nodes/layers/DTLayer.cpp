@@ -65,7 +65,9 @@ bool DTLayer::init(GJGameLevel* const& level) {
                     co_await arc::yield();
                 },
                 [](){
-                    ChangelogPopup::create()->show();
+                    auto changelog = ChangelogPopup::create();
+                    if (changelog != nullptr)
+                        changelog->show();
                 }
             );
         }
