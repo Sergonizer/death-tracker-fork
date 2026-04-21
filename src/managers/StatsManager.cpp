@@ -1124,6 +1124,8 @@ Result<> StatsManager::convertV2SaveToV3(const std::string& levelKey){
 }
 
 std::vector<std::string> StatsManager::allV2FileLevelKeys(){
+    if (!std::filesystem::exists(m_savesFolderPath)) return {};
+    
     std::vector<std::string> toReturn{};
 
     for (const auto& entry : std::filesystem::directory_iterator(m_savesFolderPath)){

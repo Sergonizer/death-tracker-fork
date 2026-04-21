@@ -1,5 +1,8 @@
 # Changelog
 
+## v3.0.1
+- Fixed crash on invalid save file location
+
 ## v3.0.0
 - backend optimized and cleaned up
 - layout system revamped!
