@@ -27,6 +27,11 @@ typedef struct PlaytimePair {
         playtimeRuns += other.playtimeRuns;
         return *this;
     }
+
+    void reset(){
+        playtimeF0 = 0;
+        playtimeRuns = 0;
+    }
     
 } PlaytimePair;
 

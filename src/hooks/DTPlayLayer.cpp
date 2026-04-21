@@ -245,6 +245,8 @@ void DTPlayLayer::saveRun(){
         else{
             StatsManager::logRun(m_fields->currentRun);
         }
+
+        savePlaytime();
     }
     else{
         if (m_fields->currentRun.start == 0 && !m_isPracticeMode){
@@ -344,17 +346,7 @@ void DTPlayLayer::onExit(){
 
     cutoutPlaytime();
 
-    auto session = StatsManager::getCurrentSession();
-    if (session != nullptr){
-        session->data.playtimeGeneral += m_fields->timePassedGeneral;
-        session->data.playtimeDead += m_fields->timePassedDead;
-        session->data.playtimePaused += m_fields->timePassedPaused;
-        (void)StatsManager::setSession(*session, m_level, session->sessionStartDate, false);
-    }
-    StatsManager::currentFrom0.playtimeGeneral += m_fields->timePassedGeneral;
-    StatsManager::currentFrom0.playtimeDead += m_fields->timePassedDead;
-    StatsManager::currentFrom0.playtimePaused += m_fields->timePassedPaused;
-    (void)StatsManager::setGeneral(StatsManager::currentFrom0, m_level);
+    savePlaytime();
 
     auto lvlKey = StatsManager::getLevelKey(m_level);
     if (lvlKey.isOk() && Settings::getAutoBackupEnabled() && Settings::getAutoBackupAtLvlExit()){
@@ -473,4 +465,22 @@ void DTPlayLayer::updateTimeWarp(float timeWarp){
     m_fields->lastAverages.clear();
     m_fields->ratioSum = 0.0f;
     m_fields->frameCount = 0;
+}
+
+void DTPlayLayer::savePlaytime(){
+    auto session = StatsManager::getCurrentSession();
+    if (session != nullptr){
+        session->data.playtimeGeneral += m_fields->timePassedGeneral;
+        session->data.playtimeDead += m_fields->timePassedDead;
+        session->data.playtimePaused += m_fields->timePassedPaused;
+        (void)StatsManager::setSession(*session, m_level, session->sessionStartDate, false);
+    }
+    StatsManager::currentFrom0.playtimeGeneral += m_fields->timePassedGeneral;
+    StatsManager::currentFrom0.playtimeDead += m_fields->timePassedDead;
+    StatsManager::currentFrom0.playtimePaused += m_fields->timePassedPaused;
+    (void)StatsManager::setGeneral(StatsManager::currentFrom0, m_level);
+
+    m_fields->timePassedGeneral.reset();
+    m_fields->timePassedDead.reset();
+    m_fields->timePassedPaused.reset();
 }

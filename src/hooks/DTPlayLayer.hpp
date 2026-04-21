@@ -94,4 +94,6 @@ class $modify(DTPlayLayer, PlayLayer) {
     void checkDelta(float delta);
 
     void updateTimeWarp(float timeWarp);
+
+    void savePlaytime();
 };
