@@ -7,7 +7,7 @@
 - Made death tracker button disappear when clicking the eye button on the level complete screen
 - Fixed session date not accounting for timezone
 - Fixed an issue were sometimes it wont track runs into sessions
-- Added "Shared Max To Hide" for easier filter managment for runs
+- Added "Shared Max To Hide" for easier filter management for runs
 - Fixed safe mode randomly being enabled for some people
 
 ## v3.0.1
