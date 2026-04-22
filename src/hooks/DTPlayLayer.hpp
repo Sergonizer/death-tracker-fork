@@ -17,17 +17,14 @@ class $modify(DTPlayLayer, PlayLayer) {
         bool nolcip = false;
         bool speedhack = false;
         CCObject* disabledCheat = nullptr;
-        std::optional<std::chrono::steady_clock::time_point> speedhackCompare;
-        float ratioSum = 0.0f;
-        int frameCount = 0;
         
-        std::chrono::steady_clock::time_point lastSampleTime = std::chrono::steady_clock::now();
-        const float sampleDurationSeconds = 0.1f;
-        const int averagesToMeasure = 5;
-        std::vector<float> lastAverages{};
-        float currentTimeWarp = 1;
-
-        float speedhackThreshold = 0.05f;
+        std::optional<std::chrono::steady_clock::time_point> speedhackCompare;
+        std::deque<double> realTimeHistory;
+        std::deque<double> gameTimeHistory;
+        double rollingRealSum = 0;
+        double rollingGameSum = 0;
+        double currentTimeWarp = 1;
+        
 
         bool didJustPause = false;
         PlaytimePair timePassedGeneral;

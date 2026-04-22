@@ -1186,13 +1186,19 @@ bool DTLayer::createDeathsString(const Deaths& deaths, const LevelMetadeta& meta
         std::string nbDeColor = "";
         std::string nbColor = "";
 
-        if (includeRunStart && !ignoreExtraSettings && !meta.showAnyRun){
-            if (meta.runsToShow.contains(runSplit.start)){
-                if (meta.runsToShow.at(runSplit.start) > runSplit.end)
+        if (includeRunStart && !ignoreExtraSettings){
+            if (!meta.showAnyRun && meta.runsToShow.size()){
+                if (meta.runsToShow.contains(runSplit.start)){
+                    if (meta.runsToShow.at(runSplit.start) > runSplit.end)
+                        continue;
+                }
+                else{
                     continue;
+                }
             }
             else{
-                continue;
+                if (meta.sharedRunToShow > runSplit.end - runSplit.start)
+                    continue;
             }
         }
         else if (!includeRunStart && !ignoreExtraSettings){
@@ -1891,6 +1897,7 @@ DTLabel* DTLayer::createNewLabel(DTLabelInfo info){
     auto newLabel = DTLabel::create(info);
     labelsHolder->addChild(newLabel);
     if (isEditingLayout) newLabel->setEditable(true);
+
     return newLabel;
 }
 
@@ -3219,7 +3226,7 @@ UpdateFuture DTLayer::onLevelRunsKey() {
     }
 
     if (!foundAny) {
-        co_return Ok("Level not done in " + std::to_string(max) + " runs or less.");
+        co_return Ok(fmt::format("Level not done in {} runs or less.", max));
     }
 
     co_return Ok(toReturn);
@@ -3310,8 +3317,9 @@ UpdateFuture DTLayer::onSessionDateKey(){
     co_await arc::yield();
 
     auto tp = std::chrono::system_clock::from_time_t(session.groupID);
+    auto local_tp = std::chrono::zoned_time{std::chrono::current_zone(), tp};
 
-    std::string dateStr = fmt::format("{:%m/%d/%Y} {:%I:%M%p}", tp, tp);
+    std::string dateStr = fmt::format("{:%m/%d/%Y %I:%M%p}", local_tp.get_local_time());
 
     co_return Ok(dateStr);
 }

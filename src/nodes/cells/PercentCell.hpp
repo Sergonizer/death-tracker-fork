@@ -32,6 +32,9 @@ class PercentCell : public CCMenu, public SliderDelegate {
         void hide();
         void hideInstant();
         void show();
+
+        void setMaxToHide(float val);
+        void sliderEnded(Slider* slider);
         
     private:
         void RunCallback(CCObject*);
@@ -43,6 +46,4 @@ class PercentCell : public CCMenu, public SliderDelegate {
         int percent;
         int maxToHide;
         geode::Function<void(PercentCell*)> callback;
-
-        void sliderEnded(Slider* slider);
 };

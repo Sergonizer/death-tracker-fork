@@ -47,6 +47,18 @@ bool LayoutOptionsLayer::init(const CCSize& size) {
     bg->setID("background");
     this->addChild(bg);
 
+    auto superBlocker = CCMenu::create();
+    superBlocker->setPosition({0, 0});
+    superBlocker->setContentSize(size);
+    superBlocker->setID("super-blocker");
+    this->addChild(superBlocker);
+
+    auto blockerItem = CCMenuItem::create();
+    blockerItem->setContentSize(size);
+    blockerItem->setID("blocker-item");
+    blockerItem->setAnchorPoint({0, 0});
+    superBlocker->addChild(blockerItem);
+
     auto generalBtnsMenu = CCMenu::create();
     generalBtnsMenu->setPosition({size.width / 2, size.height - 10});
     generalBtnsMenu->setContentSize({0, 0});

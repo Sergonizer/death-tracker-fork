@@ -30,7 +30,7 @@ public:
 
     static int MainLevelIDs[26];
 
-    static std::filesystem::path m_savesFolderPath;
+    static std::filesystem::path getSavesFolderPath();
 
     static GJGameLevel* currentLevel;
     static GeneralData currentFrom0;

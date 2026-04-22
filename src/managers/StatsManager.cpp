@@ -40,7 +40,9 @@ const std::string StatsManager::FROM0_FILE_NAME = "general.dt";
 const std::string StatsManager::SESSIONS_DIR_NAME = "sessions";
 const std::string StatsManager::BACKUPS_DIR_NAME = "backups";
 
-std::filesystem::path StatsManager::m_savesFolderPath = Settings::getSavePath();
+std::filesystem::path StatsManager::getSavesFolderPath(){
+    return Settings::getSavePath();
+}
 
 int StatsManager::MainLevelIDs[26]{
     1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 5001, 5002, 5003, 5004, 3001
@@ -119,7 +121,7 @@ Result<LevelMetadeta> StatsManager::getMetadata(GJGameLevel* const level){
     return getMetadata(levelKey);
 }
 Result<LevelMetadeta> StatsManager::getMetadata(const std::string& levelKey){
-    return getMetadata(m_savesFolderPath / levelKey);
+    return getMetadata(getSavesFolderPath() / levelKey);
 }
 
 Result<LevelMetadeta> StatsManager::getMetadata(const std::filesystem::path& path){
@@ -138,7 +140,7 @@ Result<Session> StatsManager::getSession(GJGameLevel* const level, long long ses
     return getSession(levelKey, sessionTime);
 }
 Result<Session> StatsManager::getSession(const std::string& levelKey, long long sessionTime){
-    return getSession(m_savesFolderPath / levelKey, sessionTime);
+    return getSession(getSavesFolderPath() / levelKey, sessionTime);
 }
 
 Result<Session> StatsManager::getSession(const std::filesystem::path& path, long long sessionTime){
@@ -157,7 +159,7 @@ Result<GeneralData> StatsManager::getGeneral(GJGameLevel* const level){
     return getGeneral(levelKey);
 }
 Result<GeneralData> StatsManager::getGeneral(const std::string& levelKey){
-    return getGeneral(m_savesFolderPath / levelKey);
+    return getGeneral(getSavesFolderPath() / levelKey);
 }
 
 Result<GeneralData> StatsManager::getGeneral(const std::filesystem::path& path){
@@ -199,7 +201,7 @@ Result<LevelData> StatsManager::getLevelData(const std::filesystem::path& path){
 Result<BackupLevelData> StatsManager::getBackupData(const std::string& levelKey, long long backupName){
     BackupLevelData data;
 
-    auto levelSaveFilePath = m_savesFolderPath / levelKey / StatsManager::BACKUPS_DIR_NAME / std::to_string(backupName);
+    auto levelSaveFilePath = getSavesFolderPath() / levelKey / StatsManager::BACKUPS_DIR_NAME / std::to_string(backupName);
     data.backupDate = backupName;
 
     if (!std::filesystem::exists(levelSaveFilePath))
@@ -242,7 +244,7 @@ Result<> StatsManager::setMetadata(const LevelMetadeta& stats, GJGameLevel* cons
 Result<> StatsManager::setMetadata(const LevelMetadeta& stats, const std::string& levelKey){
     createFilesIfNeeded(levelKey);
 
-    auto levelSaveFilePath = m_savesFolderPath / levelKey / StatsManager::METADATA_FILE_NAME;
+    auto levelSaveFilePath = getSavesFolderPath() / levelKey / StatsManager::METADATA_FILE_NAME;
 
     auto indentation = Dev::MINIFY_SAVE_FILE
         ? matjson::NO_INDENTATION
@@ -265,7 +267,7 @@ Result<> StatsManager::setSession(Session& stats, GJGameLevel* const level, long
 Result<> StatsManager::setSession(Session& stats, const std::string& levelKey, long long sessionTime, bool updateLastPlayed){
     createFilesIfNeeded(levelKey);
 
-    auto levelSaveFilePath = m_savesFolderPath / levelKey / StatsManager::SESSIONS_DIR_NAME / (std::to_string(sessionTime) + ".dt");
+    auto levelSaveFilePath = getSavesFolderPath() / levelKey / StatsManager::SESSIONS_DIR_NAME / (std::to_string(sessionTime) + ".dt");
 
     createFile(levelSaveFilePath);
 
@@ -295,7 +297,7 @@ Result<> StatsManager::setGeneral(const GeneralData& stats, GJGameLevel* const l
 Result<> StatsManager::setGeneral(const GeneralData& stats, const std::string& levelKey){
     createFilesIfNeeded(levelKey);
 
-    auto levelSaveFilePath = m_savesFolderPath / levelKey / StatsManager::FROM0_FILE_NAME;
+    auto levelSaveFilePath = getSavesFolderPath() / levelKey / StatsManager::FROM0_FILE_NAME;
 
     auto indentation = Dev::MINIFY_SAVE_FILE
         ? matjson::NO_INDENTATION
@@ -315,7 +317,7 @@ Result<> StatsManager::addBackup(const std::string& levelKey, bool saveLevelStat
     
     createFilesIfNeeded(levelKey);
 
-    auto levelBackupsFilePath = m_savesFolderPath / levelKey / StatsManager::BACKUPS_DIR_NAME;
+    auto levelBackupsFilePath = getSavesFolderPath() / levelKey / StatsManager::BACKUPS_DIR_NAME;
 
     auto lvlBackupsDirRes = geode::utils::file::createDirectory(levelBackupsFilePath);
     if (lvlBackupsDirRes.isErr()) return Err("failed to create backups folder! {}", lvlBackupsDirRes.unwrapErr());
@@ -335,7 +337,7 @@ Result<> StatsManager::addBackup(const std::string& levelKey, bool saveLevelStat
             return Err("backup failed! failed to read general stats");
         }
 
-        if (!std::filesystem::copy_file(m_savesFolderPath / levelKey / StatsManager::FROM0_FILE_NAME, levelBackupsFilePath / StatsManager::FROM0_FILE_NAME, std::filesystem::copy_options::overwrite_existing))
+        if (!std::filesystem::copy_file(getSavesFolderPath() / levelKey / StatsManager::FROM0_FILE_NAME, levelBackupsFilePath / StatsManager::FROM0_FILE_NAME, std::filesystem::copy_options::overwrite_existing))
             return Err("Failed to backup level stats!");
     }
 
@@ -385,7 +387,7 @@ Result<> StatsManager::addBackup(const std::string& levelKey, bool saveLevelStat
             }
 
             if (!std::filesystem::copy_file(
-                m_savesFolderPath / levelKey / StatsManager::SESSIONS_DIR_NAME / (std::to_string(sessionTime) + ".dt"), 
+                getSavesFolderPath() / levelKey / StatsManager::SESSIONS_DIR_NAME / (std::to_string(sessionTime) + ".dt"), 
                 levelBackupsFilePath / (std::to_string(sessionTime) + ".dt"), 
                 std::filesystem::copy_options::overwrite_existing
             ))
@@ -399,9 +401,9 @@ Result<> StatsManager::addBackup(const std::string& levelKey, bool saveLevelStat
 }
 
 void StatsManager::createFilesIfNeeded(const std::string& levelKey){
-    (void)geode::utils::file::createDirectory(m_savesFolderPath);
+    (void)geode::utils::file::createDirectory(getSavesFolderPath());
 
-    auto levelSaveFilePath = m_savesFolderPath / levelKey;
+    auto levelSaveFilePath = getSavesFolderPath() / levelKey;
 
     // log::info("attempting to create level folder at {}", levelSaveFilePath.string());
 
@@ -516,20 +518,25 @@ void StatsManager::logRun(const Run& run, bool instantSave) {
         return;
     }
 
-    auto session = StatsManager::getCurrentSession();
-    if (!session) return;
-
     auto runKey = fmt::format("{}-{}",
         run.start,
         run.end
     );
 
+    auto session = StatsManager::getCurrentSession();
+    if (session != nullptr){
+        session->data.runs[runKey]++;
+
+        log::info("logging run {}-{} to session {}", run.start, run.end, session->sessionStartDate);
+    }
+
     currentFrom0.runs[runKey]++;
-    session->data.runs[runKey]++;
     
     if (instantSave){
         (void)StatsManager::setGeneral(currentFrom0, currentLevel);
-        (void)StatsManager::setSession(currentSession, currentLevel, currentSession.sessionStartDate, true);
+        if (session){
+            (void)StatsManager::setSession(*session, currentLevel, session->sessionStartDate, true);
+        }
     }
 }
 
@@ -728,7 +735,7 @@ bool StatsManager::hasPlayedLevel() {
 ======================= */
 
 Result<> StatsManager::deleteLevelStats(const std::string& levelKey){
-    auto levelSaveFilePath = m_savesFolderPath / levelKey;
+    auto levelSaveFilePath = getSavesFolderPath() / levelKey;
 
     if (std::filesystem::is_directory(levelSaveFilePath)){
         if (std::filesystem::remove_all(levelSaveFilePath) == static_cast<std::uintmax_t>(-1)) return Err("Failed to delete stats folder!");
@@ -739,7 +746,7 @@ Result<> StatsManager::deleteLevelStats(const std::string& levelKey){
 }
 
 Result<> StatsManager::deleteBackup(const std::string& levelKey, long long backupName){
-    auto levelSaveFilePath = m_savesFolderPath / levelKey / StatsManager::BACKUPS_DIR_NAME / std::to_string(backupName);
+    auto levelSaveFilePath = getSavesFolderPath() / levelKey / StatsManager::BACKUPS_DIR_NAME / std::to_string(backupName);
 
     if (std::filesystem::is_directory(levelSaveFilePath)){
         if (std::filesystem::remove_all(levelSaveFilePath) == static_cast<std::uintmax_t>(-1)) return Err("Failed to delete backup {}!", backupName);
@@ -750,7 +757,7 @@ Result<> StatsManager::deleteBackup(const std::string& levelKey, long long backu
 }
 
 Result<> StatsManager::deleteAllSessions(const std::string& levelKey){
-    auto levelSaveFilePath = m_savesFolderPath / levelKey / StatsManager::SESSIONS_DIR_NAME;
+    auto levelSaveFilePath = getSavesFolderPath() / levelKey / StatsManager::SESSIONS_DIR_NAME;
 
     if (std::filesystem::is_directory(levelSaveFilePath)){
         if (std::filesystem::remove_all(levelSaveFilePath) == static_cast<std::uintmax_t>(-1)) return Err("Failed to delete sessions folder!");
@@ -812,7 +819,7 @@ std::array<std::string, 62> StatsManager::getAllFonts(){
 }
 
 Result<std::vector<std::pair<std::string, LevelMetadeta>>> StatsManager::getAllLevels(){
-    GEODE_UNWRAP_INTO(auto allLevels, file::readDirectory(m_savesFolderPath));
+    GEODE_UNWRAP_INTO(auto allLevels, file::readDirectory(getSavesFolderPath()));
 
     std::vector<std::pair<std::string, LevelMetadeta>> toReturn{};
 
@@ -889,7 +896,7 @@ int StatsManager::getDifficulty(GJGameLevel* const& level){
 }
 
 void StatsManager::setPath(const std::filesystem::path& path){
-    m_savesFolderPath = path;
+    getSavesFolderPath() = path;
 }
 
 int StatsManager::getCursorPosition(CCLabelBMFont* const& text, CCLabelBMFont* const& cursor){
@@ -978,7 +985,7 @@ Result<std::set<long long>> StatsManager::getAllSessionTimesForLevel(GJGameLevel
 }
 
 std::set<long long> StatsManager::getAllSessionTimesForLevel(const std::string& levelKey){
-    return getAllSessionTimesForLevel(m_savesFolderPath / levelKey);
+    return getAllSessionTimesForLevel(getSavesFolderPath() / levelKey);
 }
 
 std::set<long long> StatsManager::getAllSessionTimesForLevel(const std::filesystem::path& path){
@@ -1001,7 +1008,7 @@ std::set<long long> StatsManager::getAllSessionTimesForLevel(const std::filesyst
 }
 
 std::set<long long> StatsManager::getBackupsCount(const std::string& levelKey){
-    auto levelSaveFilePath = m_savesFolderPath / levelKey / StatsManager::BACKUPS_DIR_NAME;
+    auto levelSaveFilePath = getSavesFolderPath() / levelKey / StatsManager::BACKUPS_DIR_NAME;
 
     if (!std::filesystem::exists(levelSaveFilePath)) return {};
 
@@ -1020,7 +1027,7 @@ std::set<long long> StatsManager::getBackupsCount(const std::string& levelKey){
 }
 
 uintmax_t StatsManager::getBackupFileSize(const std::string& levelKey, long long backupName){
-    auto levelSaveFilePath = m_savesFolderPath / levelKey / StatsManager::BACKUPS_DIR_NAME / std::to_string(backupName);
+    auto levelSaveFilePath = getSavesFolderPath() / levelKey / StatsManager::BACKUPS_DIR_NAME / std::to_string(backupName);
 
     if (!std::filesystem::exists(levelSaveFilePath)) return 0;
 
@@ -1036,8 +1043,8 @@ uintmax_t StatsManager::getBackupFileSize(const std::string& levelKey, long long
 }
 
 Result<> StatsManager::reveretBackupSessions(const std::string& levelKey, long long backupName){
-    auto bakupSessionDirPath = m_savesFolderPath / levelKey / StatsManager::BACKUPS_DIR_NAME / std::to_string(backupName) / StatsManager::SESSIONS_DIR_NAME;
-    auto sessionDirPath = m_savesFolderPath / levelKey / StatsManager::SESSIONS_DIR_NAME;
+    auto bakupSessionDirPath = getSavesFolderPath() / levelKey / StatsManager::BACKUPS_DIR_NAME / std::to_string(backupName) / StatsManager::SESSIONS_DIR_NAME;
+    auto sessionDirPath = getSavesFolderPath() / levelKey / StatsManager::SESSIONS_DIR_NAME;
 
     if (!std::filesystem::exists(bakupSessionDirPath)) return Err("No sessions backup found!");
 
@@ -1053,9 +1060,9 @@ Result<> StatsManager::reveretBackupSessions(const std::string& levelKey, long l
 Result<> StatsManager::convertV2SaveToV3(const std::string& levelKey){
     log::info("converting V2 save to V3...");
 
-    if (!std::filesystem::exists(m_savesFolderPath)) return Err("No levels directory found");
+    if (!std::filesystem::exists(getSavesFolderPath())) return Err("No levels directory found");
 
-    auto v2Path = m_savesFolderPath / (levelKey + ".json");
+    auto v2Path = getSavesFolderPath() / (levelKey + ".json");
 
     if (!std::filesystem::exists(v2Path)) return Err("V2 level file doesnt exist!");
 
@@ -1114,7 +1121,7 @@ Result<> StatsManager::convertV2SaveToV3(const std::string& levelKey){
     }
 
     if (!std::filesystem::remove(v2Path)) return Err("Failed to erase old data!");
-    auto backupPath = m_savesFolderPath / (levelKey + ".deathsBackup");
+    auto backupPath = getSavesFolderPath() / (levelKey + ".deathsBackup");
 
     if (std::filesystem::exists(backupPath)){
         if (!std::filesystem::remove(backupPath)) return Err("Failed to delete backup old data!");
@@ -1124,11 +1131,11 @@ Result<> StatsManager::convertV2SaveToV3(const std::string& levelKey){
 }
 
 std::vector<std::string> StatsManager::allV2FileLevelKeys(){
-    if (!std::filesystem::exists(m_savesFolderPath)) return {};
+    if (!std::filesystem::exists(getSavesFolderPath())) return {};
     
     std::vector<std::string> toReturn{};
 
-    for (const auto& entry : std::filesystem::directory_iterator(m_savesFolderPath)){
+    for (const auto& entry : std::filesystem::directory_iterator(getSavesFolderPath())){
         if (!entry.is_regular_file() || entry.path().extension() != ".json") continue;
 
         toReturn.push_back(entry.path().stem().string());
@@ -1140,7 +1147,7 @@ std::vector<std::string> StatsManager::allV2FileLevelKeys(){
 std::vector<std::string> StatsManager::allV3FileLevelKeys(){
     std::vector<std::string> toReturn{};
 
-    for (const auto& entry : std::filesystem::directory_iterator(m_savesFolderPath)){
+    for (const auto& entry : std::filesystem::directory_iterator(getSavesFolderPath())){
         if (!entry.is_directory()) continue;
 
         toReturn.push_back(entry.path().stem().string());

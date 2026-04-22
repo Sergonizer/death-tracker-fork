@@ -145,3 +145,8 @@ void PercentCell::sliderEnded(Slider* slider){
     if (onMaxToHideChanged != NULL)
         onMaxToHideChanged(this);
 }
+
+void PercentCell::setMaxToHide(float val){
+    MTHScroll->setValue(val);
+    mthScroll(nullptr);
+}

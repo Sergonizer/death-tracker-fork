@@ -8,7 +8,7 @@
 using namespace geode::prelude;
 
 
-class RunOptions : public OptionsNode {
+class RunOptions : public OptionsNode, public SliderDelegate {
     public:
         static RunOptions* create(const CCSize& size);
 
@@ -30,6 +30,11 @@ class RunOptions : public OptionsNode {
         void createRunCell(int percent, int maxToHide);
 
         void onStartPoses(CCObject*);
+        void onSharedHideScroll(CCObject*);
+
+        Slider* sharedHideScroll;
+        void sliderEnded(Slider* slider);
+        TextInput* sharedRunsToShowInput;
 
     public:
         virtual void onOpened();

@@ -13,20 +13,32 @@ void DTEndLevelLayer::customSetup(){
     s2->setPosition(s->getContentSize() / 2);
     s->addChild(s2);
     s->setScale(0.75f);
-    auto btn = CCMenuItemSpriteExtra::create(
+    s->setCascadeOpacityEnabled(true);
+    s2->setCascadeOpacityEnabled(true);
+    m_fields->skullBtn = CCMenuItemSpriteExtra::create(
         s,
         nullptr,
         this,
         menu_selector(DTEndLevelLayer::openDTLayer)
     );
-    btn->setID("dt-skull-button");
+    m_fields->skullBtn->setID("dt-skull-button");
 
     auto hideLMenu = this->getChildByID("hide-layer-menu");
-    hideLMenu->addChild(btn);
+    hideLMenu->addChild(m_fields->skullBtn);
 
     hideLMenu->updateLayout();
 }
 void DTEndLevelLayer::openDTLayer(CCObject*){
     auto dtLayer = DTLayer::create(this->m_playLayer->m_level);
     dtLayer->show();
+}
+
+void DTEndLevelLayer::onHideLayer(cocos2d::CCObject* sender){
+    EndLevelLayer::onHideLayer(sender);
+
+    m_fields->skullBtn->stopAllActions();
+    m_fields->skullBtn->runAction(CCFadeTo::create(.25f, m_hidden ? 0 : 255));
+    m_fields->skullBtn->setEnabled(!m_hidden);
+
+    log::info("hid {}", m_hidden);
 }

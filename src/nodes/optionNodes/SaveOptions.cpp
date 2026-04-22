@@ -401,7 +401,7 @@ void SaveOptions::saveToDT(){
 
             pick = pick.replace_extension(".dt");
 
-            auto toZip = StatsManager::m_savesFolderPath / dtLayer->m_MyLevelStats.unwrap().levelKey;
+            auto toZip = StatsManager::getSavesFolderPath() / dtLayer->m_MyLevelStats.unwrap().levelKey;
 
             auto zipFileRes = geode::utils::file::Zip::create(pick);
             if (zipFileRes.isErr()){

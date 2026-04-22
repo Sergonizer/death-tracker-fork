@@ -163,6 +163,12 @@ void DTPlayLayer::startupPlaytime() {
 }
 
 void DTPlayLayer::resetLevel() {
+    m_fields->realTimeHistory.clear();
+    m_fields->gameTimeHistory.clear();
+    m_fields->rollingRealSum = 0;
+    m_fields->rollingGameSum = 0;
+    m_fields->speedhackCompare = std::nullopt;
+
     cutoutPlaytime();
 
     if (m_fields->lastOneDied){
@@ -200,10 +206,16 @@ void DTPlayLayer::resetLevel() {
 void DTPlayLayer::destroyPlayer(PlayerObject* player, GameObject* p1) {
     PlayLayer::destroyPlayer(player, p1);
 
+    m_fields->realTimeHistory.clear();
+    m_fields->gameTimeHistory.clear();
+    m_fields->rollingRealSum = 0;
+    m_fields->rollingGameSum = 0;
+    m_fields->speedhackCompare = std::nullopt;
+
     if (!m_fields->disabledCheat)
         m_fields->disabledCheat = p1;
     if (!m_fields->nolcip && m_fields->disabledCheat != p1 && !player->m_isDead && !m_levelEndAnimationStarted){
-        // log::info("we clip");
+        log::warn("Noclip Detected!");
         m_fields->nolcip = true;
     }
 
@@ -400,71 +412,63 @@ bool DTPlayLayer::isLegal(){
     return true;
 }
 
-void DTPlayLayer::postUpdate(float dt){
+void DTPlayLayer::postUpdate(float dt) {
     checkDelta(dt);
-
     PlayLayer::postUpdate(dt);
 }
 
 void DTPlayLayer::checkDelta(float delta) {
+    if (m_player1->m_isDead || m_isPaused) return;
+
     auto now = std::chrono::steady_clock::now();
 
     if (!m_fields->speedhackCompare.has_value()) {
         m_fields->speedhackCompare = now;
-        m_fields->lastSampleTime = now;
         return;
     }
 
-    std::chrono::duration<float> elapsed = now - m_fields->speedhackCompare.value();
-    float realDt = elapsed.count();
+    std::chrono::duration<double> realElapsed = now - m_fields->speedhackCompare.value();
     m_fields->speedhackCompare = now;
 
-    if (realDt <= 0.00001f) return;
+    auto gameDt = static_cast<double>(delta);
+    auto realDt = realElapsed.count();
 
-    float ratio = delta / realDt;
-    m_fields->ratioSum += ratio;
-    m_fields->frameCount++;
+    if (realDt > 0.2) return;
 
-    std::chrono::duration<float> timeSinceLastSample = now - m_fields->lastSampleTime;
-    
-    if (timeSinceLastSample.count() >= m_fields->sampleDurationSeconds) {
-        if (m_fields->frameCount > 0) {
-            float averageRatio = m_fields->ratioSum / static_cast<float>(m_fields->frameCount);
-            m_fields->lastAverages.push_back(averageRatio);
+    m_fields->rollingRealSum += realDt;
+    m_fields->rollingGameSum += gameDt;
+    m_fields->realTimeHistory.push_back(realDt);
+    m_fields->gameTimeHistory.push_back(gameDt);
 
-            if (m_fields->lastAverages.size() >= m_fields->averagesToMeasure) {
-                int badLooks = 0;
-                for (float avg : m_fields->lastAverages) {
-                    if (std::abs(1.0f * m_fields->currentTimeWarp - avg) > m_fields->speedhackThreshold) {
-                        badLooks++;
-                    }
-                }
+    size_t maxSamples = 120; 
+    if (m_fields->realTimeHistory.size() > maxSamples) {
+        m_fields->rollingRealSum -= m_fields->realTimeHistory.front();
+        m_fields->rollingGameSum -= m_fields->gameTimeHistory.front();
+        m_fields->realTimeHistory.pop_front();
+        m_fields->gameTimeHistory.pop_front();
+    }
 
-                if (badLooks == m_fields->averagesToMeasure) {
-                    log::warn("Speedhack Detected!");
+    if (m_fields->realTimeHistory.size() >= 30) {
+        auto currentRatio = m_fields->rollingGameSum / m_fields->rollingRealSum;
+        auto expectedRatio = m_fields->currentTimeWarp;
 
-                    m_fields->speedhack = true;
-                }
-
-                m_fields->lastAverages.clear();
+        if (std::abs(currentRatio - expectedRatio) > 0.05) {
+            if (!m_fields->speedhack) {
+                log::warn("Speedhack Detected!");
+                m_fields->speedhack = true;
             }
         }
-
-        m_fields->ratioSum = 0.0f;
-        m_fields->frameCount = 0;
-        m_fields->lastSampleTime = now;
     }
 }
 
-void DTPlayLayer::updateTimeWarp(float timeWarp){
+void DTPlayLayer::updateTimeWarp(float timeWarp) {
     this->GJBaseGameLayer::updateTimeWarp(timeWarp);
-    
     m_fields->currentTimeWarp = timeWarp;
 
-    m_fields->lastSampleTime = std::chrono::steady_clock::now();
-    m_fields->lastAverages.clear();
-    m_fields->ratioSum = 0.0f;
-    m_fields->frameCount = 0;
+    m_fields->realTimeHistory.clear();
+    m_fields->gameTimeHistory.clear();
+    m_fields->rollingRealSum = 0;
+    m_fields->rollingGameSum = 0;
 }
 
 void DTPlayLayer::savePlaytime(){

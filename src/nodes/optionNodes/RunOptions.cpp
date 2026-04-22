@@ -88,9 +88,11 @@ bool RunOptions::setup(){
     plusBtn->setPosition(runAdditionInput->getPosition() + ccp(runAdditionInput->getScaledContentWidth() / 2 + plusBtn->getContentWidth() / 2 + 5, 0));
     this->addChild(plusBtn);
 
+    float offFromBottom = 45;
+
     auto runsMenuBG = CCScale9Sprite::create("GJ_square06.png");
-    runsMenuBG->setContentSize({size.width / 2 / 1.1f, runAdditionInput->getPositionY() - runAdditionInput->getContentHeight() / 2});
-    runsMenuBG->setPosition({abs(runsMenuBG->getContentWidth() / 2 - runAdditionInput->getPositionX()), 0});
+    runsMenuBG->setContentSize({size.width / 2 / 1.1f, runAdditionInput->getPositionY() - runAdditionInput->getContentHeight() / 2 - offFromBottom});
+    runsMenuBG->setPosition({abs(runsMenuBG->getContentWidth() / 2 - runAdditionInput->getPositionX()), offFromBottom});
     runsMenuBG->setAnchorPoint({0, 0});
     runsMenuBG->setColor({75, 75, 75});
     runsMenuBG->setOpacity(100);
@@ -116,6 +118,50 @@ bool RunOptions::setup(){
             createRunCell(startPercent, maxToShow);
         }
     }
+
+    sharedHideScroll = Slider::create(this, menu_selector(RunOptions::onSharedHideScroll), .75f);
+    sharedHideScroll->setPosition({
+        runsScrollLayer->getPositionX() + runsScrollLayer->getScaledContentWidth() / 2 - 22,
+        sharedHideScroll->m_sliderBar->getScaledContentHeight() / 2 + 5
+    });
+    sharedHideScroll->setValue(dtlayer == nullptr ? 0 : (dtlayer->m_MyLevelStats.isOk() ? dtlayer->m_MyLevelStats.unwrap().metadata.sharedRunToShow / 100.0f : 0));
+    sharedHideScroll->setContentSize({0, 0});
+    sharedHideScroll->m_delegate = this;
+    this->addChild(sharedHideScroll);
+
+    auto sharedHideLabel = CCLabelBMFont::create("Shared Max To Hide", "gjFont17.fnt");
+    sharedHideLabel->setScale(.5f);
+    sharedHideLabel->setWidth(size.width / 2 - sharedHideScroll->getContentWidth() - 10);
+    sharedHideLabel->setPosition(sharedHideScroll->getPosition() + ccp(0, sharedHideScroll->m_sliderBar->getScaledContentHeight() / 2 + 5));
+    sharedHideLabel->setAnchorPoint({.5f, 0});
+    this->addChild(sharedHideLabel);
+
+    sharedRunsToShowInput = TextInput::create(45, "%");
+    sharedRunsToShowInput->setString(dtlayer == nullptr ? "" : (dtlayer->m_MyLevelStats.isOk() ? std::to_string(dtlayer->m_MyLevelStats.unwrap().metadata.sharedRunToShow) : ""));
+    sharedRunsToShowInput->setCommonFilter(CommonFilter::Uint);
+    sharedRunsToShowInput->setPosition(sharedHideScroll->getPosition() + ccp(110, 10));
+    sharedRunsToShowInput->setCallback([&](const std::string& newText){
+        auto dtlayer = DTLayer::get();
+        auto numRes = geode::utils::numFromString<int>(newText);
+
+        if (dtlayer == nullptr || dtlayer->m_MyLevelStats.isErr() || numRes.isErr()) return;
+
+        int num = numRes.unwrap();
+        num = std::min(num, 100);
+        sharedRunsToShowInput->setString(std::to_string(num));
+
+        sharedHideScroll->setValue(num / 100.0f);
+        for (const auto& child : runsScrollLayer->m_contentLayer->getChildrenExt<PercentCell*>())
+        {
+            child->setMaxToHide(sharedHideScroll->getValue());
+        }
+        sliderEnded(sharedHideScroll);
+
+        dtlayer->specialStrings["runs"]->updateContent();
+        dtlayer->specialStrings["sruns"]->updateContent();
+    });
+    this->addChild(sharedRunsToShowInput);
+
 
     auto seperator = CCScale9Sprite::create("square.png");
     seperator->setScale(.5f);
@@ -202,7 +248,7 @@ bool RunOptions::setup(){
     ResetAsDeathLabel->setAnchorPoint({1, .5f});
     this->addChild(ResetAsDeathLabel);
 
-    auto runsHidingTutorial = TutorialButton::create(.75f, "run-hiding", [&, TARToggler, TARLabel, plusBtn](DTTutorialLayer* tutorial){
+    auto runsHidingTutorial = TutorialButton::create(.75f, "run-hiding", [&, sharedHideLabel, TARToggler, TARLabel, plusBtn](DTTutorialLayer* tutorial){
         int randomPer = 7 + (static_cast<float>(rand()) / static_cast<float>(RAND_MAX)) * (95.f - 7.f);
         int randomMaxToHide = (randomPer + 2) + (static_cast<float>(rand()) / static_cast<float>(RAND_MAX)) * (93.f - (randomPer + 2.f));
 
@@ -261,10 +307,22 @@ bool RunOptions::setup(){
             ->appendDialogue(fmt::format("So <cd>{}-{}</c> wont be seen but <cy>{}-{}</c> will be!", randomPer, randomMaxToHide - 2, randomPer, randomMaxToHide), TutorialCharacterFace::TCFHappy)
             ->joinHighlight(emptyPer->getChildByID("percent-label"))
             ->joinHighlight(emptyPer->getChildByID("mth-input"))
-            ->appendDialogue("Hope this feature helps you <cy>improve clutter</c> in your death tracker! :D", TutorialCharacterFace::TCFHappy)
-            ->joinTransform(TutorialBoxPlacement::TBPCenter, 1)
+            ->appendDialogue("You also have the <cy>\"Shared Max To Hide\"</c>, to more easily edit all the <cy>\"Max to Hide\"</c>s and more", TutorialCharacterFace::TCFNormal)
+            ->joinTransform(TutorialBoxPlacement::TBPLeft, .75f)
+            ->joinHighlight(sharedHideScroll->m_sliderBar)
+            ->joinHighlight(sharedHideScroll->m_groove)
+            ->joinHighlight(sharedHideLabel)
+            ->joinHighlight(sharedRunsToShowInput)
             ->joinCallback([emptyPer](){emptyPer->hide();}, true)
-            ->joinCallback([emptyPer](){emptyPer->removeMeAndCleanup();}, false);
+            ->joinCallback([emptyPer](){emptyPer->removeMeAndCleanup();}, false)
+            ->appendDialogue("If you edit this, it will edit all <cy>\"Max To Hide\"</c>s with it relative to the slider location!", TutorialCharacterFace::TCFHappy)
+            ->joinPreviousHighlight()
+            ->appendDialogue("And if you dont have any specific runs to filter, it will act as a global <cy>\"Max To Hide\"</c> of sorts", TutorialCharacterFace::TCFNormalTilted)
+            ->joinPreviousHighlight()
+            ->appendDialogue("Allowing you to filter out runs by length!", TutorialCharacterFace::TCFNormal)
+            ->joinPreviousHighlight()
+            ->appendDialogue("Hope this feature helps you <cy>improve clutter</c> in your death tracker! :D", TutorialCharacterFace::TCFHappy)
+            ->joinTransform(TutorialBoxPlacement::TBPCenter, 1);
     });
     runsHidingTutorial->setPosition(TARLabel->getPosition() + ccp(15 + TARLabel->getScaledContentWidth() / 2, 0));
     this->addChild(runsHidingTutorial);
@@ -309,6 +367,8 @@ void RunOptions::onOpened(){
     // Dev::fadeTextInput(RealEndPerInput, true, fadeTime);
     HidUpToInput->getInputNode()->m_textLabel->setOpacity(0);
     Dev::fadeTextInput(HidUpToInput, true, fadeTime);
+    Dev::fadeTextInput(sharedRunsToShowInput, true, fadeTime);
+    Dev::fadeSlider(sharedHideScroll, true, fadeTime);
 
     for (const auto& child : CCArrayExt<PercentCell*>(runsScrollLayer->m_contentLayer->getChildren())){
         child->show();
@@ -323,6 +383,8 @@ void RunOptions::onClosed(){
     Dev::fadeTextInput(runAdditionInput, false, fadeTime);
     // Dev::fadeTextInput(RealEndPerInput, false, fadeTime);
     Dev::fadeTextInput(HidUpToInput, false, fadeTime);
+    Dev::fadeTextInput(sharedRunsToShowInput, false, fadeTime);
+    Dev::fadeSlider(sharedHideScroll, false, fadeTime);
 
     for (const auto& child : CCArrayExt<PercentCell*>(runsScrollLayer->m_contentLayer->getChildren())){
         child->hide();
@@ -470,4 +532,32 @@ void RunOptions::onStartPoses(CCObject*){
         Notification::create("StartPos runs were already added", NotificationIcon::Info)->show();
 
     runsScrollLayer->m_contentLayer->updateLayout();
+}
+
+
+void RunOptions::onSharedHideScroll(CCObject*){
+    for (const auto& child : runsScrollLayer->m_contentLayer->getChildrenExt<PercentCell*>())
+    {
+        child->setMaxToHide(sharedHideScroll->getValue());
+    }
+
+    sharedRunsToShowInput->setString(std::to_string(static_cast<int>(sharedHideScroll->getValue() * 100)));
+}
+
+void RunOptions::sliderEnded(Slider* slider){
+    for (const auto& child : runsScrollLayer->m_contentLayer->getChildrenExt<PercentCell*>())
+    {
+        child->sliderEnded(slider);
+    }
+
+    auto dtlayer = DTLayer::get();
+
+    if (dtlayer == nullptr || dtlayer->m_MyLevelStats.isErr()) return;
+
+    auto& stats = dtlayer->m_MyLevelStats.unwrap();
+    stats.metadata.sharedRunToShow = static_cast<int>(sharedHideScroll->getValue() * 100);
+    (void)StatsManager::setMetadata(stats.metadata, stats.levelKey);
+
+    dtlayer->specialStrings["runs"]->updateContent();
+    dtlayer->specialStrings["sruns"]->updateContent();
 }

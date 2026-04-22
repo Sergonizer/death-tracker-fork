@@ -140,7 +140,7 @@ $execute {
         Save::setSessionBestColor({ 255, 136, 0 });
     }
 
-    StatsManager::m_savesFolderPath = Settings::getSavePath();
+    StatsManager::getSavesFolderPath() = Settings::getSavePath();
     
 };
 

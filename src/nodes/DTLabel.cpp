@@ -220,7 +220,7 @@ bool DTLabel::init(const DTLabelInfo& info){
 }
 
 void DTLabel::registerWithTouchDispatcher(){
-    CCTouchDispatcher::get()->addPrioTargetedDelegate(this, -502, true);
+    CCTouchDispatcher::get()->addPrioTargetedDelegate(this, -505, true);
 }
 
 void DTLabel::update(float dt){

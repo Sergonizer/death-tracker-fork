@@ -23,7 +23,7 @@ speaking of the <cf>discord server</c>, if you find any <cy>issues</c> with the 
 - Accurate playtime by nanoseconds
 - Linking between level saves
 - Seperate level into named sections
-- Basic cheat detection (Noclip, Speedhack (mostly accurate))
+- Basic cheat detection (Noclip, Speedhack)
 - Safe mode
 - Automatic backups
 - Manual backups

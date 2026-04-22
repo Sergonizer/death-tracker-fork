@@ -61,7 +61,7 @@ bool Settings::getAutoBackupAtDTExit(){
 }
 
 bool Settings::getSafeMode(){
-    return Mod::get()->getSettingValue<bool>("safe-mode");
+    return Mod::get()->getSettingValue<bool>("safe-mode-v3");
 }
 
 bool Settings::getCheatDetect(){

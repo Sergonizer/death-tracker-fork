@@ -64,6 +64,7 @@ bool ChangelogPopup::init() {
     m_mainLayer->addChildAtPosition(textArea, Anchor::Center);
     textArea->setPositionY(textArea->getPositionY() - m_title->getScaledContentHeight() / 2);
 
+    // @geode-ignore(unknown-resource)
     auto lower = CCSprite::createWithSpriteFrameName("geode.loader/mods-list-bottom-sapphire.png");
     lower->setAnchorPoint({0, .5f});
     lower->setScale(m_size.width / lower->getContentWidth());

@@ -51,6 +51,9 @@ bool FileConversionLayer::init(bool exitIfNone) {
     startBtn->setPosition(m_size.width / 2, startBtn->getContentHeight() / 2 + 10);
     m_buttonMenu->addChild(startBtn);
 
+    this->setTitle("Working...");
+    textArea->setText("Looking for old save files...");
+
     lookupListener.spawn(
         lookupFuture(),
         [&](LookupFuture::Output val) {
@@ -71,7 +74,7 @@ void FileConversionLayer::lookupComplete(LookupFuture::Output result){
         }
         this->setTitle("No old files found!");
         textArea->setText("It looks like you're all set!\nNo old files were found!");
-        if (!std::filesystem::exists(StatsManager::m_savesFolderPath)){
+        if (!std::filesystem::exists(StatsManager::getSavesFolderPath())){
             this->setTitle("Conversion Failed!");
             textArea->setText("Invalid save location\nPlease change your save location in\nThe death tracker mod settings");
         }
@@ -125,11 +128,6 @@ ConversionFuture FileConversionLayer::conversionFuture(std::vector<std::string> 
 }
 
 LookupFuture FileConversionLayer::lookupFuture(){
-    geode::queueInMainThread([&](){
-        this->setTitle("Working...");
-        textArea->setText("Looking for old save files...");
-    });
-
     co_return StatsManager::allV2FileLevelKeys();
 }
 

@@ -309,6 +309,7 @@ struct matjson::Serialize<SessionCategory> {
 
 typedef struct LevelMetadeta {
     std::map<int, int> runsToShow{};
+    int sharedRunToShow;
     bool showAnyRun = true;
     std::set<std::string> linkedLevels{};
     std::string levelName = "Unknown name";
@@ -387,6 +388,9 @@ struct matjson::Serialize<LevelMetadeta> {
         if (value.contains("sessionGroups")){
             GEODE_UNWRAP_INTO(stats.sessionGroups, value["sessionGroups"].as<std::vector<SessionCategory>>());
         }
+        if (value.contains("sharedRunToShow")){
+            GEODE_UNWRAP_INTO(stats.sharedRunToShow, value["sharedRunToShow"].asInt());
+        }
 
         return Ok(stats);
     }
@@ -405,7 +409,8 @@ struct matjson::Serialize<LevelMetadeta> {
             { "autoBackup", value.autoBackup },
             { "sections", value.sections },
             { "hasGottenDataFromPT", value.hasGottenDataFromPT },
-            { "sessionGroups", value.sessionGroups }
+            { "sessionGroups", value.sessionGroups },
+            { "sharedRunToShow", value.sharedRunToShow }
         });
         return obj;
     }

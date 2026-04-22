@@ -1,5 +1,15 @@
 # Changelog
 
+## v3.0.2
+- Improved speedhack detection
+- Fixed crash on android on level entry
+- Fixed two 4s on lvlruns key
+- Made death tracker button disappear when clicking the eye button on the level complete screen
+- Fixed session date not accounting for timezone
+- Fixed an issue were sometimes it wont track runs into sessions
+- Added "Shared Max To Hide" for easier filter managment for runs
+- Fixed safe mode randomly being enabled for some people
+
 ## v3.0.1
 - Fixed crash on invalid save file location
 
