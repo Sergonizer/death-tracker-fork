@@ -457,8 +457,8 @@ void DTPlayLayer::checkDelta(float delta) {
 }
 
 void DTPlayLayer::updateTimeWarp(float timeWarp){
-    PlayLayer::updateTimeWarp(timeWarp);
-
+    this->GJBaseGameLayer::updateTimeWarp(timeWarp);
+    
     m_fields->currentTimeWarp = timeWarp;
 
     m_fields->lastSampleTime = std::chrono::steady_clock::now();
