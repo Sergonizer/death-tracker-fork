@@ -3316,10 +3316,14 @@ UpdateFuture DTLayer::onSessionDateKey(){
 
     co_await arc::yield();
 
-    auto tp = std::chrono::system_clock::from_time_t(session.groupID);
-    auto local_tp = std::chrono::zoned_time{std::chrono::current_zone(), tp};
+    std::tm tp{};
+    #if defined(GEODE_IS_WINDOWS)
+        localtime_s(&tp, &session.groupID);
+    #else
+        localtime_r(&session.groupID, &bt);
+    #endif
 
-    std::string dateStr = fmt::format("{:%m/%d/%Y %I:%M%p}", local_tp.get_local_time());
+    auto dateStr = fmt::format("{:%m/%d/%Y %H:%M%p}", tp);
 
     co_return Ok(dateStr);
 }
