@@ -3320,7 +3320,7 @@ UpdateFuture DTLayer::onSessionDateKey(){
     #if defined(GEODE_IS_WINDOWS)
         localtime_s(&tp, &session.groupID);
     #else
-        localtime_r(&session.groupID, &bt);
+        localtime_r(&session.groupID, &tp);
     #endif
 
     auto dateStr = fmt::format("{:%m/%d/%Y %H:%M%p}", tp);
