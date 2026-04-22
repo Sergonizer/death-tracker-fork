@@ -309,7 +309,7 @@ struct matjson::Serialize<SessionCategory> {
 
 typedef struct LevelMetadeta {
     std::map<int, int> runsToShow{};
-    int sharedRunToShow;
+    int sharedRunToShow = 0;
     bool showAnyRun = true;
     std::set<std::string> linkedLevels{};
     std::string levelName = "Unknown name";

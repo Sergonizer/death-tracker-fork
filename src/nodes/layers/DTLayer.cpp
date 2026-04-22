@@ -371,7 +371,7 @@ bool DTLayer::init(GJGameLevel* const& level) {
             ->joinHighlight(bottomLeftMenu)
             ->joinHighlight(sessionSelector)
 
-            ->appendDialogue("There's the <cy>level options</c> which allow you to change may things about how you <cr>track/display your data</c>", TutorialCharacterFace::TCFNormal)
+            ->appendDialogue("There's the <cy>level options</c> which allow you to change many things about how you <cr>track/display your data</c>", TutorialCharacterFace::TCFNormal)
             ->joinHighlight(levelSpecificOptionsBtn)
             ->joinTransform(TutorialBoxPlacement::TBPLeft, .75f)
             ->joinTextToHighlight("level options", .3f, TutorialTextPlacement::TTTop)

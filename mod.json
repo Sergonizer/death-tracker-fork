@@ -8,7 +8,7 @@
     },
 	"id": "elohmrow.death_tracker",
 	"name": "Death Tracker",
-	"version": "v3.0.2",
+	"version": "v3.0.3",
 	"developer": "abb2k",
 	"description": "Tracks your deaths at every percentage",
 	"links": {
@@ -31,7 +31,7 @@
 	"settings": {
 		"functionallity-title":{
 			"type": "title",
-			"name": "Functionallity"
+			"name": "Functionality"
 		},
 		"session-method": {
 			"name": "Session Method",

@@ -1,5 +1,9 @@
 # Changelog
 
+## v3.0.3
+- Made sure "Shared Max To Hide" defaults to 0
+- fixed misspells
+
 ## v3.0.2
 - Improved speedhack detection
 - Fixed crash on android on level entry
