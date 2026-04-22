@@ -405,7 +405,24 @@ bool DTLayer::init(GJGameLevel* const& level) {
             ->joinHighlight(settingsBtn)
             ->joinTextToHighlight("Mod Options", .3f, TutorialTextPlacement::TTTop)
 
-            ->appendDialogue("Have fun playing around with the features!", TutorialCharacterFace::TCFHappy)
+            ->appendDialogue("You can also <cy>double click</c> an of the <cf>labels top parts</c> to copy their contents", TutorialCharacterFace::TCFNormal)
+            ->joinTransform(TutorialBoxPlacement::TBPBottom, .75f);
+        std::set<DTLabel*> allLabels{};
+
+        int index = 0;
+        for (const auto& column : columns)
+        {
+            for (const auto& [_, label] : column->labels)
+            {
+                if (allLabels.contains(label)) continue;
+
+                allLabels.insert(label);
+                tutorialLayer->joinHighlight(label->labelTitleBG, .1f * index);
+                index++;
+            }
+        }
+
+            tutorialLayer->appendDialogue("Have fun playing around with the features!", TutorialCharacterFace::TCFHappy)
             ->joinTransform(TutorialBoxPlacement::TBPCenter);
     });
     mainInfo->setPosition(m_size);
@@ -578,6 +595,7 @@ bool DTLayer::init(GJGameLevel* const& level) {
     });
     layoutInfo->setPosition(m_size);
     layoutInfo->setOpacity(0);
+    layoutInfo->setEnabled(false);
     auto layoutInfoMenu = CCMenu::createWithItem(layoutInfo);
     layoutInfoMenu->setPosition({0, 0});
     m_mainLayer->addChild(layoutInfoMenu);
@@ -642,6 +660,7 @@ void DTLayer::onEditLayout(CCObject*){
     editLayoutMenu->setEnabled(true);
     layoutInfo->stopAllActions();
     layoutInfo->runAction(CCFadeTo::create(.15f, 255));
+    layoutInfo->setEnabled(true);
     applyChangesButtonSpr->m_BGSprite->stopAllActions();
     applyChangesButtonSpr->m_BGSprite->runAction(CCFadeTo::create(.15f, 255));
     applyChangesButtonSpr->m_label->stopAllActions();
@@ -2177,6 +2196,7 @@ void DTLayer::exitLayoutEditing(){
     editLayoutMenu->setEnabled(false);
     layoutInfo->stopAllActions();
     layoutInfo->runAction(CCFadeTo::create(.15f, 0));
+    layoutInfo->setEnabled(false);
     applyChangesButtonSpr->m_BGSprite->stopAllActions();
     applyChangesButtonSpr->m_BGSprite->runAction(CCFadeTo::create(.15f, 0));
     applyChangesButtonSpr->m_label->stopAllActions();
@@ -3316,11 +3336,13 @@ UpdateFuture DTLayer::onSessionDateKey(){
 
     co_await arc::yield();
 
+    time_t time = static_cast<time_t>(session.groupID);
+
     std::tm tp{};
-    #if defined(GEODE_IS_WINDOWS)
-        localtime_s(&tp, &session.groupID);
+    #if defined(_WIN32)
+        localtime_s(&tp, &time);
     #else
-        localtime_r(&session.groupID, &tp);
+        localtime_r(&time, &tp);
     #endif
 
     auto dateStr = fmt::format("{:%m/%d/%Y %H:%M%p}", tp);
