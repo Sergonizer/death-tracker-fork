@@ -1,277 +1,131 @@
 #pragma once
 
 #include <Geode/Geode.hpp>
-#include <matjson/stl_serialize.hpp>
+#include <types/DTTypes.hpp>
 
 using namespace geode::prelude;
 
-typedef std::map<std::string, int> Deaths;
-typedef std::map<std::string, int> Runs;
-typedef std::set<int> NewBests;
-
-struct Run_s{
-    int start;
-    int end;
-
-    Run_s(int _start, int _end) : start(_start), end(_end){}
-
-    Run_s() = default;
-};
-typedef struct Run_s Run; 
-
-struct DeathInfo_s{
-    Run run;
-    bool isNewBest;
-    int deaths;
-    float passrate;
-
-    DeathInfo_s(Run _run, bool _isNewBest, int _deaths, float _passrate) : run(_run), isNewBest(_isNewBest), deaths(_deaths), passrate(_passrate){}
-    DeathInfo_s(Run _run, int _deaths, float _passrate) : run(_run), deaths(_deaths), passrate(_passrate){}
-};
-typedef struct DeathInfo_s DeathInfo;
-
-typedef struct {
-    long long lastPlayed;
-    Deaths deaths;
-    Runs runs;
-    NewBests newBests;
-    int currentBest;
-    long long sessionStartDate;
-} Session;
-
-struct LevelStats_s {
-    Deaths deaths;
-    Runs runs;
-    NewBests newBests;
-    int currentBest;
-    std::vector<Session> sessions{};
-    std::vector<int> RunsToSave{-1};
-    std::vector<std::string> LinkedLevels;
-    std::string levelName = "Unknown name";
-    int attempts;
-    int difficulty;
-    int hideUpto;
-    int hideRunLength;
-};
-typedef struct LevelStats_s LevelStats;
-
-template <>
-struct matjson::Serialize<Session> {
-    static Result<Session> fromJson(const matjson::Value& value) {
-        Session session;
-        GEODE_UNWRAP_INTO(session.lastPlayed, value["lastPlayed"].as<long long>());
-        GEODE_UNWRAP_INTO(session.deaths, value["deaths"].as<Deaths>());
-        GEODE_UNWRAP_INTO(session.runs, value["runs"].as<Runs>());
-        GEODE_UNWRAP_INTO(session.newBests, value["newBests"].as<NewBests>());
-        GEODE_UNWRAP_INTO(session.currentBest, value["currentBest"].asInt());
-
-        if (value.contains("sessionStartDate")){
-            GEODE_UNWRAP_INTO(session.sessionStartDate, value["sessionStartDate"].as<long long>());
-        }
-        else
-            session.sessionStartDate = -1;
-
-        return Ok(session);
-    }
-
-    static matjson::Value toJson(const Session& value) {
-        matjson::Value obj = matjson::makeObject({
-            { "lastPlayed", value.lastPlayed },
-            { "deaths", value.deaths },
-            { "runs", value.runs },
-            { "newBests", value.newBests },
-            { "currentBest", value.currentBest },
-            { "sessionStartDate", value.sessionStartDate },
-        });
-        return obj;
-    }
-};
-
-template <>
-struct matjson::Serialize<LevelStats> {
-    static Result<LevelStats> fromJson(const matjson::Value& value) {
-
-        LevelStats stats;
-        GEODE_UNWRAP_INTO(stats.deaths, value["deaths"].as<Deaths>());
-        GEODE_UNWRAP_INTO(stats.runs, value["runs"].as<Runs>());
-        GEODE_UNWRAP_INTO(stats.newBests, value["newBests"].as<NewBests>());
-        GEODE_UNWRAP_INTO(stats.currentBest, value["currentBest"].asInt());
-        GEODE_UNWRAP_INTO(stats.sessions, value["sessions"].as<std::vector<Session>>());
-
-        if (value.contains("RunsToSave")){
-            GEODE_UNWRAP_INTO(stats.RunsToSave, value["RunsToSave"].as<std::vector<int>>());
-        }
-
-        if (value.contains("LinkedLevels")){
-            GEODE_UNWRAP_INTO(stats.LinkedLevels, value["LinkedLevels"].as<std::vector<std::string>>());
-        }
-        else
-            stats.LinkedLevels = value["LinkedLevels"].as<std::vector<std::string>>().unwrapOr(std::vector<std::string>{});
-        
-        if (value.contains("levelName")){
-            GEODE_UNWRAP_INTO(stats.levelName, value["levelName"].asString());
-        }
-        else
-            stats.levelName = "-1";
-
-        if (value.contains("attempts")){
-            GEODE_UNWRAP_INTO(stats.attempts, value["attempts"].asInt());
-        }
-        else
-            stats.attempts = -1;
-
-        if (value.contains("difficulty")){
-            GEODE_UNWRAP_INTO(stats.difficulty, value["difficulty"].asInt());
-        }
-        else
-            stats.difficulty = 0;
-
-        if (value.contains("hideRunLength")){
-            GEODE_UNWRAP_INTO(stats.hideRunLength, value["hideRunLength"].asInt());
-        }
-        else
-            stats.hideRunLength = 0;
-
-        if (value.contains("hideUpto")){
-            GEODE_UNWRAP_INTO(stats.hideUpto, value["hideUpto"].asInt());
-        }
-        else
-            stats.hideUpto = 0;
-
-        return Ok(stats);
-    }
-
-    static matjson::Value toJson(const LevelStats& value) {
-        matjson::Value obj = matjson::makeObject({
-            { "deaths", value.deaths },
-            { "runs", value.runs },
-            { "newBests", value.newBests },
-            { "currentBest", value.currentBest },
-            { "sessions", value.sessions },
-            { "RunsToSave", value.RunsToSave },
-            { "LinkedLevels", value.LinkedLevels },
-            { "levelName", value.levelName },
-            { "attempts", value.attempts },
-            { "difficulty", value.difficulty },
-            { "hideRunLength", value.hideRunLength },
-            { "hideUpto", value.hideUpto },
-        });
-        return obj;
-    }
-};
-
-typedef struct {
-    std::string name;
-    float value;
-    std::string type;
-} prismSetting;
-
-// matjson fuckery
-template <>
-struct matjson::Serialize<prismSetting> {
-    static Result<prismSetting> fromJson(const matjson::Value& value) {
-        prismSetting setting;
-        GEODE_UNWRAP_INTO(setting.name, value["name"].asString());
-        setting.value = 0;
-        GEODE_UNWRAP_INTO(setting.type, value["type"].asString());
-
-        if (value["value"].isBool()){
-            GEODE_UNWRAP_INTO(auto valRes, value["value"].asBool());
-            setting.value = valRes ? 1 : 0;
-        }
-        else{
-            GEODE_UNWRAP_INTO(setting.value, value["value"].asDouble());
-        }
-
-        return Ok(setting);
-    }
-};
-
 class StatsManager {
 private:
-    static GJGameLevel* m_level;
     static std::set<std::string> m_playedLevels;
-
-    static LevelStats m_levelStats;
     
     static bool m_scheduleCreateNewSession;
 
     // internal functions
 
-    //saves the data based on the last level loaded
-    static void saveData();
-    //loads the data of the level given
-    static Result<LevelStats> loadData(GJGameLevel* const& level);
     //gets new bests from level
     static Result<std::tuple<NewBests, int>> calcNewBests(GJGameLevel* const& level);
     static std::array<std::string, 62> m_AllFontsMap;
+
+    static void createFilesIfNeeded(const std::string& levelKey);
+    static void createFile(const std::filesystem::path& path);
+
+    static const std::string METADATA_FILE_NAME;
+    static const std::string FROM0_FILE_NAME;
+    static const std::string SESSIONS_DIR_NAME; 
+    static const std::string BACKUPS_DIR_NAME; 
 
 public:
     StatsManager() = delete;
 
     static int MainLevelIDs[26];
 
-    static std::filesystem::path m_savesFolderPath;
+    static std::filesystem::path getSavesFolderPath();
 
-    // main functions
+    static GJGameLevel* currentLevel;
+    static GeneralData currentFrom0;
+    static LevelMetadeta currentMetadata;
+    static Session currentSession;
 
-    //loads the level stats for a specific level
-    static void loadLevelStats(GJGameLevel* const& level);
-    //load and retrieve the stats for a level
-    static LevelStats getLevelStats(GJGameLevel* const& level);
-    //get level stats by a path to the levels save file
-    static Result<LevelStats> getLevelStats(const std::filesystem::path& level);
-    //get level stats by a levels key
-    static Result<LevelStats> getLevelStats(const std::string& levelKey);
+#pragma region level setters/getters
+
+    static Result<LevelMetadeta> getMetadata(GJGameLevel* const level);
+    static Result<LevelMetadeta> getMetadata(const std::string& levelKey);
+    static Result<LevelMetadeta> getMetadata(const std::filesystem::path& path);
+    static Result<Session> getSession(GJGameLevel* const level, long long sessionTime);
+    static Result<Session> getSession(const std::string& levelKey, long long sessionTime);
+    static Result<Session> getSession(const std::filesystem::path& path, long long sessionTime);
+    static Result<GeneralData> getGeneral(GJGameLevel* const level);
+    static Result<GeneralData> getGeneral(const std::string& levelKey);
+    static Result<GeneralData> getGeneral(const std::filesystem::path& path);
+    static Result<LevelData> getLevelData(GJGameLevel* const level);
+    static Result<LevelData> getLevelData(const std::string& levelKey);
+    static Result<LevelData> getLevelData(const std::filesystem::path& path);
+    static Result<BackupLevelData> getBackupData(const std::string& levelKey, long long backupName);
+
+    static Result<> setMetadata(const LevelMetadeta& stats, GJGameLevel* const level);
+    static Result<> setMetadata(const LevelMetadeta& stats, const std::string& levelKey);
+    static Result<> setSession(Session& stats, GJGameLevel* const level, long long sessionTime, bool updateLastPlayed);
+    static Result<> setSession(Session& stats, const std::string& levelKey, long long sessionTime, bool updateLastPlayed);
+    static Result<> setGeneral(const GeneralData& stats, GJGameLevel* const level);
+    static Result<> setGeneral(const GeneralData& stats, const std::string& levelKey);
+    // add a backup into the levels backups folder
+    // sessionsToSave: how many sessions to save into the backup, -1 for all, nullopt for none
+    static Result<> addBackup(const std::string& levelKey, bool saveLevelStats, std::optional<int> sessionsToSave);
+
+    static Result<std::set<long long>> getAllSessionTimesForLevel(GJGameLevel* const level);
+    static std::set<long long> getAllSessionTimesForLevel(const std::string& levelKey);
+    static std::set<long long> getAllSessionTimesForLevel(const std::filesystem::path& path);
+
+    static std::set<long long> getBackupsCount(const std::string& levelKey);
+    static uintmax_t getBackupFileSize(const std::string& levelKey, long long backupName);
+
+    static Result<> reveretBackupSessions(const std::string& levelKey, long long backupName);
+
+    static Result<> deleteLevelStats(const std::string& levelKey);
+    static Result<> deleteBackup(const std::string& levelKey, long long backupName);
+    static Result<> deleteAllSessions(const std::string& levelKey);
+
+    static Result<> convertV2SaveToV3(const std::string& levelKey);
+    static std::vector<std::string> allV2FileLevelKeys();
+
+    static std::vector<std::string> allV3FileLevelKeys();
+    
+#pragma endregion
+
+#pragma region logging
+
+    static void setCurrentLevel(GJGameLevel* const& level);
+
     //save a normal mode death to the loaded levels save file
-    static void logDeath(const int& percent);
+    static void logDeath(const int& percent, bool instantSave = true);
     //save an array of normal mode deaths to the loaded levels save file
     static void logDeaths(const std::vector<int>& percents);
     //save run to the loaded levels save file
-    static void logRun(const Run& run);
+    static void logRun(const Run& run, bool instantSave = true);
     //save an array of run to the loaded levels save file
     static void logRuns(const std::vector<Run>& runs);
 
+#pragma endregion
+
     // utility functions
+
+    static void updateCurrentSessionLastPlayed();
+    static GJGameLevel* getCurrentLevel();
 
     //gets the epoch time
     static long long getNowSeconds();
     //get the a levels level key
-    static Result<std::string> getLevelKey(GJGameLevel* const& level = m_level);
+    static Result<std::string> getLevelKey(GJGameLevel* const& level);
     //convert a run string into a run struct
-    static Run splitRunKey(const std::string& runKey);
+    static Result<Run> splitRunKey(const std::string& runKey);
+    static Result<std::string> createRunKey(const Run& runKey);
     //get the current ongoing session
-    static Session* getSession();
-    //update this sessions last played time
-    static void updateSessionLastPlayed(const bool& save = false);
+    static Session* getCurrentSession();
     //schedule the creation of a new session
     static void scheduleCreateNewSession(const bool& scheduled);
     //if youve played the loaded level before, returns true
     static bool hasPlayedLevel();
-    //gets the path to a levels deaths save file
-    static Result<std::filesystem::path> getLevelSaveFilePath(GJGameLevel* const& level = m_level);
     //get a font by a fontID
     static std::string getFont(const int& fontID);
     //get a fonts name by a fontID
     static std::string getFontName(const int& fontID);
     //get an array of all fonts
     static std::array<std::string, 62> getAllFonts();
-    //save data to a specific level
-    //@param stats data to save
-    //@param level level to save data for
-    static void saveData(const LevelStats& stats, GJGameLevel* const& level);
-    //save data to a specific level
-    //@param stats data to save
-    //@param levelKey a level key of the level to save data for
-    static void saveData(const LevelStats& stats, const std::string& levelKey);
     //gets an array of all levels you have progress on
-    static Result<std::vector<std::pair<std::string, LevelStats>>> getAllLevels();
+    static Result<std::vector<std::pair<std::string, LevelMetadeta>>> getAllLevels();
     //seperate a level key to [levelID, levelType]
     static std::pair<std::string, std::string> splitLevelKey(const std::string& levelKey);
-    //saves a backup for a specific level
-    static void saveBackup(const LevelStats& stats, GJGameLevel* const& level);
-    //gets data from a backup of a level
-    static Result<LevelStats> getBackupStats(GJGameLevel* const& level);
     //get the difficulty of a level
     //
     // -1 = auto, 0 = NA, 1 = Easy, 2 = Normal
@@ -284,11 +138,6 @@ public:
 
     // return a splitted version of the string provided, devided by the delim
     static std::vector<std::string> splitStr(const std::string& str, const std::string& delim);
-
-    //KMP search
-
-    static void computeLPSArray(const std::string& pat, int M, std::vector<int>& lps);
-    static std::vector<int> KMPSearch(const std::string& pat, const std::string& txt);
     
     //gets the index in which the CCLabelBMFonts cursor is located on the string
     static int getCursorPosition(CCLabelBMFont* const& text, CCLabelBMFont* const& cursor);
@@ -302,4 +151,20 @@ public:
     //better info calc :)
     //converts time to a working time string
     static std::string workingTime(long long value);
+    static std::string workingTime(uint64_t nanoseconds);
+
+    template<typename K, typename V>
+    static void mergeMapsAdd(std::map<K, V>& target, const std::map<K, V>& source);
+
+    static bool transferPlaytimeFromPT(GJGameLevel* level);
+    static bool transferPlaytimeFromPT(geode::Result<LevelData>& data, GJGameLevel* level);
 };
+
+template<typename K, typename V>
+void StatsManager::mergeMapsAdd(std::map<K, V>& target, const std::map<K, V>& source)
+{
+    for (const auto& [key, value] : source)
+    {
+        target[key] += value;
+    }
+}

@@ -1,4 +1,4 @@
-#include "../hooks/DTPauseLayer.hpp"
+#include "DTPauseLayer.hpp"
 
 void DTPauseLayer::customSetup(){
     PauseLayer::customSetup();
@@ -25,8 +25,8 @@ void DTPauseLayer::customSetup(){
 }
 
 void DTPauseLayer::onDTMiniMenuOpened(CCObject*){
-    auto dtLayer = DTLayer::create(DTPopupManager::getCurrentLevel());
-    this->addChild(dtLayer);
+    auto dtLayer = DTLayer::create(StatsManager::getCurrentLevel());
+    dtLayer->show();
 }
 
 #if defined(GEODE_IS_MACOS)

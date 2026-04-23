@@ -1,4 +1,4 @@
-#include "Settings.hpp"
+#include <utils/Settings.hpp>
 
 int64_t Settings::getMaxSessionLength() {
     auto sessionMethod = Mod::get()->getSettingValue<std::string>("session-method");
@@ -14,16 +14,12 @@ bool Settings::isCompletedLevelTrackingDisabled() {
     return Mod::get()->getSettingValue<bool>("disable-tracking-completed-levels");
 }
 
-bool Settings::isPracticeZeroDeathsEnabled() {
-    return Mod::get()->getSettingValue<bool>("practice-zero-deaths");
-}
-
 bool Settings::getPauseMenuEnabled(){
     return Mod::get()->getSettingValue<bool>("pause-menu");
 }
 
-bool Settings::getLeftMenuEnabled(){
-    return Mod::get()->getSettingValue<bool>("left-menu");
+bool Settings::getCompleteMenuEnabled(){
+    return Mod::get()->getSettingValue<bool>("complete-menu");
 }
 
 bool Settings::getLateSaveEnabled(){
@@ -36,4 +32,38 @@ float Settings::getGraphPointSize(){
 
 std::filesystem::path Settings::getSavePath(){
     return Mod::get()->getSettingValue<std::filesystem::path>("save-path-new");
+}
+
+std::optional<int> Settings::getMaxBackupAmount(){
+    if (Mod::get()->getSettingValue<bool>("backups-unlimited")) return std::nullopt;
+
+    return Mod::get()->getSettingValue<int>("backups-max-amount");
+}
+
+bool Settings::getAutoBackupEnabled(){
+    return Mod::get()->getSettingValue<bool>("auto-backups-enabled");
+}
+bool Settings::getAutoBackupGeneral(){
+    return Mod::get()->getSettingValue<bool>("auto-backups-general");
+}
+
+std::optional<int> Settings::getAutoBackupSessionAmount(){
+    if (Mod::get()->getSettingValue<bool>("auto-backups-sessions-all")) return -1;
+
+    return Mod::get()->getSettingValue<int>("auto-backups-sessions-amount");
+}
+
+bool Settings::getAutoBackupAtLvlExit(){
+    return Mod::get()->getSettingValue<bool>("auto-backup-at-lvl-exit");
+}
+bool Settings::getAutoBackupAtDTExit(){
+    return Mod::get()->getSettingValue<bool>("auto-backup-at-dt-exit");
+}
+
+bool Settings::getSafeMode(){
+    return Mod::get()->getSettingValue<bool>("safe-mode-v3");
+}
+
+bool Settings::getCheatDetect(){
+    return Mod::get()->getSettingValue<bool>("cheat-detect");
 }

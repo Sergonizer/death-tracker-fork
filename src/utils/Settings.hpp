@@ -8,10 +8,17 @@ class Settings {
 public:
     static int64_t getMaxSessionLength();
     static bool isCompletedLevelTrackingDisabled();
-    static bool isPracticeZeroDeathsEnabled();
     static bool getPauseMenuEnabled();
-    static bool getLeftMenuEnabled();
+    static bool getCompleteMenuEnabled();
     static bool getLateSaveEnabled();
     static float getGraphPointSize();
     static std::filesystem::path getSavePath();
+    static std::optional<int> getMaxBackupAmount();
+    static bool getAutoBackupEnabled();
+    static bool getAutoBackupGeneral();
+    static std::optional<int> getAutoBackupSessionAmount();
+    static bool getAutoBackupAtLvlExit();
+    static bool getAutoBackupAtDTExit();
+    static bool getSafeMode();
+    static bool getCheatDetect();
 };

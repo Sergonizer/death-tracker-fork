@@ -1,7 +1,7 @@
 #include <Geode/modify/PlayLayer.hpp>
 #include "../managers/StatsManager.hpp"
 #include "../utils/Settings.hpp"
-#include "../managers/DTPopupManager.hpp"
+#include <chrono>
 
 using namespace geode::prelude;
 
@@ -12,8 +12,30 @@ class $modify(DTPlayLayer, PlayLayer) {
         bool hasRespawned = false;
         Run currentRun;
 
+        bool lastOneDied = false;
+        
+        bool nolcip = false;
+        bool speedhack = false;
+        CCObject* disabledCheat = nullptr;
+        
+        std::optional<std::chrono::steady_clock::time_point> speedhackCompare;
+        std::deque<double> realTimeHistory;
+        std::deque<double> gameTimeHistory;
+        double rollingRealSum = 0;
+        double rollingGameSum = 0;
+        double currentTimeWarp = 1;
+        
+
+        bool didJustPause = false;
+        PlaytimePair timePassedGeneral;
+        PlaytimePair timePassedDead;
+        PlaytimePair timePassedPaused;
+        std::optional<std::chrono::steady_clock::time_point> startTime;
+
         std::vector<int> fzeroToSave{};
         std::vector<Run> runsToSave{};
+        
+        bool levelBeaten = false;
     };
 
     bool disableCompletedLevelTracking();
@@ -22,8 +44,15 @@ class $modify(DTPlayLayer, PlayLayer) {
 
     /* hooks
     ========== */
+    static void onModify(auto& self);
 
     bool init(GJGameLevel* level, bool p1, bool p2);
+
+    void cutoutPlaytime();
+
+    void discardPlaytime();
+
+    void startupPlaytime();
 
     void resetLevel();
 
@@ -39,5 +68,29 @@ class $modify(DTPlayLayer, PlayLayer) {
     
     #endif
 
-    void onQuit();
+    void pauseGame(bool unfocused);
+
+    void resume();
+
+    float getActualProgress(GJBaseGameLayer* game);
+
+    void saveRun();
+
+    void onExit();
+
+    void startGame();
+
+    void playEndAnimationToPos(cocos2d::CCPoint position);
+
+    void playPlatformerEndAnimationToPos(cocos2d::CCPoint position, bool instant);
+
+    bool isLegal();
+
+    void postUpdate(float dt);
+
+    void checkDelta(float delta);
+
+    void updateTimeWarp(float timeWarp);
+
+    void savePlaytime();
 };

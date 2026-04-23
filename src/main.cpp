@@ -5,90 +5,142 @@ using namespace geode::prelude;
 #include "utils/Settings.hpp"
 
 $execute {
-    auto _ = file::createDirectory(Mod::get()->getSaveDir() / "levels");
+    (void)file::createDirectory(Mod::get()->getSaveDir() / "levels");
 
-    if (Save::getLayout().size() == 0){
+    auto oldLayout = Save::getOldLayout();
+
+    if (oldLayout.size()){
+        // DTLayoutV3 v3Layout{};
+
+        // v3Layout.columns.push_back(DTColumnInfo{
+        //     .orderPos = 0,
+        //     .currentWidth = 205
+        // });
+        // v3Layout.columns.push_back(DTColumnInfo{
+        //     .orderPos = 1,
+        //     .currentWidth = 205
+        // });
         
-        std::vector<LabelLayout> defaultLayout{
-            {
-                .labelName = "from 0",
-                .text = "From 0:{nl}{f0}{nl} ",
-                .line = 3,
-                .position = 0,
-                .color = {160,255,198,255},
-                .alignment = CCTextAlignment::kCCTextAlignmentCenter,
-                .font = 0,
-                .fontSize = 0.5f
+        // std::map<V2LabelLayout*, std::pair<bool, bool>> labelsOrganized{};
+
+        // std::map<int, std::pair<V2LabelLayout*, V2LabelLayout*>> labelsInLine{};
+
+        // for (int i = 0; i < oldLayout.size(); i++)
+        // {
+        //     if (!labelsInLine.contains(oldLayout[i].line)){
+        //         labelsInLine.insert({oldLayout[i].line, {&oldLayout[i], nullptr}});
+        //         continue;
+        //     }
+        //     else{
+        //         labelsInLine[oldLayout[i].line].second = &oldLayout[i];
+        //     }
+        // }
+
+        // for (const auto& [line, lineLabels] : labelsInLine)
+        // {
+        //     if (lineLabels.second == nullptr){
+        //         labelsOrganized.insert({lineLabels.first, {true, true}});
+        //     }
+        //     else{
+        //         bool isFirstOnLeft = lineLabels.first->position == 0;
+                
+        //         labelsOrganized.insert({lineLabels.first, {isFirstOnLeft, !isFirstOnLeft}});
+        //         labelsOrganized.insert({lineLabels.second, {!isFirstOnLeft, isFirstOnLeft}});
+        //     }
+        // }
+        
+        // for (const auto& [label, whichColumn] : labelsOrganized)
+        // {
+        //     DTLabelInfo labelInfo{};
+
+        //     labelInfo.layer = label->line;
+        //     labelInfo.textColor = label->color;
+        //     labelInfo.labelColor = label->color;
+        //     labelInfo.font = StatsManager::getFont(label->font);
+        //     labelInfo.labelName = label->labelName;
+        //     labelInfo.scale = label->fontSize;
+        //     labelInfo.text = label->text;
+
+        //     if (!whichColumn.first && whichColumn.second){
+        //         labelInfo.minPlacementRange = 1;
+        //         labelInfo.maxPlacementRange = 1;
+        //     }
+        //     else if (whichColumn.first && whichColumn.second){
+        //         labelInfo.maxPlacementRange = 1;
+        //     }   
+
+        //     v3Layout.labels.push_back(labelInfo);
+        // }
+        
+        // Save::setLayout(v3Layout);
+        // Save::setOldLayout({});
+    }
+
+    if (Save::getLayout().isEmpty()){
+        Save::setLayout(Save::getDefaultLayout());
+
+        auto graphs = std::vector<DTGraphInfo>{
+            DTGraphInfo{
+                .isEnabled = true,
+                .coverage = static_cast<DTGraphCoverage>(3),
+                .type = static_cast<DTGraphType>(0),
+                .orderPos = 0,
+                .thickness = 1.0f,
+                .outlineThickness = 0.75f,
+                .pointScale = 0.10000000149011612f,
+                .color = {122, 74, 0, 255},
+                .outlineColor = {101, 50, 0, 255},
+                .pointColor = {164, 76, 0, 255},
+                .name = "session runs"
             },
-            {
-                .labelName = "Session",
-                .text = "Session:{nl}{ssd}{nl}{s0}{nl} ",
-                .line = 3,
-                .position = 1,
-                .color = {255,217,166,255},
-                .alignment = CCTextAlignment::kCCTextAlignmentCenter,
-                .font = 0,
-                .fontSize = 0.5f
+            DTGraphInfo{
+                .isEnabled = true,
+                .coverage = static_cast<DTGraphCoverage>(2),
+                .type = static_cast<DTGraphType>(0),
+                .orderPos = 1,
+                .thickness = 1.0f,
+                .outlineThickness = 0.75f,
+                .pointScale = 0.10000000149011612f,
+                .color = {255, 145, 0, 255},
+                .outlineColor = {170, 104, 16, 255},
+                .pointColor = {114, 66, 3, 255},
+                .name = "sess from0"
             },
-            {
-                .labelName = "Runs",
-                .text = "Runs:{nl}{runs}{nl} ",
-                .line = 4,
-                .position = 0,
-                .color = {85,168,112,255},
-                .alignment = CCTextAlignment::kCCTextAlignmentCenter,
-                .font = 0,
-                .fontSize = 0.5f
+            DTGraphInfo{
+                .isEnabled = true,
+                .coverage = static_cast<DTGraphCoverage>(1),
+                .type = static_cast<DTGraphType>(0),
+                .orderPos = 2,
+                .thickness = 0.75f,
+                .outlineThickness = 0.5f,
+                .pointScale = 0.07999999821186066f,
+                .color = {14, 138, 37, 253},
+                .outlineColor = {11, 96, 32, 255},
+                .pointColor = {5, 181, 48, 255},
+                .name = "general runs"
             },
-            {
-                .labelName = "SRuns",
-                .text = "Session Runs:{nl}{sruns}{nl} ",
-                .line = 4,
-                .position = 1,
-                .color = {251,176,94,255},
-                .alignment = CCTextAlignment::kCCTextAlignmentCenter,
-                .font = 0,
-                .fontSize = 0.5f
-            },
-            {
-                .labelName = "Title",
-                .text = "{lvln}:",
-                .line = 0,
-                .position = 1,
-                .color = {255,255,255,255},
-                .alignment = CCTextAlignment::kCCTextAlignmentCenter,
-                .font = 2,
-                .fontSize = 1
-            },
-            {
-                .labelName = "att",
-                .text = "{att} attempts",
-                .line = 2,
-                .position = 1,
-                .color = {255,255,255,255},
-                .alignment = CCTextAlignment::kCCTextAlignmentCenter,
-                .font = 1,
-                .fontSize = 0.75f
-            },
-            {
-                .labelName =  "playtime",
-                .text = "playtime - {ptall}",
-                .line = 1,
-                .position = 1,
-                .color = {255,255,255,255},
-                .alignment = CCTextAlignment::kCCTextAlignmentCenter,
-                .font = 19,
-                .fontSize = 0.45f
+            DTGraphInfo{
+                .isEnabled = true,
+                .coverage = static_cast<DTGraphCoverage>(0),
+                .type = static_cast<DTGraphType>(0),
+                .orderPos = 3,
+                .thickness = 1.0f,
+                .outlineThickness = 0.75f,
+                .pointScale = 0.10000000149011612f,
+                .color = {0, 255, 55, 255},
+                .outlineColor = {18, 162, 53, 255},
+                .pointColor = {15, 105, 41, 255},
+                .name = "general from0"
             }
         };
 
-        Save::setLayout(defaultLayout);
+        Save::setGraphs(graphs);
 
         Save::setNewBestColor({255, 255, 0});
         Save::setSessionBestColor({ 255, 136, 0 });
     }
 
-    StatsManager::m_savesFolderPath = Settings::getSavePath();
+    StatsManager::getSavesFolderPath() = Settings::getSavePath();
     
 };
 

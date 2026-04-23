@@ -4,14 +4,11 @@ using namespace geode::prelude;
 
 class $modify(DTCCTextInputNode, CCTextInputNode) {
     struct Fields{
-        char const* lastText;
-
-        SEL_CallFunc callback;
-        CCObject* target = nullptr;
+        geode::Function<void(const std::string&)> callback = NULL;
     };
 
     public:
-        void setCallback(const SEL_CallFunc& _callback, CCObject* const& _target);
+        void setCallback(geode::Function<void(const std::string&)> callback);
 
         bool onTextFieldInsertText(cocos2d::CCTextFieldTTF* pSender, char const* text, int nLen, cocos2d::enumKeyCodes keyCodes);
 };

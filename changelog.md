@@ -1,10 +1,46 @@
 # Changelog
 
-## v2.4.9
-- support for geode V5 :D
+## v3.0.3
+- Made sure "Shared Max To Hide" defaults to 0
+- fixed misspells
 
-## v2.4.8
-- support for geode V5 beta
+## v3.0.2
+- Improved speedhack detection
+- Fixed crash on android on level entry
+- Fixed two 4s on lvlruns key
+- Made death tracker button disappear when clicking the eye button on the level complete screen
+- Fixed session date not accounting for timezone
+- Fixed an issue were sometimes it wont track runs into sessions
+- Added "Shared Max To Hide" for easier filter management for runs
+- Fixed safe mode randomly being enabled for some people
+
+## v3.0.1
+- Fixed crash on invalid save file location
+
+## v3.0.0
+- backend optimized and cleaned up
+- layout system revamped!
+  - more than 2 columns
+  - custom column size
+  - new labels!
+  - more options for coloring
+  - new label movement
+  - async optimized special key loading
+  - you can now ZOOM IN in the label view by holding control (or pinching)!
+- settings menu revamped!
+- Added sections!
+- Graphs reworked!
+  - you can now add multiple graphs and overlay them!
+  - graphs have settings you can play around with to customize them
+  - graphs can be turned on and off by clicking on the colored button below the name
+  - graphs can be reordered to decided which is above which
+  - you can zoom in to the graphs by scrolling and holding control (or pinching)
+- Added many new special keys!!!!
+- Added Tutorials!
+- Accurate playtime and **Playtime Tracker** integration!
+- Added calculator!
+- Session grouping
+- Cheat detection!!!
 
 ## v2.4.6
 - iOS support

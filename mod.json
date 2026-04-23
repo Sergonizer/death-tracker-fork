@@ -1,53 +1,44 @@
 {
-	"geode": "5.0.0",
+	"geode": "5.6.1",
 	"gd": {
         "android": "2.2081",
         "win": "2.2081",
 		"mac": "2.2081",
 		"ios": "2.2081"
     },
-	"version": "v2.4.9",
 	"id": "elohmrow.death_tracker",
 	"name": "Death Tracker",
+	"version": "v3.0.3",
 	"developer": "abb2k",
 	"description": "Tracks your deaths at every percentage",
-	"repository": "https://github.com/eloh-mrow/death-tracker",
 	"links": {
+		"source": "https://github.com/abb2k/death-tracker",
 		"community": "https://discord.gg/8VTdWXghA6"
 	},
+	"issues": {
+		"info": "Feel free to send eny issues on the \"feedback\" channel on the discord server!",
+		"url": "https://discord.gg/8VTdWXghA6"
+	},
 	"resources": {
-		"sprites": [
-			"resources/*.png"
-		]
+		"spritesheets": {
+			"dt-sheet": [
+				"resources/*.png",
+				"resources/tutorialExpressions/*.png"
+			]
+		}
 	},
 	"tags": ["utility", "interface", "offline"],
 	"settings": {
+		"functionallity-title":{
+			"type": "title",
+			"name": "Functionality"
+		},
 		"session-method": {
 			"name": "Session Method",
 			"description": "Determines when a session should end.\n<cy>Exit level</c> - Ends when exiting the level.\n<cy>Exit Game</c> - Ends when exiting the game.\n<cy>Exit Game</c> - End after a set amount of seconds pass (Session Length).",
 			"type": "string",
 			"default": "Exit level",
-			"one-of": ["Exit level", "Exit game", "Seconds"]
-		},
-		"session-length": {
-			"name": "Session Length",
-			"description": "How long a session last in seconds, only if the session method is \"Seconds\"",
-			"type": "int",
-			"default": 1,
-			"min": 1,
-			"max": 86400
-		},
-		"pause-menu": {
-			"name": "Pause Menu Button",
-			"description": "Adds the tracker button to the pause menu.",
-			"type": "bool",
-			"default": true
-		},
-		"left-menu": {
-			"name": "Left Menu Button",
-			"description": "Moves the death tracker button to the left menu of the level page.",
-			"type": "bool",
-			"default": false
+			"one-of": ["Exit level", "Exit game"]
 		},
 		"late-save": {
 			"name": "Late Save",
@@ -55,34 +46,173 @@
 			"type": "bool",
 			"default": false
 		},
+		"safe-mode-v3": {
+			"name": "Safe Mode",
+			"description": "Will prevent ANY form of death tracking",
+			"type": "bool",
+			"default": false
+		},
+		"cheat-detect": {
+			"name": "Cheat Detection",
+			"description": "Will prevent deaths from tracking when using noclip or speedhack (mostly accurate)",
+			"type": "bool",
+			"default": true
+		},
 		"disable-tracking-completed-levels": {
 			"name": "Disable Tracking Completed Levels",
 			"description": "Disables tracking on completed online levels.",
 			"type": "bool",
 			"default": false
 		},
-		"practice-zero-deaths": {
-			"name": "Enable 0% Practice Mode Deaths",
-			"description": "Deaths will be shown instead of runs from 0% in practice mode.",
-			"type": "bool",
-			"default": true
+		"bakcups-title":{
+			"type": "title",
+			"name": "Backups"
 		},
-		"graph-point-size": {
-			"name": "Graph point size",
-			"description": "determines the size of the points on the graph (this setting will layer be moved to the graph layer)",
-			"type": "float",
-			"default": 1,
-			"min": 0.5,
-			"max": 2
+		"backups-unlimited":{
+			"type": "bool",
+			"default": false,
+			"name": "Unlimited Backups",
+			"description": "Remove/Add the limit for how many of the most recent backups should be saved"
+		},
+		"backups-max-amount":{
+			"type": "int",
+			"default": 5,
+			"min": 1,
+			"name": "Max Auto Backups",
+			"description": "The limit of how many backups will be saved before old ones are deleted",
+			"enable-if": "!backups-unlimited"
+		},
+		"auto-bakcups-title":{
+			"type": "title",
+			"name": "Auto Backups"
+		},
+		"auto-backups-enabled":{
+			"type": "bool",
+			"default": true,
+			"name": "Auto Backups Enabled",
+			"description": "Enable/Disable auto backups on all levels"
+		},
+		"auto-backups-general":{
+			"type": "bool",
+			"default": true,
+			"name": "Auto Backup General",
+			"description": "Whether to backup the general (not session) data when creating a backup automatically",
+			"enable-if": "auto-backups-enabled"
+		},
+		"auto-backups-sessions-all":{
+			"type": "bool",
+			"default": true,
+			"name": "Auto Backup All Sessions",
+			"description": "Whether to backup all sessions of a level when creating a backup automatically. if diabled you can set the specific amount of sessions you wanna save in the \"Backup Sessions Amount\" setting",
+			"enable-if": "auto-backups-enabled"
+		},
+		"auto-backups-sessions-amount":{
+			"type": "int",
+			"min": 0,
+			"default": 2,
+			"name": "Auto Backup Sessions Amount",
+			"description": "How many of the most recent sessions should be saved in a automatically created backup",
+			"enable-if": "auto-backups-enabled && !auto-backups-sessions-all"
+		},
+		"auto-backup-at-lvl-exit":{
+			"type": "bool",
+			"default": true,
+			"name": "Auto Backup at level exit",
+			"description": "Create a backup whenever exiting a level",
+			"enable-if": "auto-backups-enabled"
+		},
+		"auto-backup-at-dt-exit":{
+			"type": "bool",
+			"default": true,
+			"name": "Auto Backup at death tracker menu exit",
+			"description": "Create a backup whenever exiting the death tracker menu",
+			"enable-if": "auto-backups-enabled"
+		},
+		"save-title":{
+			"type": "title",
+			"name": "Save"
+		},
+		"check-for-old":{
+			"name": "Convert old saves",
+			"description": "This is used to convert old saves from death tracker V2 to V3",
+			"type": "custom:button-type-dt"
 		},
 		"save-path-new": {
 			"type": "folder",
 			"name": "Save Path",
 			"default": "{mod_save_dir}/levels"
+		},
+		"customazation-title":{
+			"type": "title",
+			"name": "Customazation"
+		},
+		"pause-menu": {
+			"name": "Pause Menu Button",
+			"description": "Adds the tracker button to the pause menu.",
+			"type": "bool",
+			"default": true
+		},
+		"complete-menu": {
+			"name": "Complete Menu Button",
+			"description": "Adds the tracker button to the level complete screen.",
+			"type": "bool",
+			"default": true
+		},
+		"enter-new-line":{
+			"type": "keybind",
+            "name": "Enter new line",
+            "description": "Enters a new line when editing a labels text",
+            "category": "universal",
+            "migrate-from": "elohmrow.death_tracker/enter-new-line",
+            "default": {
+				"win": ["Enter"],
+				"mac": ["Enter"],
+				"ios": ["Enter"],
+				"android": ["Enter"]
+			}
+		},
+		"enter-new-run-per":{
+			"type": "keybind",
+            "name": "Enter new run percentage",
+            "description": "Enters a new run percent when inputting for adding a new percent to your \"runs to track\"",
+            "category": "universal",
+            "migrate-from": "elohmrow.death_tracker/enter-new-run-per",
+            "default": {
+				"win": ["Enter"],
+				"mac": ["Enter"],
+				"ios": ["Enter"],
+				"android": ["Enter"]
+			}
+		},
+		"add-deaths":{
+			"type": "keybind",
+            "name": "Add deaths",
+            "description": "Adds deaths while you input a percent to change deaths to your level",
+            "category": "universal",
+            "migrate-from": "elohmrow.death_tracker/add-deaths",
+            "default": {
+				"win": ["Enter"],
+				"mac": ["Enter"],
+				"ios": ["Enter"],
+				"android": ["Enter"]
+			}
+		},
+		"remove-deaths":{
+			"type": "keybind",
+            "name": "Remove deaths",
+            "description": "Removes deaths while you input a percent to change deaths to your level",
+            "category": "universal",
+            "migrate-from": "elohmrow.death_tracker/remove-deaths",
+            "default": {
+				"win": ["Shift+Enter"],
+				"mac": ["Shift+Enter"],
+				"ios": ["Shift+Enter"],
+				"android": ["Shift+Enter"]
+			}
 		}
 	},
 	"dependencies": {
-		"geode.node-ids": ">=1.12.0-beta.1",
-		"cvolton.level-id-api": ">=v2.0.0-beta.2"
+		"geode.node-ids": ">=v1.10.0",
+		"cvolton.level-id-api": "v2.0.0-beta.2"
 	}
 }
