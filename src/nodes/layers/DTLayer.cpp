@@ -1131,21 +1131,31 @@ void DTLayer::updateStaticGroupings(){
     {
         for (const auto& [date, lvls] : group.group)
         {
-            time_t time = static_cast<time_t>(date);
-
-            std::tm timezonedTM{};
+            std::time_t time = static_cast<std::time_t>(date);
+            std::tm lt{};
             #if defined(_WIN32)
-                localtime_s(&timezonedTM, &time);
+                localtime_s(&lt, &time);
             #else
-                localtime_r(&time, &timezonedTM);
+                localtime_r(&time, &lt);
             #endif
 
-            std::time_t zonedDate = std::mktime(&timezonedTM);
-            auto coolerDate = std::chrono::sys_seconds{std::chrono::seconds(zonedDate)};
+            lt.tm_sec = 0;
+            lt.tm_min = 0;
+            lt.tm_hour = 0;
+            std::time_t startOfDay = std::mktime(&lt);
 
-            auto startOfDay = std::chrono::system_clock::to_time_t(std::chrono::floor<std::chrono::days>(coolerDate));
-            auto startOfWeek = std::chrono::system_clock::to_time_t(std::chrono::floor<std::chrono::weeks>(coolerDate));
-            auto startOfMonth = std::chrono::system_clock::to_time_t(std::chrono::floor<std::chrono::months>(coolerDate));
+            lt.tm_mday = 1;
+            std::time_t startOfMonth = std::mktime(&lt);
+            
+            #if defined(_WIN32)
+                localtime_s(&lt, &time);
+            #else
+                localtime_r(&time, &lt);
+            #endif
+            
+            lt.tm_sec = 0; lt.tm_min = 0; lt.tm_hour = 0;
+            lt.tm_mday -= lt.tm_wday;
+            std::time_t startOfWeek = std::mktime(&lt);
             
             if (!daySGroup.grouping.contains(startOfDay)){
                 SessionGrouping grouping{};
