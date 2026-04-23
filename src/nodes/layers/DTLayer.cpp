@@ -1133,12 +1133,12 @@ void DTLayer::updateStaticGroupings(){
         {
             std::tm timezonedTM{};
             #if defined(_WIN32)
-                localtime_s(&tp, &date);
+                localtime_s(&timezonedTM, &date);
             #else
-                localtime_r(&date, &tp);
+                localtime_r(&date, &timezonedTM);
             #endif
 
-            std::time_t zonedDate = std::mktime(&tm);
+            std::time_t zonedDate = std::mktime(&timezonedTM);
             auto coolerDate = std::chrono::sys_seconds{std::chrono::seconds(zonedDate)};
 
             auto startOfDay = std::chrono::system_clock::to_time_t(std::chrono::floor<std::chrono::days>(coolerDate));
