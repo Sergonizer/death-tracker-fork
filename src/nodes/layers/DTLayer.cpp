@@ -1131,7 +1131,15 @@ void DTLayer::updateStaticGroupings(){
     {
         for (const auto& [date, lvls] : group.group)
         {
-            auto coolerDate = std::chrono::sys_seconds{std::chrono::seconds(date)};
+            std::tm timezonedTM{};
+            #if defined(_WIN32)
+                localtime_s(&tp, &date);
+            #else
+                localtime_r(&date, &tp);
+            #endif
+
+            std::time_t zonedDate = std::mktime(&tm);
+            auto coolerDate = std::chrono::sys_seconds{std::chrono::seconds(zonedDate)};
 
             auto startOfDay = std::chrono::system_clock::to_time_t(std::chrono::floor<std::chrono::days>(coolerDate));
             auto startOfWeek = std::chrono::system_clock::to_time_t(std::chrono::floor<std::chrono::weeks>(coolerDate));
