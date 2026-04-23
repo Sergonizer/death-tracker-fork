@@ -1131,11 +1131,13 @@ void DTLayer::updateStaticGroupings(){
     {
         for (const auto& [date, lvls] : group.group)
         {
+            time_t time = static_cast<time_t>(date);
+
             std::tm timezonedTM{};
             #if defined(_WIN32)
-                localtime_s(&timezonedTM, &date);
+                localtime_s(&timezonedTM, &time);
             #else
-                localtime_r(&date, &timezonedTM);
+                localtime_r(&time, &timezonedTM);
             #endif
 
             std::time_t zonedDate = std::mktime(&timezonedTM);
