@@ -110,8 +110,9 @@ ConversionFuture FileConversionLayer::conversionFuture(std::vector<std::string> 
         
         auto conversionRes = StatsManager::convertV2SaveToV3(levelKey);
         
-        if (conversionRes.isOk())
-        successfulConversionAmount++;
+        if (conversionRes.isOk()){
+            successfulConversionAmount++;
+        }
         else if (conversionRes.isErr()){
             failedConversions.push_back(levelKey);
         }

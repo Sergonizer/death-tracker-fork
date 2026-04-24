@@ -219,7 +219,7 @@ bool LinkOptions::setup(){
         }
         tutorialLayer->appendDialogue("Levels that are in the <cy>played</c> list arent linked", TutorialCharacterFace::TCFNormal)
             ->joinHighlight(playedScrollBG)
-            ->appendDialogue("And levels that are in the <cc>linked</c> list arent linked!", TutorialCharacterFace::TCFHappy)
+            ->appendDialogue("And levels that are in the <cc>linked</c> list are linked!", TutorialCharacterFace::TCFHappy)
             ->joinHighlight(linkedScrollBG)
             ->appendDialogue("When viewing stats you will see the <cy>combined stats of all your linked levels</c>", TutorialCharacterFace::TCFNormal)
             ->joinTransform(TutorialBoxPlacement::TBPCenter, 1)

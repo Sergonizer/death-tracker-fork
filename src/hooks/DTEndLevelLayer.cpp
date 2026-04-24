@@ -36,9 +36,9 @@ void DTEndLevelLayer::openDTLayer(CCObject*){
 void DTEndLevelLayer::onHideLayer(cocos2d::CCObject* sender){
     EndLevelLayer::onHideLayer(sender);
 
+    if (m_fields->skullBtn == nullptr) return;
+
     m_fields->skullBtn->stopAllActions();
     m_fields->skullBtn->runAction(CCFadeTo::create(.25f, m_hidden ? 0 : 255));
     m_fields->skullBtn->setEnabled(!m_hidden);
-
-    log::info("hid {}", m_hidden);
 }

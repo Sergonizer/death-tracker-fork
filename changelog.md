@@ -1,5 +1,12 @@
 # Changelog
 
+## v3.0.4
+- Fixed session groups not being time zone relative
+- Fixed crash on level complete screen
+- Added scrollable text input for easier layout managment
+- now with "Better Touch Prio", touch issues in layout editing are fixed
+- fixed misspells
+
 ## v3.0.3
 - Made sure "Shared Max To Hide" defaults to 0
 - fixed misspells

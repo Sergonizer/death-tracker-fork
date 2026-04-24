@@ -4,6 +4,7 @@
 #include <nodes/DTLabel.hpp>
 #include <nodes/LayoutColumn.hpp>
 #include <nodes/FontSelectionCell.hpp>
+#include <nodes/ScrollableTextInput.hpp>
 
 using namespace geode::prelude;
 
@@ -41,7 +42,7 @@ class LayoutOptionsLayer : public CCLayer, public SliderDelegate {
         uint8_t currentPage = 0;
 
         TextInput* labelNameInput;
-        TextInput* labelTextInput;
+        ScrollableTextInput* labelTextInput;
         TextInput* fontSizeInput;
         
         void onTextColorBtnClicked(CCObject*);
@@ -77,7 +78,7 @@ class LayoutOptionsLayer : public CCLayer, public SliderDelegate {
 
         void onSpecialKeysClicked(CCObject*);
 
-        TextInput* labelTextSpecialKeysInput;
+        ScrollableTextInput* labelTextSpecialKeysInput;
         ScrollLayer* specialKeysScroll;
 
         void onSpecialKeyAdded(const std::string& str);

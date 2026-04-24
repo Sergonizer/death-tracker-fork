@@ -107,7 +107,7 @@ bool LayoutOptionsLayer::init(const CCSize& size) {
     labelNameInputLabel->setID("name-input-label");
     labelSettingsNode->addChild(labelNameInputLabel);
 
-    labelTextInput = TextInput::create((size.width - 10) / .75f, "label text");
+    labelTextInput = ScrollableTextInput::create((size.width - 10) / .75f, "label text");
     labelTextInput->setScale(.75f);
     labelTextInput->setCommonFilter(CommonFilter::Any);
     labelTextInput->setID("label-text-input");
@@ -327,19 +327,24 @@ bool LayoutOptionsLayer::init(const CCSize& size) {
         ),
         [&](const Keybind& keybind, bool down, bool repeat, double) {
             if (down && editedLabel.has_value()) {
-                TextInput* toEdit = nullptr;
-                if (labelTextInput->getInputNode()->m_selected) toEdit = labelTextInput;
-                else if (labelTextSpecialKeysInput->getInputNode()->m_selected) toEdit = labelTextSpecialKeysInput;
+                ScrollableTextInput* toEdit = nullptr;
+                bool doUpdateScrollableInput = false;
+
+                if (labelTextInput->isSelected()){
+                    toEdit = labelTextInput;
+                    doUpdateScrollableInput = true;
+                }
+                else if (labelTextSpecialKeysInput->isSelected()) toEdit = labelTextSpecialKeysInput;
                 
                 if (toEdit == nullptr) return;
 
                 auto str = std::string(toEdit->getString());
-                int pos = toEdit->getInputNode()->m_textField->m_uCursorPos;
+                int pos = toEdit->getTextInput()->getInputNode()->m_textField->m_uCursorPos;
 
                 if (pos == -1) str += "{nl}";
                 else {
                     str = str.insert(pos, "{nl}");
-                    toEdit->getInputNode()->m_textField->m_uCursorPos += 4;
+                    toEdit->getTextInput()->getInputNode()->m_textField->m_uCursorPos += 4;
                 }
 
                 toEdit->setString(str, true);
@@ -404,7 +409,7 @@ bool LayoutOptionsLayer::init(const CCSize& size) {
     fontsScroll->setMouseEnabled(false);
 
 
-    labelTextSpecialKeysInput = TextInput::create((size.width - 10) / .75f, "label text");
+    labelTextSpecialKeysInput = ScrollableTextInput::create((size.width - 10) / .75f, "label text");
     labelTextSpecialKeysInput->setScale(.75f);
     labelTextSpecialKeysInput->setCommonFilter(CommonFilter::Any);
     labelTextSpecialKeysInput->setID("label-text-input");
@@ -842,7 +847,7 @@ void LayoutOptionsLayer::onSpecialKeyAdded(const std::string& str){
     if (!editedLabel.has_value()) return;
 
     auto toEditStr = std::string(labelTextSpecialKeysInput->getString());
-    int pos = labelTextSpecialKeysInput->getInputNode()->m_textField->m_uCursorPos;
+    int pos = labelTextSpecialKeysInput->getTextInput()->getInputNode()->m_textField->m_uCursorPos;
 
     // log::info("is selected {}", labelTextSpecialKeysInput->getInputNode()->m_selected);
 
@@ -851,12 +856,12 @@ void LayoutOptionsLayer::onSpecialKeyAdded(const std::string& str){
     if (pos == -1) toEditStr += modifiedStr;
     else {
         toEditStr = toEditStr.insert(pos, modifiedStr);
-        labelTextSpecialKeysInput->getInputNode()->m_textField->m_uCursorPos += modifiedStr.length();
+        labelTextSpecialKeysInput->getTextInput()->getInputNode()->m_textField->m_uCursorPos += modifiedStr.length();
     }
 
     labelTextSpecialKeysInput->setString(toEditStr, true);
     #if !defined(GEODE_IS_MOBILE)
-    labelTextSpecialKeysInput->focus();
+    labelTextSpecialKeysInput->getTextInput()->focus();
     #endif
 }
 
@@ -869,6 +874,9 @@ void LayoutOptionsLayer::setAllInputs(CCNode* node, bool enabled){
     {
         if (auto text = typeinfo_cast<TextInput*>(child))
             text->setEnabled(enabled);
+        else if (auto scrollText = typeinfo_cast<ScrollableTextInput*>(child)){
+            scrollText->setEnabled(enabled);
+        }
     }
 }
 
