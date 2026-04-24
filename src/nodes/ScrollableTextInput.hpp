@@ -52,4 +52,5 @@ class ScrollableTextInput : public CCNode, public TextInputDelegate {
         bool enabled = true;
 
         int androidTextChangedCounter = -1;
+        bool isEmpty = false;
 };
