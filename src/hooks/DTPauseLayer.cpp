@@ -25,7 +25,13 @@ void DTPauseLayer::customSetup(){
 }
 
 void DTPauseLayer::onDTMiniMenuOpened(CCObject*){
-    auto dtLayer = DTLayer::create(StatsManager::getCurrentLevel());
+    auto level = StatsManager::getCurrentLevel();
+    if (level == nullptr) {
+        Notification::create("Error! No level data found!", NotificationIcon::Error)->show();
+        return;
+    }
+
+    auto dtLayer = DTLayer::create(level);
     dtLayer->show();
 }
 
