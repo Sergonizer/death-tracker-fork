@@ -105,6 +105,8 @@ void ScrollableTextInput::textChanged(CCTextInputNode* node){
         return;
     }
 
+    androidTextChangedCounter = -1;
+
     updateTextInput();
 
     if (onInput != NULL)
