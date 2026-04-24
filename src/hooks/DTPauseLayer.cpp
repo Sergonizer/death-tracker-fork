@@ -7,6 +7,8 @@ void DTPauseLayer::customSetup(){
 
     auto sideMenu = this->getChildByID("left-button-menu");
 
+    if (!sideMenu) return;
+
     auto s = CCSprite::createWithSpriteFrameName("GJ_plainBtn_001.png");
     auto s2 = CCSprite::createWithSpriteFrameName("miniSkull_001.png");
     s2->setPosition(s->getContentSize() / 2);
@@ -43,6 +45,10 @@ void DTPauseLayer::onNormalMode(cocos2d::CCObject* sender){
     static_cast<DTPlayLayer*>(GameManager::get()->getPlayLayer())->m_fields->currentRun.end = 0;
 
     //log::info("PauseLayer::onNormalMode()");
+    auto playLayer = GameManager::get()->getPlayLayer();
+    if (playLayer) {
+        static_cast<DTPlayLayer*>(playLayer)->m_fields->currentRun.end = 0;
+    }
 }
 
 #endif
