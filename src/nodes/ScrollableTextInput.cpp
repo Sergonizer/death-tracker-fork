@@ -95,10 +95,10 @@ void ScrollableTextInput::recreateTextInput(float extraWidth){
 
 void ScrollableTextInput::textChanged(CCTextInputNode* node){
     log::info("Text changed: {}", textInput->getString());
-    updateTextInput();
+    // updateTextInput();
 
-    if (onInput != NULL)
-        onInput(textInput->getString());
+    // if (onInput != NULL)
+    //     onInput(textInput->getString());
 }
 
 void ScrollableTextInput::textInputOpened(CCTextInputNode* node){
