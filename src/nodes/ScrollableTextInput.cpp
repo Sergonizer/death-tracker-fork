@@ -75,9 +75,11 @@ void ScrollableTextInput::recreateTextInput(float extraWidth){
     textInput = TextInput::create(newWidth <= width ? width : newWidth, placeholder.c_str(), font.c_str());
     textInput->setString(oldText);
     textInput->setDelegate(this);
+    #if !defined(GEODE_IS_MOBILE)
     if (doFocus){
         textInput->focus();
     }
+    #endif
     textInput->getInputNode()->m_textField->m_uCursorPos = oldCursorPos;
     textInput->getInputNode()->updateBlinkLabelToChar(oldCursorPos);
     textInput->setAnchorPoint({0, 0});
