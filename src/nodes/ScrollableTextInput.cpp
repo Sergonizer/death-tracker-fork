@@ -92,6 +92,7 @@ void ScrollableTextInput::recreateTextInput(float extraWidth){
 }
 
 void ScrollableTextInput::textChanged(CCTextInputNode* node){
+    #if !defined(GEODE_IS_MOBILE)
     if (androidTextChangedCounter == -1){
         androidTextChangedCounter = textInput->getString().size();
         return;
@@ -102,6 +103,7 @@ void ScrollableTextInput::textChanged(CCTextInputNode* node){
     }
 
     androidTextChangedCounter = -1;
+    #endif
 
     updateTextInput();
 

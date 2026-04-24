@@ -51,6 +51,7 @@ class ScrollableTextInput : public CCNode, public TextInputDelegate {
 
         bool enabled = true;
 
+        #if !defined(GEODE_IS_MOBILE)
         int androidTextChangedCounter = -1;
-        bool isEmpty = false;
+        #endif
 };
