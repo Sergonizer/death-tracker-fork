@@ -72,6 +72,8 @@ void ScrollableTextInput::recreateTextInput(float extraWidth){
 
     float newWidth = width + extraWidth;
 
+    log::info("Recreating text with width: {}, extraWidth: {}, oldText: {}, oldCursorPos: {}", newWidth, extraWidth, oldText, oldCursorPos);
+
     textInput = TextInput::create(newWidth <= width ? width : newWidth, placeholder.c_str(), font.c_str());
     textInput->setString(oldText);
     textInput->setDelegate(this);
@@ -92,6 +94,7 @@ void ScrollableTextInput::recreateTextInput(float extraWidth){
 }
 
 void ScrollableTextInput::textChanged(CCTextInputNode* node){
+    log::info("Text changed: {}", textInput->getString());
     updateTextInput();
 
     if (onInput != NULL)
@@ -99,10 +102,12 @@ void ScrollableTextInput::textChanged(CCTextInputNode* node){
 }
 
 void ScrollableTextInput::textInputOpened(CCTextInputNode* node){
+    log::info("Text input opened");
     isFocused = true;
 }
 
 void ScrollableTextInput::textInputClosed(CCTextInputNode* node){
+    log::info("Text input closed");
     isFocused = false;
 }
 
