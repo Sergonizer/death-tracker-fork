@@ -50,4 +50,6 @@ class ScrollableTextInput : public CCNode, public TextInputDelegate {
         geode::Function<void(std::string const&)> onInput = NULL;
 
         bool enabled = true;
+
+        int androidTextChangedCounter = -1;
 };

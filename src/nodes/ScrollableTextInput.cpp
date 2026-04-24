@@ -95,10 +95,20 @@ void ScrollableTextInput::recreateTextInput(float extraWidth){
 
 void ScrollableTextInput::textChanged(CCTextInputNode* node){
     log::info("Text changed: {}", textInput->getString());
-    // updateTextInput();
 
-    // if (onInput != NULL)
-    //     onInput(textInput->getString());
+    if (androidTextChangedCounter == -1){
+        androidTextChangedCounter = textInput->getString().size();
+        return;
+    }
+    else if (androidTextChangedCounter > 0){
+        androidTextChangedCounter--;
+        return;
+    }
+
+    updateTextInput();
+
+    if (onInput != NULL)
+        onInput(textInput->getString());
 }
 
 void ScrollableTextInput::textInputOpened(CCTextInputNode* node){
