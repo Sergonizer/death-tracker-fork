@@ -1,9 +1,12 @@
 # Changelog
 
+## v3.0.5
+- Fixed crash to do with unicode paths
+
 ## v3.0.4
 - Fixed session groups not being time zone relative
 - Fixed crash on level complete screen
-- Added scrollable text input for easier layout managment
+- Added scrollable text input for easier layout management
 - now with "Better Touch Prio", touch issues in layout editing are fixed
 - fixed misspells
 

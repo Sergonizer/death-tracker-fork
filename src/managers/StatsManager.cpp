@@ -223,7 +223,7 @@ Result<BackupLevelData> StatsManager::getBackupData(const std::string& levelKey,
         for (const auto& entry : std::filesystem::directory_iterator(levelSaveFilePath / StatsManager::SESSIONS_DIR_NAME)) {
             if (entry.is_directory()) continue;
 
-            auto numRes = geode::utils::numFromString<long long>(entry.path().filename().string());
+            auto numRes = geode::utils::numFromString<long long>(geode::utils::string::pathToString(entry.path().filename()));
             if (numRes.isErr()) continue;
 
             sessionDates.insert(numRes.unwrap());
@@ -249,8 +249,6 @@ Result<> StatsManager::setMetadata(const LevelMetadeta& stats, const std::string
     auto indentation = Dev::MINIFY_SAVE_FILE
         ? matjson::NO_INDENTATION
         : 4;
-
-    // log::info("attempted path: {}", levelSaveFilePath.string());
 
     auto jsonStr = matjson::Value(stats).dump(indentation);
     GEODE_UNWRAP(file::writeString(levelSaveFilePath, jsonStr));
@@ -404,8 +402,6 @@ void StatsManager::createFilesIfNeeded(const std::string& levelKey){
     (void)geode::utils::file::createDirectory(getSavesFolderPath());
 
     auto levelSaveFilePath = getSavesFolderPath() / levelKey;
-
-    // log::info("attempting to create level folder at {}", levelSaveFilePath.string());
 
     auto lvlSavesDirRes = geode::utils::file::createDirectory(levelSaveFilePath);
     if (lvlSavesDirRes.isErr())
@@ -742,7 +738,7 @@ Result<> StatsManager::deleteLevelStats(const std::string& levelKey){
         return Ok();
     }
 
-    return Err("Cant delete stats because level save file does not exist: " + levelSaveFilePath.string());
+    return Err("Cant delete stats because level save file does not exist: " + geode::utils::string::pathToString(levelSaveFilePath));
 }
 
 Result<> StatsManager::deleteBackup(const std::string& levelKey, long long backupName){
@@ -753,7 +749,7 @@ Result<> StatsManager::deleteBackup(const std::string& levelKey, long long backu
         return Ok();
     }
 
-    return Err("Cant delete backup because level save file does not exist: " + levelSaveFilePath.string());
+    return Err("Cant delete backup because level save file does not exist: " + geode::utils::string::pathToString(levelSaveFilePath));
 }
 
 Result<> StatsManager::deleteAllSessions(const std::string& levelKey){
@@ -764,7 +760,7 @@ Result<> StatsManager::deleteAllSessions(const std::string& levelKey){
         return Ok();
     }
 
-    return Err("Cant delete sessions because level save file does not exist: " + levelSaveFilePath.string());
+    return Err("Cant delete sessions because level save file does not exist: " + geode::utils::string::pathToString(levelSaveFilePath));
 }
 
 Result<std::tuple<NewBests, int>> StatsManager::calcNewBests(GJGameLevel* const& level) {
@@ -828,7 +824,7 @@ Result<std::vector<std::pair<std::string, LevelMetadeta>>> StatsManager::getAllL
     for (int i = 0; i < allLevels.size(); i++)
     {
         if (std::filesystem::is_directory(allLevels[i])){
-            auto currentDirName = allLevels[i].parent_path().string();
+            auto currentDirName = geode::utils::string::pathToString(allLevels[i].parent_path());
             // log::info("Getting level stats for level: {}", currentDirName);
 
             auto currentLevel = StatsManager::getMetadata(currentDirName);
@@ -998,7 +994,7 @@ std::set<long long> StatsManager::getAllSessionTimesForLevel(const std::filesyst
     for (const auto& entry : std::filesystem::directory_iterator(levelSaveFilePath)) {
         if (!entry.is_regular_file() || entry.path().extension() != ".dt") continue;
 
-        auto numRes = geode::utils::numFromString<long long>(entry.path().filename().string());
+        auto numRes = geode::utils::numFromString<long long>(geode::utils::string::pathToString(entry.path().filename()));
         if (numRes.isErr()) continue;
 
         toReturn.insert(numRes.unwrap());
@@ -1017,7 +1013,7 @@ std::set<long long> StatsManager::getBackupsCount(const std::string& levelKey){
     for (const auto& entry : std::filesystem::directory_iterator(levelSaveFilePath)) {
         if (!entry.is_directory()) continue;
 
-        auto numRes = geode::utils::numFromString<long long>(entry.path().filename().string());
+        auto numRes = geode::utils::numFromString<long long>(geode::utils::string::pathToString(entry.path().filename()));
         if (numRes.isErr()) continue;
 
         toReturn.insert(numRes.unwrap());
@@ -1138,7 +1134,7 @@ std::vector<std::string> StatsManager::allV2FileLevelKeys(){
     for (const auto& entry : std::filesystem::directory_iterator(getSavesFolderPath())){
         if (!entry.is_regular_file() || entry.path().extension() != ".json") continue;
 
-        toReturn.push_back(entry.path().stem().string());
+        toReturn.push_back(geode::utils::string::pathToString(entry.path().stem()));
     }
 
     return toReturn;
@@ -1150,7 +1146,7 @@ std::vector<std::string> StatsManager::allV3FileLevelKeys(){
     for (const auto& entry : std::filesystem::directory_iterator(getSavesFolderPath())){
         if (!entry.is_directory()) continue;
 
-        toReturn.push_back(entry.path().stem().string());
+        toReturn.push_back(geode::utils::string::pathToString(entry.path().stem()));
     }
 
     return toReturn;
