@@ -7,75 +7,6 @@ using namespace geode::prelude;
 $execute {
     (void)file::createDirectory(Mod::get()->getSaveDir() / "levels");
 
-    auto oldLayout = Save::getOldLayout();
-
-    if (oldLayout.size()){
-        // DTLayoutV3 v3Layout{};
-
-        // v3Layout.columns.push_back(DTColumnInfo{
-        //     .orderPos = 0,
-        //     .currentWidth = 205
-        // });
-        // v3Layout.columns.push_back(DTColumnInfo{
-        //     .orderPos = 1,
-        //     .currentWidth = 205
-        // });
-        
-        // std::map<V2LabelLayout*, std::pair<bool, bool>> labelsOrganized{};
-
-        // std::map<int, std::pair<V2LabelLayout*, V2LabelLayout*>> labelsInLine{};
-
-        // for (int i = 0; i < oldLayout.size(); i++)
-        // {
-        //     if (!labelsInLine.contains(oldLayout[i].line)){
-        //         labelsInLine.insert({oldLayout[i].line, {&oldLayout[i], nullptr}});
-        //         continue;
-        //     }
-        //     else{
-        //         labelsInLine[oldLayout[i].line].second = &oldLayout[i];
-        //     }
-        // }
-
-        // for (const auto& [line, lineLabels] : labelsInLine)
-        // {
-        //     if (lineLabels.second == nullptr){
-        //         labelsOrganized.insert({lineLabels.first, {true, true}});
-        //     }
-        //     else{
-        //         bool isFirstOnLeft = lineLabels.first->position == 0;
-                
-        //         labelsOrganized.insert({lineLabels.first, {isFirstOnLeft, !isFirstOnLeft}});
-        //         labelsOrganized.insert({lineLabels.second, {!isFirstOnLeft, isFirstOnLeft}});
-        //     }
-        // }
-        
-        // for (const auto& [label, whichColumn] : labelsOrganized)
-        // {
-        //     DTLabelInfo labelInfo{};
-
-        //     labelInfo.layer = label->line;
-        //     labelInfo.textColor = label->color;
-        //     labelInfo.labelColor = label->color;
-        //     labelInfo.font = StatsManager::getFont(label->font);
-        //     labelInfo.labelName = label->labelName;
-        //     labelInfo.scale = label->fontSize;
-        //     labelInfo.text = label->text;
-
-        //     if (!whichColumn.first && whichColumn.second){
-        //         labelInfo.minPlacementRange = 1;
-        //         labelInfo.maxPlacementRange = 1;
-        //     }
-        //     else if (whichColumn.first && whichColumn.second){
-        //         labelInfo.maxPlacementRange = 1;
-        //     }   
-
-        //     v3Layout.labels.push_back(labelInfo);
-        // }
-        
-        // Save::setLayout(v3Layout);
-        // Save::setOldLayout({});
-    }
-
     if (Save::getLayout().isEmpty()){
         Save::setLayout(Save::getDefaultLayout());
 
@@ -139,9 +70,6 @@ $execute {
         Save::setNewBestColor({255, 255, 0});
         Save::setSessionBestColor({ 255, 136, 0 });
     }
-
-    StatsManager::getSavesFolderPath() = Settings::getSavePath();
-    
 };
 
 $on_mod(Loaded){
