@@ -3306,39 +3306,6 @@ UpdateFuture DTLayer::getAttemptsFor(geode::Function<unsigned long long(GeneralD
     co_return Ok(std::to_string(attempts));
 }
 
-template<class T>
-GetTFuture<T> DTLayer::getTFor(geode::Function<T(GeneralData const&)>&& dataGetter, geode::Function<T(T const&, T const&)>&& combineFunc, bool session){
-    if (!session){
-        if (m_MyLevelStats.isErr()) co_return Err("Failed to calculate playtime");
-        auto myStats = m_MyLevelStats.unwrap();
-        if (myStats.from0.isErr()) co_return Err("No deaths saved!");
-        auto myFrom0Stats = myStats.from0.unwrap();
-
-        auto linkedLevelsCopy = linkedLevelsData;
-
-        T all = dataGetter(myFrom0Stats);
-
-        for (const auto& levelData : linkedLevelsCopy)
-        {
-            co_await arc::yield();
-            if (levelData.from0.isErr() || levelData.levelKey == myStats.levelKey) continue;
-            auto levelFrom0Stats = levelData.from0.unwrap();
-            all = combineFunc(all, dataGetter(levelFrom0Stats));
-        }
-
-        co_return Ok(all);
-    }
-    else{
-        auto sessionRes = loadSessionFromSave();
-        if (sessionRes.isErr()) co_return Err("{}", sessionRes.unwrapErr());
-        auto session = sessionRes.unwrap();
-
-        co_await arc::yield();
-
-        co_return Ok(dataGetter(session.data));
-    }
-}
-
 SessionCategory& DTLayer::getCurrentGrouping(){
     if (m_MyLevelStats.isErr()) return sessionsOrder;
     auto& myStats = m_MyLevelStats.unwrap();

@@ -1,5 +1,4 @@
 #include <nodes/DTGraphNode.hpp>
-#include <nodes/layers/DTLayer.hpp>
 
 DTGraphNode* DTGraphNode::create() {
     auto ret = new DTGraphNode();
@@ -83,8 +82,6 @@ void DTGraphNode::updateDeaths(){
     default:
         break;
     }
-
-    updateGraphContent();
 }
 
 void DTGraphNode::updateGraphContent(){
@@ -97,11 +94,19 @@ void DTGraphNode::updateGraphContent(){
         return;
     }
 
-    auto runStartRes = StatsManager::splitRunKey(deaths.begin()->first);
-    if (runStartRes.isErr()) return;
     float RunStartPercent = 0;
-    if (runStartRes.unwrap().start != -1)
-        RunStartPercent = runStartRes.unwrap().start;
+    bool hasRunStart = false;
+    for (const auto& death : deaths) {
+        auto runStartRes = StatsManager::splitRunKey(death.first);
+        if (runStartRes.isErr()) continue;
+        auto start = runStartRes.unwrap().start;
+        if (start != -1) {
+            if (!hasRunStart || start < RunStartPercent) {
+                RunStartPercent = start;
+                hasRunStart = true;
+            }
+        }
+    }
 
     points.clear();
 
@@ -203,7 +208,7 @@ void DTGraphNode::updateGraphContent(){
                 if (!firstPercentPoint){
 
 
-                    if (!secondPercentPoint){
+                        if (!secondPercentPoint && firstAfterSecondPointIndex != -1){
                         points.insert(std::next(points.begin(), firstAfterSecondPointIndex + 1), ccp((firstAfterSecondPoint - 1) * scaling.width, 100 * scaling.height));
                         added++;
                     }
@@ -236,10 +241,13 @@ void DTGraphNode::updateGraphContent(){
                 percentageDeaths.emplace(percentageDeaths.begin(), RunStartPercentTemp, overallCount);
             }
             
-            if (percentageDeaths[percentageDeaths.size() - 1].first < 100){
-                percentageDeaths.emplace_back(percentageDeaths[percentageDeaths.size() - 1].first + 1, 0);
+            if (percentageDeaths.back().first < 100){
+                int nextPercent = percentageDeaths.back().first + 1;
+                if (nextPercent <= 100) {
+                    percentageDeaths.emplace_back(nextPercent, 0);
+                }
 
-                if (percentageDeaths[percentageDeaths.size() - 1].first != 100)
+                if (percentageDeaths.back().first != 100)
                     percentageDeaths.emplace_back(100, 0);
             }
         }
@@ -303,59 +311,61 @@ void DTGraphNode::updateGraphContent(){
 }
 
 void DTGraphNode::getGeneralDeaths(){
-    if (DTLayer::get()->m_MyLevelStats.isErr()) return;
-    auto& myStats = DTLayer::get()->m_MyLevelStats.unwrap();
-    if (myStats.from0.isErr()) return;
-    auto& myFrom0Stats = myStats.from0.unwrap();
-
-    Deaths sharedDeaths;
-    StatsManager::mergeMapsAdd(sharedDeaths, myFrom0Stats.deaths);
-
-    for (const auto& levelData : DTLayer::get()->linkedLevelsData)
-    {
-        if (levelData.from0.isErr()) continue;
-        auto& levelFrom0Stats = levelData.from0.unwrap();
-
-        StatsManager::mergeMapsAdd(sharedDeaths, levelFrom0Stats.deaths);
-    }
-
-    this->deaths = sharedDeaths;
+    getDeathsAsync(
+        [](GeneralData const& data){ return data.deaths; },
+        false
+    );
 }
 
 void DTGraphNode::getGeneralRuns(){
-    if (DTLayer::get()->m_MyLevelStats.isErr()) return;
-    auto& myStats = DTLayer::get()->m_MyLevelStats.unwrap();
-    if (myStats.from0.isErr()) return;
-    auto& myFrom0Stats = myStats.from0.unwrap();
-
-    Deaths sharedDeaths;
-    StatsManager::mergeMapsAdd(sharedDeaths, myFrom0Stats.runs);
-
-    for (const auto& levelData : DTLayer::get()->linkedLevelsData)
-    {
-        if (levelData.from0.isErr()) continue;
-        auto& levelFrom0Stats = levelData.from0.unwrap();
-
-        StatsManager::mergeMapsAdd(sharedDeaths, levelFrom0Stats.runs);
-    }
-
-    this->deaths = sharedDeaths;
+    getDeathsAsync(
+        [](GeneralData const& data){ return data.runs; },
+        false
+    );
 }
 
 void DTGraphNode::getSessionDeaths(){
     if (!sessionToShow.has_value()){
-        this->deaths.clear();
+        onDeathsUpdated(Err("no session"));
         return;
     }
 
-    this->deaths = sessionToShow.value().data.deaths;
+    onDeathsUpdated(Ok(sessionToShow.value().data.deaths));
 }
 
 void DTGraphNode::getSessionRuns(){
     if (!sessionToShow.has_value()){
-        this->deaths.clear();
+        onDeathsUpdated(Err("no session"));
         return;
     }
 
-    this->deaths = sessionToShow.value().data.runs;
+    onDeathsUpdated(Ok(sessionToShow.value().data.runs));
+}
+
+
+void DTGraphNode::onDeathsUpdated(GetTFuture<Deaths>::Output deaths){
+    if (deaths.isErr()){
+        log::error("Failed to get deaths for graph {}: {}", info.value().name, deaths.unwrapErr());
+        this->deaths.clear();
+    }
+    else{
+        this->deaths = std::move(deaths).unwrap();
+    }
+
+    updateGraphContent();
+}
+
+void DTGraphNode::getDeathsAsync(geode::Function<Deaths(GeneralData const&)>&& dataGetter, bool session){
+    getDeathsListener.cancel();
+    getDeathsListener.spawn(DTLayer::get()->getTFor<Deaths>(
+        std::move(dataGetter),
+        [](Deaths const& a, Deaths const& b){
+            auto map = a;
+            StatsManager::mergeMapsAdd(map, b);
+            return map;
+        }, session),
+        [&](GetTFuture<Deaths>::Output out){
+            onDeathsUpdated(std::move(out));
+        }
+    );
 }
