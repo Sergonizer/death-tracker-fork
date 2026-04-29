@@ -1,5 +1,13 @@
 # Changelog
 
+## v3.0.6
+- Removed the keyword "Error:" from some things that shouldt have it
+- Extra safty protocols for corrupted saves
+- Remove Invalid Runs button added to the modify tab
+- Small changes to default graph and label layout
+- Made backup creating and reverting safer
+- Added a counter showing the amount of hidden runs according to your settings
+
 ## v3.0.5
 - Fixed crash to do with unicode paths
 
