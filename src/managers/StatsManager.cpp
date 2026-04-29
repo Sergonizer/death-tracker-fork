@@ -315,6 +315,7 @@ Result<> StatsManager::setGeneral(const GeneralData& stats, const std::string& l
 
 Result<> StatsManager::addBackup(const std::string& levelKey, bool saveLevelStats, std::optional<int> sessionsToSave){
     //log::info("adding backup for level {} | {} | {}", levelKey, saveLevelStats, sessionsToSave);
+    std::error_code ec;
     auto metaRes = getMetadata(levelKey);
     if (metaRes.isErr()) return Err("No level to back up! {}", metaRes.unwrapErr());
     auto metadata = metaRes.unwrap();
@@ -341,8 +342,8 @@ Result<> StatsManager::addBackup(const std::string& levelKey, bool saveLevelStat
             return Err("backup failed! failed to read general stats");
         }
 
-        if (!std::filesystem::copy_file(getSavesFolderPath() / levelKey / StatsManager::FROM0_FILE_NAME, levelBackupsFilePath / StatsManager::FROM0_FILE_NAME, std::filesystem::copy_options::overwrite_existing))
-            return Err("Failed to backup level stats!");
+        std::filesystem::copy_file(getSavesFolderPath() / levelKey / StatsManager::FROM0_FILE_NAME, levelBackupsFilePath / StatsManager::FROM0_FILE_NAME, std::filesystem::copy_options::overwrite_existing, ec);
+        if (ec) return Err("Failed to backup level stats: {}", ec.message());
     }
 
     auto backupsAmount = Settings::getMaxBackupAmount();
@@ -390,12 +391,13 @@ Result<> StatsManager::addBackup(const std::string& levelKey, bool saveLevelStat
                 continue;
             }
 
-            if (!std::filesystem::copy_file(
+            std::filesystem::copy_file(
                 getSavesFolderPath() / levelKey / StatsManager::SESSIONS_DIR_NAME / (std::to_string(sessionTime) + ".dt"), 
                 levelBackupsFilePath / (std::to_string(sessionTime) + ".dt"), 
-                std::filesystem::copy_options::overwrite_existing
-            ))
-                return Err("Failed to backup session {}", sessionTime);
+                std::filesystem::copy_options::overwrite_existing,
+                ec
+            );
+            if (ec) return Err("Failed to backup session {}: {}", sessionTime, ec.message());
 
             index++;
         }
@@ -783,8 +785,10 @@ bool StatsManager::hasPlayedLevel() {
 Result<> StatsManager::deleteLevelStats(const std::string& levelKey){
     auto levelSaveFilePath = getSavesFolderPath() / levelKey;
 
-    if (std::filesystem::is_directory(levelSaveFilePath)){
-        if (std::filesystem::remove_all(levelSaveFilePath) == static_cast<std::uintmax_t>(-1)) return Err("Failed to delete stats folder!");
+    std::error_code ec;
+    if (std::filesystem::is_directory(levelSaveFilePath, ec)){
+        std::filesystem::remove_all(levelSaveFilePath, ec);
+        if (ec) return Err("Failed to delete stats folder: {}", ec.message());
         return Ok();
     }
 
@@ -794,8 +798,10 @@ Result<> StatsManager::deleteLevelStats(const std::string& levelKey){
 Result<> StatsManager::deleteBackup(const std::string& levelKey, long long backupName){
     auto levelSaveFilePath = getSavesFolderPath() / levelKey / StatsManager::BACKUPS_DIR_NAME / std::to_string(backupName);
 
-    if (std::filesystem::is_directory(levelSaveFilePath)){
-        if (std::filesystem::remove_all(levelSaveFilePath) == static_cast<std::uintmax_t>(-1)) return Err("Failed to delete backup {}!", backupName);
+    std::error_code ec;
+    if (std::filesystem::is_directory(levelSaveFilePath, ec)){
+        std::filesystem::remove_all(levelSaveFilePath, ec);
+        if (ec) return Err("Failed to delete backup {}: {}", backupName, ec.message());
         return Ok();
     }
 
@@ -805,8 +811,10 @@ Result<> StatsManager::deleteBackup(const std::string& levelKey, long long backu
 Result<> StatsManager::deleteAllSessions(const std::string& levelKey){
     auto levelSaveFilePath = getSavesFolderPath() / levelKey / StatsManager::SESSIONS_DIR_NAME;
 
-    if (std::filesystem::is_directory(levelSaveFilePath)){
-        if (std::filesystem::remove_all(levelSaveFilePath) == static_cast<std::uintmax_t>(-1)) return Err("Failed to delete sessions folder!");
+    std::error_code ec;
+    if (std::filesystem::is_directory(levelSaveFilePath, ec)){
+        std::filesystem::remove_all(levelSaveFilePath, ec);
+        if (ec) return Err("Failed to delete sessions folder: {}", ec.message());
         return Ok();
     }
 
@@ -1092,13 +1100,16 @@ Result<> StatsManager::reveretBackupSessions(const std::string& levelKey, long l
     auto bakupSessionDirPath = getSavesFolderPath() / levelKey / StatsManager::BACKUPS_DIR_NAME / std::to_string(backupName) / StatsManager::SESSIONS_DIR_NAME;
     auto sessionDirPath = getSavesFolderPath() / levelKey / StatsManager::SESSIONS_DIR_NAME;
 
-    if (!std::filesystem::exists(bakupSessionDirPath)) return Err("No sessions backup found!");
+    std::error_code ec;
+    if (!std::filesystem::exists(bakupSessionDirPath, ec)) return Err("No sessions backup found!");
 
-    if (std::filesystem::exists(sessionDirPath)){
-        if (std::filesystem::remove_all(sessionDirPath) == static_cast<std::uintmax_t>(-1)) return Err("Failed to delete current sessions folder!");
+    if (std::filesystem::exists(sessionDirPath, ec)){
+        std::filesystem::remove_all(sessionDirPath, ec);
+        if (ec) return Err("Failed to delete current sessions folder: {}", ec.message());
     }
 
-    std::filesystem::copy(bakupSessionDirPath, sessionDirPath, std::filesystem::copy_options::recursive | std::filesystem::copy_options::overwrite_existing);
+    std::filesystem::copy(bakupSessionDirPath, sessionDirPath, std::filesystem::copy_options::recursive | std::filesystem::copy_options::overwrite_existing, ec);
+    if (ec) return Err("Failed to revert sessions: {}", ec.message());
 
     return Ok();
 }
@@ -1166,11 +1177,15 @@ Result<> StatsManager::convertV2SaveToV3(const std::string& levelKey){
         if (setSession(v3Session, levelKey, v3Session.sessionStartDate, false).isErr()) return Err("Failed to write V3 session! session sd: {}", v3Session.sessionStartDate);
     }
 
-    if (!std::filesystem::remove(v2Path)) return Err("Failed to erase old data!");
+    std::error_code ec;
+    std::filesystem::remove(v2Path, ec);
+    if (ec) return Err("Failed to erase old data: {}", ec.message());
+
     auto backupPath = getSavesFolderPath() / (levelKey + ".deathsBackup");
 
-    if (std::filesystem::exists(backupPath)){
-        if (!std::filesystem::remove(backupPath)) return Err("Failed to delete backup old data!");
+    if (std::filesystem::exists(backupPath, ec)){
+        std::filesystem::remove(backupPath, ec);
+        if (ec) return Err("Failed to delete backup old data: {}", ec.message());
     }
 
     return Ok();
