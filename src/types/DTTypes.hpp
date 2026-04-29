@@ -426,6 +426,7 @@ struct LevelData {
 };
 
 struct BackupLevelData {
+    std::optional<LevelMetadeta> meta;
     std::optional<GeneralData> from0 = std::nullopt;
     std::optional<std::set<long long>> sessionNames = std::nullopt;
     long long backupDate;

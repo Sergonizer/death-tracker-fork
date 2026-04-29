@@ -7,6 +7,8 @@
 - Small changes to default graph and label layout
 - Made backup creating and reverting safer
 - Added a counter showing the amount of hidden runs according to your settings
+- Made graph data appear lower down on mobile devices se it is seen
+- Fixed some people having the old Seconds session method
 
 ## v3.0.5
 - Fixed crash to do with unicode paths

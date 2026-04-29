@@ -291,22 +291,25 @@ void SaveOptions::createChoiceAlert(const std::string& title, const std::string&
 }
 
 void SaveOptions::onBackupRevert(BackupCell* cell){
-    if (DTLayer::get()->m_MyLevelStats.isErr()) return;
-
     if (cell->getBackupData() == nullptr) return;
 
     createChoiceAlert("WARNING!", "Reverting to this backup will overwrite your current death tracker save for this level.\nAre you sure you want to do this?", "No", "Yes", [&, cell](bool btn2){
         if (btn2){
+            Result<> metaRes = Ok();
             Result<> generalRes = Ok();
             Result<> sessionsRes = Ok();
 
+            if (cell->getBackupData()->meta.has_value())
+                metaRes = StatsManager::setMetadata(cell->getBackupData()->meta.value(), cell->getLevelKey());
             if (cell->getBackupData()->from0.has_value())
                 generalRes = StatsManager::setGeneral(cell->getBackupData()->from0.value(), cell->getLevelKey());
             if (cell->getBackupData()->sessionNames.has_value()){
                 sessionsRes = StatsManager::reveretBackupSessions(cell->getLevelKey(), cell->getBackupTime());
             }
 
-            if (generalRes.isErr() || sessionsRes.isErr()){
+            if (generalRes.isErr() || sessionsRes.isErr() || metaRes.isErr()){
+                if (metaRes.isErr())
+                    log::error("{}", metaRes.unwrapErr());
                 if (generalRes.isErr())
                     log::error("{}", generalRes.unwrapErr());
                 if (sessionsRes.isErr())
@@ -322,8 +325,6 @@ void SaveOptions::onBackupRevert(BackupCell* cell){
     });
 }
 void SaveOptions::onBackupDelete(BackupCell* cell){
-    if (DTLayer::get()->m_MyLevelStats.isErr()) return;
-
     createChoiceAlert("WARNING!", "Deleting this backup is irreversible.\nAre you sure you want to do this?", "No", "Yes", [&, cell](bool btn2){
         if (btn2){
             auto deleteBackupRes = StatsManager::deleteBackup(cell->getLevelKey(), cell->getBackupTime());
@@ -340,13 +341,13 @@ void SaveOptions::onBackupDelete(BackupCell* cell){
 void SaveOptions::updateBackupsList(){
     backupsScrollLayer->m_contentLayer->removeAllChildren();
 
-    if (DTLayer::get()->m_MyLevelStats.isOk()){
-        auto& stats = DTLayer::get()->m_MyLevelStats.unwrap();
+    auto lvlKey = StatsManager::getLevelKey(DTLayer::get()->m_Level);
 
-        auto backupsList = StatsManager::getBackupsCount(stats.levelKey);
+    if (lvlKey.isOk()){
+        auto backupsList = StatsManager::getBackupsCount(lvlKey.unwrap());
         int z = 0;
         for (const auto& backupTime : backupsList){
-            auto cell = BackupCell::create(backupsScrollLayer->getContentWidth() - 5, stats.levelKey, backupTime);
+            auto cell = BackupCell::create(backupsScrollLayer->getContentWidth() - 5, lvlKey.unwrap(), backupTime);
             cell->onRevertCallback = std::bind(&SaveOptions::onBackupRevert, this, std::placeholders::_1);
             cell->onDeleteCallback = std::bind(&SaveOptions::onBackupDelete, this, std::placeholders::_1);
             backupsScrollLayer->m_contentLayer->addChild(cell);
@@ -358,6 +359,7 @@ void SaveOptions::updateBackupsList(){
             cell->setZOrder(z++);
         }
     }
+    
 
     backupsScrollLayer->m_contentLayer->updateLayout();
     backupsScrollLayer->moveToTop();

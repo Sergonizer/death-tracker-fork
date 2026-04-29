@@ -213,6 +213,16 @@ Result<BackupLevelData> StatsManager::getBackupData(const std::string& levelKey,
     if (!std::filesystem::exists(levelSaveFilePath))
         return Err("1 (no stats exist for backup!)");
 
+    if (std::filesystem::exists(levelSaveFilePath / StatsManager::METADATA_FILE_NAME)){
+        auto levelStatsJsonRes = file::readJson(levelSaveFilePath / StatsManager::METADATA_FILE_NAME);
+        if (levelStatsJsonRes.isErr()) return Err("Failed to get backup level stats!");
+        auto levelStatsJson = levelStatsJsonRes.unwrap();
+        
+        auto metaJsonObjRes = levelStatsJson.as<LevelMetadeta>();
+        if (metaJsonObjRes.isErr()) return Err("Failed to get backup metadata!");
+        data.meta = metaJsonObjRes.unwrap();
+    }
+
     if (std::filesystem::exists(levelSaveFilePath / StatsManager::FROM0_FILE_NAME)){
         auto levelStatsJsonRes = file::readJson(levelSaveFilePath / StatsManager::FROM0_FILE_NAME);
         if (levelStatsJsonRes.isErr()) return Err("Failed to get backup level stats!");
@@ -363,6 +373,9 @@ Result<> StatsManager::addBackup(const std::string& levelKey, bool saveLevelStat
             }
         }
     }
+
+    std::filesystem::copy_file(getSavesFolderPath() / levelKey / StatsManager::METADATA_FILE_NAME, levelBackupsFilePath / StatsManager::METADATA_FILE_NAME, std::filesystem::copy_options::overwrite_existing, ec);
+    if (ec) return Err("Failed to backup level metadata: {}", ec.message());
 
     if (sessionsToSave == std::nullopt) return Ok();
 
