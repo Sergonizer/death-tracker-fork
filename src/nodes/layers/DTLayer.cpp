@@ -1185,8 +1185,9 @@ void DTLayer::updateStaticGroupings(){
 bool DTLayer::createDeathsString(const Deaths& deaths, const stringCustomazations& custom, std::string& out, std::optional<NewBests> const newBests, const ccColor3B& newBestColoring, bool ignoreExtraSettings){
     out = "";
     if (m_MyLevelStats.isErr()) return false;
+    auto& stats = m_MyLevelStats.unwrap();
 
-    auto toReturn = createDeathsString(deaths, m_MyLevelStats.unwrap().metadata, custom, out, newBests, newBestColoring, ignoreExtraSettings);
+    auto toReturn = createDeathsString(deaths, stats.metadata, custom, out, newBests, newBestColoring, ignoreExtraSettings);
 
     return toReturn;
 }
@@ -2768,8 +2769,8 @@ UpdateFuture DTLayer::onAPTSRUNSKey(){
     co_return Ok(StatsManager::workingTime(calcPlaytime(runs)));
 }
 
-Result<Session> DTLayer::loadSessionFromSave(std::optional<int> sessionIndex){
-    if (!getCurrentGrouping().grouping.size()) return Err("No sessions saved!");
+Result<Session, UpdateFutureError> DTLayer::loadSessionFromSave(std::optional<int> sessionIndex){
+    if (!getCurrentGrouping().grouping.size()) return Err(UpdateFutureError("No sessions saved!", false));
     int i = sessionIndex.has_value() ? sessionIndex.value() : sessionSelector->getCurrentCount();
 
     if (i == 0 || i > getCurrentGrouping().grouping.size())
@@ -2778,7 +2779,7 @@ Result<Session> DTLayer::loadSessionFromSave(std::optional<int> sessionIndex){
     auto it = getCurrentGrouping().grouping.begin();
     std::advance(it, i - 1);
 
-    Result<Session> sess = Err("");
+    Result<Session, UpdateFutureError> sess = Err("");
 
     for (const auto& [SDate, lvlKeys] : it->second.group)
     {
@@ -2805,7 +2806,7 @@ Result<Session> DTLayer::loadSessionFromSave(std::optional<int> sessionIndex){
         auto& sessRef = sess.unwrap();
         sessRef.groupID = it->first;
     }
-        
+    
     return sess;
 }
 
@@ -3321,7 +3322,7 @@ SessionCategory& DTLayer::getCurrentGrouping(){
 
 UpdateFuture DTLayer::onSessionDateKey(){
     auto sessionRes = loadSessionFromSave();
-    if (sessionRes.isErr()) co_return Err("{}", sessionRes.unwrapErr());
+    if (sessionRes.isErr()) co_return Err(sessionRes.unwrapErr());
 
     auto session = sessionRes.unwrap();
 

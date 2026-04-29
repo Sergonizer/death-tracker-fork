@@ -31,9 +31,9 @@ std::set<std::string> StatsManager::m_playedLevels{};
 bool StatsManager::m_scheduleCreateNewSession = false;
 
 GJGameLevel* StatsManager::currentLevel = nullptr;
-GeneralData StatsManager::currentFrom0{};
-LevelMetadeta StatsManager::currentMetadata{};
-Session StatsManager::currentSession{};
+std::optional<GeneralData> StatsManager::currentFrom0{};
+std::optional<LevelMetadeta> StatsManager::currentMetadata{};
+std::optional<Session> StatsManager::currentSession{};
 
 const std::string StatsManager::METADATA_FILE_NAME = "metadata";
 const std::string StatsManager::FROM0_FILE_NAME = "general.dt";
@@ -149,9 +149,12 @@ Result<Session> StatsManager::getSession(const std::filesystem::path& path, long
     if (!std::filesystem::exists(levelSaveFilePath))
         return Err("1 (no stats exist for level!)");
 
-    GEODE_UNWRAP_INTO(auto json, file::readJson(levelSaveFilePath));
+    auto sessionRes = file::readJson(levelSaveFilePath);
+    if (sessionRes.isErr()) return Err("Session Corrupted");
+    auto session = sessionRes.unwrap().as<Session>();
+    if (session.isErr()) return Err("Session Corrupted");
         
-    return json.as<Session>();
+    return session;
 }
 
 Result<GeneralData> StatsManager::getGeneral(GJGameLevel* const level){
@@ -165,12 +168,15 @@ Result<GeneralData> StatsManager::getGeneral(const std::string& levelKey){
 Result<GeneralData> StatsManager::getGeneral(const std::filesystem::path& path){
     auto levelSaveFilePath = path / StatsManager::FROM0_FILE_NAME;
 
-    if (!std::filesystem::exists(levelSaveFilePath))
-        return Err("1 (no stats exist for level!)");
+    if (!std::filesystem::exists(levelSaveFilePath) || std::filesystem::is_empty(levelSaveFilePath))
+        return Err("1(no stats exist for level!)");
 
-    GEODE_UNWRAP_INTO(auto json, file::readJson(levelSaveFilePath));
+    auto jsonRes = file::readJson(levelSaveFilePath);
+    if (jsonRes.isErr()) return Err("Save Corrupted");
+    auto genDataRes = jsonRes.unwrap().as<GeneralData>();
+    if (genDataRes.isErr()) return Err("Save Corrupted");
         
-    return json.as<GeneralData>();
+    return genDataRes;
 }
 
 Result<LevelData> StatsManager::getLevelData(GJGameLevel* const level){
@@ -436,21 +442,28 @@ void StatsManager::setCurrentLevel(GJGameLevel* const& level){
 
     if (metadataRes.isErr()){
         currentLevel = nullptr;
-        currentFrom0 = GeneralData{};
-        currentSession = Session{};
-        currentMetadata = LevelMetadeta{};
+        currentFrom0 = std::nullopt;
+        currentSession = std::nullopt;
+        currentMetadata = std::nullopt;
         log::error("Failed to apply current level stats as main stats ({})", metadataRes.unwrapErr());
         return;
     }
 
     if (from0Res.isErr()){
-        auto newF0 = GeneralData{.currentBest = -1};
+        if (from0Res.unwrapErr()[0] == '1'){
+            auto newF0 = GeneralData{.currentBest = -1};
 
-        from0Res = Ok(newF0);
+            from0Res = Ok(newF0);
+        }
+        else{
+            from0Res = Err("-");
+            currentFrom0 = std::nullopt;
+        }
     }
+    
+    if (!(from0Res.isErr() && from0Res.unwrapErr() == "-"))
+        currentFrom0 = from0Res.unwrap();
 
-    currentFrom0 = from0Res.unwrap();
-    //currentSession = sessionRes.unwrap();
     currentMetadata = metadataRes.unwrap();
 }
 
@@ -462,11 +475,21 @@ void StatsManager::logDeath(const int& percent, bool instantSave) {
 
     auto percentKey = std::to_string(percent);
 
-    currentFrom0.deaths[percentKey]++;
+    if (!currentFrom0.has_value()){
+        auto from0Res = getGeneral(currentLevel);
+        if (from0Res.isOk()){
+            currentFrom0 = from0Res.unwrap();
+        }
+    }
 
-    if (percent > currentFrom0.currentBest) {
-        currentFrom0.currentBest = percent;
-        currentFrom0.newBests.insert(percent);
+    if (currentFrom0.has_value()){
+        auto& val = currentFrom0.value();
+        val.deaths[percentKey]++;
+
+        if (percent > val.currentBest) {
+            val.currentBest = percent;
+            val.newBests.insert(percent);
+        }
     }
 
     auto session = StatsManager::getCurrentSession();
@@ -481,7 +504,9 @@ void StatsManager::logDeath(const int& percent, bool instantSave) {
     }
 
     if (instantSave){
-        (void)StatsManager::setGeneral(currentFrom0, currentLevel);
+        if (currentFrom0.has_value()){
+            (void)StatsManager::setGeneral(currentFrom0.value(), currentLevel);
+        }
         if (session){
             (void)StatsManager::setSession(*session, currentLevel, session->sessionStartDate, true);
         }
@@ -501,7 +526,9 @@ void StatsManager::logDeaths(const std::vector<int>& percents) {
 
     auto session = StatsManager::getCurrentSession();
 
-    (void)StatsManager::setGeneral(currentFrom0, currentLevel);
+    if (currentFrom0.has_value()){
+        (void)StatsManager::setGeneral(currentFrom0.value(), currentLevel);
+    }
     if (session){
         //log::info("session does exist");
         (void)StatsManager::setSession(*session, currentLevel, session->sessionStartDate, true);
@@ -512,6 +539,13 @@ void StatsManager::logRun(const Run& run, bool instantSave) {
     if (currentLevel == nullptr) {
         log::error("Failed to log deaths");
         return;
+    }
+
+    if (!currentFrom0.has_value()){
+        auto from0Res = getGeneral(currentLevel);
+        if (from0Res.isOk()){
+            currentFrom0 = from0Res.unwrap();
+        }
     }
 
     auto runKey = fmt::format("{}-{}",
@@ -526,10 +560,15 @@ void StatsManager::logRun(const Run& run, bool instantSave) {
         log::info("logging run {}-{} to session {}", run.start, run.end, session->sessionStartDate);
     }
 
-    currentFrom0.runs[runKey]++;
+    if (currentFrom0.has_value()){
+        auto& val = currentFrom0.value();
+        val.runs[runKey]++;
+    }
     
     if (instantSave){
-        (void)StatsManager::setGeneral(currentFrom0, currentLevel);
+        if (currentFrom0.has_value()){
+            (void)StatsManager::setGeneral(currentFrom0.value(), currentLevel);
+        }
         if (session){
             (void)StatsManager::setSession(*session, currentLevel, session->sessionStartDate, true);
         }
@@ -550,7 +589,9 @@ void StatsManager::logRuns(const std::vector<Run>& runs) {
 
     auto session = StatsManager::getCurrentSession();
 
-    (void)StatsManager::setGeneral(currentFrom0, currentLevel);
+    if (currentFrom0.has_value()){
+        (void)StatsManager::setGeneral(currentFrom0.value(), currentLevel);
+    }
     if (session){
         //log::info("session does exist r");
         (void)StatsManager::setSession(*session, currentLevel, session->sessionStartDate, true);
@@ -636,7 +677,7 @@ Session* StatsManager::getCurrentSession() {
         return nullptr;
     }
 
-    auto currentSession = &StatsManager::currentSession;
+    auto currentSession = StatsManager::currentSession.has_value() ? &StatsManager::currentSession.value() : nullptr;
 
     auto levelKeyRes = StatsManager::getLevelKey(currentLevel);
 
@@ -652,10 +693,12 @@ Session* StatsManager::getCurrentSession() {
     // and are created when the player dies
     if (!sessionsCount.size() && !m_scheduleCreateNewSession) return nullptr;
 
-    if (!m_scheduleCreateNewSession && currentSession->sessionStartDate == 0){
+    if (!m_scheduleCreateNewSession && (currentSession == nullptr || currentSession->sessionStartDate == 0)){
         auto latestSession = StatsManager::getSession(currentLevel, *std::prev(sessionsCount.end()));
         if (latestSession.isErr()){
             log::error("failed to load latest session! current session is dysfunctional");
+            StatsManager::currentSession = std::nullopt;
+            currentSession = nullptr;
         }
         else{
             StatsManager::currentSession = latestSession.unwrap();

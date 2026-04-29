@@ -345,7 +345,7 @@ void DTGraphNode::getSessionRuns(){
 
 void DTGraphNode::onDeathsUpdated(GetTFuture<Deaths>::Output deaths){
     if (deaths.isErr()){
-        log::error("Failed to get deaths for graph {}: {}", info.value().name, deaths.unwrapErr());
+        log::error("Failed to get deaths for graph {}: {}", info.value().name, deaths.unwrapErr().error);
         this->deaths.clear();
     }
     else{

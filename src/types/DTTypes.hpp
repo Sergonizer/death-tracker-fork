@@ -419,7 +419,7 @@ struct matjson::Serialize<LevelMetadeta> {
 struct LevelData {
     std::string levelKey;
     LevelMetadeta metadata;
-    Result<GeneralData> from0 = Err("Not loaded");
+    Result<GeneralData> from0 = Err("1Not loaded");
     std::set<long long> sessionNames;
 
     LevelData() = default;

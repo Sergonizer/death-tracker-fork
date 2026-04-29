@@ -1,8 +1,30 @@
 #pragma once
 
+#include <ostream>
+
 using namespace geode::prelude;
 
-using UpdateFuture = arc::Future<Result<std::string>>;
+struct UpdateFutureError{
+    std::string error = "";
+    bool displayAsError = true;
+
+    UpdateFutureError() = default;
+    UpdateFutureError(std::string error_, bool displayAsError_ = true)
+        : error(std::move(error_))
+        , displayAsError(displayAsError_)
+    {}
+
+    UpdateFutureError(const char* error_, bool displayAsError_ = true)
+        : error(error_ ? error_ : "")
+        , displayAsError(displayAsError_)
+    {}
+
+    friend std::ostream& operator<<(std::ostream& os, UpdateFutureError const& err) {
+        return os << err.error;
+    }
+};
+
+using UpdateFuture = arc::Future<Result<std::string, UpdateFutureError>>;
 
 #ifndef BIND_UPDATE_FUNC
 #define BIND_UPDATE_FUNC(METHOD) [&]() { return METHOD(); }

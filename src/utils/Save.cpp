@@ -224,7 +224,7 @@ DTLayoutV3 Save::getDefaultLayout(){
                 .maxPlacementRange = 3,
                 .layer = 1,
                 .labelName = "session playtime",
-                .text = "overall: {ptsgen}{nl}from 0: {ptsf0}{nl}runs: {ptsruns}{nl}paused time: {pptsgen}",
+                .text = "overall: {ptsgen}{nl}from 0: {ptsf0}{nl}runs: {ptsruns}{nl}paused time: {pptsgen}{nl}dead time: {dptsgen}",
                 .font = "gjFont17.fnt",
                 .horizontalAlignment = static_cast<CCTextAlignment>(0),
                 .labelColor = {176, 150, 110, 255},

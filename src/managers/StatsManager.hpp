@@ -33,9 +33,9 @@ public:
     static std::filesystem::path getSavesFolderPath();
 
     static GJGameLevel* currentLevel;
-    static GeneralData currentFrom0;
-    static LevelMetadeta currentMetadata;
-    static Session currentSession;
+    static std::optional<GeneralData> currentFrom0;
+    static std::optional<LevelMetadeta> currentMetadata;
+    static std::optional<Session> currentSession;
 
 #pragma region level setters/getters
 

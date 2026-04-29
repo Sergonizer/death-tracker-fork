@@ -14,7 +14,7 @@
 
 using namespace geode::prelude;
 template<class T>
-using GetTFuture = arc::Future<Result<T>>;
+using GetTFuture = arc::Future<Result<T, UpdateFutureError>>;
 
 struct ColumnComperator {
     bool operator() (LayoutColumn* a, LayoutColumn* b) const;
@@ -111,7 +111,7 @@ class DTLayer : public Popup, public FLAlertLayerProtocol {
 
         SessionSelector* sessionSelector = nullptr;
 
-        Result<Session> loadSessionFromSave(std::optional<int> sessionIndex = std::nullopt);
+        Result<Session, UpdateFutureError> loadSessionFromSave(std::optional<int> sessionIndex = std::nullopt);
 
         void foreachLinkedLevel(geode::Function<void(LevelData&)> onLevelVisit);
 
@@ -124,7 +124,13 @@ class DTLayer : public Popup, public FLAlertLayerProtocol {
             if (!session){
                 if (m_MyLevelStats.isErr()) co_return Err("Failed to calculate playtime");
                 auto myStats = m_MyLevelStats.unwrap();
-                if (myStats.from0.isErr()) co_return Err("No deaths saved!");
+                if (myStats.from0.isErr()){
+                    auto error = myStats.from0.unwrapErr();
+                    if (error[0] == '1')
+                        co_return Err(UpdateFutureError("No Deaths Saved!", false));
+                    else
+                        co_return Err(error);
+                }
                 auto myFrom0Stats = myStats.from0.unwrap();
                 auto linkedLevelsCopy = linkedLevelsData;
 
@@ -142,7 +148,7 @@ class DTLayer : public Popup, public FLAlertLayerProtocol {
             }
             else{
                 auto sessionRes = loadSessionFromSave();
-                if (sessionRes.isErr()) co_return Err("{}", sessionRes.unwrapErr());
+                if (sessionRes.isErr()) co_return Err(sessionRes.unwrapErr());
                 auto session = sessionRes.unwrap();
 
                 co_await arc::yield();

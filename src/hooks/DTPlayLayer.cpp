@@ -479,10 +479,15 @@ void DTPlayLayer::savePlaytime(){
         session->data.playtimePaused += m_fields->timePassedPaused;
         (void)StatsManager::setSession(*session, m_level, session->sessionStartDate, false);
     }
-    StatsManager::currentFrom0.playtimeGeneral += m_fields->timePassedGeneral;
-    StatsManager::currentFrom0.playtimeDead += m_fields->timePassedDead;
-    StatsManager::currentFrom0.playtimePaused += m_fields->timePassedPaused;
-    (void)StatsManager::setGeneral(StatsManager::currentFrom0, m_level);
+
+    if (StatsManager::currentFrom0.has_value()){
+        auto& val = StatsManager::currentFrom0.value();
+        val.playtimeGeneral += m_fields->timePassedGeneral;
+        val.playtimeDead += m_fields->timePassedDead;
+        val.playtimePaused += m_fields->timePassedPaused;
+        (void)StatsManager::setGeneral(val, m_level);
+    }
+    
 
     m_fields->timePassedGeneral.reset();
     m_fields->timePassedDead.reset();

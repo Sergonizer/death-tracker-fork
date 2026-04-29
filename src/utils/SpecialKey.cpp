@@ -51,8 +51,13 @@ void SpecialKey::setUpdateStartedCallback(geode::Function<void(const std::shared
 }
 
 void SpecialKey::onUpdateCompleted(UpdateFuture::Output val){
-    if (val.isErr())
-        this->currentContent = fmt::format("Error: {}", val.unwrapErr());
+    if (val.isErr()){
+        auto errData = val.unwrapErr();
+        if (errData.displayAsError)
+            this->currentContent = fmt::format("Error: {}", errData.error);
+        else
+            this->currentContent = errData.error;
+    }
     else
         this->currentContent = val.unwrap();
 
