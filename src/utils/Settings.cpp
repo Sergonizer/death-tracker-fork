@@ -2,6 +2,11 @@
 
 int64_t Settings::getMaxSessionLength() {
     auto sessionMethod = Mod::get()->getSettingValue<std::string>("session-method");
+    if (sessionMethod == "Seconds"){
+        sessionMethod = "Exit game";
+        Mod::get()->setSettingValue("session-method", sessionMethod);
+    }
+
     if (sessionMethod == "Exit level")
         return -2;
     else if (sessionMethod == "Exit game")

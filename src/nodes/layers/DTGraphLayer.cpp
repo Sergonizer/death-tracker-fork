@@ -482,7 +482,13 @@ void DTGraphLayer::OnPointSelected(GraphPoint* point){
     if (!displaysForPoints.size()){
         auto pointPosConverted = m_mainLayer->convertToNodeSpace(point->convertToWorldSpace({point->getContentWidth() / 2, 0}));
 
-        position = pointPosConverted - ccp(display->getContentWidth() / 2, display->getContentHeight());
+        position = pointPosConverted - ccp(
+            display->getContentWidth() / 2, 
+            display->getContentHeight()
+#if defined(GEODE_IS_MOBILE)
+                + 15
+#endif
+        );
     }
     else{
         GraphPointDisplay* lowestOther = *displays.rbegin();
