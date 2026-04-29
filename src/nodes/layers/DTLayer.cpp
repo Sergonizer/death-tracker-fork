@@ -1215,6 +1215,8 @@ bool DTLayer::createDeathsString(const Deaths& deaths, const LevelMetadeta& meta
 
     int prevStart = -2;
 
+    int hiddenRuns = 0;
+
     for (const auto& [run, amount] : deathVec)
     {
         auto runSplitRes = StatsManager::splitRunKey(run);
@@ -1233,22 +1235,29 @@ bool DTLayer::createDeathsString(const Deaths& deaths, const LevelMetadeta& meta
         if (includeRunStart && !ignoreExtraSettings){
             if (!meta.showAnyRun && meta.runsToShow.size()){
                 if (meta.runsToShow.contains(runSplit.start.value())){
-                    if (meta.runsToShow.at(runSplit.start.value()) > runSplit.end)
+                    if (meta.runsToShow.at(runSplit.start.value()) > runSplit.end){
+                        hiddenRuns += amount;
                         continue;
+                    }
                 }
                 else{
+                    hiddenRuns += amount;
                     continue;
                 }
             }
             else{
-                if (meta.sharedRunToShow > runSplit.end - runSplit.start.value())
+                if (meta.sharedRunToShow > runSplit.end - runSplit.start.value()){
+                    hiddenRuns += amount;
                     continue;
+                }
             }
         }
         else if (!includeRunStart && !ignoreExtraSettings){
-            log::info("a {}", runSplit.end);
-            if (meta.hideUpto > runSplit.end && runSplit.end >= 0)
+            //log::info("a {}", runSplit.end);
+            if (meta.hideUpto > runSplit.end && runSplit.end >= 0){
+                hiddenRuns += amount;
                 continue;
+            }
 
             if (newBests.has_value() && newBests.value().contains(runSplit.end)){
                 nbDeColor = "</wave></color>";
@@ -1284,10 +1293,16 @@ bool DTLayer::createDeathsString(const Deaths& deaths, const LevelMetadeta& meta
         out += toAdd;
     }
 
-    if (out == "")
+    if (out == "" && hiddenRuns == 0)
         out = "No Deaths Found!";
     else {
         out.erase(out.length() - custom.seperator.length());
+    }
+
+    if (hiddenRuns != 0){
+        if (out != "")
+            out += "{nl}";
+        out += fmt::format("{}x hidden", hiddenRuns);
     }
 
     return true;
