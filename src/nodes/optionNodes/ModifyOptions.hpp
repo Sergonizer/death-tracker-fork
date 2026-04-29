@@ -60,9 +60,12 @@ class ModifyOptions : public OptionsNode {
         int currentNBToAdd = 0;
 
         SwitcherButton* sessLvlSwitcher;
+        SimpleToggler* runF0Toggler;
 
         void removeNB(CCObject*);
         void addNB(CCObject*);
+
+        void removeInvalidRuns(CCObject*);
 
     public:
         virtual void onOpened();

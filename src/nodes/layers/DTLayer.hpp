@@ -120,7 +120,7 @@ class DTLayer : public Popup, public FLAlertLayerProtocol {
         void CleanGetStats();
 
         template<class T>
-        GetTFuture<T> getTFor(geode::Function<T(GeneralData const&)> dataGetter, geode::Function<T(T const&, T const&)> combineFunc, bool session){
+        GetTFuture<T> getTFor(geode::Function<T(GeneralData const&)> dataGetter, geode::Function<T(T const&, T const&)> combineFunc, bool session, bool localOnly = false){
             if (!session){
                 if (m_MyLevelStats.isErr()) co_return Err("Failed to calculate playtime");
                 auto myStats = m_MyLevelStats.unwrap();
@@ -136,12 +136,14 @@ class DTLayer : public Popup, public FLAlertLayerProtocol {
 
                 T all = dataGetter(myFrom0Stats);
 
-                for (const auto& levelData : linkedLevelsCopy)
-                {
-                    co_await arc::yield();
-                    if (levelData.from0.isErr() || levelData.levelKey == myStats.levelKey) continue;
-                    auto levelFrom0Stats = levelData.from0.unwrap();
-                    all = combineFunc(all, dataGetter(levelFrom0Stats));
+                if (!localOnly){
+                    for (const auto& levelData : linkedLevelsCopy)
+                    {
+                        co_await arc::yield();
+                        if (levelData.from0.isErr() || levelData.levelKey == myStats.levelKey) continue;
+                        auto levelFrom0Stats = levelData.from0.unwrap();
+                        all = combineFunc(all, dataGetter(levelFrom0Stats));
+                    }
                 }
 
                 co_return Ok(all);

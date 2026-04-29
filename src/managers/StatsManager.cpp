@@ -314,7 +314,7 @@ Result<> StatsManager::setGeneral(const GeneralData& stats, const std::string& l
 }
 
 Result<> StatsManager::addBackup(const std::string& levelKey, bool saveLevelStats, std::optional<int> sessionsToSave){
-    log::info("adding backup for level {} | {} | {}", levelKey, saveLevelStats, sessionsToSave);
+    //log::info("adding backup for level {} | {} | {}", levelKey, saveLevelStats, sessionsToSave);
     auto metaRes = getMetadata(levelKey);
     if (metaRes.isErr()) return Err("No level to back up! {}", metaRes.unwrapErr());
     auto metadata = metaRes.unwrap();
@@ -536,7 +536,7 @@ void StatsManager::logDeaths(const std::vector<int>& percents) {
 }
 
 void StatsManager::logRun(const Run& run, bool instantSave) {
-    if (currentLevel == nullptr) {
+    if (currentLevel == nullptr || !run.start.has_value()) {
         log::error("Failed to log deaths");
         return;
     }
@@ -549,7 +549,7 @@ void StatsManager::logRun(const Run& run, bool instantSave) {
     }
 
     auto runKey = fmt::format("{}-{}",
-        run.start,
+        run.start.value(),
         run.end
     );
 
@@ -557,7 +557,7 @@ void StatsManager::logRun(const Run& run, bool instantSave) {
     if (session != nullptr){
         session->data.runs[runKey]++;
 
-        log::info("logging run {}-{} to session {}", run.start, run.end, session->sessionStartDate);
+        log::info("logging run {}-{} to session {}", run.start.value(), run.end, session->sessionStartDate);
     }
 
     if (currentFrom0.has_value()){
@@ -637,19 +637,26 @@ Result<std::string> StatsManager::getLevelKey(GJGameLevel* const& level) {
 }
 
 Result<Run> StatsManager::splitRunKey(const std::string& runKey) {
+    bool firstNegative = false;
+    if (runKey.size() && runKey[0] == '-')
+        firstNegative = true;
+
     auto runKeySplit = StatsManager::splitStr(runKey, "-");
 
     if (runKeySplit.size() == 0 || runKeySplit.size() > 2)
         return Err("Invalid run key!");
 
-    int start = -1;
+    std::optional<int> start = std::nullopt;
     int end = -1;
 
     if (runKeySplit.size() == 1){
         GEODE_UNWRAP_INTO(end, geode::utils::numFromString<int>(runKeySplit[0]));
+        if (firstNegative)
+            end *= -1;
     }
     else{
-        GEODE_UNWRAP_INTO(start, geode::utils::numFromString<int>(runKeySplit[0]));
+        GEODE_UNWRAP_INTO(int startRes, geode::utils::numFromString<int>(runKeySplit[0]));
+        start = startRes * (firstNegative ? -1 : 1);
         GEODE_UNWRAP_INTO(end, geode::utils::numFromString<int>(runKeySplit[1]));
     }
 
@@ -661,7 +668,7 @@ Result<Run> StatsManager::splitRunKey(const std::string& runKey) {
 }
 
 Result<std::string> StatsManager::createRunKey(const Run& runKey){
-    if (runKey.start == -1){
+    if (runKey.start == std::nullopt){
         return Ok(std::to_string(runKey.end));
     }
     else if (runKey.start >= 0){

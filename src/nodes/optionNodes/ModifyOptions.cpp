@@ -96,7 +96,7 @@ bool ModifyOptions::setup(){
     ));
     this->addChild(sessLvlSwitcher);
 
-    auto runF0Toggler = SimpleToggler::create(
+    runF0Toggler = SimpleToggler::create(
         CCSprite::createWithSpriteFrameName("from-zero.png"_spr),
         CCSprite::createWithSpriteFrameName("run.png"_spr),
         .75f
@@ -127,7 +127,7 @@ bool ModifyOptions::setup(){
         updatePreviewName(sessLvlSwitcher->getCurrentOptionIndex() == 1, !state);
     });
 
-    sessLvlSwitcher->setOptionChangedCallback([&, runF0Toggler](auto option){
+    sessLvlSwitcher->setOptionChangedCallback([&](auto option){
         updatePreviewName(option == 1, !runF0Toggler->isToggled());
     });
 
@@ -137,7 +137,7 @@ bool ModifyOptions::setup(){
     }
 
     sessionSelector = SessionSelector::create(sessionAmount);
-    sessionSelector->setCallback([&, runF0Toggler](int newSession) {
+    sessionSelector->setCallback([&](int newSession) {
         DTLayer::get()->onSessionSelected(newSession, true);
         if (!runF0Toggler->isToggled())
             updatePreviewName(sessLvlSwitcher->getCurrentOptionIndex() == 1, !runF0Toggler->isToggled());
@@ -150,6 +150,25 @@ bool ModifyOptions::setup(){
         0
     ));
     this->addChild(sessionSelector);
+
+    auto removeInvalidRunsBtnSpr = ButtonSprite::create(
+        "Remove Invalid Runs",
+        "bigFont.fnt",
+        "GJ_button_06.png"
+    );
+    removeInvalidRunsBtnSpr->setCascadeOpacityEnabled(true);
+    removeInvalidRunsBtnSpr->setScale(.35f);
+    auto removeInvalidRunsBtn = CCMenuItemSpriteExtra::create(
+        removeInvalidRunsBtnSpr,
+        this,
+        menu_selector(ModifyOptions::removeInvalidRuns)
+    );
+    removeInvalidRunsBtn->setAnchorPoint({0, .5f});
+    removeInvalidRunsBtn->setPosition(selectionBG->getPosition() + ccp(
+        0,
+        -selectionBG->getScaledContentHeight() - removeInvalidRunsBtn->getScaledContentHeight() / 2 - 10
+    ));
+    this->addChild(removeInvalidRunsBtn);
 
     float diffBetweenSquares = 5;
     float squaresHeight = 135;
@@ -491,7 +510,7 @@ bool ModifyOptions::setup(){
 
     scheduleUpdate();
 
-    auto modiftyInfo = TutorialButton::create(.75f, "modify-overall", [&, addBtn, removeBtn, runF0Toggler, currentRunModeLabel](DTTutorialLayer* tutorialLayer){
+    auto modiftyInfo = TutorialButton::create(.75f, "modify-overall", [&, addBtn, removeInvalidRunsBtn, removeBtn, currentRunModeLabel](DTTutorialLayer* tutorialLayer){
         tutorialLayer->appendDialogue("Here you are able to <cy>modify</c> your save file!", TutorialCharacterFace::TCFHappy)
             ->appendDialogue("Here you have a <cf>preview</c> of how your save file <cy>currently</c> looks", TutorialCharacterFace::TCFNormal)
             ->joinTransform(TutorialBoxPlacement::TBPLeft, .75f)
@@ -544,7 +563,7 @@ bool ModifyOptions::setup(){
             ->appendDialogue("And buttons for <cg>adding</c>/<cr>removing</c> the inputted data from the save file!", TutorialCharacterFace::TCFHappy)
             ->joinHighlight(addBtn)
             ->joinHighlight(removeBtn);
-        
+
         for (const auto& [btn, _] : plusMinusCallbacks)
         {
             tutorialLayer->joinHighlight(btn);
@@ -553,6 +572,13 @@ bool ModifyOptions::setup(){
         tutorialLayer->appendDialogue("Some have an <cy>amount field</c> for inputting <cy>how any of x runs</c> to add at a time", TutorialCharacterFace::TCFNormal)
             ->joinHighlight(f0AmountInput)
             ->joinHighlight(runAmountInput)
+            
+            ->appendDialogue("Theres is also the <cr>\"Remove Invalid Runs\"</c> button", TutorialCharacterFace::TCFNormal)
+            ->joinHighlight(removeInvalidRunsBtn)
+            
+            ->appendDialogue("Which removes runs that go <co>below 0%</c> or <co>abover 100%</c> you might have saved", TutorialCharacterFace::TCFNormalTilted)
+            ->joinHighlight(removeInvalidRunsBtn)
+
             ->appendDialogue("Enjoy editing your save file!", TutorialCharacterFace::TCFHappy)
             ->joinTransform(TutorialBoxPlacement::TBPCenter, 1);
     });
@@ -809,3 +835,63 @@ void ModifyOptions::addNB(CCObject*){
     if (sessionNum == std::nullopt) DTLayer::get()->specialStrings["general"]->updateContent();
     else DTLayer::get()->specialStrings["s0"]->updateContent();
 }
+
+void ModifyOptions::removeInvalidRuns(CCObject*){
+    std::optional<int> sessionNum = std::nullopt;
+    if (sessLvlSwitcher->getCurrentOptionIndex() == 1)
+        sessionNum = sessionSelector->getCurrentCount();
+
+    auto togglerState = runF0Toggler->isToggled();
+
+    auto task = arc::spawn(DTLayer::get()->getTFor<Deaths>([togglerState](GeneralData const& data){
+        return togglerState ? data.runs : data.deaths;
+    },
+    [](auto const& a, auto const& b){
+        auto map = a;
+        StatsManager::mergeMapsAdd(map, b);
+        return map;
+    }, sessionNum.has_value(), true));
+
+    auto deathsRes = task.blockOn();
+    if (deathsRes.isErr()) return;
+
+    Deaths toEdit = std::move(deathsRes).unwrap();
+
+    std::vector<std::pair<Run, int>> runs{};
+
+    bool from0Maybe = false;
+
+    for (const auto& [deathStr, count] : toEdit){
+        auto splitRes = StatsManager::splitRunKey(deathStr);
+        if (splitRes.isErr()) continue;
+        auto split = splitRes.unwrap();
+
+        if (split.start == std::nullopt) from0Maybe = true;
+
+
+        if (split.start.has_value() && ((split.start.value() < 0 || split.start.value() > 100) || (split.end < 0 || split.end > 100))){
+            runs.push_back({split, count});
+            continue;
+        }
+        else if (!split.start.has_value() && split.end < 0 || split.end > 100){
+            runs.push_back({split, count});
+            continue;
+        }
+    }
+
+    for (const auto& [run, deathCount] : runs)
+    {
+        if (from0Maybe){
+            DTLayer::get()->modifyRun(run.end, -deathCount, sessionNum);
+        }
+        else{
+            DTLayer::get()->modifyRun(run.start.value_or(-1), run.end, -deathCount, sessionNum);
+        }
+    }
+    
+    if (sessionNum == std::nullopt) DTLayer::get()->specialStrings["runs"]->updateContent();
+    else DTLayer::get()->specialStrings["sruns"]->updateContent();
+    if (sessionNum == std::nullopt) DTLayer::get()->specialStrings["general"]->updateContent();
+    else DTLayer::get()->specialStrings["runs"]->updateContent();
+}
+

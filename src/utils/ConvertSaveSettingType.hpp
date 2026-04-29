@@ -7,7 +7,7 @@
 
 using namespace geode::prelude;
 
-class ButtonSettingDT : public SettingV3 {
+class ConvertSaveSetting : public SettingV3 {
 public:
     static Result<std::shared_ptr<SettingV3>> parse(std::string const& key, std::string const& modID, matjson::Value const& json);
 
@@ -20,12 +20,12 @@ public:
     SettingNodeV3* createNode(float width) override;
 };
 
-class ButtonSettingNodeDT : public SettingNodeV3 {
+class ConvertSaveSettingNode : public SettingNodeV3 {
 protected:
     ButtonSprite* m_buttonSprite;
     CCMenuItemSpriteExtra* m_button;
 
-    bool init(std::shared_ptr<ButtonSettingDT> setting, float width);
+    bool init(std::shared_ptr<ConvertSaveSetting> setting, float width);
     
     void updateState(CCNode* invoker) override;
     void onButton(CCObject*);
@@ -34,14 +34,14 @@ protected:
     void onResetToDefault() override;
 
 public:
-    static ButtonSettingNodeDT* create(std::shared_ptr<ButtonSettingDT> setting, float width);
+    static ConvertSaveSettingNode* create(std::shared_ptr<ConvertSaveSetting> setting, float width);
 
     bool hasUncommittedChanges() const override;
     bool hasNonDefaultValue() const override;
 
-    std::shared_ptr<ButtonSettingDT> getSetting() const;
+    std::shared_ptr<ConvertSaveSetting> getSetting() const;
 };
 
 $execute {
-    (void)Mod::get()->registerCustomSettingType("button-type-dt", &ButtonSettingDT::parse);
+    (void)Mod::get()->registerCustomSettingType("button-type-dt", &ConvertSaveSetting::parse);
 }

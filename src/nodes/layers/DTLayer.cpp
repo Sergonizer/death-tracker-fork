@@ -1225,15 +1225,15 @@ bool DTLayer::createDeathsString(const Deaths& deaths, const LevelMetadeta& meta
 
         auto& runSplit = runSplitRes.unwrap();
 
-        bool includeRunStart = runSplit.start != -1;
+        bool includeRunStart = runSplit.start != std::nullopt;
 
         std::string nbDeColor = "";
         std::string nbColor = "";
 
         if (includeRunStart && !ignoreExtraSettings){
             if (!meta.showAnyRun && meta.runsToShow.size()){
-                if (meta.runsToShow.contains(runSplit.start)){
-                    if (meta.runsToShow.at(runSplit.start) > runSplit.end)
+                if (meta.runsToShow.contains(runSplit.start.value())){
+                    if (meta.runsToShow.at(runSplit.start.value()) > runSplit.end)
                         continue;
                 }
                 else{
@@ -1241,12 +1241,13 @@ bool DTLayer::createDeathsString(const Deaths& deaths, const LevelMetadeta& meta
                 }
             }
             else{
-                if (meta.sharedRunToShow > runSplit.end - runSplit.start)
+                if (meta.sharedRunToShow > runSplit.end - runSplit.start.value())
                     continue;
             }
         }
         else if (!includeRunStart && !ignoreExtraSettings){
-            if (meta.hideUpto > runSplit.end)
+            log::info("a {}", runSplit.end);
+            if (meta.hideUpto > runSplit.end && runSplit.end >= 0)
                 continue;
 
             if (newBests.has_value() && newBests.value().contains(runSplit.end)){
@@ -1255,16 +1256,16 @@ bool DTLayer::createDeathsString(const Deaths& deaths, const LevelMetadeta& meta
             }
         }
 
-        if (prevStart != runSplit.start){
+        if (prevStart != runSplit.start.value_or(-1)){
             if (prevStart != -2){
                 out += "----------{nl}";
             }
-            prevStart = runSplit.start;
+            prevStart = runSplit.start.value_or(-1);
         }
 
         auto format = custom.format;
 
-        std::string toReplaceWith = includeRunStart ? fmt::format("{}-{}", runSplit.start, runSplit.end) : fmt::format("{}", runSplit.end);
+        std::string toReplaceWith = includeRunStart ? fmt::format("{}-{}", runSplit.start.value(), runSplit.end) : fmt::format("{}", runSplit.end);
         format = std::regex_replace(
             format,
             std::regex("\\{per\\}"),
@@ -2265,7 +2266,7 @@ void DTLayer::modifyRun(int startPer, int amount, std::optional<int> sessionNumb
         }
 
         auto newNum = data[runStr] + amount;
-        log::info("{} | {} | {}", amount, data[runStr], newNum);
+        //log::info("{} | {} | {}", amount, data[runStr], newNum);
 
         if (newNum <= 0){
             data.erase(runStr);
@@ -2678,10 +2679,10 @@ long long DTLayer::calcPlaytime(const Deaths& deaths){
         if (runSplitRes.isErr()) continue;
 
         float runLength;
-        if (runSplitRes.unwrap().start == -1)
+        if (runSplitRes.unwrap().start == std::nullopt)
             runLength = runSplitRes.unwrap().end;
         else
-            runLength = (runSplitRes.unwrap().end - runSplitRes.unwrap().start);
+            runLength = (runSplitRes.unwrap().end - runSplitRes.unwrap().start.value());
         // log::info("{} | {} | {}", runLength, runSplitRes.unwrap().end, runSplitRes.unwrap().start);
         // log::info("{}", death.second);
 
@@ -2866,10 +2867,12 @@ UpdateFuture DTLayer::onBestRunsKey(){
         if (splitRunRes.isErr()) continue;
         auto splitRun = splitRunRes.unwrap();
 
-        if (!bestRuns.contains(splitRun.start))
-            bestRuns.insert({splitRun.start, splitRun.end});
-        else if (bestRuns[splitRun.start] < splitRun.end){
-            bestRuns[splitRun.start] = splitRun.end;
+        auto realStart = splitRun.start.value_or(-1);
+
+        if (!bestRuns.contains(realStart))
+            bestRuns.insert({realStart, splitRun.end});
+        else if (bestRuns[realStart] < splitRun.end){
+            bestRuns[realStart] = splitRun.end;
         }
     }
 
@@ -2941,10 +2944,12 @@ UpdateFuture DTLayer::onSessionBestRunsKey(){
         if (splitRunRes.isErr()) continue;
         auto splitRun = splitRunRes.unwrap();
 
-        if (!bestRuns.contains(splitRun.start))
-            bestRuns.insert({splitRun.start, splitRun.end});
-        else if (bestRuns[splitRun.start] < splitRun.end){
-            bestRuns[splitRun.start] = splitRun.end;
+        auto realStart = splitRun.start.value_or(-1);
+
+        if (!bestRuns.contains(realStart))
+            bestRuns.insert({realStart, splitRun.end});
+        else if (bestRuns[realStart] < splitRun.end){
+            bestRuns[realStart] = splitRun.end;
         }
     }
 
@@ -3145,7 +3150,7 @@ UpdateFuture DTLayer::onSectionKey(){
         if (splitDeathRes.isErr()) continue;
         auto splitDeath = splitDeathRes.unwrap();
 
-        if (splitDeath.start == -1){
+        if (splitDeath.start == std::nullopt){
             CreateSectioIDForSectionPair(splitDeath, std::nullopt, death.second);
             continue;
         }
@@ -3154,7 +3159,7 @@ UpdateFuture DTLayer::onSectionKey(){
 
         for (const auto& section : validSections)
         {
-            if (!section.isPercentInSection(splitDeath.start)) continue;
+            if (!section.isPercentInSection(splitDeath.start.value_or(-1))) continue;
 
             startingSectionsForDeath.push_back(section);
         }
@@ -3224,8 +3229,9 @@ UpdateFuture DTLayer::onLevelRunsKey() {
         auto res = StatsManager::splitRunKey(key);
         if (res.isOk()) {
             Run run = res.unwrap();
-            if (run.start <= -1) run.start = 0;
-            if (count > 0 && run.end > run.start) {
+            auto runStartReal = run.start.value_or(-1);
+            if (runStartReal <= -1) runStartReal = 0;
+            if (count > 0 && run.end > runStartReal) {
                 validRuns.push_back(run);
             }
         }

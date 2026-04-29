@@ -100,9 +100,9 @@ void DTGraphNode::updateGraphContent(){
         auto runStartRes = StatsManager::splitRunKey(death.first);
         if (runStartRes.isErr()) continue;
         auto start = runStartRes.unwrap().start;
-        if (start != -1) {
+        if (start != std::nullopt) {
             if (!hasRunStart || start < RunStartPercent) {
-                RunStartPercent = start;
+                RunStartPercent = start.value();
                 hasRunStart = true;
             }
         }
@@ -124,8 +124,8 @@ void DTGraphNode::updateGraphContent(){
         auto runRes = StatsManager::splitRunKey(death.first);
         if (runRes.isErr()) continue;
 
-        if (runRes.unwrap().start != -1){
-            if (runRes.unwrap().start == runPercent)
+        if (runRes.unwrap().start != std::nullopt){
+            if (runRes.unwrap().start.value() == runPercent)
                 sortedDeaths[runRes.unwrap()] += death.second;
         }
         else

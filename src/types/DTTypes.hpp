@@ -9,10 +9,10 @@ typedef std::map<std::string, int> Deaths;
 typedef std::set<int> NewBests;
 
 struct Run_s{
-    int start;
+    std::optional<int> start;
     int end;
 
-    Run_s(int _start, int _end) : start(_start), end(_end){}
+    Run_s(std::optional<int> _start, int _end) : start(_start), end(_end){}
 
     Run_s() = default;
 };

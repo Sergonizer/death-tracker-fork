@@ -38,12 +38,12 @@ bool GraphPointDisplay::init(){
 }
 
 void GraphPointDisplay::setContent(std::string run, float ratePercent, DTGraphType type, ccColor3B graphInner, ccColor3B graphOuter){
-    auto runInfo = StatsManager::splitRunKey(run).unwrapOr(Run{-1, -1});
+    auto runInfo = StatsManager::splitRunKey(run).unwrapOr(Run{std::nullopt, -1});
 
     std::string runSprFormatted;
-    if (runInfo.start == -1 && runInfo.end == -1)
+    if (runInfo.start == std::nullopt && runInfo.end == -1)
         runSprFormatted = "Error";
-    else if (runInfo.start == -1)
+    else if (runInfo.start == std::nullopt)
         runSprFormatted = fmt::format("{}%", runInfo.end);
     else
         runSprFormatted = fmt::format("{}%-{}%", runInfo.start, runInfo.end);
