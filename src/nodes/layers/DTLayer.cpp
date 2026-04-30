@@ -1002,7 +1002,7 @@ void DTLayer::UpdateSharedStats(){
 
             auto currStatsRes = StatsManager::getLevelData(linkedLevel);
             if (currStatsRes.isErr()){
-                Notification::create(fmt::format("failed to get data for linked level - {} | {}", linkedLevel, currStatsRes.unwrapErr()))->show();
+                Notification::create(fmt::format("failed to get data for linked level - {} | {}", linkedLevel, currStatsRes.unwrapErr().error))->show();
                 continue;
             }
             auto currStats = currStatsRes.unwrap();
@@ -2803,7 +2803,7 @@ Result<Session, UpdateFutureError> DTLayer::loadSessionFromSave(std::optional<in
         {
             auto sessionRes = StatsManager::getSession(lvlKey, SDate);
             if (sessionRes.isErr()){
-                sess = Err(sessionRes.unwrapErr());
+                sess = Err(sessionRes.unwrapErr().error);
                 break;
             }
 
@@ -3401,13 +3401,13 @@ void DTLayer::onGroupSelected(int const& id){
 
 void DTLayer::CleanGetStats(){
     m_MyLevelStats = StatsManager::getLevelData(m_Level);
-    if (m_MyLevelStats.isErr() && m_MyLevelStats.unwrapErr().size() && m_MyLevelStats.unwrapErr()[0] == '1'){
+    if (m_MyLevelStats.isErr() && m_MyLevelStats.unwrapErr().code == 1){
         LevelData newData;
         newData.levelKey = StatsManager::getLevelKey(m_Level).unwrap();
         m_MyLevelStats = Ok(newData);
     }
     else if (m_MyLevelStats.isErr()){
-        auto notif = geode::Notification::create(fmt::format("Failed to load DT level data! {}", m_MyLevelStats.unwrapErr()), NotificationIcon::Error, 3);
+        auto notif = geode::Notification::create(fmt::format("Failed to load DT level data! {}", m_MyLevelStats.unwrapErr().error), NotificationIcon::Error, 3);
         notif->show();
         notif->setZOrder(101);
     }

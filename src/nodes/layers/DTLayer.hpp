@@ -38,7 +38,7 @@ class DTLayer : public Popup, public FLAlertLayerProtocol {
 
         GJGameLevel* m_Level;
 
-        Result<LevelData> m_MyLevelStats = Err("");
+        Result<LevelData, ErrorWithCode> m_MyLevelStats = Err("");
         std::vector<LevelData> linkedLevelsData{};
         SessionCategory sessionsOrder{};
         SessionCategory daySGroup{};
@@ -126,10 +126,10 @@ class DTLayer : public Popup, public FLAlertLayerProtocol {
                 auto myStats = m_MyLevelStats.unwrap();
                 if (myStats.from0.isErr()){
                     auto error = myStats.from0.unwrapErr();
-                    if (error[0] == '1')
+                    if (error.code == 1)
                         co_return Err(UpdateFutureError("No Deaths Saved!", false));
                     else
-                        co_return Err(error);
+                        co_return Err(error.error);
                 }
                 auto myFrom0Stats = myStats.from0.unwrap();
                 auto linkedLevelsCopy = linkedLevelsData;

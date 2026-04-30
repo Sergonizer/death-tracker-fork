@@ -39,18 +39,18 @@ public:
 
 #pragma region level setters/getters
 
-    static Result<LevelMetadeta> getMetadata(GJGameLevel* const level);
-    static Result<LevelMetadeta> getMetadata(const std::string& levelKey);
-    static Result<LevelMetadeta> getMetadata(const std::filesystem::path& path);
-    static Result<Session> getSession(GJGameLevel* const level, long long sessionTime);
-    static Result<Session> getSession(const std::string& levelKey, long long sessionTime);
-    static Result<Session> getSession(const std::filesystem::path& path, long long sessionTime);
-    static Result<GeneralData> getGeneral(GJGameLevel* const level);
-    static Result<GeneralData> getGeneral(const std::string& levelKey);
-    static Result<GeneralData> getGeneral(const std::filesystem::path& path);
-    static Result<LevelData> getLevelData(GJGameLevel* const level);
-    static Result<LevelData> getLevelData(const std::string& levelKey);
-    static Result<LevelData> getLevelData(const std::filesystem::path& path);
+    static Result<LevelMetadeta, ErrorWithCode> getMetadata(GJGameLevel* const level);
+    static Result<LevelMetadeta, ErrorWithCode> getMetadata(const std::string& levelKey);
+    static Result<LevelMetadeta, ErrorWithCode> getMetadata(const std::filesystem::path& path);
+    static Result<Session, ErrorWithCode> getSession(GJGameLevel* const level, long long sessionTime);
+    static Result<Session, ErrorWithCode> getSession(const std::string& levelKey, long long sessionTime);
+    static Result<Session, ErrorWithCode> getSession(const std::filesystem::path& path, long long sessionTime);
+    static Result<GeneralData, ErrorWithCode> getGeneral(GJGameLevel* const level);
+    static Result<GeneralData, ErrorWithCode> getGeneral(const std::string& levelKey);
+    static Result<GeneralData, ErrorWithCode> getGeneral(const std::filesystem::path& path);
+    static Result<LevelData, ErrorWithCode> getLevelData(GJGameLevel* const level);
+    static Result<LevelData, ErrorWithCode> getLevelData(const std::string& levelKey);
+    static Result<LevelData, ErrorWithCode> getLevelData(const std::filesystem::path& path);
     static Result<BackupLevelData> getBackupData(const std::string& levelKey, long long backupName);
 
     static Result<> setMetadata(const LevelMetadeta& stats, GJGameLevel* const level);
@@ -133,9 +133,6 @@ public:
     // 7 = Easy Demon, 8 = Medium Demon, 9 = Insane Demon, 10 = Extreme Demon
     static int getDifficulty(GJGameLevel* const& level);
 
-    //sets the current deaths save folder path
-    static void setPath(const std::filesystem::path& path);
-
     // return a splitted version of the string provided, devided by the delim
     static std::vector<std::string> splitStr(const std::string& str, const std::string& delim);
     
@@ -157,7 +154,7 @@ public:
     static void mergeMapsAdd(std::map<K, V>& target, const std::map<K, V>& source);
 
     static bool transferPlaytimeFromPT(GJGameLevel* level);
-    static bool transferPlaytimeFromPT(geode::Result<LevelData>& data, GJGameLevel* level);
+    static bool transferPlaytimeFromPT(geode::Result<LevelData, ErrorWithCode>& data, GJGameLevel* level);
 };
 
 template<typename K, typename V>

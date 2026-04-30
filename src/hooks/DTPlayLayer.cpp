@@ -28,12 +28,12 @@ bool DTPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
     if (!PlayLayer::init(level, p1, p2)) return false;
 
     auto metaRes = StatsManager::getMetadata(level);
-    if (metaRes.isErr() && metaRes.unwrapErr().size() && metaRes.unwrapErr()[0] == '1'){
+    if (metaRes.isErr() && metaRes.unwrapErr().code == 1){
         LevelMetadeta newMeta{};
         metaRes = Ok(newMeta);
     }
     else if (metaRes.isErr()){
-        geode::Notification::create(fmt::format("Failed to load DT level data! {}", metaRes.unwrapErr()), NotificationIcon::Error)->show();
+        geode::Notification::create(fmt::format("Failed to load DT level data! {}", metaRes.unwrapErr().error), NotificationIcon::Error)->show();
     }
 
     if (metaRes.isOk()){
@@ -448,7 +448,7 @@ void DTPlayLayer::checkDelta(float delta) {
         m_fields->gameTimeHistory.pop_front();
     }
 
-    if (m_fields->realTimeHistory.size() >= 30) {
+    if (m_fields->realTimeHistory.size() >= 30 && m_fields->rollingGameSum != 0) {
         auto currentRatio = m_fields->rollingGameSum / m_fields->rollingRealSum;
         auto expectedRatio = m_fields->currentTimeWarp;
 

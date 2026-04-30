@@ -8,6 +8,8 @@
 using namespace geode::prelude;
 
 std::vector<std::string> StatsManager::splitStr(const std::string& str, const std::string& delim) {
+    if (delim.empty()) return {};
+
     size_t posStart = 0;
     size_t posEnd;
     size_t delimLen = delim.length();
@@ -116,77 +118,82 @@ std::array<std::string, 62> StatsManager::m_AllFontsMap{
 /* main functions
 ================== */
 
-Result<LevelMetadeta> StatsManager::getMetadata(GJGameLevel* const level){
+Result<LevelMetadeta, ErrorWithCode> StatsManager::getMetadata(GJGameLevel* const level){
     GEODE_UNWRAP_INTO(auto levelKey, StatsManager::getLevelKey(level));
     return getMetadata(levelKey);
 }
-Result<LevelMetadeta> StatsManager::getMetadata(const std::string& levelKey){
+Result<LevelMetadeta, ErrorWithCode> StatsManager::getMetadata(const std::string& levelKey){
     return getMetadata(getSavesFolderPath() / levelKey);
 }
 
-Result<LevelMetadeta> StatsManager::getMetadata(const std::filesystem::path& path){
+Result<LevelMetadeta, ErrorWithCode> StatsManager::getMetadata(const std::filesystem::path& path){
     auto levelSaveFilePath = path / StatsManager::METADATA_FILE_NAME;
 
     if (!std::filesystem::exists(levelSaveFilePath))
-        return Err("1 (no stats exist for level!)");
+        return Err(ErrorWithCode("no stats exist for level!", 1));
 
-    GEODE_UNWRAP_INTO(auto json, file::readJson(levelSaveFilePath));
+    auto readRes = file::readJson(levelSaveFilePath);
+    if (readRes.isErr()) return Err("Metadata Corrupted");
+    auto json = readRes.unwrap().as<LevelMetadeta>();
+    if (json.isErr()) return Err("Metadata Corrupted");
         
-    return json.as<LevelMetadeta>();
+    return Ok(json.unwrap());
 }
 
-Result<Session> StatsManager::getSession(GJGameLevel* const level, long long sessionTime){
+Result<Session, ErrorWithCode> StatsManager::getSession(GJGameLevel* const level, long long sessionTime){
     GEODE_UNWRAP_INTO(auto levelKey, StatsManager::getLevelKey(level));
     return getSession(levelKey, sessionTime);
 }
-Result<Session> StatsManager::getSession(const std::string& levelKey, long long sessionTime){
+Result<Session, ErrorWithCode> StatsManager::getSession(const std::string& levelKey, long long sessionTime){
     return getSession(getSavesFolderPath() / levelKey, sessionTime);
 }
 
-Result<Session> StatsManager::getSession(const std::filesystem::path& path, long long sessionTime){
+Result<Session, ErrorWithCode> StatsManager::getSession(const std::filesystem::path& path, long long sessionTime){
     auto levelSaveFilePath = path / StatsManager::SESSIONS_DIR_NAME / (std::to_string(sessionTime) + ".dt");
 
     if (!std::filesystem::exists(levelSaveFilePath))
-        return Err("1 (no stats exist for level!)");
+        return Err(ErrorWithCode("no stats exist for level!", 1));
 
     auto sessionRes = file::readJson(levelSaveFilePath);
     if (sessionRes.isErr()) return Err("Session Corrupted");
     auto session = sessionRes.unwrap().as<Session>();
     if (session.isErr()) return Err("Session Corrupted");
         
-    return session;
+    return Ok(session.unwrap());
 }
 
-Result<GeneralData> StatsManager::getGeneral(GJGameLevel* const level){
+Result<GeneralData, ErrorWithCode> StatsManager::getGeneral(GJGameLevel* const level){
     GEODE_UNWRAP_INTO(auto levelKey, StatsManager::getLevelKey(level));
     return getGeneral(levelKey);
 }
-Result<GeneralData> StatsManager::getGeneral(const std::string& levelKey){
+Result<GeneralData, ErrorWithCode> StatsManager::getGeneral(const std::string& levelKey){
     return getGeneral(getSavesFolderPath() / levelKey);
 }
 
-Result<GeneralData> StatsManager::getGeneral(const std::filesystem::path& path){
+Result<GeneralData, ErrorWithCode> StatsManager::getGeneral(const std::filesystem::path& path){
     auto levelSaveFilePath = path / StatsManager::FROM0_FILE_NAME;
 
     if (!std::filesystem::exists(levelSaveFilePath) || std::filesystem::is_empty(levelSaveFilePath))
-        return Err("1(no stats exist for level!)");
+        return Err(ErrorWithCode("no stats exist for level!", 1));
 
     auto jsonRes = file::readJson(levelSaveFilePath);
     if (jsonRes.isErr()) return Err("Save Corrupted");
     auto genDataRes = jsonRes.unwrap().as<GeneralData>();
     if (genDataRes.isErr()) return Err("Save Corrupted");
         
-    return genDataRes;
+    return Ok(genDataRes.unwrap());
 }
 
-Result<LevelData> StatsManager::getLevelData(GJGameLevel* const level){
+Result<LevelData, ErrorWithCode> StatsManager::getLevelData(GJGameLevel* const level){
     GEODE_UNWRAP_INTO(auto levelKey, StatsManager::getLevelKey(level));
 
     return getLevelData(levelKey);
 }
-Result<LevelData> StatsManager::getLevelData(const std::string& levelKey){
+Result<LevelData, ErrorWithCode> StatsManager::getLevelData(const std::string& levelKey){
     LevelData data;
+
     GEODE_UNWRAP_INTO(data.metadata, StatsManager::getMetadata(levelKey));
+
     data.from0 = StatsManager::getGeneral(levelKey);
     data.sessionNames = StatsManager::getAllSessionTimesForLevel(levelKey);
     data.levelKey = levelKey;
@@ -194,12 +201,13 @@ Result<LevelData> StatsManager::getLevelData(const std::string& levelKey){
     return Ok(data);
 }
 
-Result<LevelData> StatsManager::getLevelData(const std::filesystem::path& path){
+Result<LevelData, ErrorWithCode> StatsManager::getLevelData(const std::filesystem::path& path){
     LevelData data;
+
     GEODE_UNWRAP_INTO(data.metadata, StatsManager::getMetadata(path));
+
     data.from0 = StatsManager::getGeneral(path);
     data.sessionNames = StatsManager::getAllSessionTimesForLevel(path);
-    data.levelKey = data.levelKey;
 
     return Ok(data);
 }
@@ -327,7 +335,7 @@ Result<> StatsManager::addBackup(const std::string& levelKey, bool saveLevelStat
     //log::info("adding backup for level {} | {} | {}", levelKey, saveLevelStats, sessionsToSave);
     std::error_code ec;
     auto metaRes = getMetadata(levelKey);
-    if (metaRes.isErr()) return Err("No level to back up! {}", metaRes.unwrapErr());
+    if (metaRes.isErr()) return Err("No level to back up! {}", metaRes.unwrapErr().error);
     auto metadata = metaRes.unwrap();
     
     createFilesIfNeeded(levelKey);
@@ -460,23 +468,23 @@ void StatsManager::setCurrentLevel(GJGameLevel* const& level){
         currentFrom0 = std::nullopt;
         currentSession = std::nullopt;
         currentMetadata = std::nullopt;
-        log::error("Failed to apply current level stats as main stats ({})", metadataRes.unwrapErr());
+        log::error("Failed to apply current level stats as main stats ({})", metadataRes.unwrapErr().error);
         return;
     }
 
     if (from0Res.isErr()){
-        if (from0Res.unwrapErr()[0] == '1'){
+        if (from0Res.unwrapErr().code == 1){
             auto newF0 = GeneralData{.currentBest = -1};
 
             from0Res = Ok(newF0);
         }
         else{
-            from0Res = Err("-");
+            from0Res = Err(ErrorWithCode("", 3));
             currentFrom0 = std::nullopt;
         }
     }
     
-    if (!(from0Res.isErr() && from0Res.unwrapErr() == "-"))
+    if (!(from0Res.isErr() && from0Res.unwrapErr().code == 3))
         currentFrom0 = from0Res.unwrap();
 
     currentMetadata = metadataRes.unwrap();
@@ -552,7 +560,7 @@ void StatsManager::logDeaths(const std::vector<int>& percents) {
 
 void StatsManager::logRun(const Run& run, bool instantSave) {
     if (currentLevel == nullptr || !run.start.has_value()) {
-        log::error("Failed to log deaths");
+        log::error("Failed to log run");
         return;
     }
 
@@ -596,7 +604,6 @@ void StatsManager::logRuns(const std::vector<Run>& runs) {
         return;
     }
 
-    bool TrackRun = false;
     for (int i = 0; i < runs.size(); i++)
     {
         logRun(runs[i], false);
@@ -895,12 +902,12 @@ Result<std::vector<std::pair<std::string, LevelMetadeta>>> StatsManager::getAllL
     for (int i = 0; i < allLevels.size(); i++)
     {
         if (std::filesystem::is_directory(allLevels[i])){
-            auto currentDirName = geode::utils::string::pathToString(allLevels[i].parent_path());
+            auto currentDirName = geode::utils::string::pathToString(allLevels[i].filename());
             // log::info("Getting level stats for level: {}", currentDirName);
 
             auto currentLevel = StatsManager::getMetadata(currentDirName);
             if (currentLevel.isErr()){
-                Notification::create(fmt::format("failed getting some levels, errors send in logs.", currentDirName, currentLevel.unwrapErr()), nullptr)->show();
+                Notification::create(fmt::format("failed getting some levels, errors send in logs.", currentDirName, currentLevel.unwrapErr().error), nullptr)->show();
                 failedKeys.push_back(currentDirName);
                 continue;
             }
@@ -960,10 +967,6 @@ int StatsManager::getDifficulty(GJGameLevel* const& level){
         }
     else 
         return 0;
-}
-
-void StatsManager::setPath(const std::filesystem::path& path){
-    getSavesFolderPath() = path;
 }
 
 int StatsManager::getCursorPosition(CCLabelBMFont* const& text, CCLabelBMFont* const& cursor){
@@ -1236,7 +1239,7 @@ bool StatsManager::transferPlaytimeFromPT(GJGameLevel* level){
     return transferPlaytimeFromPT(data, level);
 }
 
-bool StatsManager::transferPlaytimeFromPT(geode::Result<LevelData>& data, GJGameLevel* level){
+bool StatsManager::transferPlaytimeFromPT(geode::Result<LevelData, ErrorWithCode>& data, GJGameLevel* level){
     std::string lvlID = level->m_levelType == GJLevelType::Editor ? fmt::format("Editor-{}", EditorIDs::getID(level)) : std::to_string(level->m_levelID.value());
     auto ptPath = Mod::get()->getSaveDir().parent_path() / "nanew.playtime-tracker" / "data" / (lvlID + ".json");
 
