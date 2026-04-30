@@ -19,8 +19,8 @@ struct Run_s{
 typedef struct Run_s Run;
 
 typedef struct PlaytimePair {
-    uint64_t playtimeF0;
-    uint64_t playtimeRuns;
+    uint64_t playtimeF0 = 0;
+    uint64_t playtimeRuns = 0;
 
     PlaytimePair& operator+=(const PlaytimePair& other) {
         playtimeF0 += other.playtimeF0;
