@@ -41,6 +41,7 @@ const std::string StatsManager::METADATA_FILE_NAME = "metadata";
 const std::string StatsManager::FROM0_FILE_NAME = "general.dt";
 const std::string StatsManager::SESSIONS_DIR_NAME = "sessions";
 const std::string StatsManager::BACKUPS_DIR_NAME = "backups";
+arc::TaskHandle<void> StatsManager::backupHandler{};
 
 std::filesystem::path StatsManager::getSavesFolderPath(){
     return Settings::getSavePath();
@@ -331,100 +332,140 @@ Result<> StatsManager::setGeneral(const GeneralData& stats, const std::string& l
     return Ok();
 }
 
-Result<> StatsManager::addBackup(const std::string& levelKey, bool saveLevelStats, std::optional<int> sessionsToSave){
+void StatsManager::addBackup(const std::string& levelKey, bool saveLevelStats, std::optional<int> sessionsToSave, bool showNotifications){
     //log::info("adding backup for level {} | {} | {}", levelKey, saveLevelStats, sessionsToSave);
-    std::error_code ec;
-    auto metaRes = getMetadata(levelKey);
-    if (metaRes.isErr()) return Err("No level to back up! {}", metaRes.unwrapErr().error);
-    auto metadata = metaRes.unwrap();
-    
-    createFilesIfNeeded(levelKey);
 
-    auto levelBackupsFilePath = getSavesFolderPath() / levelKey / StatsManager::BACKUPS_DIR_NAME;
-
-    auto lvlBackupsDirRes = geode::utils::file::createDirectory(levelBackupsFilePath);
-    if (lvlBackupsDirRes.isErr()) return Err("failed to create backups folder! {}", lvlBackupsDirRes.unwrapErr());
-
-    auto currBackupName = StatsManager::getNowSeconds();
-
-    levelBackupsFilePath /= std::to_string(currBackupName);
-
-    auto lvlBackupDirRes = geode::utils::file::createDirectory(levelBackupsFilePath);
-    if (lvlBackupDirRes.isErr()) return Err("failed to create backup folder! {}", lvlBackupDirRes.unwrapErr());
-
-    if (saveLevelStats){
-
-        if (getGeneral(levelKey).isErr()){
-            (void)deleteBackup(levelKey, currBackupName);
-
-            return Err("backup failed! failed to read general stats");
-        }
-
-        std::filesystem::copy_file(getSavesFolderPath() / levelKey / StatsManager::FROM0_FILE_NAME, levelBackupsFilePath / StatsManager::FROM0_FILE_NAME, std::filesystem::copy_options::overwrite_existing, ec);
-        if (ec) return Err("Failed to backup level stats: {}", ec.message());
+    if (backupHandler.isValid()){
+        backupHandler.abort();
     }
 
-    auto backupsAmount = Settings::getMaxBackupAmount();
+    auto progressFunc = [](float progress01){
+        //maybe ill use this later for somethn idk bruh
+    };
 
-    if (backupsAmount != std::nullopt){
-        auto count = getBackupsCount(levelKey);
+    backupHandler = async::spawn(
+        [levelKey, saveLevelStats, sessionsToSave, progressFunc]() -> arc::Future<Result<>> {
+            std::error_code ec;
+            progressFunc(0.0f);
+            auto metaRes = getMetadata(levelKey);
+            if (metaRes.isErr()) co_return Err("No level to back up! {}", metaRes.unwrapErr().error);
+            auto metadata = metaRes.unwrap();
+            
+            createFilesIfNeeded(levelKey);
+            progressFunc(0.1f);
 
-        if (count.size() > backupsAmount.value()){
-            int index = 0;
-            for (const auto& backupName : count)
-            {
-                if (index == count.size() - backupsAmount.value()) break;
+            auto levelBackupsFilePath = getSavesFolderPath() / levelKey / StatsManager::BACKUPS_DIR_NAME;
 
-                (void)deleteBackup(levelKey, backupName);
+            auto lvlBackupsDirRes = geode::utils::file::createDirectory(levelBackupsFilePath);
+            if (lvlBackupsDirRes.isErr()) co_return Err("failed to create backups folder! {}", lvlBackupsDirRes.unwrapErr());
 
-                index++;
+            auto currBackupName = StatsManager::getNowSeconds();
+
+            levelBackupsFilePath /= std::to_string(currBackupName);
+
+            auto lvlBackupDirRes = geode::utils::file::createDirectory(levelBackupsFilePath);
+            if (lvlBackupDirRes.isErr()) co_return Err("failed to create backup folder! {}", lvlBackupDirRes.unwrapErr());
+            progressFunc(0.2f);
+
+            if (saveLevelStats){
+
+                if (getGeneral(levelKey).isErr()){
+                    (void)deleteBackup(levelKey, currBackupName);
+
+                    co_return Err("backup failed! failed to read general stats");
+                }
+
+                std::filesystem::copy_file(getSavesFolderPath() / levelKey / StatsManager::FROM0_FILE_NAME, levelBackupsFilePath / StatsManager::FROM0_FILE_NAME, std::filesystem::copy_options::overwrite_existing, ec);
+                if (ec) co_return Err("Failed to backup level stats: {}", ec.message());
             }
-        }
-    }
+            progressFunc(0.35f);
 
-    std::filesystem::copy_file(getSavesFolderPath() / levelKey / StatsManager::METADATA_FILE_NAME, levelBackupsFilePath / StatsManager::METADATA_FILE_NAME, std::filesystem::copy_options::overwrite_existing, ec);
-    if (ec) return Err("Failed to backup level metadata: {}", ec.message());
+            auto backupsAmount = Settings::getMaxBackupAmount();
 
-    if (sessionsToSave == std::nullopt) return Ok();
+            if (backupsAmount != std::nullopt){
+                auto count = getBackupsCount(levelKey);
 
-    if (sessionsToSave.value() >= -1){
-        levelBackupsFilePath /= StatsManager::SESSIONS_DIR_NAME;
+                if (count.size() > backupsAmount.value()){
+                    int index = 0;
+                    for (const auto& backupName : count)
+                    {
+                        if (index == count.size() - backupsAmount.value()) break;
 
-        auto lvlBackupsDirRes = geode::utils::file::createDirectory(levelBackupsFilePath);
-        if (lvlBackupsDirRes.isErr()) return Err("failed to create backup sessions folder! {}", lvlBackupsDirRes.unwrapErr());
+                        (void)deleteBackup(levelKey, backupName);
 
-        std::set<long long, std::greater<long long>> sessionTimes{};
-        auto nonSorted = getAllSessionTimesForLevel(levelKey);
-        sessionTimes.insert(nonSorted.begin(), nonSorted.end());
+                        index++;
+                    }
+                }
+            }
+            progressFunc(0.5f);
 
-        int numToSave = sessionsToSave.value();
-        if (numToSave == -1)
-            numToSave = sessionTimes.size();
+            std::filesystem::copy_file(getSavesFolderPath() / levelKey / StatsManager::METADATA_FILE_NAME, levelBackupsFilePath / StatsManager::METADATA_FILE_NAME, std::filesystem::copy_options::overwrite_existing, ec);
+            if (ec) co_return Err("Failed to backup level metadata: {}", ec.message());
+            progressFunc(0.7f);
 
-        int index = 0;
-        for (const auto& sessionTime : sessionTimes)
-        {
-            if (index == numToSave) break;
-
-            if (getSession(levelKey, sessionTime).isErr()){
-                log::error("Failed to backup session {}", sessionTime);
-
-                continue;
+            if (sessionsToSave == std::nullopt) {
+                progressFunc(1.0f);
+                co_return Ok();
             }
 
-            std::filesystem::copy_file(
-                getSavesFolderPath() / levelKey / StatsManager::SESSIONS_DIR_NAME / (std::to_string(sessionTime) + ".dt"), 
-                levelBackupsFilePath / (std::to_string(sessionTime) + ".dt"), 
-                std::filesystem::copy_options::overwrite_existing,
-                ec
-            );
-            if (ec) return Err("Failed to backup session {}: {}", sessionTime, ec.message());
+            if (sessionsToSave.value() >= -1){
+                levelBackupsFilePath /= StatsManager::SESSIONS_DIR_NAME;
 
-            index++;
+                auto lvlBackupsDirRes = geode::utils::file::createDirectory(levelBackupsFilePath);
+                if (lvlBackupsDirRes.isErr()) co_return Err("failed to create backup sessions folder! {}", lvlBackupsDirRes.unwrapErr());
+
+                std::set<long long, std::greater<long long>> sessionTimes{};
+                auto nonSorted = getAllSessionTimesForLevel(levelKey);
+                sessionTimes.insert(nonSorted.begin(), nonSorted.end());
+
+                int numToSave = sessionsToSave.value();
+                if (numToSave == -1)
+                    numToSave = sessionTimes.size();
+
+                int index = 0;
+                for (const auto& sessionTime : sessionTimes)
+                {
+                    if (index == numToSave) break;
+
+                    if (getSession(levelKey, sessionTime).isErr()){
+                        log::error("Failed to backup session {}", sessionTime);
+                        index++;
+                        continue;
+                    }
+
+                    std::filesystem::copy_file(
+                        getSavesFolderPath() / levelKey / StatsManager::SESSIONS_DIR_NAME / (std::to_string(sessionTime) + ".dt"), 
+                        levelBackupsFilePath / (std::to_string(sessionTime) + ".dt"), 
+                        std::filesystem::copy_options::overwrite_existing,
+                        ec
+                    );
+                    if (ec) co_return Err("Failed to backup session {}: {}", sessionTime, ec.message());
+
+                    index++;
+                    if (numToSave > 0) {
+                        float sessionProgress = 0.7f + 0.3f * (static_cast<float>(index) / static_cast<float>(numToSave));
+                        if (sessionProgress > 1.0f) sessionProgress = 1.0f;
+                        progressFunc(sessionProgress);
+                    }
+                }
+
+                if (!sessionTimes.size())
+                    progressFunc(1.0f);
+            }
+            else progressFunc(1.0f);
+            
+            co_return Ok();
+        },
+        [showNotifications](Result<> res){
+            if (!showNotifications) return;
+
+            if (res.isErr()) {
+                log::error("{}", res.unwrapErr());
+                Notification::create("Failed to create backup!", NotificationIcon::Error)->show();
+            }
+            else Notification::create("Created backup successfully!", NotificationIcon::Success)->show();
         }
-    }
-
-    return Ok();
+    );
 }
 
 void StatsManager::createFilesIfNeeded(const std::string& levelKey){

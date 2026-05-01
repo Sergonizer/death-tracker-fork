@@ -364,7 +364,7 @@ void DTPlayLayer::onExit(){
     if (lvlKey.isOk() && Settings::getAutoBackupEnabled() && Settings::getAutoBackupAtLvlExit()){
         auto metaRes = StatsManager::getMetadata(lvlKey.unwrap());
         if (metaRes.isOk() && metaRes.unwrap().autoBackup){
-            (void)StatsManager::addBackup(
+            StatsManager::addBackup(
                 lvlKey.unwrap(),
                 Settings::getAutoBackupGeneral(),
                 Settings::getAutoBackupSessionAmount()

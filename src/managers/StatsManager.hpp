@@ -25,6 +25,8 @@ private:
     static const std::string SESSIONS_DIR_NAME; 
     static const std::string BACKUPS_DIR_NAME; 
 
+    static arc::TaskHandle<void> backupHandler;
+
 public:
     StatsManager() = delete;
 
@@ -61,7 +63,7 @@ public:
     static Result<> setGeneral(const GeneralData& stats, const std::string& levelKey);
     // add a backup into the levels backups folder
     // sessionsToSave: how many sessions to save into the backup, -1 for all, nullopt for none
-    static Result<> addBackup(const std::string& levelKey, bool saveLevelStats, std::optional<int> sessionsToSave);
+    static void addBackup(const std::string& levelKey, bool saveLevelStats, std::optional<int> sessionsToSave, bool showNotifications = false);
 
     static Result<std::set<long long>> getAllSessionTimesForLevel(GJGameLevel* const level);
     static std::set<long long> getAllSessionTimesForLevel(const std::string& levelKey);

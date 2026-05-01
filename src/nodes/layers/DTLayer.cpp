@@ -1062,7 +1062,7 @@ void DTLayer::keyBackClicked(){
 void DTLayer::onClose(CCObject* sender){
     if (m_MyLevelStats.isOk() && Settings::getAutoBackupEnabled() && Settings::getAutoBackupAtDTExit()){
         if (m_MyLevelStats.unwrap().metadata.autoBackup){
-            (void)StatsManager::addBackup(
+            StatsManager::addBackup(
                 m_MyLevelStats.unwrap().levelKey,
                 Settings::getAutoBackupGeneral(),
                 Settings::getAutoBackupSessionAmount()
