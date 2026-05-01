@@ -17,6 +17,9 @@
 float DTLayer::transitionTime = .35f;
 
 bool ColumnComperator::operator()(LayoutColumn* a, LayoutColumn* b) const {
+    if (!a || !b) {
+        return a < b;
+    }
     return a->info.orderPos < b->info.orderPos;
 }
 

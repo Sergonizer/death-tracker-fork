@@ -19,11 +19,13 @@ std::vector<std::string> StatsManager::splitStr(const std::string& str, const st
     while ((posEnd = str.find(delim, posStart)) != std::string::npos) {
         std::string token = str.substr(posStart, posEnd - posStart);
         posStart = posEnd + delimLen;
-        if (!token.empty())
-            res.push_back(token);
+        res.push_back(token);
     }
 
-    res.push_back(str.substr(posStart));
+    std::string lastToken = str.substr(posStart);
+    if (!lastToken.empty() || res.empty())
+        res.push_back(lastToken);
+
     return res;
 }
 
@@ -997,8 +999,8 @@ int StatsManager::getDifficulty(GJGameLevel* const& level){
     if (level->m_ratingsSum != 0)
         if (level->m_demon == 1){
             int fixedNum = level->m_demonDifficulty;
-
-            if (fixedNum != 0)
+            // Demon difficulty values in GD are offset by 2 (e.g., 3 = Easy, 4 = Medium)
+            if (fixedNum >= 3)
                 fixedNum -= 2;
 
             return 6 + fixedNum;
@@ -1179,7 +1181,7 @@ Result<> StatsManager::convertV2SaveToV3(const std::string& levelKey){
     auto v2Path = getSavesFolderPath() / (levelKey + ".json");
 
     if (!std::filesystem::exists(v2Path)) return Err("V2 level file doesnt exist!");
-
+    
     auto res = file::readJson(v2Path);
     GEODE_UNWRAP_INTO(auto json, res);
     
@@ -1315,7 +1317,7 @@ bool StatsManager::transferPlaytimeFromPT(geode::Result<LevelData, ErrorWithCode
             if (realSessRes.isErr()) continue;
             auto realSess = realSessRes.unwrap();
 
-            for (auto ptPair : session) {
+            for (const auto& ptPair : session) {
 
                 auto endT = ptPair[1].as<long long>();
                 auto startT = ptPair[0].as<long long>();
