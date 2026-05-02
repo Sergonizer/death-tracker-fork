@@ -1220,6 +1220,8 @@ bool DTLayer::createDeathsString(const Deaths& deaths, const LevelMetadeta& meta
 
     int hiddenRuns = 0;
 
+    int runIndex = 0;
+
     for (const auto& [run, amount] : deathVec)
     {
         auto runSplitRes = StatsManager::splitRunKey(run);
@@ -1254,6 +1256,11 @@ bool DTLayer::createDeathsString(const Deaths& deaths, const LevelMetadeta& meta
                     continue;
                 }
             }
+
+            if (runIndex % 2 == 0){
+                nbDeColor = "</cplus>";
+                nbColor = fmt::format("<cplus={}>", custom.alternateStrength);
+            }
         }
         else if (!includeRunStart && !ignoreExtraSettings){
             //log::info("a {}", runSplit.end);
@@ -1263,8 +1270,12 @@ bool DTLayer::createDeathsString(const Deaths& deaths, const LevelMetadeta& meta
             }
 
             if (newBests.has_value() && newBests.value().contains(runSplit.end)){
-                nbDeColor = "</wave></color>";
-                nbColor = fmt::format("<color={}><wave>", cc3bToHexString(newBestColoring));
+                nbDeColor = "</color>";
+                nbColor = fmt::format("<color={}>", cc3bToHexString(newBestColoring));
+            }
+            else if (runIndex % 2 == 0){
+                nbDeColor = "</cplus>";
+                nbColor = fmt::format("<cplus={}>", custom.alternateStrength);
             }
         }
 
@@ -1291,9 +1302,11 @@ bool DTLayer::createDeathsString(const Deaths& deaths, const LevelMetadeta& meta
         );
 
         //old coloring
-        //out += fmt::format("{}{}{}{}", nbColor, format, nbDeColor, custom.seperator);
-        auto toAdd = fmt::format("{}{}", format, custom.seperator);
-        out += toAdd;
+        out += fmt::format("{}{}{}{}", nbColor, format, nbDeColor, custom.seperator);
+        // auto toAdd = fmt::format("{}{}", format, custom.seperator);
+        // out += toAdd;
+
+        runIndex++;
     }
 
     if (out == "" && hiddenRuns == 0)
@@ -2899,7 +2912,7 @@ UpdateFuture DTLayer::onBestRunsKey(){
     for (const auto& [bestRunStart, bestRunEnd] : bestRuns)
     {
         co_await arc::yield();
-        auto runStringRes = StatsManager::createRunKey(Run{bestRunStart, bestRunEnd});
+        auto runStringRes = StatsManager::createRunKey(Run{bestRunStart == -1 ? std::nullopt : std::make_optional(bestRunStart), bestRunEnd});
         if (runStringRes.isErr()) continue;
         auto runString = runStringRes.unwrap();
         if (!deaths.contains(runString)) continue;
@@ -3199,6 +3212,8 @@ UpdateFuture DTLayer::onSectionKey(){
 
     auto custom = Save::getFrom0Customazations();
 
+    int indexofyeah = 0;
+
     for (const auto& startIdx : order)
     {
         for (const auto& endIdx : order)
@@ -3211,7 +3226,17 @@ UpdateFuture DTLayer::onSectionKey(){
             format = std::regex_replace(format, std::regex("\\{per\\}"), sectionID);
             format = std::regex_replace(format, std::regex("\\{d\\}"), std::to_string(it->second));
 
-            out += fmt::format("{}{}", format, custom.seperator);
+            std::string keysStart = "";
+            std::string keysEnd = "";
+
+            if (indexofyeah % 2 == 0){
+                keysEnd = "</cplus>";
+                keysStart = fmt::format("<cplus={}>", custom.alternateStrength);
+            }
+
+            out += fmt::format("{}{}{}{}", keysStart, format, custom.seperator, keysEnd);
+
+            indexofyeah++;
         }
 
         if (startIdx != order.back())

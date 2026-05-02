@@ -96,8 +96,7 @@ class DTLabel : public CCMenu {
         SimpleTextArea* labelTitleArea;
 
         CCNode* labelTextContainer;
-        //RichTextArea* labelText;
-        SimpleTextArea* labelText;
+        RichTextArea* labelText;
         float currentHeight;
 
         float normalBGOpacity = 150;
@@ -136,4 +135,6 @@ class DTLabel : public CCMenu {
         bool isHovering;
 
         float doubleClickTimer = .2f;
+
+        float getSpecificTitleHeight();
 };

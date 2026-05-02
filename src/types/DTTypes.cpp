@@ -245,6 +245,9 @@ Result<DTLabelInfo> matjson::Serialize<DTLabelInfo>::fromJson(const matjson::Val
         GEODE_UNWRAP_INTO(auto wrapping, value["wrapping"].asInt());
         info.wrapping = static_cast<WrappingMode>(wrapping);
     }
+    if (value.contains("hideHeader")) {
+        GEODE_UNWRAP_INTO(info.hideHeader, value["hideHeader"].asBool());
+    }
     return Ok(info);
 }
 
@@ -262,6 +265,7 @@ matjson::Value matjson::Serialize<DTLabelInfo>::toJson(const DTLabelInfo& value)
         { "scale", value.scale },
         { "isExpanded", value.isExpanded },
         { "wrapping", static_cast<int>(value.wrapping) },
+        { "hideHeader", value.hideHeader }
     });
 }
 
@@ -326,13 +330,18 @@ Result<stringCustomazations> matjson::Serialize<stringCustomazations>::fromJson(
     stringCustomazations sc;
     GEODE_UNWRAP_INTO(sc.seperator, value["seperator"].asString());
     GEODE_UNWRAP_INTO(sc.format, value["format"].asString());
+    if (value.contains("alternateStrength")){
+        GEODE_UNWRAP_INTO(sc.alternateStrength, value["alternateStrength"].asInt());
+    }
+
     return Ok(sc);
 }
 
 matjson::Value matjson::Serialize<stringCustomazations>::toJson(const stringCustomazations& value) {
     return matjson::makeObject({
         { "seperator", value.seperator },
-        { "format", value.format }
+        { "format", value.format },
+        { "alternateStrength", value.alternateStrength }
     });
 }
 

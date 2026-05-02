@@ -256,8 +256,9 @@ struct DTLabelInfo_s {
     ccColor4B labelColor = {170, 170, 170, 255};
     ccColor4B textColor = {255, 255, 255, 255};
     float scale = 1;
-    bool isExpanded;
+    bool isExpanded = false;
     WrappingMode wrapping = WrappingMode::CUTOFF_WRAP;
+    bool hideHeader = false;
 
     static inline const CCPoint MIN_MAX_SCALE = ccp(0.01f, 2);
 };
@@ -318,6 +319,7 @@ struct matjson::Serialize<V2LabelLayout> {
 struct stringCustomazations{
     std::string seperator = "{nl}";
     std::string format = "{per}% X{d}";
+    int alternateStrength = 25;
 };
 
 template <>
