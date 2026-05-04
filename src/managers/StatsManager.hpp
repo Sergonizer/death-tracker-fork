@@ -98,6 +98,8 @@ public:
     //save an array of run to the loaded levels save file
     static void logRuns(const std::vector<Run>& runs);
 
+    static bool safeCheckCurrF0();
+
 #pragma endregion
 
     // utility functions

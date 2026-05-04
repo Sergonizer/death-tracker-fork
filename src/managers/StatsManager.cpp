@@ -541,12 +541,8 @@ void StatsManager::logDeath(const int& percent, bool instantSave) {
 
     auto percentKey = std::to_string(percent);
 
-    if (!currentFrom0.has_value()){
-        auto from0Res = getGeneral(currentLevel);
-        if (from0Res.isOk()){
-            currentFrom0 = from0Res.unwrap();
-        }
-    }
+    if (instantSave)
+        safeCheckCurrF0();
 
     if (currentFrom0.has_value()){
         auto& val = currentFrom0.value();
@@ -585,6 +581,8 @@ void StatsManager::logDeaths(const std::vector<int>& percents) {
         return;
     }
 
+    safeCheckCurrF0();
+
     for (int i = 0; i < percents.size(); i++)
     {
         logDeath(percents[i], false);
@@ -607,12 +605,8 @@ void StatsManager::logRun(const Run& run, bool instantSave) {
         return;
     }
 
-    if (!currentFrom0.has_value()){
-        auto from0Res = getGeneral(currentLevel);
-        if (from0Res.isOk()){
-            currentFrom0 = from0Res.unwrap();
-        }
-    }
+    if (instantSave)
+        safeCheckCurrF0();
 
     auto runKey = fmt::format("{}-{}",
         run.start.value(),
@@ -647,6 +641,8 @@ void StatsManager::logRuns(const std::vector<Run>& runs) {
         return;
     }
 
+    safeCheckCurrF0();
+
     for (int i = 0; i < runs.size(); i++)
     {
         logRun(runs[i], false);
@@ -660,6 +656,19 @@ void StatsManager::logRuns(const std::vector<Run>& runs) {
     if (session){
         //log::info("session does exist r");
         (void)StatsManager::setSession(*session, currentLevel, session->sessionStartDate, true);
+    }
+}
+
+bool StatsManager::safeCheckCurrF0(){
+    auto from0Res = getGeneral(currentLevel);
+    if (from0Res.isOk()){
+        currentFrom0 = from0Res.unwrap();
+        return true;
+    }
+    else{
+        currentFrom0 = std::nullopt;
+        Notification::create("Deat Tracker cant save! File corrupted!")->show();
+        return false;
     }
 }
 

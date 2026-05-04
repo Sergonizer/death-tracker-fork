@@ -480,6 +480,8 @@ void DTPlayLayer::savePlaytime(){
         (void)StatsManager::setSession(*session, m_level, session->sessionStartDate, false);
     }
 
+    StatsManager::safeCheckCurrF0();
+
     if (StatsManager::currentFrom0.has_value()){
         auto& val = StatsManager::currentFrom0.value();
         val.playtimeGeneral += m_fields->timePassedGeneral;
