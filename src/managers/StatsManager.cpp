@@ -661,15 +661,14 @@ void StatsManager::logRuns(const std::vector<Run>& runs) {
 
 bool StatsManager::safeCheckCurrF0(){
     auto from0Res = getGeneral(currentLevel);
-    if (from0Res.isOk()){
-        currentFrom0 = from0Res.unwrap();
-        return true;
-    }
-    else{
+    if (from0Res.isErr() && from0Res.unwrapErr().code != 1) {
         currentFrom0 = std::nullopt;
-        Notification::create("Deat Tracker cant save! File corrupted!")->show();
+        Notification::create("Death Tracker cant save! File corrupted!")->show();
         return false;
     }
+
+    currentFrom0 = from0Res.unwrap();
+    return true;
 }
 
 /* utility functions

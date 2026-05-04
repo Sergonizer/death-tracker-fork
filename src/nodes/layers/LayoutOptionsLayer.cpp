@@ -38,6 +38,8 @@ LayoutOptionsLayer* LayoutOptionsLayer::create(const CCSize& size) {
 bool LayoutOptionsLayer::init(const CCSize& size) {
     if (!CCLayer::init()) return false;
 
+    this->size = size;
+
     this->setContentSize(size);
 
     // @geode-ignore(unknown-resource)
@@ -211,9 +213,8 @@ bool LayoutOptionsLayer::init(const CCSize& size) {
     scaleSlider = Slider::create(this, menu_selector(LayoutOptionsLayer::scaleSliderChanged), .5f);
     scaleSlider->setContentSize({0, 0});
     scaleSlider->setPositionY(-215);
-    scaleSlider->setPositionX(fontSizeInput->getPositionX());
+    //scaleSlider->setPositionX(fontSizeInput->getPositionX() + 30);
     scaleSlider->setID("font-size-slider");
-    scaleSlider->setScaleX(.7f);
     scaleSlider->m_delegate = this;
     labelSettingsNode->addChild(scaleSlider);
 
@@ -296,29 +297,25 @@ bool LayoutOptionsLayer::init(const CCSize& size) {
 
     labelSettingsNode->addChild(wrappingModeBtn);
 
-    auto fontSelectionBtnSpr = ButtonSprite::create("Select Font");
-    fontSelectionBtnSpr->setScale(.55f);
+    auto fontSelectionBtnSpr = ButtonSprite::create("Choose");
+    fontSelectionBtnSpr->setScale(.45f);
     auto fontSelectionBtn = CCMenuItemSpriteExtra::create(
         fontSelectionBtnSpr,
         this,
         menu_selector(LayoutOptionsLayer::onFontSelection)
     );
     fontSelectionBtn->setPositionY(-260);
+    fontSelectionBtn->setPositionX(size.width / 2 - 5 - fontSelectionBtn->getContentWidth() / 2);
     fontSelectionBtn->setID("font-selection-btn");
     labelSettingsNode->addChild(fontSelectionBtn);
 
-    fontSelectedIndicatorLabel = SimpleTextArea::create("Selected: font -1", "gjFont21.fnt");
-    fontSelectedIndicatorLabel->setID("font-select-indicator-label");
-    fontSelectedIndicatorLabel->setScale(.4f);
-    fontSelectedIndicatorLabel->setAlignment(CCTextAlignment::kCCTextAlignmentCenter);
-    fontSelectedIndicatorLabel->setPosition(fontSelectionBtn->getPosition() + ccp(0, 5 + fontSelectionBtn->getScaledContentHeight() / 2 + fontSelectedIndicatorLabel->getScaledContentHeight() / 2));
-    labelSettingsNode->addChild(fontSelectedIndicatorLabel);
+    updateFontSelectFont();
 
-    auto fontSelectionBtnLabel = CCLabelBMFont::create("Font", "bigFont.fnt");
-    fontSelectionBtnLabel->setID("font-selection-label");
-    fontSelectionBtnLabel->setScale(.4f);
-    fontSelectionBtnLabel->setPosition(fontSelectedIndicatorLabel->getPosition() + ccp(0, fontSelectedIndicatorLabel->getScaledContentHeight() / 2 + fontSelectionBtnLabel->getScaledContentHeight() / 2));
-    labelSettingsNode->addChild(fontSelectionBtnLabel);
+    // auto fontSelectionBtnLabel = CCLabelBMFont::create("Font", "bigFont.fnt");
+    // fontSelectionBtnLabel->setID("font-selection-label");
+    // fontSelectionBtnLabel->setScale(.4f);
+    // fontSelectionBtnLabel->setPosition(fontSelectedIndicatorLabel->getPosition() + ccp(0, fontSelectedIndicatorLabel->getScaledContentHeight() / 2 + fontSelectionBtnLabel->getScaledContentHeight() / 2));
+    // labelSettingsNode->addChild(fontSelectionBtnLabel);
 
     this->addEventListener(
         KeybindSettingPressedEvent(
@@ -543,8 +540,7 @@ void LayoutOptionsLayer::setEditedNodeTo(DTLabel* label) {
     );
     scaleSliderChanged(nullptr);
 
-    fontSelectedIndicatorLabel->setText(fmt::format("selected: \"{}\"", label->info.font.substr(0, label->info.font.length() - 4)));
-    fontSelectedIndicatorLabel->setFont(label->info.font);
+    updateFontSelectFont();
     if (currentlySelectedFontCell != nullptr)
         currentlySelectedFontCell->deselect();
     currentlySelectedFontCell = allFontCells[label->info.font];
@@ -776,7 +772,7 @@ void LayoutOptionsLayer::onDelete(CCObject*){
         if (onBackedOut != NULL)
             onBackedOut();
     }
-}
+} 
 
 void LayoutOptionsLayer::onFontSelected(FontSelectionCell* cell){
     if (!isEditingNode()) return;
@@ -788,8 +784,7 @@ void LayoutOptionsLayer::onFontSelected(FontSelectionCell* cell){
     if (editedLabel.has_value()){
         editedLabel.value()->setFont(cell->font);
         DTLayer::get()->organizeLayout();
-        fontSelectedIndicatorLabel->setText(fmt::format("selected: \"{}\"", cell->font.substr(0, cell->font.length() - 4)));
-        fontSelectedIndicatorLabel->setFont(cell->font);
+        updateFontSelectFont();
     }
 }
 
@@ -884,4 +879,27 @@ void LayoutOptionsLayer::sliderEnded(Slider* slider){
     #if defined(GEODE_IS_MOBILE)
     sliderUpdate();
     #endif
+}
+
+void LayoutOptionsLayer::updateFontSelectFont(){
+    if (!editedLabel.has_value()) return;
+
+    if (fontSelectedIndicatorLabel != nullptr)
+        fontSelectedIndicatorLabel->removeMeAndCleanup();
+    
+    fontSelectedIndicatorLabel = TextInput::create(
+        size.width / 2 + 10, 
+        "",
+        editedLabel.value()->info.font
+    );
+    fontSelectedIndicatorLabel->setID("font-select-indicator-label");
+    fontSelectedIndicatorLabel->setString(fmt::format(
+        "Font: \"{}\"", 
+        editedLabel.value()->info.font.substr(0, editedLabel.value()->info.font.length() - 4)
+    ));
+    fontSelectedIndicatorLabel->getInputNode()->setTouchEnabled(false);
+    fontSelectedIndicatorLabel->setAnchorPoint({0, .5f});
+    fontSelectedIndicatorLabel->setPosition(ccp(-size.width / 2 + 5, -260));
+    fontSelectedIndicatorLabel->getBGSprite()->setScaleY(.3f);
+    labelSettingsNode->addChild(fontSelectedIndicatorLabel);
 }

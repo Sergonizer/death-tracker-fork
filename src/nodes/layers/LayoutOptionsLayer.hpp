@@ -29,6 +29,8 @@ class LayoutOptionsLayer : public CCLayer, public SliderDelegate {
     private:
         bool init(const CCSize& size);
 
+        CCSize size;
+
         std::optional<DTLabel*> editedLabel = std::nullopt;
         std::optional<LayoutColumn*> editedColumn = std::nullopt;
 
@@ -66,7 +68,7 @@ class LayoutOptionsLayer : public CCLayer, public SliderDelegate {
         CCMenuItemSpriteExtra* wrappingModeBtn;
         
         void onFontSelection(CCObject*);
-        SimpleTextArea* fontSelectedIndicatorLabel;
+        TextInput* fontSelectedIndicatorLabel;
         
         void onBack(CCObject*);
         void onDelete(CCObject*);
@@ -90,4 +92,6 @@ class LayoutOptionsLayer : public CCLayer, public SliderDelegate {
 
         void sliderEnded(Slider* slider) override;
         void sliderUpdate();
+
+        void updateFontSelectFont();
     };
