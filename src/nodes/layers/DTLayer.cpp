@@ -3139,7 +3139,7 @@ UpdateFuture DTLayer::onSectionKey(){
         validSections.push_back(section);
     }
     
-    if (validSections.size() <= 1) co_return Err(UpdateFutureError("Not enough sections!", false));
+    if (validSections.size() <= 1) co_return Err(UpdateFutureError("No sections specified!", false));
 
     GEODE_CO_UNWRAP_INTO(auto deaths, co_await getTFor<Deaths>([](GeneralData const& data){
         auto runs = data.runs;
