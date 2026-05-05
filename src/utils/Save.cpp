@@ -106,6 +106,13 @@ void Save::setTutorialSeen(const std::string& tutorialID){
     Mod::get()->setSavedValue("tutorialsSeen", tutorialsSeen);
 }
 
+std::vector<DTLayoutPreset> Save::getLayoutPresets(){
+    return Mod::get()->getSavedValue<std::vector<DTLayoutPreset>>("layoutPresets");
+}
+void Save::setLayoutPresets(const std::vector<DTLayoutPreset>& presets){
+    Mod::get()->setSavedValue("layoutPresets", presets);
+}
+
 DTLayoutV3 Save::getDefaultLayout(){
     return DTLayoutV3{
         .columns = std::vector<DTColumnInfo>{

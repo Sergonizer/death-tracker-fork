@@ -303,12 +303,20 @@ Result<DTLayoutPreset> matjson::Serialize<DTLayoutPreset>::fromJson(const matjso
     DTLayoutPreset preset;
     GEODE_UNWRAP_INTO(preset.name, value["name"].asString());
     GEODE_UNWRAP_INTO(preset.layout, value["layout"].as<DTLayoutV3>());
+    if (value.contains("newBestColor")){
+        GEODE_UNWRAP_INTO(preset.newBestColor, value["newBestColor"].as<ccColor3B>());
+    }
+    if (value.contains("sessionBestColor")){
+        GEODE_UNWRAP_INTO(preset.sessionBestColor, value["sessionBestColor"].as<ccColor3B>());
+    }
     return Ok(preset);
 }
 matjson::Value matjson::Serialize<DTLayoutPreset>::toJson(const DTLayoutPreset& value){
     return matjson::makeObject({
         { "name", value.name },
-        { "layout", value.layout }
+        { "layout", value.layout },
+        { "newBestColor", value.newBestColor },
+        { "sessionBestColor", value.sessionBestColor }
     });
 }
 

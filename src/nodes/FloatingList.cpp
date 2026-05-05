@@ -117,15 +117,65 @@ void FloatingList::addItem(const FloatingListItem& text){
     buttonItem->setEnabled(isOpen);
 
     scrollLayer->m_contentLayer->addChild(menu);
-    scrollLayer->m_contentLayer->updateLayout();
+    updateListLayout();
     itemIds[buttonItem] = text;
-    if (sideBtn != nullptr)
+    if (sideBtn != nullptr){
+        buttonItem->setPositionX(buttonItem->getPositionX() - sideBtn->getContentWidth() / 2 - 1);
+        sideBtn->setPosition(buttonItem->getPosition() + ccp(
+            buttonItem->getContentWidth() / 2 + sideBtn->getContentWidth() / 2 + 2,
+            0
+        ));
         extraButtonsItemIds[sideBtn] = text;
+    }
 }
 void FloatingList::addItems(const std::vector<FloatingListItem>& texts){
     for (const auto& text : texts){
         addItem(text);
     }
+}
+
+void FloatingList::removeItem(int id){
+    CCMenuItemSpriteExtra* element = nullptr;
+    for (const auto& [_, item] : itemIds){
+        if (item.id == id){
+            element = _;
+            break;
+        }
+    }
+
+    if (element == nullptr) return;
+
+    CCMenuItemSpriteExtra* extraToRemove = nullptr;
+
+    for (const auto& [item, _] : extraButtonsItemIds){
+        if (_.id == id){
+            extraToRemove = item;
+            break;
+        }
+    }
+
+    if (extraToRemove != nullptr){
+        extraButtonsItemIds.erase(extraToRemove);
+    }
+
+    itemIds.erase(element);
+
+    element->getParent()->removeMeAndCleanup();
+    updateListLayout();
+}
+
+void FloatingList::clearAllItems(){
+    std::set<int> ids{};
+
+    for (const auto& [_, item] : itemIds){
+        ids.insert(item.id);
+    }
+
+    for (const auto& id : ids)
+    {
+        removeItem(id);
+    }
+    
 }
 
 void FloatingList::open(){
@@ -248,4 +298,24 @@ void FloatingList::setEnabled(bool b){
     {
         btn->setEnabled(b);
     }
+}
+
+void FloatingList::updateListLayout(){
+    std::set<CCNode*> invisNodes{};
+
+    for (const auto& child : scrollLayer->m_contentLayer->getChildrenExt<CCNode*>())
+    {
+        if (!child->isVisible())
+            invisNodes.insert(child);
+        child->setVisible(true);
+    }
+    
+
+    scrollLayer->m_contentLayer->updateLayout();
+
+    for (const auto& invis : invisNodes)
+    {
+        invis->setVisible(false);
+    }
+    
 }

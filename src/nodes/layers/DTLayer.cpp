@@ -13,6 +13,7 @@
 
 #include <utils/Settings.hpp>
 #include <nodes/layers/ChangelogPopup.hpp>
+#include <nodes/layers/TextInputPopup.hpp>
 
 float DTLayer::transitionTime = .35f;
 
@@ -441,6 +442,7 @@ bool DTLayer::init(GJGameLevel* const& level) {
     resetLayoutMenu->setContentSize({0, 0});
     resetLayoutMenu->setCascadeOpacityEnabled(true);
     resetLayoutMenu->setEnabled(false);
+    resetLayoutMenu->setZOrder(3);
     m_mainLayer->addChild(resetLayoutMenu);
     
     auto resetLayoutBtnSpr = CCSprite::createWithSpriteFrameName("GJ_replayBtn_001.png");
@@ -453,7 +455,6 @@ bool DTLayer::init(GJGameLevel* const& level) {
     resetLayoutBtn->setPosition({0, 0});
     resetLayoutMenu->addChild(resetLayoutBtn);
 
-
     auto layoutPresetsBtnSpr = ButtonSprite::create("Presets", "bigFont.fnt", "GJ_button_05.png");
     layoutPresetsBtnSpr->setScale(.4f);
     layoutPresetsBtnSpr->setCascadeOpacityEnabled(true);
@@ -464,6 +465,30 @@ bool DTLayer::init(GJGameLevel* const& level) {
     );
     layoutPresetsBtn->setPosition({m_size.width, 0});
     resetLayoutMenu->addChild(layoutPresetsBtn);
+
+    presetList = FloatingList::create({
+        layoutPresetsBtn->getContentWidth() + 10,
+        90
+    });
+    presetList->setPosition(layoutPresetsBtn->getPosition() + ccp(0, layoutPresetsBtn->getContentHeight() / 2 + 2));
+    presetList->setAnchorPoint({.5f, 0});
+    presetList->setCallback([&](int id){
+        auto optItem = presetList->getItemForID(id);
+        if (!optItem.has_value()) return;
+
+        auto presets = Save::getLayoutPresets();
+        int index = 0;
+        for (const auto& preset : presets)
+        {
+            if (optItem.value().text == preset.name){
+                resetLayoutTo(preset);
+                break;
+            }
+
+            index++;
+        }
+    });
+    resetLayoutMenu->addChild(presetList);
 
     auto addPreset = CCSprite::createWithSpriteFrameName("GJ_plusBtn_001.png");
     addPreset->setScale(.45f);
@@ -478,6 +503,25 @@ bool DTLayer::init(GJGameLevel* const& level) {
     ));
     resetLayoutMenu->addChild(addPresetBtn);
 
+    auto importBtnSpr = CCSprite::createWithSpriteFrameName("GJ_plainBtn_001.png");
+    // @geode-ignore(unknown-resource)
+    auto importBtnSpr1 = CCSprite::createWithSpriteFrameName("geode.loader/install.png");
+    importBtnSpr1->setPosition(importBtnSpr->getContentSize() / 2);
+    importBtnSpr1->setScale(1.2f);
+    importBtnSpr->addChild(importBtnSpr1);
+    importBtnSpr->setCascadeOpacityEnabled(true);
+    importBtnSpr->setScale(0.45f);
+    auto importPresetBtn = CCMenuItemSpriteExtra::create(
+        importBtnSpr,
+        this,
+        menu_selector(DTLayer::onImportPreset)
+    );
+    importPresetBtn->setPosition(addPresetBtn->getPosition() + ccp(
+        -addPresetBtn->getContentWidth() / 2 - importPresetBtn->getContentWidth() / 2 - 1.5f,
+        0
+    ));
+    resetLayoutMenu->addChild(importPresetBtn);
+
     auto exportPreset = CCSprite::createWithSpriteFrameName("GJ_shareBtn_001.png");
     exportPreset->setScale(.25f);
     auto exportPresetBtn = CCMenuItemSpriteExtra::create(
@@ -485,8 +529,8 @@ bool DTLayer::init(GJGameLevel* const& level) {
         this,
         menu_selector(DTLayer::onExportPreset)
     );
-    exportPresetBtn->setPosition(addPresetBtn->getPosition() + ccp(
-        -addPresetBtn->getContentWidth() / 2 - exportPresetBtn->getContentWidth() / 2 - 1.5f,
+    exportPresetBtn->setPosition(importPresetBtn->getPosition() + ccp(
+        -importPresetBtn->getContentWidth() / 2 - exportPresetBtn->getContentWidth() / 2 - 1.5f,
         0
     ));
     resetLayoutMenu->addChild(exportPresetBtn);
@@ -2141,6 +2185,10 @@ void DTLayer::fixUpColumnPositions(){
 }
 
 void DTLayer::saveCurrentLayout(){
+    Save::setLayout(currentLayout());
+}
+
+DTLayoutV3 DTLayer::currentLayout(){
     std::set<DTLabel*> labels{};
 
     DTLayoutV3 layout{};
@@ -2159,9 +2207,7 @@ void DTLayer::saveCurrentLayout(){
         }
     }
 
-    // log::info("saving {} columns and {} labels", layout.columns.size(), layout.labels.size());
-
-    Save::setLayout(layout);
+    return layout;
 }
 
 void DTLayer::specialKeyUpdateStarted(const std::shared_ptr<SpecialKey>& key){
@@ -2344,6 +2390,8 @@ void DTLayer::exitLayoutEditing(){
     columnHolder->setEnabled(false);
 
     scrollLayer->moveBy(ccp(0, LayoutColumn::topHeight));
+
+    presetList->close();
 
     this->organizeLayout();
 }
@@ -3560,25 +3608,206 @@ void DTLayer::onResetLayout(CCObject*){
 void DTLayer::FLAlert_Clicked(FLAlertLayer* layer, bool btn2){
     if (!btn2) return;
 
-    newBestColorBtnSpr->setColor({255, 255, 0});
-    Save::setNewBestColor(newBestColorBtnSpr->getColor());
-    sessionBestColorBtnSpr->setColor({ 255, 136, 0 });
-    Save::setSessionBestColor(sessionBestColorBtnSpr->getColor());
-
-    setLayoutBy(Save::getDefaultLayout());
-    organizeLayout();
-
-    specialStrings["general"]->updateContent();
-    specialStrings["s0"]->updateContent();
+    resetLayoutTo(DTLayoutPreset{
+        .name = "Default",
+        .layout = Save::getDefaultLayout(),
+        .newBestColor = {255, 255, 0},
+        .sessionBestColor = { 255, 136, 0 }
+    });
 }
 
 
 void DTLayer::onLayoutPresets(CCObject*){
+    if (presetList->isOpened())
+        presetList->close();
+    else{
+        presetList->clearAllItems();
 
+        std::vector<FloatingListItem> items{};
+
+        presets.clear();
+
+        auto savedPresets = Save::getLayoutPresets();
+        int index = 0;
+        for (const auto& preset : savedPresets)
+        {
+            FloatingListItem newItem{};
+
+            newItem.id = index;
+            newItem.text = preset.name;
+            newItem.sideButtonSprite = CCSprite::createWithSpriteFrameName("GJ_trashBtn_001.png");
+            newItem.sideButtonSprite->setScale(.35f);
+            newItem.sideButtonCallback = [&](auto _){DTLayer::deletePreset(_);};
+
+            index++;
+
+            items.push_back(newItem);
+            presets.insert({index, preset});
+        }
+
+        presetList->addItems(items);
+        presetList->open();
+    }
 }
 void DTLayer::onAddPreset(CCObject*){
+    TextInputPopup::create(
+        "Save Layout",
+        "Layout Name",
+        "OK",
+        "",
+        [&](const auto& str){
+            savePreset(DTLayoutPreset{
+                .name = str,
+                .layout = currentLayout(),
+                .newBestColor = newBestColorBtnSpr->getColor(),
+                .sessionBestColor = sessionBestColorBtnSpr->getColor()
+            });
 
+            presetList->close();
+        }
+    )->show();
+}
+void DTLayer::onImportPreset(CCObject*){
+    async::spawn(
+        file::pick(
+            file::PickMode::OpenFile,
+            file::FilePickOptions{
+                .defaultPath = ".dtl",
+                .filters = {
+                    file::FilePickOptions::Filter{
+                        .description = "Death Tracker Layout file",
+                        .files = {
+                            "*.dtl"
+                        }
+                    }
+                }
+            }
+        ),
+        [&](file::PickResult result){
+            if (result.isErr()){
+                log::error("{}", result.unwrapErr());
+                return;
+            }
+
+            auto pickOpt = result.unwrap();
+            if (!pickOpt.has_value()) return;
+            auto pick = pickOpt.value();
+
+            if (pick.extension() != ".dtl" || !std::filesystem::exists(pick)) return;
+
+            auto preset = file::readFromJson<DTLayoutPreset>(pick);
+            if (preset.isErr()){
+                log::error("{}", preset.unwrapErr());
+                return;
+            }
+
+            savePreset(preset.unwrap());
+
+            presetList->close();
+        }
+    );
 }
 void DTLayer::onExportPreset(CCObject*){
+    TextInputPopup::create(
+        "Export Layout",
+        "Layout Name",
+        "EXPORT",
+        "",
+        [&](const auto& str){
+            auto layout = currentLayout();
+            
+            auto preset = DTLayoutPreset{
+                .name = str,
+                .layout = layout,
+                .newBestColor = newBestColorBtnSpr->getColor(),
+                .sessionBestColor = sessionBestColorBtnSpr->getColor()
+            };
 
+            async::spawn(
+                file::pick(
+                    file::PickMode::SaveFile,
+                    file::FilePickOptions{
+                        .defaultPath = str + ".dtl",
+                        .filters = {
+                            file::FilePickOptions::Filter{
+                                .description = "Death Tracker Layout file",
+                                .files = {
+                                    "*.dtl"
+                                }
+                            }
+                        }
+                    }
+                ),
+                [preset](file::PickResult result){
+                    if (result.isErr()){
+                        log::error("{}", result.unwrapErr());
+                        return;
+                    }
+
+                    auto pickOpt = result.unwrap();
+                    if (!pickOpt.has_value()) return;
+                    auto pick = pickOpt.value();
+
+                    pick = pick.replace_extension(".dtl");
+
+                    StatsManager::createFile(pick);
+
+                    if (file::writeToJson(pick, preset).isErr()){
+                        Notification::create("Failed to export layout!", NotificationIcon::Error)->show();
+                    }
+                }
+            );
+        }
+    )->show();
+}
+
+void DTLayer::savePreset(DTLayoutPreset mypreset){
+    auto presets = Save::getLayoutPresets();
+    for (const auto& preset : presets)
+    {
+        if (mypreset.name == preset.name){
+            Notification::create("A preset with that name already exists!", NotificationIcon::Error)->show();
+            return;
+        }
+    }
+    
+    presets.push_back(mypreset);
+    Save::setLayoutPresets(presets);
+}
+
+void DTLayer::deletePreset(int id){
+    geode::createQuickPopup("Warning!", "Are you sure you want to delete this preset?", "NO", "YES", [&](auto _, bool b2){
+        if (!b2) return;
+
+        auto optItem = presetList->getItemForID(id);
+        if (!optItem.has_value()) return;
+
+        auto presets = Save::getLayoutPresets();
+        int index = 0;
+        for (const auto& preset : presets)
+        {
+            if (optItem.value().text == preset.name){
+                presets.erase(std::next(presets.begin(), index));
+                break;
+            }
+
+            index++;
+        }
+
+        Save::setLayoutPresets(presets);
+        presetList->close();
+    });
+}
+
+void DTLayer::resetLayoutTo(DTLayoutPreset const& preset){
+    newBestColorBtnSpr->setColor(preset.newBestColor);
+    Save::setNewBestColor(newBestColorBtnSpr->getColor());
+    sessionBestColorBtnSpr->setColor(preset.sessionBestColor);
+    Save::setSessionBestColor(sessionBestColorBtnSpr->getColor());
+
+    setLayoutBy(preset.layout);
+    organizeLayout();
+
+    specialStrings["general"]->updateContent();
+    specialStrings["s0"]->updateContent();
 }

@@ -95,6 +95,7 @@ class DTLayer : public Popup, public FLAlertLayerProtocol {
         void removeColumn(LayoutColumn* column);
         bool cornerOnNextOrganization = true;
         void saveCurrentLayout();
+        DTLayoutV3 currentLayout();
         bool isEditingLayout = false;
 
         void subscribeKeyListener(DTLabel* label);
@@ -324,5 +325,15 @@ class DTLayer : public Popup, public FLAlertLayerProtocol {
 
         void onLayoutPresets(CCObject*);
         void onAddPreset(CCObject*);
+        void onImportPreset(CCObject*);
         void onExportPreset(CCObject*);
+
+        void savePreset(DTLayoutPreset preset);
+
+        FloatingList* presetList;
+        std::map<int, DTLayoutPreset> presets{};
+
+        void deletePreset(int id);
+
+        void resetLayoutTo(DTLayoutPreset const& preset);
 };

@@ -18,7 +18,6 @@ private:
     static std::array<std::string, 62> m_AllFontsMap;
 
     static void createFilesIfNeeded(const std::string& levelKey);
-    static void createFile(const std::filesystem::path& path);
 
     static const std::string METADATA_FILE_NAME;
     static const std::string FROM0_FILE_NAME;
@@ -38,6 +37,8 @@ public:
     static std::optional<GeneralData> currentFrom0;
     static std::optional<LevelMetadeta> currentMetadata;
     static std::optional<Session> currentSession;
+
+    static void createFile(const std::filesystem::path& path);
 
 #pragma region level setters/getters
 

@@ -12,7 +12,7 @@ struct FloatingListItem {
     std::string BGTexture = "GJ_button_01.png";
 
     CCNode* sideButtonSprite = nullptr;
-    geode::FunctionRef<void(int id)> sideButtonCallback = [](int){};
+    std::function<void(int id)> sideButtonCallback = [](int){};
 };
 
 class FloatingList : public CCNode, public CCTouchDelegate {
@@ -21,6 +21,9 @@ class FloatingList : public CCNode, public CCTouchDelegate {
 
         void addItem(const FloatingListItem& text);
         void addItems(const std::vector<FloatingListItem>& texts);
+
+        void removeItem(int id);
+        void clearAllItems();
 
         void open();
         void close();
@@ -34,6 +37,8 @@ class FloatingList : public CCNode, public CCTouchDelegate {
         std::optional<FloatingListItem> getItemForID(int id);
 
         void setEnabled(bool b);
+
+        void updateListLayout();
 
     private:
         bool init(CCSize const& size, bool startOpen);

@@ -302,6 +302,9 @@ struct matjson::Serialize<DTLayoutV3> {
 struct DTLayoutPreset {
     std::string name;
     DTLayoutV3 layout;
+
+    ccColor3B newBestColor;
+    ccColor3B sessionBestColor;
 };
 
 template <>

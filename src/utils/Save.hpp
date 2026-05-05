@@ -46,5 +46,8 @@ class Save {
         static bool wasTutorialSeen(const std::string& tutorialID);
         static void setTutorialSeen(const std::string& tutorialID);
 
+        static std::vector<DTLayoutPreset> getLayoutPresets();
+        static void setLayoutPresets(const std::vector<DTLayoutPreset>& presets);
+
         static DTLayoutV3 getDefaultLayout();
 };
