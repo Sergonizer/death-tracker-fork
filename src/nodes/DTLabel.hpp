@@ -45,6 +45,7 @@ class DTLabel : public CCMenu {
         void setTextColor(const ccColor4B& newColor);
         void setTextAlignment(CCTextAlignment alignment);
         void setTextWrapping(WrappingMode wrapMode);
+        void setHideHeader(bool hideHeader);
 
         float textCornerOffset = 5;
 
@@ -98,6 +99,8 @@ class DTLabel : public CCMenu {
         CCNode* labelTextContainer;
         RichTextArea* labelText;
         float currentHeight;
+
+        CCSprite* hideBGSpr;
 
         float normalBGOpacity = 150;
 

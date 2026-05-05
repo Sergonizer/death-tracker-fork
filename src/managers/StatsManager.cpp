@@ -666,7 +666,10 @@ bool StatsManager::safeCheckCurrF0(){
         Notification::create("Death Tracker cant save! File corrupted!")->show();
         return false;
     }
-
+    else if (from0Res.isErr()) {
+        return true;
+    }
+    
     currentFrom0 = from0Res.unwrap();
     return true;
 }

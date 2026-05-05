@@ -5,6 +5,7 @@
 #include <nodes/LayoutColumn.hpp>
 #include <nodes/FontSelectionCell.hpp>
 #include <nodes/ScrollableTextInput.hpp>
+#include <nodes/SimpleToggler.hpp>
 
 using namespace geode::prelude;
 
@@ -94,4 +95,6 @@ class LayoutOptionsLayer : public CCLayer, public SliderDelegate {
         void sliderUpdate();
 
         void updateFontSelectFont();
+
+        SimpleToggler* hideHeaderToggler;
     };

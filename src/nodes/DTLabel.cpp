@@ -121,6 +121,66 @@ bool DTLabel::init(const DTLabelInfo& info){
         }
     ));
 
+    labelText->registerRichTextKey(std::make_shared<RichTextKey<std::tuple<ccColor3B, ccColor3B, float, float>>>(
+        "gradient",
+        [](std::string value) -> Result<std::tuple<ccColor3B, ccColor3B, float, float>> {
+            ccColor3B colorA = ccWHITE;
+            ccColor3B colorB = ccWHITE;
+            float speed = 1.0f;
+            float holdTime = 0.2f;
+
+            auto splitStr = utils::string::split(value, ",");
+            if (splitStr.size() >= 1) {
+                auto res = geode::cocos::cc3bFromHexString(splitStr[0]);
+                if (res.isOk()) colorA = res.unwrap();
+            }
+            if (splitStr.size() >= 2) {
+                auto res = geode::cocos::cc3bFromHexString(splitStr[1]);
+                if (res.isOk()) colorB = res.unwrap();
+            }
+            if (splitStr.size() >= 3) {
+                auto res = geode::utils::numFromString<float>(splitStr[2]);
+                if (res.isOk()) speed = res.unwrap();
+            }
+            if (splitStr.size() >= 4) {
+                auto res = geode::utils::numFromString<float>(splitStr[3]);
+                if (res.isOk()) holdTime = res.unwrap();
+            }
+
+            return Ok(std::make_tuple(colorA, colorB, speed, holdTime));
+        },
+        [](std::tuple<ccColor3B, ccColor3B, float, float> const& value, cocos2d::CCFontSprite* sprite, int localIndex, int charIndex) {
+            auto colorA = std::get<0>(value);
+            auto colorB = std::get<1>(value);
+            auto speed = std::get<2>(value);
+            auto holdTime = std::get<3>(value);
+
+            sprite->setColor(colorA);
+
+            if (speed > 0.f) {
+                float phaseOffset = holdTime * localIndex;
+
+                auto sequence = CCSequence::create(
+                    CCDelayTime::create(phaseOffset),
+
+                    CCTintTo::create(speed, colorB.r, colorB.g, colorB.b),
+                    CCDelayTime::create(holdTime),
+
+                    CCTintTo::create(speed, colorA.r, colorA.g, colorA.b),
+                    CCDelayTime::create(holdTime),
+
+                    CCDelayTime::create(
+                        std::max(0.f, holdTime * 10.f - phaseOffset)
+                    ),
+
+                    nullptr
+                );
+
+                sprite->runAction(CCRepeatForever::create(sequence));
+            }
+        }
+    ));
+
     labelText->registerRichTextKey(std::make_shared<RichTextKey<int>>(
         "cplus",
         [](std::string value) -> Result<int> {
@@ -176,11 +236,17 @@ bool DTLabel::init(const DTLabelInfo& info){
     labelTitleBG->setOpacity(info.hideHeader ? 0 : 255);
     this->addChild(labelTitleBG);
 
+    hideBGSpr = CCSprite::createWithSpriteFrameName("hideBtn_001.png");
+    hideBGSpr->setPositionY(labelTitleBG->getContentHeight() / 2);
+    hideBGSpr->setAnchorPoint({1, .5f});
+    hideBGSpr->setScale(1 / labelTitleBG->getScale() / 2);
+    hideBGSpr->setVisible(info.hideHeader);
+    labelTitleBG->addChild(hideBGSpr);
+
     labelTitleArea = SimpleTextArea::create(info.labelName, "bigFont.fnt", .35f);
     labelTitleArea->setID("title-text");
-    labelTitleArea->setAnchorPoint({0, 1});
+    labelTitleArea->setAnchorPoint({.5f, 1});
     labelTitleArea->setAlignment(CCTextAlignment::kCCTextAlignmentLeft);
-    labelTitleArea->setPositionX(15);
     labelTitleArea->setWrappingMode(WrappingMode::CUTOFF_WRAP);
     labelTitleArea->setMaxLines(1);
     labelTitleArea->setVisible(!info.hideHeader);
@@ -296,13 +362,21 @@ void DTLabel::update(float dt){
 
     loadingCircle->setPosition({this->getContentWidth() / 2, this->getContentHeight() - getSpecificTitleHeight() / 2});
 
-    labelTitleArea->setWidth(this->getContentWidth() - labelTitleArea->getPositionX() - 4);
+    labelTitleArea->setWidth(this->getContentWidth() - expandBtn->getScaledContentHeight() * 2 - 5);
     labelTitleArea->setPositionY(this->getContentHeight());
+    labelTitleArea->setPositionX(this->getContentWidth() / 2 + (
+        labelTitleArea->getAlignment() == CCTextAlignment::kCCTextAlignmentRight && !info.hideHeader ? 
+            expandBtn->getScaledContentHeight() :
+            0
+    ));
 
     leftExpandLine->setPositionY(this->getContentHeight());
 
     rightExpandLine->setPositionY(this->getContentHeight());
     rightExpandLine->setPositionX(this->getContentWidth());
+
+    hideBGSpr->setPositionX(labelTitleBG->getContentWidth() - 5);
+    hideBGSpr->setOpacity(labelTitleBG->getOpacity());
 
     if (isMovingLabel)
         onMoveUpdate(dt);
@@ -734,7 +808,7 @@ void DTLabel::setLabelColor(const ccColor4B& newColor){
     bg->setColor({info.labelColor.r, info.labelColor.g, info.labelColor.b});
     bg->setOpacity(normalBGOpacity * (info.labelColor.a / 255.0f));
     labelTitleBG->setColor({info.labelColor.r, info.labelColor.g, info.labelColor.b});
-    labelTitleBG->setOpacity(info.hideHeader ? 0 : info.labelColor.a);
+    labelTitleBG->setOpacity(info.hideHeader && !isEditable ? 0 : info.labelColor.a);
 }
 
 void DTLabel::setTextColor(const ccColor4B& newColor){
@@ -757,6 +831,12 @@ void DTLabel::setTextWrapping(WrappingMode wrapMode){
     info.wrapping = wrapMode;
 
     labelText->setWrappingMode(wrapMode);
+}
+
+void DTLabel::setHideHeader(bool hideHeader){
+    info.hideHeader = hideHeader;
+
+    hideBGSpr->setVisible(info.hideHeader);
 }
 
 void DTLabel::onBeingEdited(){
@@ -875,5 +955,5 @@ void DTLabel::fadeTitleColorTo(ccColor4B newColor, float time){
 }
 
 float DTLabel::getSpecificTitleHeight(){
-    return !info.hideHeader || isEditable ? labelTitleHeight : 0;
+    return !info.hideHeader || isEditable ? labelTitleHeight : 2.5f;
 }

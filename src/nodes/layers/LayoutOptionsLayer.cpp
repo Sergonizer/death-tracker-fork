@@ -311,11 +311,27 @@ bool LayoutOptionsLayer::init(const CCSize& size) {
 
     updateFontSelectFont();
 
-    // auto fontSelectionBtnLabel = CCLabelBMFont::create("Font", "bigFont.fnt");
-    // fontSelectionBtnLabel->setID("font-selection-label");
-    // fontSelectionBtnLabel->setScale(.4f);
-    // fontSelectionBtnLabel->setPosition(fontSelectedIndicatorLabel->getPosition() + ccp(0, fontSelectedIndicatorLabel->getScaledContentHeight() / 2 + fontSelectionBtnLabel->getScaledContentHeight() / 2));
-    // labelSettingsNode->addChild(fontSelectionBtnLabel);
+    hideHeaderToggler = SimpleToggler::create(
+        CCSprite::createWithSpriteFrameName("GJ_checkOff_001.png"),
+        CCSprite::createWithSpriteFrameName("GJ_checkOn_001.png"),
+        .65f
+    );
+    hideHeaderToggler->setPositionY(fontSelectionBtn->getPositionY() + fontSelectionBtn->getContentHeight() / 2 + hideHeaderToggler->getContentHeight() / 2 + 7.5f);
+    hideHeaderToggler->setPositionX(size.width / 2 - 20 - hideHeaderToggler->getContentWidth() / 2);
+    hideHeaderToggler->setID("hide-header-toggler");
+    hideHeaderToggler->setCallback([&](auto state){
+        if (!editedLabel.has_value()) return;
+
+        editedLabel.value()->setHideHeader(state);
+    });
+    labelSettingsNode->addChild(hideHeaderToggler);
+
+    auto hideHeaderTogglerLabel = CCLabelBMFont::create("Hide Header", "bigFont.fnt");
+    hideHeaderTogglerLabel->setScale(.4f);
+    hideHeaderTogglerLabel->setPosition(hideHeaderToggler->getPosition() + ccp(-hideHeaderToggler->getContentWidth() / 2 - 10, 0));
+    hideHeaderTogglerLabel->setID("hide-header-label");
+    hideHeaderTogglerLabel->setAnchorPoint({1, .5f});
+    labelSettingsNode->addChild(hideHeaderTogglerLabel);
 
     this->addEventListener(
         KeybindSettingPressedEvent(
@@ -545,6 +561,8 @@ void LayoutOptionsLayer::setEditedNodeTo(DTLabel* label) {
         currentlySelectedFontCell->deselect();
     currentlySelectedFontCell = allFontCells[label->info.font];
     currentlySelectedFontCell->select();
+
+    hideHeaderToggler->toggle(label->info.hideHeader);
 
     switchToMenu(1);
 

@@ -462,7 +462,6 @@ bool DTLayer::init(GJGameLevel* const& level) {
     colorChangeBG->setZOrder(101);
     colorChangeBG->setOpacity(0);
     colorChangeBG->setScale(.85f);
-    colorChangeBG->setVisible(false);
     colorChangeBG->setCascadeOpacityEnabled(true);
     m_mainLayer->addChild(colorChangeBG);
 
@@ -588,8 +587,8 @@ bool DTLayer::init(GJGameLevel* const& level) {
         }
 
         tutorialLayer
-            // ->appendDialogue("You can also edit the <cy>new best</c> and <co>session best</c> colors", TutorialCharacterFace::TCFNormal)
-            // ->joinHighlight(colorChangeBG)
+            ->appendDialogue("You can also edit the <cy>new best</c> and <co>session best</c> colors", TutorialCharacterFace::TCFNormal)
+            ->joinHighlight(colorChangeBG)
             ->appendDialogue("One you are done, you can click the <cg>Apply Changes</c> button to save your changes", TutorialCharacterFace::TCFHappy)
             ->joinHighlight(applyChangesButton)
             ->appendDialogue("And if you <cr>regret your changes</c> you can either revert to the <cy>default layout</c> of the mod", TutorialCharacterFace::TCFNormal)
@@ -1195,15 +1194,22 @@ bool DTLayer::createDeathsString(const Deaths& deaths, const stringCustomazation
     return toReturn;
 }
 
-bool DTLayer::createDeathsString(const Deaths& deaths, const LevelMetadeta& meta, const stringCustomazations& custom, std::string& out, std::optional<NewBests> const newBests, const ccColor3B& newBestColoring, bool ignoreExtraSettings){
+bool DTLayer::createDeathsString(const Deaths& deaths, const LevelMetadeta& meta, const stringCustomazations& custom, std::string& out, std::optional<NewBests> const newBests,  const ccColor3B& newBestColoring, bool ignoreExtraSettings) {
     out = "";
-    
+
     std::vector<std::pair<std::string, int>> deathVec(deaths.begin(), deaths.end());
-    std::sort(deathVec.begin(), deathVec.end(), [](const auto& a, const auto& b){
+
+    std::sort(deathVec.begin(), deathVec.end(), [](const auto& a, const auto& b) {
         auto runARes = StatsManager::splitRunKey(a.first);
         auto runBRes = StatsManager::splitRunKey(b.first);
-        if (runARes.isErr() || runBRes.isErr()){
-            log::error("Failed to split run key! {} | {}", runARes.isErr() ? runARes.unwrapErr() : "", runBRes.isErr() ? runBRes.unwrapErr() : "");
+
+        if (runARes.isErr() || runBRes.isErr()) {
+            log::error(
+                "Failed to split run key! {} | {}",
+                runARes.isErr() ? runARes.unwrapErr() : "",
+                runBRes.isErr() ? runBRes.unwrapErr() : ""
+            );
+
             return a.first < b.first;
         }
 
@@ -1217,78 +1223,101 @@ bool DTLayer::createDeathsString(const Deaths& deaths, const LevelMetadeta& meta
     });
 
     int prevStart = -2;
-
     int hiddenRuns = 0;
-
     int runIndex = 0;
 
-    for (const auto& [run, amount] : deathVec)
-    {
+    for (const auto& [run, amount] : deathVec) {
         auto runSplitRes = StatsManager::splitRunKey(run);
-        if (runSplitRes.isErr()){
+
+        if (runSplitRes.isErr()) {
             log::error("Failed to split run key! {}", runSplitRes.unwrapErr());
             continue;
         }
 
         auto& runSplit = runSplitRes.unwrap();
 
-        bool includeRunStart = runSplit.start != std::nullopt;
+        bool includeRunStart = runSplit.start.has_value();
 
-        std::string nbDeColor = "";
-        std::string nbColor = "";
+        std::string nbDeColor;
+        std::string nbColor;
 
-        if (includeRunStart && !ignoreExtraSettings){
-            if (!meta.showAnyRun && meta.runsToShow.size()){
-                if (meta.runsToShow.contains(runSplit.start.value())){
-                    if (meta.runsToShow.at(runSplit.start.value()) > runSplit.end){
+        if (includeRunStart && !ignoreExtraSettings) {
+            int startValue = runSplit.start.value();
+
+            if (!meta.showAnyRun && !meta.runsToShow.empty()) {
+                auto it = meta.runsToShow.find(startValue);
+
+                if (it != meta.runsToShow.end()) {
+                    if (it->second > runSplit.end) {
                         hiddenRuns += amount;
                         continue;
                     }
                 }
-                else{
+                else {
                     hiddenRuns += amount;
                     continue;
                 }
             }
-            else{
-                if (meta.sharedRunToShow > runSplit.end - runSplit.start.value()){
+            else {
+                if (meta.sharedRunToShow > runSplit.end - startValue) {
                     hiddenRuns += amount;
                     continue;
                 }
             }
 
-            if (runIndex % 2 == 0){
+            if (runIndex % 2 == 0) {
                 nbDeColor = "</cplus>";
                 nbColor = fmt::format("<cplus={}>", custom.alternateStrength);
             }
         }
-        else if (!includeRunStart && !ignoreExtraSettings){
-            //log::info("a {}", runSplit.end);
-            if (meta.hideUpto > runSplit.end && runSplit.end >= 0){
+        else if (!includeRunStart && !ignoreExtraSettings) {
+            if (meta.hideUpto > runSplit.end && runSplit.end >= 0) {
                 hiddenRuns += amount;
                 continue;
             }
 
-            if (newBests.has_value() && newBests.value().contains(runSplit.end)){
-                nbDeColor = "</color>";
-                nbColor = fmt::format("<color={}>", cc3bToHexString(newBestColoring));
+            if (newBests.has_value() && newBests.value().contains(runSplit.end)) {
+                nbDeColor = "</gradient>";
+
+                constexpr int lowerAmount = 135;
+
+                int lowerR = std::min<int>(newBestColoring.r + lowerAmount, 255);
+                int lowerG = std::min<int>(newBestColoring.g + lowerAmount, 255);
+                int lowerB = std::min<int>(newBestColoring.b + lowerAmount, 255);
+
+                nbColor = fmt::format(
+                    "<gradient={},{},.3,.15>",
+                    cc3bToHexString(newBestColoring),
+                    cc3bToHexString(ccColor3B{
+                        static_cast<GLubyte>(lowerR),
+                        static_cast<GLubyte>(lowerG),
+                        static_cast<GLubyte>(lowerB)
+                    })
+                );
             }
-            else if (runIndex % 2 == 0){
+            else if (runIndex % 2 == 0) {
                 nbDeColor = "</cplus>";
                 nbColor = fmt::format("<cplus={}>", custom.alternateStrength);
             }
         }
 
-        if (prevStart != runSplit.start.value_or(-1)){
-            if (prevStart != -2){
+        int currentStart = runSplit.start.value_or(-1);
+
+        if (prevStart != currentStart) {
+            if (prevStart != -2) {
                 out += "----------{nl}";
             }
-            prevStart = runSplit.start.value_or(-1);
+
+            prevStart = currentStart;
         }
 
         auto format = custom.format;
 
-        std::string toReplaceWith = includeRunStart ? fmt::format("{}-{}", runSplit.start.value(), runSplit.end) : fmt::format("{}", runSplit.end);
+        std::string toReplaceWith =
+            includeRunStart
+                ? fmt::format("{}-{}", runSplit.start.value(), runSplit.end)
+                : fmt::format("{}", runSplit.end);
+
         format = std::regex_replace(
             format,
             std::regex("\\{per\\}"),
@@ -1301,23 +1330,31 @@ bool DTLayer::createDeathsString(const Deaths& deaths, const LevelMetadeta& meta
             std::to_string(amount)
         );
 
-        //old coloring
-        out += fmt::format("{}{}{}{}", nbColor, format, nbDeColor, custom.seperator);
-        // auto toAdd = fmt::format("{}{}", format, custom.seperator);
-        // out += toAdd;
+        out += fmt::format(
+            "{}{}{}{}",
+            nbColor,
+            format,
+            nbDeColor,
+            custom.seperator
+        );
 
         runIndex++;
     }
 
-    if (out == "" && hiddenRuns == 0)
+    if (out.empty() && hiddenRuns == 0) {
         out = "No Deaths Found!";
+    }
     else {
-        out.erase(out.length() - custom.seperator.length());
+        if (!custom.seperator.empty() && out.size() >= custom.seperator.size()) {
+            out.erase(out.size() - custom.seperator.size());
+        }
     }
 
-    if (hiddenRuns != 0){
-        if (out != "")
+    if (hiddenRuns != 0) {
+        if (!out.empty()) {
             out += "{nl}";
+        }
+
         out += fmt::format("{}x hidden", hiddenRuns);
     }
 
@@ -3484,6 +3521,14 @@ void DTLayer::onResetLayout(CCObject*){
 void DTLayer::FLAlert_Clicked(FLAlertLayer* layer, bool btn2){
     if (!btn2) return;
 
+    newBestColorBtnSpr->setColor({255, 255, 0});
+    Save::setNewBestColor(newBestColorBtnSpr->getColor());
+    sessionBestColorBtnSpr->setColor({ 255, 136, 0 });
+    Save::setSessionBestColor(sessionBestColorBtnSpr->getColor());
+
     setLayoutBy(Save::getDefaultLayout());
     organizeLayout();
+
+    specialStrings["general"]->updateContent();
+    specialStrings["s0"]->updateContent();
 }
