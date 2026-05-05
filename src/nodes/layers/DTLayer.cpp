@@ -535,6 +535,49 @@ bool DTLayer::init(GJGameLevel* const& level) {
     ));
     resetLayoutMenu->addChild(exportPresetBtn);
 
+    auto presetsTutorial = TutorialButton::create(.75f, "layout-presets", [
+        &,
+        exportPresetBtn,
+        importPresetBtn,
+        addPresetBtn,
+        layoutPresetsBtn,
+        discardChangesButton
+    ](DTTutorialLayer* tutorialLayer){
+        tutorialLayer->appendDialogue("Here you are able to save <cy>presets</c> of your layout!", TutorialCharacterFace::TCFHappy)
+            ->joinTransform(TutorialBoxPlacement::TBPRight, .75f)
+            ->joinHighlight(exportPresetBtn)
+            ->joinHighlight(importPresetBtn)
+            ->joinHighlight(addPresetBtn)
+            ->joinHighlight(layoutPresetsBtn)
+
+            ->appendDialogue("You can click the <cy>presets</c> button to look at a <cf>list of all the presets</c> you have", TutorialCharacterFace::TCFNormal)
+            ->joinHighlight(layoutPresetsBtn)
+
+            ->appendDialogue("In that list, you can click the <cg>presets name</c> to <cy>switch</c> to it, and the <cr>trash</c> button to <cr>delete</c> it!", TutorialCharacterFace::TCFHappy)
+            ->joinHighlight(layoutPresetsBtn)
+
+            ->appendDialogue("Theres the <cg>create preset</c> button, that takes the <cy>current layout</c> and makes it into a preset", TutorialCharacterFace::TCFNormal)
+            ->joinHighlight(addPresetBtn)
+            ->joinTextToHighlight("Create Preset", .3f, TutorialTextPlacement::TTTop)
+
+            ->appendDialogue("Theres the <cf>import preset</c> button, which lets you choose a '.dtl' file and add it as a preset", TutorialCharacterFace::TCFNormalTilted)
+            ->joinHighlight(importPresetBtn)
+            ->joinTextToHighlight("Import Preset", .3f, TutorialTextPlacement::TTTop)
+
+            ->appendDialogue("And lastly, you have the <cd>export preset</c> button, which adds your <cy>current layout</c> into a '.dtl' file!", TutorialCharacterFace::TCFHappy)
+            ->joinHighlight(importPresetBtn)
+            ->joinTextToHighlight("Export Preset", .3f, TutorialTextPlacement::TTTop)
+
+            ->appendDialogue("Remember you can always <cr>discard your changes</c> if something isnt like you wanted", TutorialCharacterFace::TCFNormal)
+            ->joinTransform(TutorialBoxPlacement::TBPCenter, .75f)
+            ->joinHighlight(discardChangesButton);
+    });
+    presetsTutorial->setPosition(layoutPresetsBtn->getPosition() + ccp(
+        0,
+        presetsTutorial->getContentHeight() / 2 + 1 + layoutPresetsBtn->getContentHeight() / 2
+    ));
+    resetLayoutMenu->addChild(presetsTutorial);
+
 
     resetLayoutMenu->setOpacity(0);
 
