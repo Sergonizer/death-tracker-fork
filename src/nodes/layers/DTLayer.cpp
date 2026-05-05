@@ -453,6 +453,45 @@ bool DTLayer::init(GJGameLevel* const& level) {
     resetLayoutBtn->setPosition({0, 0});
     resetLayoutMenu->addChild(resetLayoutBtn);
 
+
+    auto layoutPresetsBtnSpr = ButtonSprite::create("Presets", "bigFont.fnt", "GJ_button_05.png");
+    layoutPresetsBtnSpr->setScale(.4f);
+    layoutPresetsBtnSpr->setCascadeOpacityEnabled(true);
+    auto layoutPresetsBtn = CCMenuItemSpriteExtra::create(
+        layoutPresetsBtnSpr,
+        this,
+        menu_selector(DTLayer::onLayoutPresets)
+    );
+    layoutPresetsBtn->setPosition({m_size.width, 0});
+    resetLayoutMenu->addChild(layoutPresetsBtn);
+
+    auto addPreset = CCSprite::createWithSpriteFrameName("GJ_plusBtn_001.png");
+    addPreset->setScale(.45f);
+    auto addPresetBtn = CCMenuItemSpriteExtra::create(
+        addPreset,
+        this,
+        menu_selector(DTLayer::onAddPreset)
+    );
+    addPresetBtn->setPosition(layoutPresetsBtn->getPosition() + ccp(
+        -layoutPresetsBtn->getContentWidth() / 2 - addPresetBtn->getContentWidth() / 2 - 1.5f,
+        0
+    ));
+    resetLayoutMenu->addChild(addPresetBtn);
+
+    auto exportPreset = CCSprite::createWithSpriteFrameName("GJ_shareBtn_001.png");
+    exportPreset->setScale(.25f);
+    auto exportPresetBtn = CCMenuItemSpriteExtra::create(
+        exportPreset,
+        this,
+        menu_selector(DTLayer::onExportPreset)
+    );
+    exportPresetBtn->setPosition(addPresetBtn->getPosition() + ccp(
+        -addPresetBtn->getContentWidth() / 2 - exportPresetBtn->getContentWidth() / 2 - 1.5f,
+        0
+    ));
+    resetLayoutMenu->addChild(exportPresetBtn);
+
+
     resetLayoutMenu->setOpacity(0);
 
     colorChangeBG = CCScale9Sprite::create("GJ_square05.png");
@@ -3531,4 +3570,15 @@ void DTLayer::FLAlert_Clicked(FLAlertLayer* layer, bool btn2){
 
     specialStrings["general"]->updateContent();
     specialStrings["s0"]->updateContent();
+}
+
+
+void DTLayer::onLayoutPresets(CCObject*){
+
+}
+void DTLayer::onAddPreset(CCObject*){
+
+}
+void DTLayer::onExportPreset(CCObject*){
+
 }

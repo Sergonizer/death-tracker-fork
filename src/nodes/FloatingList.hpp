@@ -10,6 +10,9 @@ struct FloatingListItem {
     std::string text;
     std::string font = "bigFont.fnt";
     std::string BGTexture = "GJ_button_01.png";
+
+    CCNode* sideButtonSprite = nullptr;
+    geode::FunctionRef<void(int id)> sideButtonCallback = [](int){};
 };
 
 class FloatingList : public CCNode, public CCTouchDelegate {
@@ -38,12 +41,14 @@ class FloatingList : public CCNode, public CCTouchDelegate {
         geode::Function<void(const int& id)> onItemClicked;
 
         void itemClicked(CCObject* sender);
+        void sideBtnClicked(CCObject* sender);
 
         void setItemEnabled(bool isEnabled);
 
         bool ccTouchBegan(CCTouch *pTouch, CCEvent *pEvent) override;
 
         std::map<CCMenuItemSpriteExtra*, FloatingListItem> itemIds{};
+        std::map<CCMenuItemSpriteExtra*, FloatingListItem> extraButtonsItemIds{};
 
         ScrollLayer* scrollLayer;
         Scrollbar* scrollbar;

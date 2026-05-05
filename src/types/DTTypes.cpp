@@ -299,6 +299,19 @@ matjson::Value matjson::Serialize<DTLayoutV3>::toJson(const DTLayoutV3& value) {
     });
 }
 
+Result<DTLayoutPreset> matjson::Serialize<DTLayoutPreset>::fromJson(const matjson::Value& value){
+    DTLayoutPreset preset;
+    GEODE_UNWRAP_INTO(preset.name, value["name"].asString());
+    GEODE_UNWRAP_INTO(preset.layout, value["layout"].as<DTLayoutV3>());
+    return Ok(preset);
+}
+matjson::Value matjson::Serialize<DTLayoutPreset>::toJson(const DTLayoutPreset& value){
+    return matjson::makeObject({
+        { "name", value.name },
+        { "layout", value.layout }
+    });
+}
+
 Result<V2LabelLayout> matjson::Serialize<V2LabelLayout>::fromJson(const matjson::Value& value) {
     V2LabelLayout layout;
     GEODE_UNWRAP_INTO(layout.labelName, value["labelName"].asString());

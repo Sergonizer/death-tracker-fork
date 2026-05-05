@@ -76,8 +76,18 @@ void FloatingList::addItem(const FloatingListItem& text){
 
     float off = 5;
 
+    CCMenuItemSpriteExtra* sideBtn = nullptr;
+    if (text.sideButtonSprite != nullptr){
+        sideBtn = CCMenuItemSpriteExtra::create(
+            text.sideButtonSprite,
+            this,
+            menu_selector(FloatingList::sideBtnClicked)
+        );
+        sideBtn->setTag(text.id);
+    }
+
     auto buttonSpr = ButtonSprite::create(text.text.c_str(), text.font.c_str(), text.BGTexture.c_str());
-    float wantedScaleX = (this->getContentWidth() - off) / buttonSpr->getContentWidth();
+    float wantedScaleX = (this->getContentWidth() - off - (sideBtn != nullptr ? sideBtn->getContentWidth() : 0)) / buttonSpr->getContentWidth();
     float wantedScaleY = (elementHeight - off) / buttonSpr->getContentHeight();
     buttonSpr->setScale(wantedScaleX > wantedScaleY ? wantedScaleY : wantedScaleX);
     auto buttonItem = CCMenuItemSpriteExtra::create(
@@ -94,6 +104,10 @@ void FloatingList::addItem(const FloatingListItem& text){
     });
     buttonItem->setPosition(menu->getContentSize() / 2);
 
+    if (sideBtn != nullptr){
+        menu->addChild(sideBtn);
+    }
+
     auto itemBG = CCScale9Sprite::create("square02_small.png");
     itemBG->setContentSize(menu->getContentSize());
     itemBG->setOpacity(150);
@@ -105,6 +119,8 @@ void FloatingList::addItem(const FloatingListItem& text){
     scrollLayer->m_contentLayer->addChild(menu);
     scrollLayer->m_contentLayer->updateLayout();
     itemIds[buttonItem] = text;
+    if (sideBtn != nullptr)
+        extraButtonsItemIds[sideBtn] = text;
 }
 void FloatingList::addItems(const std::vector<FloatingListItem>& texts){
     for (const auto& text : texts){
@@ -153,6 +169,9 @@ void FloatingList::setItemEnabled(bool isEnabled){
     for (const auto& [item, _] : itemIds){
         item->setEnabled(isEnabled);
     }
+    for (const auto& [item, _] : extraButtonsItemIds){
+        item->setEnabled(isEnabled);
+    }
 }
 
 void FloatingList::setCallback(geode::Function<void(const int& id)> callback){
@@ -164,6 +183,13 @@ void FloatingList::itemClicked(CCObject* sender){
     if (!itemIds.contains(btn)) return;
 
     if (onItemClicked) onItemClicked(itemIds[btn].id);
+}
+
+void FloatingList::sideBtnClicked(CCObject* sender){
+    auto btn = static_cast<CCMenuItemSpriteExtra*>(sender);
+    if (!extraButtonsItemIds.contains(btn)) return;
+
+    extraButtonsItemIds[btn].sideButtonCallback(extraButtonsItemIds[btn].id);
 }
 
 void FloatingList::setOpenDirection(bool openUpwards){
@@ -215,6 +241,10 @@ void FloatingList::onExit(){
 
 void FloatingList::setEnabled(bool b){
     for (const auto& [btn, _] : itemIds)
+    {
+        btn->setEnabled(b);
+    }
+    for (const auto& [btn, _] : extraButtonsItemIds)
     {
         btn->setEnabled(b);
     }

@@ -320,4 +320,9 @@ class DTLayer : public Popup, public FLAlertLayerProtocol {
 
         ccColor3B originalNewBestColor = {255, 255, 255};
         ccColor3B originalSessionBestColor = {255, 255, 255};
+
+
+        void onLayoutPresets(CCObject*);
+        void onAddPreset(CCObject*);
+        void onExportPreset(CCObject*);
 };

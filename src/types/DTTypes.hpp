@@ -299,6 +299,17 @@ struct matjson::Serialize<DTLayoutV3> {
     static matjson::Value toJson(const DTLayoutV3& value);
 };
 
+struct DTLayoutPreset {
+    std::string name;
+    DTLayoutV3 layout;
+};
+
+template <>
+struct matjson::Serialize<DTLayoutPreset> {
+    static Result<DTLayoutPreset> fromJson(const matjson::Value& value);
+    static matjson::Value toJson(const DTLayoutPreset& value);
+};
+
 typedef struct {
     std::string labelName;
     std::string text;
