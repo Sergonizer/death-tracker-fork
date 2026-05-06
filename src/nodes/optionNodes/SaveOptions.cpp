@@ -361,14 +361,6 @@ void SaveOptions::updateBackupsList(){
 }
 
 void SaveOptions::onExport(CCObject*){
-    saveToDT();
-}
-
-void SaveOptions::onImport(CCObject*){
-    ImportPopup::create()->show();
-}
-
-void SaveOptions::saveToDT(){
     auto dtLayer = DTLayer::get();
     if (dtLayer == nullptr || dtLayer->m_MyLevelStats.isErr()) return;
 
@@ -380,6 +372,12 @@ void SaveOptions::saveToDT(){
                     .description = "Death Tracker file",
                     .files = {
                         "*.dt"
+                    }
+                },
+                file::FilePickOptions::Filter{
+                    .description = "CSV file",
+                    .files = {
+                        "*.csv"
                     }
                 }
             }
@@ -396,36 +394,53 @@ void SaveOptions::saveToDT(){
             if (!pickOpt.has_value()) return;
             auto pick = pickOpt.value();
 
-            pick = pick.replace_extension(".dt");
+            auto source = StatsManager::getSavesFolderPath() / dtLayer->m_MyLevelStats.unwrap().levelKey;
 
-            auto toZip = StatsManager::getSavesFolderPath() / dtLayer->m_MyLevelStats.unwrap().levelKey;
-
-            auto zipFileRes = geode::utils::file::Zip::create(pick);
-            if (zipFileRes.isErr()){
-                Notification::create("Failed to create zip file!", NotificationIcon::Error)->show();
-                log::error("{}", zipFileRes.unwrapErr());
+            if (pick.extension() == ".csv"){
+                saveToCSV(pick, source);
                 return;
             }
 
-            auto zip = std::move(zipFileRes).unwrap();
+            pick = pick.replace_extension(".dt");
 
-            for (const auto& entry : std::filesystem::directory_iterator(toZip)) {
-                Result<> didFileWrite = Err("");
-                
-                if (entry.path().filename() == "backups") continue;
-
-                if (std::filesystem::is_directory(entry)){
-                    didFileWrite = zip.addAllFrom(entry);
-                }
-                else {
-                    didFileWrite = zip.addFrom(entry);
-                }
-
-                if (didFileWrite.isErr()){
-                    Notification::create("Failed to write zip file!", NotificationIcon::Error)->show();
-                    return;
-                }
-            }
+            saveToDT(pick, source);
         }
     );
+}
+
+void SaveOptions::onImport(CCObject*){
+    ImportPopup::create()->show();
+}
+
+void SaveOptions::saveToDT(std::filesystem::path const& pick, std::filesystem::path const& source){
+    auto zipFileRes = geode::utils::file::Zip::create(pick);
+    if (zipFileRes.isErr()){
+        Notification::create("Failed to create zip file!", NotificationIcon::Error)->show();
+        log::error("{}", zipFileRes.unwrapErr());
+        return;
+    }
+
+    auto zip = std::move(zipFileRes).unwrap();
+
+    for (const auto& entry : std::filesystem::directory_iterator(source)) {
+        Result<> didFileWrite = Err("");
+        
+        if (entry.path().filename() == "backups") continue;
+
+        if (std::filesystem::is_directory(entry)){
+            didFileWrite = zip.addAllFrom(entry);
+        }
+        else {
+            didFileWrite = zip.addFrom(entry);
+        }
+
+        if (didFileWrite.isErr()){
+            Notification::create("Failed to write zip file!", NotificationIcon::Error)->show();
+            return;
+        }
+    }
+}
+
+void SaveOptions::saveToCSV(std::filesystem::path const& pick, std::filesystem::path const& source){
+    
 }

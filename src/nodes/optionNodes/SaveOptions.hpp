@@ -31,7 +31,7 @@ class SaveOptions : public OptionsNode, public FLAlertLayerProtocol {
         void updateBackupsList();
 
         async::TaskHolder<file::PickResult> filepicklistener;
-        void saveToDT();
+        void saveToDT(std::filesystem::path const& pick, std::filesystem::path const& source);
 
     public:
         virtual void onOpened() override;
