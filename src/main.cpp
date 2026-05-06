@@ -7,6 +7,12 @@ using namespace geode::prelude;
 $execute {
     (void)file::createDirectory(Mod::get()->getSaveDir() / "levels");
 
+    GameEvent(GameEventType::Exiting).listen([](){
+        StatsManager::isGameClosing = true;
+        return false;
+    }).leak();
+
+
     if (Save::getLayout().isEmpty()){
         Save::setLayout(Save::getDefaultLayout());
 

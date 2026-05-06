@@ -38,6 +38,8 @@ public:
     static std::optional<LevelMetadeta> currentMetadata;
     static std::optional<Session> currentSession;
 
+    static bool isGameClosing;
+
     static void createFile(const std::filesystem::path& path);
 
 #pragma region level setters/getters

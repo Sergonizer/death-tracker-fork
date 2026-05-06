@@ -36,6 +36,8 @@ class $modify(DTPlayLayer, PlayLayer) {
         std::vector<Run> runsToSave{};
         
         bool levelBeaten = false;
+
+        geode::comm::ListenerHandle gameExitListener;
     };
 
     bool disableCompletedLevelTracking();

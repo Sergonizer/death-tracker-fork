@@ -1,6 +1,8 @@
 # Changelog
 
 ## v3.0.7
+- new best colors are back!
+- added alternating bright/normal colors for runs
 - made it so backups would not lag the game
 - small fixes to text and in general
 - hide header option added to label settings
