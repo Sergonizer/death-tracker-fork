@@ -79,107 +79,108 @@ bool DTLabel::init(const DTLabelInfo& info){
     setLabelText(info.text);
     labelTextContainer->addChild(labelText);
 
-    labelText->registerRichTextKey(std::make_shared<RichTextKey<std::tuple<float, float, float, float>>>(
-        "wave",
-        [](std::string value) -> Result<std::tuple<float, float, float, float>> {
-            float speed = 1;
-            float distanceY = 5;
-            float distanceX = 0;
-            float offsetPerIndex = .3f;
+    // labelText->registerRichTextKey(std::make_shared<RichTextKey<std::tuple<float, float, float, float>>>(
+    //     "wave",
+    //     [](std::string value) -> Result<std::tuple<float, float, float, float>> {
+    //         float speed = 1;
+    //         float distanceY = 5;
+    //         float distanceX = 0;
+    //         float offsetPerIndex = .3f;
 
-            auto splitStr = utils::string::split(value, ",");
-            if (splitStr.size() >= 1){
-                auto speedRes = geode::utils::numFromString<float>(splitStr[0]);
-                if (speedRes.isOk()) speed = speedRes.unwrap();
-            }
-            if (splitStr.size() >= 2){
-                auto distanceYRes = geode::utils::numFromString<float>(splitStr[1]);
-                if (distanceYRes.isOk()) distanceY = distanceYRes.unwrap();
-            }
-            if (splitStr.size() >= 3){
-                auto distanceXRes = geode::utils::numFromString<float>(splitStr[2]);
-                if (distanceXRes.isOk()) distanceX = distanceXRes.unwrap();
-            }
-            if (splitStr.size() >= 4){
-                auto offsetPerIndexRes = geode::utils::numFromString<float>(splitStr[3]);
-                if (offsetPerIndexRes.isOk()) offsetPerIndex = offsetPerIndexRes.unwrap();
-            }
+    //         auto splitStr = utils::string::split(value, ",");
+    //         if (splitStr.size() >= 1){
+    //             auto speedRes = geode::utils::numFromString<float>(splitStr[0]);
+    //             if (speedRes.isOk()) speed = speedRes.unwrap();
+    //         }
+    //         if (splitStr.size() >= 2){
+    //             auto distanceYRes = geode::utils::numFromString<float>(splitStr[1]);
+    //             if (distanceYRes.isOk()) distanceY = distanceYRes.unwrap();
+    //         }
+    //         if (splitStr.size() >= 3){
+    //             auto distanceXRes = geode::utils::numFromString<float>(splitStr[2]);
+    //             if (distanceXRes.isOk()) distanceX = distanceXRes.unwrap();
+    //         }
+    //         if (splitStr.size() >= 4){
+    //             auto offsetPerIndexRes = geode::utils::numFromString<float>(splitStr[3]);
+    //             if (offsetPerIndexRes.isOk()) offsetPerIndex = offsetPerIndexRes.unwrap();
+    //         }
 
-            return Ok(std::make_tuple(speed, distanceY, distanceX, offsetPerIndex));
-        },
-        [](std::tuple<float, float, float, float> const& value, cocos2d::CCFontSprite* sprite, int localIndex, int charIndex) {
-            sprite->runAction(
-                CCRepeatForever::create(
-                    CCWaveAction::create(
-                        std::get<0>(value),
-                        std::get<2>(value),
-                        std::get<1>(value),
-                        std::get<3>(value) * localIndex
-                    )
-                )
-            );
-        }
-    ));
+    //         return Ok(std::make_tuple(speed, distanceY, distanceX, offsetPerIndex));
+    //     },
+    //     [](std::tuple<float, float, float, float> const& value, cocos2d::CCFontSprite* sprite, int localIndex, int charIndex) {
+    //         sprite->runAction(
+    //             CCRepeatForever::create(
+    //                 CCWaveAction::create(
+    //                     std::get<0>(value),
+    //                     std::get<2>(value),
+    //                     std::get<1>(value),
+    //                     std::get<3>(value) * localIndex
+    //                 )
+    //             )
+    //         );
+    //     }
+    // ));
 
-    labelText->registerRichTextKey(std::make_shared<RichTextKey<std::tuple<ccColor3B, ccColor3B, float, float>>>(
-        "gradient",
-        [](std::string value) -> Result<std::tuple<ccColor3B, ccColor3B, float, float>> {
-            ccColor3B colorA = ccWHITE;
-            ccColor3B colorB = ccWHITE;
-            float speed = 1.0f;
-            float holdTime = 0.2f;
+    // labelText->registerRichTextKey(std::make_shared<RichTextKey<std::tuple<ccColor3B, ccColor3B, float, float>>>(
+    //     "gradient",
+    //     [](std::string value) -> Result<std::tuple<ccColor3B, ccColor3B, float, float>> {
+    //         ccColor3B colorA = ccWHITE;
+    //         ccColor3B colorB = ccWHITE;
+    //         float speed = 1.0f;
+    //         float holdTime = 0.2f;
 
-            auto splitStr = utils::string::split(value, ",");
-            if (splitStr.size() >= 1) {
-                auto res = geode::cocos::cc3bFromHexString(splitStr[0]);
-                if (res.isOk()) colorA = res.unwrap();
-            }
-            if (splitStr.size() >= 2) {
-                auto res = geode::cocos::cc3bFromHexString(splitStr[1]);
-                if (res.isOk()) colorB = res.unwrap();
-            }
-            if (splitStr.size() >= 3) {
-                auto res = geode::utils::numFromString<float>(splitStr[2]);
-                if (res.isOk()) speed = res.unwrap();
-            }
-            if (splitStr.size() >= 4) {
-                auto res = geode::utils::numFromString<float>(splitStr[3]);
-                if (res.isOk()) holdTime = res.unwrap();
-            }
+    //         auto splitStr = utils::string::split(value, ",");
+    //         if (splitStr.size() >= 1) {
+    //             auto res = geode::cocos::cc3bFromHexString(splitStr[0]);
+    //             if (res.isOk()) colorA = res.unwrap();
+    //         }
+    //         if (splitStr.size() >= 2) {
+    //             auto res = geode::cocos::cc3bFromHexString(splitStr[1]);
+    //             if (res.isOk()) colorB = res.unwrap();
+    //         }
+    //         if (splitStr.size() >= 3) {
+    //             auto res = geode::utils::numFromString<float>(splitStr[2]);
+    //             if (res.isOk()) speed = res.unwrap();
+    //         }
+    //         if (splitStr.size() >= 4) {
+    //             auto res = geode::utils::numFromString<float>(splitStr[3]);
+    //             if (res.isOk()) holdTime = res.unwrap();
+    //         }
 
-            return Ok(std::make_tuple(colorA, colorB, speed, holdTime));
-        },
-        [](std::tuple<ccColor3B, ccColor3B, float, float> const& value, cocos2d::CCFontSprite* sprite, int localIndex, int charIndex) {
-            auto colorA = std::get<0>(value);
-            auto colorB = std::get<1>(value);
-            auto speed = std::get<2>(value);
-            auto holdTime = std::get<3>(value);
+    //         return Ok(std::make_tuple(colorA, colorB, speed, holdTime));
+    //     },
+    //     [](std::tuple<ccColor3B, ccColor3B, float, float> const& value, cocos2d::CCFontSprite* sprite, int localIndex, int charIndex) {
 
-            sprite->setColor(colorA);
+    //         auto colorA = std::get<0>(value);
+    //         auto colorB = std::get<1>(value);
+    //         auto speed = std::get<2>(value);
+    //         auto holdTime = std::get<3>(value);
 
-            if (speed > 0.f) {
-                float phaseOffset = holdTime * localIndex;
+    //         sprite->setColor(colorA);
 
-                auto sequence = CCSequence::create(
-                    CCDelayTime::create(phaseOffset),
+    //         if (speed > 0.f) {
+    //             float phaseOffset = holdTime * localIndex;
 
-                    CCTintTo::create(speed, colorB.r, colorB.g, colorB.b),
-                    CCDelayTime::create(holdTime),
+    //             auto sequence = CCSequence::create(
+    //                 CCDelayTime::create(phaseOffset),
 
-                    CCTintTo::create(speed, colorA.r, colorA.g, colorA.b),
-                    CCDelayTime::create(holdTime),
+    //                 CCTintTo::create(speed, colorB.r, colorB.g, colorB.b),
+    //                 CCDelayTime::create(holdTime),
 
-                    CCDelayTime::create(
-                        std::max(0.f, holdTime * 10.f - phaseOffset)
-                    ),
+    //                 CCTintTo::create(speed, colorA.r, colorA.g, colorA.b),
+    //                 CCDelayTime::create(holdTime),
 
-                    nullptr
-                );
+    //                 CCDelayTime::create(
+    //                     std::max(0.f, holdTime * 10.f - phaseOffset)
+    //                 ),
 
-                sprite->runAction(CCRepeatForever::create(sequence));
-            }
-        }
-    ));
+    //                 nullptr
+    //             );
+
+    //             sprite->runAction(CCRepeatForever::create(sequence));
+    //         }
+    //     }
+    // ));
 
     labelText->registerRichTextKey(std::make_shared<RichTextKey<int>>(
         "cplus",

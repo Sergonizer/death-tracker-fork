@@ -1,5 +1,12 @@
 # Changelog
 
+## v3.0.7
+- made it so backups would not lag the game
+- small fixes to text and in general
+- hide header option added to label settings
+- even more corruption safty added while playing a level
+- layout presets added
+
 ## v3.0.6
 - Removed the keyword "Error:" from some things that shouldt have it
 - Extra safty protocols for corrupted saves

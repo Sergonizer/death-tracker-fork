@@ -567,7 +567,7 @@ bool DTLayer::init(GJGameLevel* const& level) {
             ->joinTextToHighlight("Import Preset", .3f, TutorialTextPlacement::TTTop)
 
             ->appendDialogue("And lastly, you have the <cd>export preset</c> button, which adds your <cy>current layout</c> into a '.dtl' file!", TutorialCharacterFace::TCFHappy)
-            ->joinHighlight(importPresetBtn)
+            ->joinHighlight(exportPresetBtn)
             ->joinTextToHighlight("Export Preset", .3f, TutorialTextPlacement::TTTop)
 
             ->appendDialogue("Remember you can always <cr>discard your changes</c> if something isnt like you wanted", TutorialCharacterFace::TCFNormal)
@@ -1405,22 +1405,24 @@ bool DTLayer::createDeathsString(const Deaths& deaths, const LevelMetadeta& meta
             }
 
             if (newBests.has_value() && newBests.value().contains(runSplit.end)) {
-                nbDeColor = "</gradient>";
+                nbDeColor = "</color>";
 
-                constexpr int lowerAmount = 135;
+                // constexpr int lowerAmount = 135;
 
-                int lowerR = std::min<int>(newBestColoring.r + lowerAmount, 255);
-                int lowerG = std::min<int>(newBestColoring.g + lowerAmount, 255);
-                int lowerB = std::min<int>(newBestColoring.b + lowerAmount, 255);
+                // int lowerR = std::min<int>(newBestColoring.r + lowerAmount, 255);
+                // int lowerG = std::min<int>(newBestColoring.g + lowerAmount, 255);
+                // int lowerB = std::min<int>(newBestColoring.b + lowerAmount, 255);
 
                 nbColor = fmt::format(
-                    "<gradient={},{},.3,.15>",
-                    cc3bToHexString(newBestColoring),
-                    cc3bToHexString(ccColor3B{
-                        static_cast<GLubyte>(lowerR),
-                        static_cast<GLubyte>(lowerG),
-                        static_cast<GLubyte>(lowerB)
-                    })
+                    //"<gradient={},{},.3,.15><wave>",
+                    "<color={}>",
+                    cc3bToHexString(newBestColoring)
+                    // cc3bToHexString(newBestColoring),
+                    // cc3bToHexString(ccColor3B{
+                    //     static_cast<GLubyte>(lowerR),
+                    //     static_cast<GLubyte>(lowerG),
+                    //     static_cast<GLubyte>(lowerB)
+                    // })
                 );
             }
             else if (runIndex % 2 == 0) {
