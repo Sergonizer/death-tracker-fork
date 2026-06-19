@@ -214,7 +214,7 @@ void DTPlayLayer::destroyPlayer(PlayerObject* player, GameObject* p1) {
 
     if (!m_fields->disabledCheat)
         m_fields->disabledCheat = p1;
-    if (!m_fields->nolcip && m_fields->disabledCheat != p1 && !player->m_isDead && !m_levelEndAnimationStarted){
+    if (!m_fields->nolcip && m_fields->disabledCheat != static_cast<cocos2d::CCObject*>(p1) && !player->m_isDead && !m_levelEndAnimationStarted){
         log::warn("Noclip Detected!");
         m_fields->nolcip = true;
     }

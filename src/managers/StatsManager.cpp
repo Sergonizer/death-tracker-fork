@@ -683,7 +683,7 @@ bool StatsManager::safeCheckCurrF0(){
     auto from0Res = getGeneral(currentLevel);
     if (from0Res.isErr() && from0Res.unwrapErr().code != 1) {
         currentFrom0 = std::nullopt;
-        Notification::create(fmt::format("Death Tracker cant save! {}", from0Res.unwrapErr().error))->show();
+        Notification::create(fmt::format("Death Tracker cant save! {}", from0Res.unwrapErr().error), NotificationIcon::Error)->show();
         return false;
     }
     else if (from0Res.isErr()) {

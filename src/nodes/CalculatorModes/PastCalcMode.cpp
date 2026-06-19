@@ -60,7 +60,7 @@ void PastCalcMode::calculate(){
     auto& meGen = meStats.from0.unwrap();
 
     auto deadsRes = async::spawn(DTLayer::get()->getTFor<Deaths>([](GeneralData const& data){
-        auto runs = data.runs;
+        Deaths runs{};
         StatsManager::mergeMapsAdd(runs, data.deaths);
         return runs;
     },

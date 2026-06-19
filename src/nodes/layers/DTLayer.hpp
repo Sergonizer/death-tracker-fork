@@ -336,4 +336,6 @@ class DTLayer : public Popup, public FLAlertLayerProtocol {
         void deletePreset(int id);
 
         void resetLayoutTo(DTLayoutPreset const& preset);
+
+        static CCLabelBMFont* verText;
 };

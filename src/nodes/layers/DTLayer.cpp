@@ -16,6 +16,7 @@
 #include <nodes/layers/TextInputPopup.hpp>
 
 float DTLayer::transitionTime = .35f;
+CCLabelBMFont* DTLayer::verText = nullptr;
 
 bool ColumnComperator::operator()(LayoutColumn* a, LayoutColumn* b) const {
     if (!a || !b) {
@@ -80,6 +81,19 @@ bool DTLayer::init(GJGameLevel* const& level) {
             );
         }
     }
+
+    
+    if (verText == nullptr){
+        verText = CCLabelBMFont::create(Mod::get()->getVersion().toVString(true).c_str(), "gjFont17.fnt");
+        verText->setAnchorPoint({0, 0});
+        verText->setOpacity(0);
+        verText->setPosition({5, 5});
+        verText->setScale(.5f);
+        OverlayManager::get()->addChild(verText);
+    }
+
+    verText->stopAllActions();
+    verText->runAction(CCFadeTo::create(.5f, 120));
 
     float height = 60;
     ogLimits = CCSize{m_size.width - 30 + 1, m_size.height - height  + 1};
@@ -1214,6 +1228,9 @@ void DTLayer::onClose(CCObject* sender){
     keyListeners.clear();
 
     instance = nullptr;
+
+    verText->stopAllActions();
+    verText->runAction(CCFadeTo::create(.2f, 0));
 
     Popup::onClose(sender);
 }

@@ -213,6 +213,7 @@
 	},
 	"dependencies": {
 		"geode.node-ids": ">=v1.10.0",
-		"cvolton.level-id-api": "v2.0.0-beta.2"
+		"cvolton.level-id-api": "v2.0.0-beta.2",
+		"alk.better-touch-prio": ">=v1.0.19"
 	}
 }
