@@ -11,6 +11,8 @@ class PastCalcMode : public CalculatorMode {
 
         TextInput* passPercentInput;
 
+        bool isGeneral = true;
+
     public:
         static PastCalcMode* create(CCSize const& size, geode::Function<void(std::string const&)>&& onVariablesChanged, geode::Function<void(std::string const&)>&& onCalculate);
         

@@ -2,6 +2,8 @@
 
 #include <nodes/layers/DTLayer.hpp>
 
+#include <nodes/SwitcherButton.hpp>
+
 BeforeCalcMode* BeforeCalcMode::create(CCSize const& size, geode::Function<void(std::string const&)>&& onVariablesChanged, geode::Function<void(std::string const&)>&& onCalculate) {
     auto ret = new BeforeCalcMode();
     if (ret && ret->init(size, std::move(onVariablesChanged), std::move(onCalculate))) {
@@ -21,14 +23,26 @@ bool BeforeCalcMode::init(CCSize const& size, geode::Function<void(std::string c
     beforePercentInput->setCallback([&](auto newStr){
         sendVars();
     });
-    beforePercentInput->setPosition(size / 2);
+    beforePercentInput->setPosition({size.width / 2, size.height});
+    beforePercentInput->setAnchorPoint({.5f, 1});
     this->addChild(beforePercentInput);
 
     auto beforePercentInputLabel = CCLabelBMFont::create("Before percent", "bigFont.fnt");
     beforePercentInputLabel->setScale(.45f);
-    beforePercentInputLabel->setPosition(beforePercentInput->getPosition() + ccp(1.5f, beforePercentInput->getScaledContentHeight() / 2));
+    beforePercentInput->setPositionY(beforePercentInput->getPositionY() - beforePercentInputLabel->getScaledContentHeight());
+    beforePercentInputLabel->setPosition(beforePercentInput->getPosition() + ccp(1.5f, 0));
     beforePercentInputLabel->setAnchorPoint({.5f, 0});
     this->addChild(beforePercentInputLabel);
+
+    auto sf0Btn = SwitcherButton::create({size.width / 1.5f / (1 / .85f), 25 / (1 / .85f)}, "GJ_button_01.png", {"General", "Session"});
+    sf0Btn->setPosition({size.width / 2, sf0Btn->getScaledContentHeight() / 2 + 2});
+    sf0Btn->setOptionChangedCallback([&](int opt){
+        isGeneral = opt == 0;
+    });
+    
+    auto m = CCMenu::createWithItem(sf0Btn);
+    m->setPosition({0,0});
+    this->addChild(m);
 
     return true;
 }
@@ -45,16 +59,19 @@ void BeforeCalcMode::calculate(){
     if (meStats.from0.isErr()) return;
     auto& meGen = meStats.from0.unwrap();
 
-    Deaths deads{};
-    StatsManager::mergeMapsAdd(deads, meGen.deaths);
+    auto deadsRes = async::spawn(DTLayer::get()->getTFor<Deaths>([](GeneralData const& data){
+        auto runs = data.runs;
+        StatsManager::mergeMapsAdd(runs, data.deaths);
+        return runs;
+    },
+    [](auto const& a, auto const& b){
+        auto map = a;
+        StatsManager::mergeMapsAdd(map, b);
+        return map;
+    }, !isGeneral)).blockOn();
 
-    for (const auto& levelData : DTLayer::get()->linkedLevelsData)
-    {
-        if (levelData.from0.isErr() || levelData.levelKey == meStats.levelKey) continue;
-        auto levelFrom0Stats = levelData.from0.unwrap();
-        
-        StatsManager::mergeMapsAdd(deads, levelFrom0Stats.deaths);
-    }
+    if (deadsRes.isErr()) onCalculate(deadsRes.unwrapErr().error);
+    auto deads = deadsRes.unwrap();
 
     int totalPastDeaths = 0;
 

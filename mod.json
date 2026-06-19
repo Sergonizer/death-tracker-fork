@@ -40,9 +40,9 @@
 			"default": "Exit game",
 			"one-of": ["Exit level", "Exit game"]
 		},
-		"late-save": {
-			"name": "Late Save",
-			"description": "Will save your deaths when exiting the level instead of when you die, this may fix lag spikes that happen on death.",
+		"quick-save": {
+			"name": "Quick Save",
+			"description": "Will save your deaths instantly when dying instead of when exiting the level, this can cause lag spikes for some people.",
 			"type": "bool",
 			"default": false
 		},

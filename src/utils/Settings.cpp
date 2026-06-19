@@ -27,8 +27,8 @@ bool Settings::getCompleteMenuEnabled(){
     return Mod::get()->getSettingValue<bool>("complete-menu");
 }
 
-bool Settings::getLateSaveEnabled(){
-    return Mod::get()->getSettingValue<bool>("late-save");
+bool Settings::getQuickSaveEnabled(){
+    return Mod::get()->getSettingValue<bool>("quick-save");
 }
 
 float Settings::getGraphPointSize(){

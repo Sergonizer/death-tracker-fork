@@ -396,10 +396,10 @@ void SaveOptions::onExport(CCObject*){
 
             auto source = StatsManager::getSavesFolderPath() / dtLayer->m_MyLevelStats.unwrap().levelKey;
 
-            if (pick.extension() == ".csv"){
-                saveToCSV(pick, source);
-                return;
-            }
+            // if (pick.extension() == ".csv"){
+            //     saveToCSV(pick, source);
+            //     return;
+            // }
 
             pick = pick.replace_extension(".dt");
 
@@ -439,8 +439,4 @@ void SaveOptions::saveToDT(std::filesystem::path const& pick, std::filesystem::p
             return;
         }
     }
-}
-
-void SaveOptions::saveToCSV(std::filesystem::path const& pick, std::filesystem::path const& source){
-    
 }

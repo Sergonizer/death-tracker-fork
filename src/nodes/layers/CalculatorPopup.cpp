@@ -41,8 +41,8 @@ bool CalculatorPopup::init() {
     menu->setPosition({0, 0});
     m_mainLayer->addChild(menu);
 
-    auto calcBtnSpr = ButtonSprite::create("Calculate");
-    calcBtnSpr->setScale(.75f);
+    auto calcBtnSpr = ButtonSprite::create("Calculate", "goldFont.fnt", "GJ_button_03.png");
+    calcBtnSpr->setScale(.8f);
     calcBtn = CCMenuItemSpriteExtra::create(
         calcBtnSpr,
         this,

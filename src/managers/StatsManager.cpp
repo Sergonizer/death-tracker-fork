@@ -677,7 +677,9 @@ bool StatsManager::safeCheckCurrF0(){
         return true;
     }
     
-    currentFrom0 = from0Res.unwrap();
+    if (!currentFrom0.has_value()){
+        currentFrom0 = from0Res.unwrap();
+    }
     return true;
 }
 

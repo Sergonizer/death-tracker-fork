@@ -243,7 +243,7 @@ void DTPlayLayer::saveRun(){
     if (Settings::getSafeMode()) return;
     if (!isLegal()) return;
 
-    if (!Settings::getLateSaveEnabled()){
+    if (Settings::getQuickSaveEnabled()){
         if (m_fields->currentRun.start == 0 && !m_isPracticeMode){
             StatsManager::logDeath(m_fields->currentRun.end);
         }
@@ -347,6 +347,8 @@ float DTPlayLayer::getActualProgress(GJBaseGameLayer* game) {
 void DTPlayLayer::onExit(){
     PlayLayer::onExit();
     if (m_fields->didJustPause) return;
+
+    
 
     if (m_fields->fzeroToSave.size()){
         StatsManager::logDeaths(m_fields->fzeroToSave);

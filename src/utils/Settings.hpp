@@ -10,7 +10,7 @@ public:
     static bool isCompletedLevelTrackingDisabled();
     static bool getPauseMenuEnabled();
     static bool getCompleteMenuEnabled();
-    static bool getLateSaveEnabled();
+    static bool getQuickSaveEnabled();
     static float getGraphPointSize();
     static std::filesystem::path getSavePath();
     static std::optional<int> getMaxBackupAmount();

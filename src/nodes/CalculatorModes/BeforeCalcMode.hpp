@@ -11,6 +11,8 @@ class BeforeCalcMode : public CalculatorMode {
 
         TextInput* beforePercentInput;
 
+        bool isGeneral;
+
     public:
         static BeforeCalcMode* create(CCSize const& size, geode::Function<void(std::string const&)>&& onVariablesChanged, geode::Function<void(std::string const&)>&& onCalculate);
 
