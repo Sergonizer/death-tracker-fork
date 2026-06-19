@@ -2457,7 +2457,7 @@ void DTLayer::unsubscribeKeyListener(DTLabel* label){
 void DTLayer::modifyRun(int startPer, int amount, std::optional<int> sessionNumber){
     if (m_MyLevelStats.isErr()) return;
 
-    auto processRun = [&, amount, startPer](Deaths& data) -> bool {
+    auto processRun = [&, amount, startPer, sessionNumber](Deaths& data) -> bool {
         auto runStr = std::to_string(startPer);
         if (!data.contains(runStr)){
             if (amount < 0)
@@ -2472,6 +2472,7 @@ void DTLayer::modifyRun(int startPer, int amount, std::optional<int> sessionNumb
 
         if (newNum <= 0){
             data.erase(runStr);
+            modifyNewBest(startPer, false, sessionNumber);
             return true;
         }
 

@@ -57,7 +57,6 @@ typedef struct GeneralData {
     Deaths deaths;
     Deaths runs;
     NewBests newBests;
-    int currentBest;
     PlaytimePair playtimeGeneral;
     PlaytimePair playtimePaused;
     PlaytimePair playtimeDead;

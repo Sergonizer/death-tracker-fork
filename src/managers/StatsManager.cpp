@@ -133,6 +133,9 @@ Result<LevelMetadeta, ErrorWithCode> StatsManager::getMetadata(const std::string
 Result<LevelMetadeta, ErrorWithCode> StatsManager::getMetadata(const std::filesystem::path& path){
     auto levelSaveFilePath = path / StatsManager::METADATA_FILE_NAME;
 
+    if (!std::filesystem::exists(StatsManager::getSavesFolderPath()))
+        return Err("Invalid save directory!");
+
     if (!std::filesystem::exists(levelSaveFilePath))
         return Err(ErrorWithCode("no stats exist for level!", 1));
 
@@ -155,6 +158,9 @@ Result<Session, ErrorWithCode> StatsManager::getSession(const std::string& level
 Result<Session, ErrorWithCode> StatsManager::getSession(const std::filesystem::path& path, long long sessionTime){
     auto levelSaveFilePath = path / StatsManager::SESSIONS_DIR_NAME / (std::to_string(sessionTime) + ".dt");
 
+    if (!std::filesystem::exists(StatsManager::getSavesFolderPath()))
+        return Err("Invalid save directory!");
+
     if (!std::filesystem::exists(levelSaveFilePath))
         return Err(ErrorWithCode("no stats exist for level!", 1));
 
@@ -176,6 +182,9 @@ Result<GeneralData, ErrorWithCode> StatsManager::getGeneral(const std::string& l
 
 Result<GeneralData, ErrorWithCode> StatsManager::getGeneral(const std::filesystem::path& path){
     auto levelSaveFilePath = path / StatsManager::FROM0_FILE_NAME;
+
+    if (!std::filesystem::exists(StatsManager::getSavesFolderPath()))
+        return Err("Invalid save directory!");
 
     if (!std::filesystem::exists(levelSaveFilePath) || std::filesystem::is_empty(levelSaveFilePath))
         return Err(ErrorWithCode("no stats exist for level!", 1));
@@ -524,7 +533,7 @@ void StatsManager::setCurrentLevel(GJGameLevel* const& level){
 
     if (from0Res.isErr()){
         if (from0Res.unwrapErr().code == 1){
-            auto newF0 = GeneralData{.currentBest = -1};
+            auto newF0 = GeneralData{};
 
             from0Res = Ok(newF0);
         }
@@ -551,12 +560,15 @@ void StatsManager::logDeath(const int& percent, bool instantSave) {
     if (instantSave)
         safeCheckCurrF0();
 
+    int best = -1;
+
     if (currentFrom0.has_value()){
         auto& val = currentFrom0.value();
         val.deaths[percentKey]++;
 
-        if (percent > val.currentBest) {
-            val.currentBest = percent;
+        if (val.newBests.size() != 0) best = *val.newBests.rbegin();
+
+        if (percent > best) {
             val.newBests.insert(percent);
         }
     }
@@ -566,8 +578,9 @@ void StatsManager::logDeath(const int& percent, bool instantSave) {
         session->data.deaths[percentKey]++;
         log::info("logging death {} to session {}", percentKey, session->sessionStartDate);
 
-        if (session && percent > session->data.currentBest) {
-            session->data.currentBest = percent;
+        if (session->data.newBests.size() != 0) best = *session->data.newBests.rbegin();
+
+        if (session && percent > best) {
             session->data.newBests.insert(percent);
         }
     }
@@ -670,7 +683,7 @@ bool StatsManager::safeCheckCurrF0(){
     auto from0Res = getGeneral(currentLevel);
     if (from0Res.isErr() && from0Res.unwrapErr().code != 1) {
         currentFrom0 = std::nullopt;
-        Notification::create("Death Tracker cant save! File corrupted!")->show();
+        Notification::create(fmt::format("Death Tracker cant save! {}", from0Res.unwrapErr().error))->show();
         return false;
     }
     else if (from0Res.isErr()) {
@@ -812,8 +825,7 @@ Session* StatsManager::getCurrentSession() {
         .data = GeneralData{
             .deaths = {},
             .runs = {},
-            .newBests = {},
-            .currentBest = -1,
+            .newBests = {}
         }
     };
 
@@ -1237,7 +1249,6 @@ Result<> StatsManager::convertV2SaveToV3(const std::string& levelKey){
     auto v3General = GeneralData{};
     v3General.deaths = stats.deaths;
     v3General.runs = stats.runs;
-    v3General.currentBest = stats.currentBest;
     v3General.newBests = stats.newBests;
 
     if (setGeneral(v3General, levelKey).isErr()) return Err("Failed to write V3 general!");
@@ -1250,7 +1261,6 @@ Result<> StatsManager::convertV2SaveToV3(const std::string& levelKey){
         v3Session.data.deaths = v2session.deaths;
         v3Session.data.runs = v2session.runs;
         v3Session.data.newBests = v2session.newBests;
-        v3Session.data.currentBest = v2session.currentBest;
         v3Session.sessionStartDate = v2session.sessionStartDate;
 
         if (setSession(v3Session, levelKey, v3Session.sessionStartDate, false).isErr()) return Err("Failed to write V3 session! session sd: {}", v3Session.sessionStartDate);

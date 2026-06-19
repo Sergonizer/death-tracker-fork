@@ -21,7 +21,6 @@ GeneralData& GeneralData::operator+=(const GeneralData& other) {
         runs[key] += val;
     }
     newBests.insert(other.newBests.begin(), other.newBests.end());
-    currentBest = other.currentBest > currentBest ? other.currentBest : currentBest;
     playtimeGeneral += other.playtimeGeneral;
     playtimePaused += other.playtimePaused;
     playtimeDead += other.playtimeDead;
@@ -64,7 +63,6 @@ Result<GeneralData> matjson::Serialize<GeneralData>::fromJson(const matjson::Val
     GEODE_UNWRAP_INTO(stats.deaths, value["deaths"].as<Deaths>());
     GEODE_UNWRAP_INTO(stats.runs, value["runs"].as<Deaths>());
     GEODE_UNWRAP_INTO(stats.newBests, value["newBests"].as<NewBests>());
-    GEODE_UNWRAP_INTO(stats.currentBest, value["currentBest"].asInt());
     if (value.contains("playtimeGeneral")) {
         GEODE_UNWRAP_INTO(stats.playtimeGeneral, value["playtimeGeneral"].as<PlaytimePair>());
     }
@@ -82,7 +80,6 @@ matjson::Value matjson::Serialize<GeneralData>::toJson(const GeneralData& value)
         { "deaths", value.deaths },
         { "runs", value.runs },
         { "newBests", value.newBests },
-        { "currentBest", value.currentBest },
         { "playtimeGeneral", value.playtimeGeneral },
         { "playtimePaused", value.playtimePaused },
         { "playtimeDead", value.playtimeDead }
@@ -93,9 +90,6 @@ Result<Session> matjson::Serialize<Session>::fromJson(const matjson::Value& valu
     Session session;
     GEODE_UNWRAP_INTO(session.lastPlayed, value["lastPlayed"].as<long long>());
     GEODE_UNWRAP_INTO(session.sessionStartDate, value["sessionStartDate"].as<long long>());
-    if (value.contains("currentBest")) {
-        GEODE_UNWRAP_INTO(session.data.currentBest, value["currentBest"].asInt());
-    }
     if (value.contains("newBests")) {
         GEODE_UNWRAP_INTO(session.data.newBests, value["newBests"].as<NewBests>());
     }
