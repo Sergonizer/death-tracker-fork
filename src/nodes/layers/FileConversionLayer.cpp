@@ -55,6 +55,7 @@ bool FileConversionLayer::init(bool exitIfNone) {
     textArea->setText("Looking for old save files...");
 
     lookupListener.spawn(
+        "DT-convert-lookup-task",
         lookupFuture(),
         [&](LookupFuture::Output val) {
             this->lookupComplete(val);
@@ -165,6 +166,7 @@ void FileConversionLayer::onStart(cocos2d::CCObject* sender){
     static_cast<CCMenuItemSpriteExtra*>(sender)->setEnabled(false);
 
     conversionListener.spawn(
+        "DT-convert-process-task",
         conversionFuture(lookupResult, [&](ConversionProgress progress){
             geode::queueInMainThread([&, progress](){
                 progressBar->setVisible(true);

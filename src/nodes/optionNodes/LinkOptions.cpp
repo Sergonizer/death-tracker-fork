@@ -334,6 +334,7 @@ void LinkOptions::getAllLevelsData(){
     loadingCircle->m_sprite->setVisible(true);
 
     getallLevelsListener.spawn(
+        "DT-get-all-levels-task",
         getLevelsFuture(),
         [&](GetLevelsFuture::Output val){
             this->onGetLevels(val);

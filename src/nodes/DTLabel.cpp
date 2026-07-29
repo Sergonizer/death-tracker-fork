@@ -717,7 +717,7 @@ void DTLabel::setLabelText(const std::string& text){
     auto self = this;
     self->retain();
 
-    modifyListener.spawn(modifyKeys(), [self](std::optional<std::string> opt){
+    modifyListener.spawn("DT-text-apply-keys-recursive-task", modifyKeys(), [self](std::optional<std::string> opt){
         if (!self) return;
 
         self->loadingCircle->setVisible(false);
@@ -769,7 +769,7 @@ void DTLabel::completeLoading(const std::shared_ptr<SpecialKey>& key){
         auto self = this;
         self->retain();
 
-        modifyListener.spawn(modifyKeys(), [self](std::optional<std::string> opt){
+        modifyListener.spawn("DT-load-complete-apply-keys-recursive-task", modifyKeys(), [self](std::optional<std::string> opt){
             if (!self) return;
 
             self->loadingCircle->setVisible(false);

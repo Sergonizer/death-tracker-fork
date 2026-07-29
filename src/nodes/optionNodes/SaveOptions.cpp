@@ -365,6 +365,7 @@ void SaveOptions::onExport(CCObject*){
     if (dtLayer == nullptr || dtLayer->m_MyLevelStats.isErr()) return;
 
     filepicklistener.spawn(
+        "DT-export-picker-task",
         file::pick(file::PickMode::SaveFile, file::FilePickOptions{
             .defaultPath = dtLayer->m_MyLevelStats.unwrap().metadata.levelName + ".dt",
             .filters = {

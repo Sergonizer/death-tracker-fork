@@ -484,6 +484,7 @@ void StatsManager::addBackup(const std::string& levelKey, bool saveLevelStats, s
             else Notification::create("Created backup successfully!", NotificationIcon::Success)->show();
         }
     );
+    backupHandler.setName("DT-backup-task");
 }
 
 void StatsManager::createFilesIfNeeded(const std::string& levelKey){
@@ -518,7 +519,7 @@ void StatsManager::setCurrentLevel(GJGameLevel* const& level){
     }
 
     auto from0Res = getGeneral(level);
-    auto sessionCount = getAllSessionTimesForLevel(level);
+    //auto sessionCount = getAllSessionTimesForLevel(level);
     //auto sessionRes = sessionCount.isErr() ? Err(sessionCount.unwrapErr()) : getSession(level, sessionCount.unwrap());
     auto metadataRes = getMetadata(level);
 
@@ -543,7 +544,7 @@ void StatsManager::setCurrentLevel(GJGameLevel* const& level){
         }
     }
     
-    if (!(from0Res.isErr() && from0Res.unwrapErr().code == 3))
+    if (from0Res.isOk())
         currentFrom0 = from0Res.unwrap();
 
     currentMetadata = metadataRes.unwrap();

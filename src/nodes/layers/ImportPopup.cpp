@@ -103,6 +103,7 @@ void ImportPopup::onFromDT(CCObject*){
     if (dtLayer == nullptr || dtLayer->m_MyLevelStats.isErr()) return;
 
     fileListener.spawn(
+        "DT-import-from-dt-task",
         file::pick(file::PickMode::OpenFile, file::FilePickOptions{
             .filters = {
                 file::FilePickOptions::Filter{
@@ -163,6 +164,7 @@ void ImportPopup::onFromText(CCObject*){
     if (dtLayer == nullptr || dtLayer->m_MyLevelStats.isErr()) return;
 
     fileListener.spawn(
+        "DT-import-from-text-task",
         file::pick(file::PickMode::OpenFile, file::FilePickOptions{
             .filters = {
                 file::FilePickOptions::Filter{

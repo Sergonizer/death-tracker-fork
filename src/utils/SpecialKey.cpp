@@ -26,8 +26,8 @@ void SpecialKey::updateContent(){
         cancel();
     }
 
-    updateListener.setName("DTKey-" + key);
     updateListener.spawn(
+        "DT-update-key:" + key + "-task",
         updateFutureRunner(),
         [&](UpdateFuture::Output val) {
             // log::info("completed update for {}", val);

@@ -80,6 +80,7 @@ bool BackupCell::init(float width, const std::string& levelKey, const long long 
 
 void BackupCell::LoadBackupData(){
     getBackupListener.spawn(
+        "DT-load-backups-data-task",
         LoadBackupDataFuture(),
         [&](GetBackupFuture::Output val) {
             this->onBackupLoaded(val);

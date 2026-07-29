@@ -69,7 +69,7 @@ bool DTLayer::init(GJGameLevel* const& level) {
         Save::setLastOpenedVersion(Mod::get()->getVersion().toNonVString());
         Mod::get()->getVersion();
         if (!isNewPlayer){
-            async::spawn(
+            auto versionHandle = async::spawn(
                 []() -> arc::Future<> {
                     co_await arc::yield();
                 },
@@ -79,6 +79,7 @@ bool DTLayer::init(GJGameLevel* const& level) {
                         changelog->show();
                 }
             );
+            versionHandle.setName("DT-version-popup-delay-task");
         }
     }
 
@@ -1691,6 +1692,7 @@ void DTLayer::update(float dt){
 void DTLayer::organizeLayout(){
     if (!canOrganize) return;
     organizationListener.spawn(
+        "DT-organize-layout-task",
         organizeLayoutTask(),
         [this](organizationFuture::Output result){
             if (scrollLayer->isAtMinZoom())
@@ -3733,7 +3735,7 @@ void DTLayer::onAddPreset(CCObject*){
     )->show();
 }
 void DTLayer::onImportPreset(CCObject*){
-    async::spawn(
+    auto importPresetHandle = async::spawn(
         file::pick(
             file::PickMode::OpenFile,
             file::FilePickOptions{
@@ -3771,6 +3773,7 @@ void DTLayer::onImportPreset(CCObject*){
             presetList->close();
         }
     );
+    importPresetHandle.setName("DT-import-preset-task");
 }
 void DTLayer::onExportPreset(CCObject*){
     TextInputPopup::create(
@@ -3788,7 +3791,7 @@ void DTLayer::onExportPreset(CCObject*){
                 .sessionBestColor = sessionBestColorBtnSpr->getColor()
             };
 
-            async::spawn(
+            auto exportHandle = async::spawn(
                 file::pick(
                     file::PickMode::SaveFile,
                     file::FilePickOptions{
@@ -3822,6 +3825,7 @@ void DTLayer::onExportPreset(CCObject*){
                     }
                 }
             );
+            exportHandle.setName("DT-export-preset-task");
         }
     )->show();
 }

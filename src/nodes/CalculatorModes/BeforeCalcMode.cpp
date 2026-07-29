@@ -59,7 +59,7 @@ void BeforeCalcMode::calculate(){
     if (meStats.from0.isErr()) return;
     auto& meGen = meStats.from0.unwrap();
 
-    auto deadsRes = async::spawn(DTLayer::get()->getTFor<Deaths>([](GeneralData const& data){
+    auto deadsHandle = async::spawn(DTLayer::get()->getTFor<Deaths>([](GeneralData const& data){
         Deaths runs{};
         StatsManager::mergeMapsAdd(runs, data.deaths);
         return runs;
@@ -68,7 +68,10 @@ void BeforeCalcMode::calculate(){
         auto map = a;
         StatsManager::mergeMapsAdd(map, b);
         return map;
-    }, !isGeneral)).blockOn();
+    }, !isGeneral));
+    deadsHandle.setName("DT-before-calculator-deaths-task");
+
+    auto deadsRes = deadsHandle.blockOn();
 
     if (deadsRes.isErr()) onCalculate(deadsRes.unwrapErr().error);
     auto deads = deadsRes.unwrap();

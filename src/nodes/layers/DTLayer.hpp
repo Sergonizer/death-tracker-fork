@@ -166,7 +166,6 @@ class DTLayer : public Popup, public FLAlertLayerProtocol {
         LayoutOptionsLayer* layoutOptionsLayer = nullptr;
         organizationFuture organizeLayoutTask();
         async::TaskHolder<organizationFuture::Output> organizationListener;
-        async::TaskHolder<> orgCooldown;
 
         bool canOrganize = true;
         int firstTime = 0;
