@@ -25,6 +25,8 @@ class DTLabel : public CCMenu {
         static float moveThreshold;
         static float labelLerpSpeed;
 
+        bool ignoreExtraSettings;
+
         void removeFromColumns();
 
         void addColumnAsHolder(LayoutColumn* column);

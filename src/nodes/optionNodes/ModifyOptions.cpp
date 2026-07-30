@@ -65,6 +65,7 @@ bool ModifyOptions::setup(){
     info.isExpanded = true;
 
     myLabel = DTLabel::create(info);
+    myLabel->ignoreExtraSettings = true;
     myLabel->setExpandable(false);
     myLabel->setContentWidth(previewScroll->getContentWidth());
     previewScroll->m_contentLayer->addChild(myLabel);
@@ -892,6 +893,6 @@ void ModifyOptions::removeInvalidRuns(CCObject*){
     if (sessionNum == std::nullopt) DTLayer::get()->specialStrings["runs"]->updateContent();
     else DTLayer::get()->specialStrings["sruns"]->updateContent();
     if (sessionNum == std::nullopt) DTLayer::get()->specialStrings["general"]->updateContent();
-    else DTLayer::get()->specialStrings["runs"]->updateContent();
+    else DTLayer::get()->specialStrings["s0"]->updateContent();
 }
 

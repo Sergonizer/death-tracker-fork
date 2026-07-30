@@ -128,4 +128,9 @@ class DTTutorialLayer : public CCLayer, public DialogDelegate {
 	    void scrollWheel(float x, float y) override;
 
         DialogObject* prevDialogue = nullptr;
+        CCMenuItemSpriteExtra* skipButton;
+
+        void skipTutorial(CCObject*);
+
+        bool isClosing;
 };

@@ -9,7 +9,7 @@ bool SpecialKey::compareToKey(const std::string& otherKey){
     return this->key == otherKey;
 }
 
-void SpecialKey::setUpdateFunction(geode::Function<UpdateFuture()> task){
+void SpecialKey::setUpdateFunction(geode::Function<UpdateFuture(std::map<std::string, std::any>)> task){
     this->updateFunction = std::move(task);
 }
 
@@ -28,7 +28,7 @@ void SpecialKey::updateContent(){
 
     updateListener.spawn(
         "DT-update-key:" + key + "-task",
-        updateFutureRunner(),
+        updateFutureRunner({}),
         [&](UpdateFuture::Output val) {
             // log::info("completed update for {}", val);
             this->onUpdateCompleted(val);
@@ -36,8 +36,12 @@ void SpecialKey::updateContent(){
     );
 }
 
-UpdateFuture SpecialKey::updateFutureRunner(){
-    auto value = co_await this->updateFunction.value()();
+UpdateFuture SpecialKey::getUpdatedContentAsync(std::map<std::string, std::any> payload){
+    co_return co_await updateFutureRunner(payload);
+}
+
+UpdateFuture SpecialKey::updateFutureRunner(std::map<std::string, std::any> payload){
+    auto value = co_await this->updateFunction.value()(payload);
 
     co_return value;
 }

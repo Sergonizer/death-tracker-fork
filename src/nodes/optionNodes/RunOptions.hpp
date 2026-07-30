@@ -19,7 +19,7 @@ class RunOptions : public OptionsNode, public SliderDelegate {
         bool addNewRun(int percent);
 
         TextInput* runAdditionInput;
-        //TextInput* RealEndPerInput;
+        TextInput* RealEndPerInput;
         TextInput* HidUpToInput;
 
         ScrollLayer* runsScrollLayer;

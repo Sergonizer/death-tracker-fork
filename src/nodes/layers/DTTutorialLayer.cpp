@@ -23,6 +23,23 @@ bool DTTutorialLayer::init() {
     lightRT->getSprite()->setOpacity(0);
     this->addChild(lightRT);
 
+    auto skipButtonSpr = ButtonSprite::create("Skip Tutorial");
+    skipButtonSpr->setScale(.5f);
+    skipButtonSpr->setCascadeOpacityEnabled(true);
+    skipButton = CCMenuItemSpriteExtra::create(
+        skipButtonSpr,
+        this,
+        menu_selector(DTTutorialLayer::skipTutorial)
+    );
+    skipButton->setAnchorPoint({1, 0});
+    skipButton->setOpacity(0);
+    skipButton->runAction(CCFadeIn::create(.5f));
+
+    auto menu = CCMenu::create();
+    this->addChild(menu);
+
+    menu->addChildAtPosition(skipButton, Anchor::BottomRight);
+
     scheduleUpdate();
     this->setMouseEnabled(true);
     this->setKeyboardEnabled(true);
@@ -339,11 +356,17 @@ void DTTutorialLayer::onProgress(DialogObject* dObject){
 }
 
 void DTTutorialLayer::dialogClosed(DialogLayer* layer){
+    if (isClosing) return;
+
+    isClosing = true;
+    
     lightRT->getSprite()->runAction(CCSequence::create(
         CCEaseInOut::create(CCFadeTo::create(.25f, 0), 2),
         CCCallFunc::create(this, callfunc_selector(DTTutorialLayer::close)),
         nullptr
     ));
+
+    skipButton->runAction(CCFadeOut::create(.5f));
 
     dialogueLayer = nullptr;
 }
@@ -531,4 +554,10 @@ void DTTutorialLayer::scrollWheel(float x, float y){
             return;
         }
     }
+}
+
+void DTTutorialLayer::skipTutorial(CCObject*){
+    if (isClosing) return;
+    dialogueLayer->removeMeAndCleanup();
+    dialogClosed(nullptr);
 }

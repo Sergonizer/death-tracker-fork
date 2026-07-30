@@ -1343,7 +1343,46 @@ bool DTLayer::createDeathsString(const Deaths& deaths, const stringCustomazation
 bool DTLayer::createDeathsString(const Deaths& deaths, const LevelMetadeta& meta, const stringCustomazations& custom, std::string& out, std::optional<NewBests> const newBests,  const ccColor3B& newBestColoring, bool ignoreExtraSettings) {
     out = "";
 
-    std::vector<std::pair<std::string, int>> deathVec(deaths.begin(), deaths.end());
+    std::vector<std::pair<std::string, int>> deathVec;
+
+    if (!ignoreExtraSettings)
+    {
+        std::unordered_map<std::string, int> mergedDeaths;
+
+        for (const auto& [originalRunStr, count] : deaths) 
+        {
+            auto runSplitRes = StatsManager::splitRunKey(originalRunStr);
+            if (runSplitRes.isErr()) continue;
+            auto runSplit = runSplitRes.unwrap();
+
+            if (runSplit.end >= meta.realEndPercent)
+                runSplit.end = 100;
+
+            if (runSplit.start.has_value() && runSplit.start.value() >= meta.realEndPercent)
+                runSplit.start = 100;
+
+            auto res = StatsManager::createRunKey(runSplit);
+            if (res.isErr()) continue;
+
+            mergedDeaths[res.unwrap()] += count;
+        }
+
+        deathVec.assign(mergedDeaths.begin(), mergedDeaths.end());
+    } 
+    else 
+    {
+        for (const auto& [originalRunStr, count] : deaths) 
+        {
+            auto runSplitRes = StatsManager::splitRunKey(originalRunStr);
+            if (runSplitRes.isErr()) continue;
+            
+            auto res = StatsManager::createRunKey(runSplitRes.unwrap());
+            if (res.isErr()) continue;
+
+            deathVec.emplace_back(res.unwrap(), count);
+        }
+    }
+        
 
     std::sort(deathVec.begin(), deathVec.end(), [](const auto& a, const auto& b) {
         auto runARes = StatsManager::splitRunKey(a.first);
@@ -1446,6 +1485,29 @@ bool DTLayer::createDeathsString(const Deaths& deaths, const LevelMetadeta& meta
             else if (runIndex % 2 == 0) {
                 nbDeColor = "</cplus>";
                 nbColor = fmt::format("<cplus={}>", custom.alternateStrength);
+            }
+        }
+        else{
+            if (newBests.has_value() && newBests.value().contains(runSplit.end)) {
+                nbDeColor = "</color>";
+
+                // constexpr int lowerAmount = 135;
+
+                // int lowerR = std::min<int>(newBestColoring.r + lowerAmount, 255);
+                // int lowerG = std::min<int>(newBestColoring.g + lowerAmount, 255);
+                // int lowerB = std::min<int>(newBestColoring.b + lowerAmount, 255);
+
+                nbColor = fmt::format(
+                    //"<gradient={},{},.3,.15><wave>",
+                    "<color={}>",
+                    cc3bToHexString(newBestColoring)
+                    // cc3bToHexString(newBestColoring),
+                    // cc3bToHexString(ccColor3B{
+                    //     static_cast<GLubyte>(lowerR),
+                    //     static_cast<GLubyte>(lowerG),
+                    //     static_cast<GLubyte>(lowerB)
+                    // })
+                );
             }
         }
 
@@ -2767,20 +2829,20 @@ bool DTLayer::DeleteSave(){
     return true;
 }
 
-UpdateFuture DTLayer::onNLKey(){
+UpdateFuture DTLayer::onNLKey(std::map<std::string, std::any> payload){
     co_return Ok(std::string("\n"));
 }
-UpdateFuture DTLayer::onATTKey(){
+UpdateFuture DTLayer::onATTKey(std::map<std::string, std::any> payload){
     long long totalAttempts = 0;
     for (const auto& lebel : linkedLevelsData)
         totalAttempts += lebel.metadata.attempts;
 
     co_return Ok(std::to_string(totalAttempts));
 }
-UpdateFuture DTLayer::onLVLNKey(){
+UpdateFuture DTLayer::onLVLNKey(std::map<std::string, std::any> payload){
     co_return Ok(std::string(m_Level->m_levelName));
 }
-UpdateFuture DTLayer::onGeneralKey(){
+UpdateFuture DTLayer::onGeneralKey(std::map<std::string, std::any> payload){
     GEODE_CO_UNWRAP_INTO(auto combinedDeaths, co_await getTFor<std::pair<Deaths, NewBests>>([](GeneralData const& data){
         return std::make_pair(data.deaths, data.newBests);
     },
@@ -2794,14 +2856,21 @@ UpdateFuture DTLayer::onGeneralKey(){
         return std::make_pair(map, nbs);
     }, false));
 
+    bool ignoreExtraSettings = false;
+
+    if (payload.contains("ignoreExtraSettings")){
+        if (auto ignoreExtraSettingsTemp = std::any_cast<bool>(&payload["ignoreExtraSettings"]))
+            ignoreExtraSettings = ignoreExtraSettingsTemp;
+    }
+
     std::string out;
-    if (!createDeathsString(combinedDeaths.first, Save::getFrom0Customazations(), out, combinedDeaths.second, Save::getNewBestColor()))
+    if (!createDeathsString(combinedDeaths.first, Save::getFrom0Customazations(), out, combinedDeaths.second, Save::getNewBestColor(), ignoreExtraSettings))
         co_return Err("Failed to create from0 deaths string");
 
     co_return Ok(out);
 }
 
-UpdateFuture DTLayer::onRUNSKey(){
+UpdateFuture DTLayer::onRUNSKey(std::map<std::string, std::any> payload){
     GEODE_CO_UNWRAP_INTO(auto sharedRuns, co_await getTFor<Deaths>([](GeneralData const& data){
         return data.runs;
     },
@@ -2811,68 +2880,89 @@ UpdateFuture DTLayer::onRUNSKey(){
         return map;
     }, false));
 
+    bool ignoreExtraSettings = false;
+
+    if (payload.contains("ignoreExtraSettings")){
+        if (auto ignoreExtraSettingsTemp = std::any_cast<bool>(&payload["ignoreExtraSettings"]))
+            ignoreExtraSettings = ignoreExtraSettingsTemp;
+    }
+
     std::string out;
-    if (!createDeathsString(sharedRuns, Save::getRunsCustomazations(), out))
+    if (!createDeathsString(sharedRuns, Save::getRunsCustomazations(), out, std::nullopt, {255, 255, 255}, ignoreExtraSettings))
         co_return Err("Failed to create run deaths string");
 
     co_return Ok(out);
 }
 
-UpdateFuture DTLayer::onS0Key(){
+UpdateFuture DTLayer::onS0Key(std::map<std::string, std::any> payload){
     GEODE_CO_UNWRAP_INTO(auto sessioNDeaths, co_await getTFor<std::pair<Deaths, NewBests>>([](GeneralData const& data){
         return std::make_pair(data.deaths, data.newBests);
     },
     NULL, true));
+    
+    bool ignoreExtraSettings = false;
+
+    if (payload.contains("ignoreExtraSettings")){
+        if (auto ignoreExtraSettingsTemp = std::any_cast<bool>(&payload["ignoreExtraSettings"]))
+            ignoreExtraSettings = ignoreExtraSettingsTemp;
+    }
 
     std::string out;
-    if (!createDeathsString(sessioNDeaths.first, Save::getSessionF0Customazations(), out, sessioNDeaths.second, Save::getSessionBestColor()))
+    if (!createDeathsString(sessioNDeaths.first, Save::getSessionF0Customazations(), out, sessioNDeaths.second, Save::getSessionBestColor(), ignoreExtraSettings))
         co_return Err("Failed to create session from0 deaths string");
 
     co_return Ok(out);
 }
-UpdateFuture DTLayer::onSRUNSKey(){
+UpdateFuture DTLayer::onSRUNSKey(std::map<std::string, std::any> payload){
     GEODE_CO_UNWRAP_INTO(auto sruns, co_await getTFor<Deaths>([](GeneralData const& data){
         return data.runs;
     },
     NULL, true));
 
+    bool ignoreExtraSettings = false;
+
+    if (payload.contains("ignoreExtraSettings")){
+        if (auto ignoreExtraSettingsTemp = std::any_cast<bool>(&payload["ignoreExtraSettings"]))
+            ignoreExtraSettings = ignoreExtraSettingsTemp;
+    }
+
     std::string out;
-    if (!createDeathsString(sruns, Save::getRunsCustomazations(), out))
+    if (!createDeathsString(sruns, Save::getRunsCustomazations(), out, std::nullopt, {255, 255, 255}, ignoreExtraSettings))
         co_return Err("Failed to create session run deaths string");
 
     co_return Ok(out);
 }
 
-UpdateFuture DTLayer::onDTATTKey(){
+UpdateFuture DTLayer::onDTATTKey(std::map<std::string, std::any> payload){
     co_return co_await getAttemptsFor([](GeneralData const& data, auto deathsFunc) {
         return deathsFunc(data.deaths) + deathsFunc(data.runs);
     }, false);
 }
 
-UpdateFuture DTLayer::onDTF0ATTKey(){
+UpdateFuture DTLayer::onDTF0ATTKey(std::map<std::string, std::any> payload){
     co_return co_await getAttemptsFor([](GeneralData const& data, auto deathsFunc) {
         return deathsFunc(data.deaths);
     }, false);
 }
 
-UpdateFuture DTLayer::onDTRunsATTKey(){
+UpdateFuture DTLayer::onDTRunsATTKey(std::map<std::string, std::any> payload){
     co_return co_await getAttemptsFor([](GeneralData const& data, auto deathsFunc) {
         return deathsFunc(data.runs);
     }, false);
 }
 
-UpdateFuture DTLayer::onSAttKey(){
+UpdateFuture DTLayer::onSAttKey(std::map<std::string, std::any> payload){
     co_return co_await getAttemptsFor([](GeneralData const& data, auto deathsFunc) {
         return deathsFunc(data.deaths) + deathsFunc(data.runs);
     }, true);
 }
 
-UpdateFuture DTLayer::onSF0AttKey(){
+UpdateFuture DTLayer::onSF0AttKey(std::map<std::string, std::any> payload){
     co_return co_await getAttemptsFor([](GeneralData const& data, auto deathsFunc) {
         return deathsFunc(data.deaths);
     }, true);
 }
-UpdateFuture DTLayer::onSRunsAttKey(){
+UpdateFuture DTLayer::onSRunsAttKey(std::map<std::string, std::any> payload){
     co_return co_await getAttemptsFor([](GeneralData const& data, auto deathsFunc) {
         return deathsFunc(data.runs);
     }, true);
@@ -2924,7 +3014,7 @@ long long DTLayer::calcPlaytime(const Deaths& deaths){
     return playtime;
 }
 
-UpdateFuture DTLayer::onAPTALLSKey(){
+UpdateFuture DTLayer::onAPTALLSKey(std::map<std::string, std::any> payload){
     GEODE_CO_UNWRAP_INTO(auto deaths, co_await getTFor<Deaths>([](GeneralData const& data){
         auto runs = data.runs;
         StatsManager::mergeMapsAdd(runs, data.deaths);
@@ -2940,7 +3030,7 @@ UpdateFuture DTLayer::onAPTALLSKey(){
     co_return Ok(pt);
 }
 
-UpdateFuture DTLayer::onAPTF0SKey(){
+UpdateFuture DTLayer::onAPTF0SKey(std::map<std::string, std::any> payload){
     GEODE_CO_UNWRAP_INTO(auto deaths, co_await getTFor<Deaths>([](GeneralData const& data){
         return data.deaths;
     },
@@ -2952,7 +3042,7 @@ UpdateFuture DTLayer::onAPTF0SKey(){
 
     co_return Ok(StatsManager::workingTime(calcPlaytime(deaths)));
 }
-UpdateFuture DTLayer::onAPTRUNSKey(){
+UpdateFuture DTLayer::onAPTRUNSKey(std::map<std::string, std::any> payload){
     GEODE_CO_UNWRAP_INTO(auto deaths, co_await getTFor<Deaths>([](GeneralData const& data){
         return data.runs;
     },
@@ -2965,7 +3055,7 @@ UpdateFuture DTLayer::onAPTRUNSKey(){
     co_return Ok(StatsManager::workingTime(calcPlaytime(deaths)));
 }
 
-UpdateFuture DTLayer::onAPTSALLSKey(){
+UpdateFuture DTLayer::onAPTSALLSKey(std::map<std::string, std::any> payload){
     GEODE_CO_UNWRAP_INTO(auto deaths, co_await getTFor<Deaths>([](GeneralData const& data){
         auto runs = data.runs;
         StatsManager::mergeMapsAdd(runs, data.deaths);
@@ -2975,7 +3065,7 @@ UpdateFuture DTLayer::onAPTSALLSKey(){
 
     co_return Ok(StatsManager::workingTime(calcPlaytime(deaths)));
 }
-UpdateFuture DTLayer::onAPTSF0Key(){
+UpdateFuture DTLayer::onAPTSF0Key(std::map<std::string, std::any> payload){
     GEODE_CO_UNWRAP_INTO(auto deaths, co_await getTFor<Deaths>([](GeneralData const& data){
         return data.deaths;
     },
@@ -2983,7 +3073,7 @@ UpdateFuture DTLayer::onAPTSF0Key(){
 
     co_return Ok(StatsManager::workingTime(calcPlaytime(deaths)));
 }
-UpdateFuture DTLayer::onAPTSRUNSKey(){
+UpdateFuture DTLayer::onAPTSRUNSKey(std::map<std::string, std::any> payload){
     GEODE_CO_UNWRAP_INTO(auto runs, co_await getTFor<Deaths>([](GeneralData const& data){
         return data.runs;
     },
@@ -3033,7 +3123,7 @@ Result<Session, UpdateFutureError> DTLayer::loadSessionFromSave(std::optional<in
     return sess;
 }
 
-UpdateFuture DTLayer::onRunsTo100Key(){
+UpdateFuture DTLayer::onRunsTo100Key(std::map<std::string, std::any> payload){
     GEODE_CO_UNWRAP_INTO(auto deaths, co_await getTFor<Deaths>([](GeneralData const& data){
         auto runs = data.runs;
         StatsManager::mergeMapsAdd(runs, data.deaths);
@@ -3061,14 +3151,21 @@ UpdateFuture DTLayer::onRunsTo100Key(){
         to100Deaths.insert(death);
     }
 
+    bool ignoreExtraSettings = false;
+
+    if (payload.contains("ignoreExtraSettings")){
+        if (auto ignoreExtraSettingsTemp = std::any_cast<bool>(&payload["ignoreExtraSettings"]))
+            ignoreExtraSettings = ignoreExtraSettingsTemp;
+    }
+
     std::string out;
-    if (!createDeathsString(to100Deaths, Save::getRunsCustomazations(), out))
+    if (!createDeathsString(to100Deaths, Save::getRunsCustomazations(), out, std::nullopt, {255, 255, 255}, ignoreExtraSettings))
         co_return Err("Failed to create runs to 100 string");
 
     co_return Ok(out);
 }
 
-UpdateFuture DTLayer::onBestRunsKey(){
+UpdateFuture DTLayer::onBestRunsKey(std::map<std::string, std::any> payload){
     GEODE_CO_UNWRAP_INTO(auto deaths, co_await getTFor<Deaths>([](GeneralData const& data){
         auto runs = data.runs;
         StatsManager::mergeMapsAdd(runs, data.deaths);
@@ -3111,14 +3208,21 @@ UpdateFuture DTLayer::onBestRunsKey(){
         bestRunDeaths.insert({runString, deaths[runString]});
     }
 
+    bool ignoreExtraSettings = false;
+
+    if (payload.contains("ignoreExtraSettings")){
+        if (auto ignoreExtraSettingsTemp = std::any_cast<bool>(&payload["ignoreExtraSettings"]))
+            ignoreExtraSettings = ignoreExtraSettingsTemp;
+    }
+
     std::string out;
-    if (!createDeathsString(bestRunDeaths, Save::getRunsCustomazations(), out))
+    if (!createDeathsString(bestRunDeaths, Save::getRunsCustomazations(), out, std::nullopt, {255, 255, 255}, ignoreExtraSettings))
         co_return Err("Failed best runs string");
 
     co_return Ok(out);
 }
 
-UpdateFuture DTLayer::onSessionRunsTo100Key(){
+UpdateFuture DTLayer::onSessionRunsTo100Key(std::map<std::string, std::any> payload){
     GEODE_CO_UNWRAP_INTO(auto deaths, co_await getTFor<Deaths>([](GeneralData const& data){
         auto runs = data.runs;
         StatsManager::mergeMapsAdd(runs, data.deaths);
@@ -3142,14 +3246,21 @@ UpdateFuture DTLayer::onSessionRunsTo100Key(){
         to100Deaths.insert(death);
     }
 
+    bool ignoreExtraSettings = false;
+
+    if (payload.contains("ignoreExtraSettings")){
+        if (auto ignoreExtraSettingsTemp = std::any_cast<bool>(&payload["ignoreExtraSettings"]))
+            ignoreExtraSettings = ignoreExtraSettingsTemp;
+    }
+
     std::string out;
-    if (!createDeathsString(to100Deaths, Save::getRunsCustomazations(), out))
+    if (!createDeathsString(to100Deaths, Save::getRunsCustomazations(), out, std::nullopt, {255, 255, 255}, ignoreExtraSettings))
         co_return Err("Failed to create session runs to 100 string");
 
     co_return Ok(out);
 }
 
-UpdateFuture DTLayer::onSessionBestRunsKey(){
+UpdateFuture DTLayer::onSessionBestRunsKey(std::map<std::string, std::any> payload){
     GEODE_CO_UNWRAP_INTO(auto deaths, co_await getTFor<Deaths>([](GeneralData const& data){
         auto runs = data.runs;
         StatsManager::mergeMapsAdd(runs, data.deaths);
@@ -3188,8 +3299,15 @@ UpdateFuture DTLayer::onSessionBestRunsKey(){
         bestRunDeaths.insert({runString, deaths[runString]});
     }
 
+    bool ignoreExtraSettings = false;
+
+    if (payload.contains("ignoreExtraSettings")){
+        if (auto ignoreExtraSettingsTemp = std::any_cast<bool>(&payload["ignoreExtraSettings"]))
+            ignoreExtraSettings = ignoreExtraSettingsTemp;
+    }
+
     std::string out;
-    if (!createDeathsString(bestRunDeaths, Save::getRunsCustomazations(), out))
+    if (!createDeathsString(bestRunDeaths, Save::getRunsCustomazations(), out, std::nullopt, {255, 255, 255}, ignoreExtraSettings))
         co_return Err("Failed best session runs string");
 
     co_return Ok(out);
@@ -3206,119 +3324,119 @@ void DTLayer::foreachLinkedLevel(geode::Function<void(LevelData&)> onLevelVisit)
     }
 }
 
-UpdateFuture DTLayer::onPTALLSKey(){
+UpdateFuture DTLayer::onPTALLSKey(std::map<std::string, std::any> payload){
     co_return co_await getPlaytimeFor([](GeneralData const& data){
         return data.playtimeGeneral.playtimeF0 + data.playtimeGeneral.playtimeRuns;
     }, false);
 }
 
-UpdateFuture DTLayer::onPTF0SKey() {
+UpdateFuture DTLayer::onPTF0SKey(std::map<std::string, std::any> payload) {
     co_return co_await getPlaytimeFor([](GeneralData const& data){
         return data.playtimeGeneral.playtimeF0;
     }, false);
 }
 
 // same thing here, no distinction between playtime from 0 and playtime from runs
-UpdateFuture DTLayer::onPTRUNSKey() {
+UpdateFuture DTLayer::onPTRUNSKey(std::map<std::string, std::any> payload) {
     co_return co_await getPlaytimeFor([](GeneralData const& data){
         return data.playtimeGeneral.playtimeRuns;
     }, false);
 }
 
-UpdateFuture DTLayer::onPTSALLSKey() {
+UpdateFuture DTLayer::onPTSALLSKey(std::map<std::string, std::any> payload) {
     co_return co_await getPlaytimeFor([](GeneralData const& data){
         return data.playtimeGeneral.playtimeF0 + data.playtimeGeneral.playtimeRuns;
     }, true);
 }
 
-UpdateFuture DTLayer::onPTSF0Key() {
+UpdateFuture DTLayer::onPTSF0Key(std::map<std::string, std::any> payload) {
     co_return co_await getPlaytimeFor([](GeneralData const& data){
         return data.playtimeGeneral.playtimeF0;
     }, true);
 }
 
-UpdateFuture DTLayer::onPTSRUNSKey() {
+UpdateFuture DTLayer::onPTSRUNSKey(std::map<std::string, std::any> payload) {
     co_return co_await getPlaytimeFor([](GeneralData const& data){
         return data.playtimeGeneral.playtimeRuns;
     }, true);
 }
 
-UpdateFuture DTLayer::onDeadPTALLSKey(){
+UpdateFuture DTLayer::onDeadPTALLSKey(std::map<std::string, std::any> payload){
     co_return co_await getPlaytimeFor([](GeneralData const& data){
         return data.playtimeDead.playtimeF0 + data.playtimeDead.playtimeRuns;
     }, false);
 }
 
-UpdateFuture DTLayer::onDeadPTF0SKey() {
+UpdateFuture DTLayer::onDeadPTF0SKey(std::map<std::string, std::any> payload) {
     co_return co_await getPlaytimeFor([](GeneralData const& data){
         return data.playtimeDead.playtimeF0;
     }, false);
 }
 
 // same thing here, no distinction between playtime from 0 and playtime from runs
-UpdateFuture DTLayer::onDeadPTRUNSKey() {
+UpdateFuture DTLayer::onDeadPTRUNSKey(std::map<std::string, std::any> payload) {
     co_return co_await getPlaytimeFor([](GeneralData const& data){
         return data.playtimeDead.playtimeRuns;
     }, false);
 }
 
-UpdateFuture DTLayer::onDeadPTSALLSKey() {
+UpdateFuture DTLayer::onDeadPTSALLSKey(std::map<std::string, std::any> payload) {
     co_return co_await getPlaytimeFor([](GeneralData const& data){
         return data.playtimeDead.playtimeF0 + data.playtimeDead.playtimeRuns;
     }, true);
 }
 
-UpdateFuture DTLayer::onDeadPTSF0Key() {
+UpdateFuture DTLayer::onDeadPTSF0Key(std::map<std::string, std::any> payload) {
     co_return co_await getPlaytimeFor([](GeneralData const& data){
         return data.playtimeDead.playtimeF0;
     }, true);
 }
 
-UpdateFuture DTLayer::onDeadPTSRUNSKey() {
+UpdateFuture DTLayer::onDeadPTSRUNSKey(std::map<std::string, std::any> payload) {
     co_return co_await getPlaytimeFor([](GeneralData const& data){
         return data.playtimeDead.playtimeRuns;
     }, true);
 }
 
-UpdateFuture DTLayer::onPausedPTALLSKey(){
+UpdateFuture DTLayer::onPausedPTALLSKey(std::map<std::string, std::any> payload){
     co_return co_await getPlaytimeFor([](GeneralData const& data){
         return data.playtimePaused.playtimeF0 + data.playtimePaused.playtimeRuns;
     }, false);
 }
 
-UpdateFuture DTLayer::onPausedPTF0SKey() {
+UpdateFuture DTLayer::onPausedPTF0SKey(std::map<std::string, std::any> payload) {
     co_return co_await getPlaytimeFor([](GeneralData const& data){
         return data.playtimePaused.playtimeF0;
     }, false);
 }
 
 // same thing here, no distinction between playtime from 0 and playtime from runs
-UpdateFuture DTLayer::onPausedPTRUNSKey() {
+UpdateFuture DTLayer::onPausedPTRUNSKey(std::map<std::string, std::any> payload) {
     co_return co_await getPlaytimeFor([](GeneralData const& data){
         return data.playtimePaused.playtimeRuns;
     }, false);
 }
 
-UpdateFuture DTLayer::onPausedPTSALLSKey() {
+UpdateFuture DTLayer::onPausedPTSALLSKey(std::map<std::string, std::any> payload) {
     co_return co_await getPlaytimeFor([](GeneralData const& data){
         return data.playtimePaused.playtimeF0 + data.playtimePaused.playtimeRuns;
     }, true);
 }
 
-UpdateFuture DTLayer::onPausedPTSF0Key() {
+UpdateFuture DTLayer::onPausedPTSF0Key(std::map<std::string, std::any> payload) {
     co_return co_await getPlaytimeFor([](GeneralData const& data){
         return data.playtimePaused.playtimeF0;
     }, true);
 }
 
-UpdateFuture DTLayer::onPausedPTSRUNSKey() {
+UpdateFuture DTLayer::onPausedPTSRUNSKey(std::map<std::string, std::any> payload) {
     co_return co_await getPlaytimeFor([](GeneralData const& data){
         return data.playtimePaused.playtimeRuns;
     }, true);
 }
 
 
-UpdateFuture DTLayer::onSectionKey(){
+UpdateFuture DTLayer::onSectionKey(std::map<std::string, std::any> payload){
     if (m_MyLevelStats.isErr()) co_return Err("Failed to calculate runs playtime");
     auto myStats = m_MyLevelStats.unwrap();
 
@@ -3444,7 +3562,7 @@ void DTLayer::onCalculator(CCObject*){
     CalculatorPopup::create()->show();
 }
 
-UpdateFuture DTLayer::onLevelRunsKey() {
+UpdateFuture DTLayer::onLevelRunsKey(std::map<std::string, std::any> payload) {
     GEODE_CO_UNWRAP_INTO(auto deaths, co_await getTFor<Deaths>([](GeneralData const& data){
         auto runs = data.runs;
         StatsManager::mergeMapsAdd(runs, data.deaths);
@@ -3560,7 +3678,7 @@ SessionCategory& DTLayer::getCurrentGrouping(){
     return myStats.metadata.sessionGroups[currentGrouping];
 }
 
-UpdateFuture DTLayer::onSessionDateKey(){
+UpdateFuture DTLayer::onSessionDateKey(std::map<std::string, std::any> payload){
     auto sessionRes = loadSessionFromSave();
     if (sessionRes.isErr()) co_return Err(sessionRes.unwrapErr());
 

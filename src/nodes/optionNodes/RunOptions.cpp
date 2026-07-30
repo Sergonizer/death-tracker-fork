@@ -200,31 +200,37 @@ bool RunOptions::setup(){
     HideUpToLabel->setAnchorPoint({1, .5f});
     this->addChild(HideUpToLabel);
 
-    // RealEndPerInput = TextInput::create(45, "E %");
-    // RealEndPerInput->setPosition({size.width - RealEndPerInput->getContentWidth() / 2 - rightOffset, size.height / 8 * 3});
-    // RealEndPerInput->setString(dtlayer == nullptr ? "" : (dtlayer->m_MyLevelStats.isOk() ? std::to_string(dtlayer->m_MyLevelStats.unwrap().metadata.realEndPercent) : ""));
-    // RealEndPerInput->setCommonFilter(CommonFilter::Uint);
-    // RealEndPerInput->setCallback([&](const std::string& newText){
-    //     auto dtlayer = DTLayer::get();
-    //     auto numRes = geode::utils::numFromString<int>(newText);
+    RealEndPerInput = TextInput::create(45, "E %");
+    RealEndPerInput->setPosition({size.width - RealEndPerInput->getContentWidth() / 2 - rightOffset, size.height / 8 * 4});
+    RealEndPerInput->setString(dtlayer == nullptr ? "" : (dtlayer->m_MyLevelStats.isOk() ? std::to_string(dtlayer->m_MyLevelStats.unwrap().metadata.realEndPercent) : ""));
+    RealEndPerInput->setCommonFilter(CommonFilter::Uint);
+    RealEndPerInput->setCallback([&](const std::string& newText){
+        auto dtlayer = DTLayer::get();
+        auto numRes = geode::utils::numFromString<int>(newText);
 
-    //     if (dtlayer == nullptr || dtlayer->m_MyLevelStats.isErr() || numRes.isErr()) return;
+        if (dtlayer == nullptr || dtlayer->m_MyLevelStats.isErr() || numRes.isErr()) return;
 
-    //     int num = numRes.unwrap();
-    //     num = std::min(num, 100);
-    //     RealEndPerInput->setString(std::to_string(num));
+        int num = numRes.unwrap();
+        num = std::min(num, 100);
+        RealEndPerInput->setString(std::to_string(num));
 
-    //     auto& stats = dtlayer->m_MyLevelStats.unwrap();
-    //     stats.metadata.realEndPercent = num;
-    // });
-    // this->addChild(RealEndPerInput);
+        auto& stats = dtlayer->m_MyLevelStats.unwrap();
+        stats.metadata.realEndPercent = num;
+        (void)StatsManager::setMetadata(stats.metadata, stats.levelKey);
 
-    // auto RealEndPerLabel = CCLabelBMFont::create("Real End %", "gjFont17.fnt");
-    // RealEndPerLabel->setScale(.65f);
-    // RealEndPerLabel->setWidth(size.width / 2 - RealEndPerInput->getContentWidth() - rightOffset);
-    // RealEndPerLabel->setPosition(RealEndPerInput->getPosition() - ccp(RealEndPerInput->getContentWidth() / 2 + rightOffset, 0));
-    // RealEndPerLabel->setAnchorPoint({1, .5f});
-    // this->addChild(RealEndPerLabel);
+        DTLayer::get()->specialStrings["runs"]->updateContent();
+        DTLayer::get()->specialStrings["sruns"]->updateContent();
+        DTLayer::get()->specialStrings["general"]->updateContent();
+        DTLayer::get()->specialStrings["s0"]->updateContent();
+    });
+    this->addChild(RealEndPerInput);
+
+    auto RealEndPerLabel = CCLabelBMFont::create("Real End %", "gjFont17.fnt");
+    RealEndPerLabel->setScale(.65f);
+    RealEndPerLabel->setWidth(size.width / 2 - RealEndPerInput->getContentWidth() - rightOffset);
+    RealEndPerLabel->setPosition(RealEndPerInput->getPosition() - ccp(RealEndPerInput->getContentWidth() / 2 + rightOffset, 0));
+    RealEndPerLabel->setAnchorPoint({1, .5f});
+    this->addChild(RealEndPerLabel);
 
     auto ResetAsDeathToggler = SimpleToggler::createWithDefaults(
         .75f,
@@ -363,8 +369,8 @@ void RunOptions::onOpened(){
 
     runAdditionInput->getInputNode()->m_textLabel->setOpacity(0);
     Dev::fadeTextInput(runAdditionInput, true, fadeTime);
-    // RealEndPerInput->getInputNode()->m_textLabel->setOpacity(0);
-    // Dev::fadeTextInput(RealEndPerInput, true, fadeTime);
+    RealEndPerInput->getInputNode()->m_textLabel->setOpacity(0);
+    Dev::fadeTextInput(RealEndPerInput, true, fadeTime);
     HidUpToInput->getInputNode()->m_textLabel->setOpacity(0);
     Dev::fadeTextInput(HidUpToInput, true, fadeTime);
     Dev::fadeTextInput(sharedRunsToShowInput, true, fadeTime);
@@ -381,7 +387,7 @@ void RunOptions::onClosed(){
     this->runAction(CCFadeOut::create(fadeTime));
 
     Dev::fadeTextInput(runAdditionInput, false, fadeTime);
-    // Dev::fadeTextInput(RealEndPerInput, false, fadeTime);
+    Dev::fadeTextInput(RealEndPerInput, false, fadeTime);
     Dev::fadeTextInput(HidUpToInput, false, fadeTime);
     Dev::fadeTextInput(sharedRunsToShowInput, false, fadeTime);
     Dev::fadeSlider(sharedHideScroll, false, fadeTime);

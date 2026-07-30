@@ -233,66 +233,66 @@ class DTLayer : public Popup, public FLAlertLayerProtocol {
 
         void exitLayoutEditing();
 
-        UpdateFuture onNLKey();
-        UpdateFuture onATTKey();
-        UpdateFuture onLVLNKey();
-        UpdateFuture onGeneralKey();
-        UpdateFuture onRUNSKey();
-        UpdateFuture onS0Key();
-        UpdateFuture onSRUNSKey();
+        UpdateFuture onNLKey(std::map<std::string, std::any> payload);
+        UpdateFuture onATTKey(std::map<std::string, std::any> payload);
+        UpdateFuture onLVLNKey(std::map<std::string, std::any> payload);
+        UpdateFuture onGeneralKey(std::map<std::string, std::any> payload);
+        UpdateFuture onRUNSKey(std::map<std::string, std::any> payload);
+        UpdateFuture onS0Key(std::map<std::string, std::any> payload);
+        UpdateFuture onSRUNSKey(std::map<std::string, std::any> payload);
 
-        UpdateFuture onDTATTKey();
-        UpdateFuture onDTF0ATTKey();
-        UpdateFuture onDTRunsATTKey();
+        UpdateFuture onDTATTKey(std::map<std::string, std::any> payload);
+        UpdateFuture onDTF0ATTKey(std::map<std::string, std::any> payload);
+        UpdateFuture onDTRunsATTKey(std::map<std::string, std::any> payload);
 
-        UpdateFuture onSAttKey();
-        UpdateFuture onSF0AttKey();
-        UpdateFuture onSRunsAttKey();
+        UpdateFuture onSAttKey(std::map<std::string, std::any> payload);
+        UpdateFuture onSF0AttKey(std::map<std::string, std::any> payload);
+        UpdateFuture onSRunsAttKey(std::map<std::string, std::any> payload);
         
         long long calcPlaytime(const Deaths& deaths);
         
-        UpdateFuture onAPTALLSKey();
-        UpdateFuture onAPTF0SKey();
-        UpdateFuture onAPTRUNSKey();
-        UpdateFuture onAPTSALLSKey();
-        UpdateFuture onAPTSF0Key();
-        UpdateFuture onAPTSRUNSKey();
+        UpdateFuture onAPTALLSKey(std::map<std::string, std::any> payload);
+        UpdateFuture onAPTF0SKey(std::map<std::string, std::any> payload);
+        UpdateFuture onAPTRUNSKey(std::map<std::string, std::any> payload);
+        UpdateFuture onAPTSALLSKey(std::map<std::string, std::any> payload);
+        UpdateFuture onAPTSF0Key(std::map<std::string, std::any> payload);
+        UpdateFuture onAPTSRUNSKey(std::map<std::string, std::any> payload);
 
         //playtime
-        UpdateFuture onPTALLSKey();
-        UpdateFuture onPTF0SKey();
-        UpdateFuture onPTRUNSKey();
-        UpdateFuture onPTSALLSKey();
-        UpdateFuture onPTSF0Key();
-        UpdateFuture onPTSRUNSKey();
+        UpdateFuture onPTALLSKey(std::map<std::string, std::any> payload);
+        UpdateFuture onPTF0SKey(std::map<std::string, std::any> payload);
+        UpdateFuture onPTRUNSKey(std::map<std::string, std::any> payload);
+        UpdateFuture onPTSALLSKey(std::map<std::string, std::any> payload);
+        UpdateFuture onPTSF0Key(std::map<std::string, std::any> payload);
+        UpdateFuture onPTSRUNSKey(std::map<std::string, std::any> payload);
 
         //dead playtime
-        UpdateFuture onDeadPTALLSKey();
-        UpdateFuture onDeadPTF0SKey();
-        UpdateFuture onDeadPTRUNSKey();
-        UpdateFuture onDeadPTSALLSKey();
-        UpdateFuture onDeadPTSF0Key();
-        UpdateFuture onDeadPTSRUNSKey();
+        UpdateFuture onDeadPTALLSKey(std::map<std::string, std::any> payload);
+        UpdateFuture onDeadPTF0SKey(std::map<std::string, std::any> payload);
+        UpdateFuture onDeadPTRUNSKey(std::map<std::string, std::any> payload);
+        UpdateFuture onDeadPTSALLSKey(std::map<std::string, std::any> payload);
+        UpdateFuture onDeadPTSF0Key(std::map<std::string, std::any> payload);
+        UpdateFuture onDeadPTSRUNSKey(std::map<std::string, std::any> payload);
         
         //paused playtime
-        UpdateFuture onPausedPTALLSKey();
-        UpdateFuture onPausedPTF0SKey();
-        UpdateFuture onPausedPTRUNSKey();
-        UpdateFuture onPausedPTSALLSKey();
-        UpdateFuture onPausedPTSF0Key();
-        UpdateFuture onPausedPTSRUNSKey();
+        UpdateFuture onPausedPTALLSKey(std::map<std::string, std::any> payload);
+        UpdateFuture onPausedPTF0SKey(std::map<std::string, std::any> payload);
+        UpdateFuture onPausedPTRUNSKey(std::map<std::string, std::any> payload);
+        UpdateFuture onPausedPTSALLSKey(std::map<std::string, std::any> payload);
+        UpdateFuture onPausedPTSF0Key(std::map<std::string, std::any> payload);
+        UpdateFuture onPausedPTSRUNSKey(std::map<std::string, std::any> payload);
 
-        UpdateFuture onRunsTo100Key();
-        UpdateFuture onBestRunsKey();
+        UpdateFuture onRunsTo100Key(std::map<std::string, std::any> payload);
+        UpdateFuture onBestRunsKey(std::map<std::string, std::any> payload);
 
-        UpdateFuture onSessionRunsTo100Key();
-        UpdateFuture onSessionBestRunsKey();
+        UpdateFuture onSessionRunsTo100Key(std::map<std::string, std::any> payload);
+        UpdateFuture onSessionBestRunsKey(std::map<std::string, std::any> payload);
         
-        UpdateFuture onSectionKey();
+        UpdateFuture onSectionKey(std::map<std::string, std::any> payload);
 
-        UpdateFuture onSessionDateKey();
+        UpdateFuture onSessionDateKey(std::map<std::string, std::any> payload);
 
-        UpdateFuture onLevelRunsKey();
+        UpdateFuture onLevelRunsKey(std::map<std::string, std::any> payload);
 
         UpdateFuture getPlaytimeFor(geode::Function<uint64_t(GeneralData const&)>&& dataGetter, bool session);
         UpdateFuture getAttemptsFor(geode::Function<unsigned long long(GeneralData const&, geode::FunctionRef<unsigned long long(const Deaths&)> const&)>&& dataGetter, bool session);

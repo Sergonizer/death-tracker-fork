@@ -345,14 +345,8 @@ void DTLabel::update(float dt){
 
     this->setContentHeight(targetHeight);
 
-    if (doUpdateLayout){
-        if (!DTLayer::get()->cornerOnNextOrganization){
-            DTLayer::get()->organizeLayout();
-            
-        }
-        else{
-
-        }
+    if (doUpdateLayout && DTLayer::get() && !DTLayer::get()->cornerOnNextOrganization){
+        DTLayer::get()->organizeLayout();
     }
 
     labelTitleBG->setContentWidth(this->getContentWidth() / labelTitleBG->getScale());
@@ -904,7 +898,17 @@ arc::Future<std::string> DTLabel::modifyStrRecursive(const std::string& str){
 
         auto dtLayer = DTLayer::get();
         if (dtLayer != nullptr && dtLayer->specialStrings.contains(key)) {
-            result += co_await modifyStrRecursive(dtLayer->specialStrings.at(key)->getContent());
+            std::string content = dtLayer->specialStrings.at(key)->getContent();
+            
+            if (ignoreExtraSettings){
+                auto res = co_await dtLayer->specialStrings.at(key)->getUpdatedContentAsync({
+                    {"ignoreExtraSettings", true}
+                });
+                if (res.isOk())
+                    content = res.unwrap();
+            }
+            
+            result += co_await modifyStrRecursive(content);
         }
         else {
             result += match.str();
