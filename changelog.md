@@ -1,5 +1,18 @@
 # Changelog
 
+## v3.0.8
+- fixed invalid directory error not showing when its supposed to
+- fixed new best desync (should prevent random unremovable new bests and other new best issues hopefully)
+- improved some error messages
+- changed "Late Save" to "Quick Save" flipping the action of the setting, this is due to feedback from people getting lag on death
+- added session mode to calculator
+- fixed many crashes and bugs
+- added faded version text to bottom left of the screen
+- added a "skip tutorial" button to the tutorial dialogues
+- named my async tasks (about time)
+- re-added "real end precent"
+- added open save file directory button to save menu
+
 ## v3.0.7
 - new best colors are back!
 - added alternating bright/normal colors for runs

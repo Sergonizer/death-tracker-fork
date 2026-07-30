@@ -44,6 +44,22 @@ bool SaveOptions::setup(){
     deleteBtnLabel->setPosition(deleteBtn->getPosition() + ccp(deleteBtn->getContentWidth() / 2 + 5, 0));
     this->addChild(deleteBtnLabel);
 
+    auto openSaveBtnSpr = CCSprite::createWithSpriteFrameName("backArrowPlain_01_001.png");
+    auto openSaveBtn = CCMenuItemSpriteExtra::create(
+        openSaveBtnSpr,
+        this,
+        menu_selector(SaveOptions::openSaveDir)
+    );
+    openSaveBtn->setPosition(deleteBtn->getPosition() + ccp(0, deleteBtn->getScaledContentHeight()));
+    this->addChild(openSaveBtn);
+
+    auto openSaveBtnLabel = CCLabelBMFont::create("Open save directory", "bigFont.fnt");
+    openSaveBtnLabel->setScale(.45f);
+    openSaveBtnLabel->setWidth(size.width / 2 - openSaveBtn->getContentWidth());
+    openSaveBtnLabel->setAnchorPoint({0, .5f});
+    openSaveBtnLabel->setPosition(openSaveBtn->getPosition() + ccp(openSaveBtn->getContentWidth() / 2 + 5, 0));
+    this->addChild(openSaveBtnLabel);
+
     auto backupBtnSpr = CCSprite::createWithSpriteFrameName("accountBtn_myLevels_001.png");
     backupBtnSpr->setScale(.7f);
     auto backupBtn = CCMenuItemSpriteExtra::create(
@@ -440,4 +456,14 @@ void SaveOptions::saveToDT(std::filesystem::path const& pick, std::filesystem::p
             return;
         }
     }
+}
+
+void SaveOptions::openSaveDir(CCObject*){
+    auto dtLayer = DTLayer::get();
+    if (dtLayer == nullptr) return;
+
+    auto lvlKeyRes = StatsManager::getLevelKey(DTLayer::get()->m_Level);
+    if (lvlKeyRes.isErr()) return;
+
+    file::openFolder(StatsManager::getSavesFolderPath() / lvlKeyRes.unwrap());
 }

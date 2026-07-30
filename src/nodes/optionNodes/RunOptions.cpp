@@ -333,13 +333,18 @@ bool RunOptions::setup(){
     runsHidingTutorial->setPosition(TARLabel->getPosition() + ccp(15 + TARLabel->getScaledContentWidth() / 2, 0));
     this->addChild(runsHidingTutorial);
 
-    auto runsOtherTutorial = TutorialButton::create(.75f, "run-overall", [&, HideUpToLabel, ResetAsDeathToggler, ResetAsDeathLabel](DTTutorialLayer* tutorial){
+    auto runsOtherTutorial = TutorialButton::create(.75f, "run-overall", [&, HideUpToLabel, ResetAsDeathToggler, ResetAsDeathLabel, RealEndPerLabel](DTTutorialLayer* tutorial){
         tutorial->appendDialogue("Here we have some extra settings for run managment", TutorialCharacterFace::TCFNormalTilted)
             ->appendDialogue("We have <cy>\"Hide Up To\"</c>, which like <cy>\"Max to Hide\"</c> on runs, will hide all runs up to that percent but from 0", TutorialCharacterFace::TCFNormal)
             ->joinTransform(TutorialBoxPlacement::TBPLeft, .70f)
             ->joinHighlight(HidUpToInput)
             ->joinHighlight(HideUpToLabel)
-            ->appendDialogue("And we also have <cy>\"Reset as death\"</c>! which makes resetting count as if you died, tracking it!", TutorialCharacterFace::TCFHappy)
+            ->appendDialogue("There is <cy>\"Real End Percent\"</c>, which allows you to make near ending deaths count as 100% runs", TutorialCharacterFace::TCFHappy)
+            ->joinHighlight(RealEndPerInput)
+            ->joinHighlight(RealEndPerLabel)
+            ->appendDialogue("This is useful in the case of a long end screen and such", TutorialCharacterFace::TCFHappy)
+            ->joinPreviousHighlight()
+            ->appendDialogue("And we also have <cy>\"Reset as death\"</c>! which makes resetting count as if you died, tracking it!", TutorialCharacterFace::TCFNormalTilted)
             ->joinHighlight(ResetAsDeathToggler)
             ->joinHighlight(ResetAsDeathLabel);
     });

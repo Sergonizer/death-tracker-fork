@@ -33,6 +33,8 @@ class SaveOptions : public OptionsNode, public FLAlertLayerProtocol {
         async::TaskHolder<file::PickResult> filepicklistener;
         void saveToDT(std::filesystem::path const& pick, std::filesystem::path const& source);
 
+        void openSaveDir(CCObject*);
+
     public:
         virtual void onOpened() override;
         virtual void onClosed() override;
