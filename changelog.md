@@ -1,5 +1,12 @@
 # Changelog
 
+## v3.0.9
+- fixed a bug where the first run after opening a level when not playing from 0 will not track for no reason
+- fixed deleting save data while inside of a level causing data corruption
+- created new sprites for the "mod options" and "level options"
+- fixed timewarp bugs (i think)
+- fixed deleting data while playtime tracker is installed not deleting the playtime correctly
+
 ## v3.0.8
 - fixed invalid directory error not showing when its supposed to
 - fixed new best desync (should prevent random unremovable new bests and other new best issues hopefully)

@@ -141,7 +141,7 @@ bool DTLayer::init(GJGameLevel* const& level) {
     m_mainLayer->addChild(sessionSelector);
 
     bottomLeftMenu = CCMenu::create();
-    bottomLeftMenu->setContentSize({m_size.width / 2 - sessionSelector->getScaledContentWidth() / 2 - 10, height / 2.5f});
+    bottomLeftMenu->setContentSize({m_size.width / 2 - sessionSelector->getScaledContentWidth() / 2 - 10, height / 2.4f});
     bottomLeftMenu->setAnchorPoint({0, .5f});
     bottomLeftMenu->setPosition(ccp(10, height / 2.5f  / 2) + ccp(0, 7.5f));
     bottomLeftMenu->setLayout(SimpleAxisLayout::create(Axis::Row)
@@ -156,7 +156,7 @@ bool DTLayer::init(GJGameLevel* const& level) {
     m_mainLayer->addChild(bottomLeftMenu);
 
     bottomRightMenu = CCMenu::create();
-    bottomRightMenu->setContentSize({m_size.width / 2 - sessionSelector->getScaledContentWidth() / 2 - 10, height / 2.5f});
+    bottomRightMenu->setContentSize({m_size.width / 2 - sessionSelector->getScaledContentWidth() / 2 - 10, height / 2.4f});
     bottomRightMenu->setAnchorPoint({1, .5f});
     bottomRightMenu->setPosition(ccp(m_size.width - 10, height / 2.5f  / 2) + ccp(0, 7.5f));
     bottomRightMenu->setLayout(SimpleAxisLayout::create(Axis::Row)
@@ -170,7 +170,7 @@ bool DTLayer::init(GJGameLevel* const& level) {
     bottomRightMenu->setID("bottom-right-menu");
     m_mainLayer->addChild(bottomRightMenu);
 
-    auto levelSpecificOptionsSpr = CCSprite::createWithSpriteFrameName("GJ_creatorBtn_001.png");
+    auto levelSpecificOptionsSpr = CCSprite::createWithSpriteFrameName("DTLevelOptionsBtn.png"_spr);
     auto levelSpecificOptionsBtn = CCMenuItemSpriteExtra::create(
         levelSpecificOptionsSpr,
         this,
@@ -236,7 +236,7 @@ bool DTLayer::init(GJGameLevel* const& level) {
     editLayoutBtn->setPosition(scrollLayer->getPosition() + scrollLayer->getContentSize());
     bottomRightMenu->addChild(editLayoutBtn);
 
-    auto settingsBtnSpr = CCSprite::createWithSpriteFrameName("GJ_optionsBtn_001.png");
+    auto settingsBtnSpr = CCSprite::createWithSpriteFrameName("DTSettingsBtn.png"_spr);
     settingsBtnSpr->setScale(.75f);
     auto settingsBtn = CCMenuItemSpriteExtra::create(
         settingsBtnSpr,
@@ -2819,11 +2819,16 @@ void DTLayer::modifyNewBest(int percent, bool makeTrue, std::optional<int> sessi
 }
 
 bool DTLayer::DeleteSave(){
-    auto deleteRes = StatsManager::deleteLevelStats(m_MyLevelStats.unwrap().levelKey);
+    auto lvlRes = StatsManager::getLevelKey(m_Level);
+    if (lvlRes.isErr()) return false;
+
+    auto deleteRes = StatsManager::deleteLevelStats(lvlRes.unwrap());
     if (deleteRes.isErr()){
         log::error("{}", deleteRes.unwrapErr());
         return false;
     }
+
+    SaveDeletionEvent().send();
 
     onClose(nullptr);
     return true;
@@ -3936,7 +3941,7 @@ void DTLayer::onExportPreset(CCObject*){
 
                     pick = pick.replace_extension(".dtl");
 
-                    StatsManager::createFile(pick);
+                    StatsManager::createFile(pick, std::nullopt);
 
                     if (file::writeToJson(pick, preset).isErr()){
                         Notification::create("Failed to export layout!", NotificationIcon::Error)->show();

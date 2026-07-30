@@ -21,4 +21,5 @@ public:
     static bool getAutoBackupAtDTExit();
     static bool getSafeMode();
     static bool getCheatDetect();
+    static bool getDisablePractice();
 };

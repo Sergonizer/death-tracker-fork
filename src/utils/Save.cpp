@@ -113,6 +113,24 @@ void Save::setLayoutPresets(const std::vector<DTLayoutPreset>& presets){
     Mod::get()->setSavedValue("layoutPresets", presets);
 }
 
+bool Save::getLevelWasPTTransferred(std::string const& lvlKey){
+    auto PTTransferData = Mod::get()->getSavedValue<std::set<std::string>>("PTTransferData");
+
+    if (PTTransferData.contains(lvlKey))
+        return true;
+    
+    return false;
+}
+void Save::setLevelWasPTTransferred(std::string const& lvlKey){
+    auto PTTransferData = Mod::get()->getSavedValue<std::set<std::string>>("PTTransferData");
+
+    if (PTTransferData.contains(lvlKey)) return;
+
+    PTTransferData.insert(lvlKey);
+
+    Mod::get()->setSavedValue("PTTransferData", PTTransferData);
+}
+
 DTLayoutV3 Save::getDefaultLayout(){
     return DTLayoutV3{
         .columns = std::vector<DTColumnInfo>{

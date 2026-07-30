@@ -53,6 +53,25 @@ bool DTPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
 
     StatsManager::setCurrentLevel(level);
 
+    m_fields->saveDeleteHandle = SaveDeletionEvent().listen([&]() {
+
+        m_fields->fzeroToSave.clear();
+        m_fields->runsToSave.clear();
+
+        m_fields->timePassedGeneral = PlaytimePair{};
+        m_fields->timePassedDead = PlaytimePair{};
+        m_fields->timePassedPaused = PlaytimePair{};
+
+        StatsManager::currentFrom0 = GeneralData{};
+        if (StatsManager::currentSession.has_value()){
+            StatsManager::currentSession.value().data = GeneralData{};
+        }
+
+        StatsManager::scheduleCreateNewSession(true);
+        
+        return ListenerResult::Propagate;
+    });
+
     // log::info("PlayLayer::init()");
 
     auto session = StatsManager::getCurrentSession();
@@ -175,7 +194,7 @@ void DTPlayLayer::resetLevel() {
         m_fields->lastOneDied = false;
     }
     else{
-        if (!DTPlayLayer::disableCompletedLevelTracking() && isGameplayActive()){
+        if (!(DTPlayLayer::disableCompletedLevelTracking() || (Settings::getDisablePractice() && m_isPracticeMode)) && isGameplayActive()){
             auto metaRes = StatsManager::getMetadata(m_level);
 
             if (metaRes.isOk() && metaRes.unwrap().resetAsDeath){
@@ -226,7 +245,7 @@ void DTPlayLayer::destroyPlayer(PlayerObject* player, GameObject* p1) {
 
     cutoutPlaytime();
 
-    if (DTPlayLayer::disableCompletedLevelTracking()) return;
+    if (DTPlayLayer::disableCompletedLevelTracking() || (Settings::getDisablePractice() && m_isPracticeMode)) return;
 
     if (!m_level->isPlatformer())
         m_fields->currentRun.end = getActualProgress(this);
@@ -285,7 +304,7 @@ void DTPlayLayer::levelComplete() {
     m_fields->hasRespawned = false;
 
     // disable tracking deaths on completed levels
-    if (DTPlayLayer::disableCompletedLevelTracking()) return;
+    if (DTPlayLayer::disableCompletedLevelTracking() || (Settings::getDisablePractice() && m_isPracticeMode)) return;
 
     if (!m_level->isPlatformer())
         m_fields->currentRun.end = 100;
@@ -389,6 +408,8 @@ void DTPlayLayer::onExit(){
 void DTPlayLayer::startGame(){
     PlayLayer::startGame();
 
+    m_fields->didGameStartThisFrame = true;
+
     startupPlaytime();
 }
 
@@ -455,16 +476,20 @@ void DTPlayLayer::checkDelta(float delta) {
         auto expectedRatio = m_fields->currentTimeWarp;
 
         if (std::abs(currentRatio - expectedRatio) > 0.05) {
-            if (!m_fields->speedhack) {
+            if (!m_fields->speedhack && !m_fields->didGameStartThisFrame) {
                 log::warn("Speedhack Detected!");
                 m_fields->speedhack = true;
             }
         }
+
+        m_fields->didGameStartThisFrame = false;
     }
 }
 
 void DTPlayLayer::updateTimeWarp(float timeWarp) {
-    this->GJBaseGameLayer::updateTimeWarp(timeWarp);
+    PlayLayer::updateTimeWarp(timeWarp);
+    if (m_fields->levelBeaten) return;
+
     m_fields->currentTimeWarp = timeWarp;
 
     m_fields->realTimeHistory.clear();

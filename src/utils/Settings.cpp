@@ -72,3 +72,7 @@ bool Settings::getSafeMode(){
 bool Settings::getCheatDetect(){
     return Mod::get()->getSettingValue<bool>("cheat-detect");
 }
+
+bool Settings::getDisablePractice(){
+    return Mod::get()->getSettingValue<bool>("disable-practice-tracking");
+}

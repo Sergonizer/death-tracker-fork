@@ -49,5 +49,8 @@ class Save {
         static std::vector<DTLayoutPreset> getLayoutPresets();
         static void setLayoutPresets(const std::vector<DTLayoutPreset>& presets);
 
+        static bool getLevelWasPTTransferred(std::string const& lvlKey);
+        static void setLevelWasPTTransferred(std::string const& lvlKey);
+
         static DTLayoutV3 getDefaultLayout();
 };

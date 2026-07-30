@@ -40,7 +40,7 @@ public:
 
     static bool isGameClosing;
 
-    static void createFile(const std::filesystem::path& path);
+    static void createFile(const std::filesystem::path& path, std::optional<matjson::Value> jsonToFill);
 
 #pragma region level setters/getters
 

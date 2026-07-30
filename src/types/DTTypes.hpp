@@ -8,6 +8,11 @@ using namespace geode::prelude;
 typedef std::map<std::string, int> Deaths;
 typedef std::set<int> NewBests;
 
+class SaveDeletionEvent : public Event<SaveDeletionEvent, bool()> {
+public:
+    using Event::Event;
+};
+
 struct ErrorWithCode{
     std::string error;
     int code;

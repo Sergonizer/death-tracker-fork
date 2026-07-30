@@ -8,7 +8,7 @@
     },
 	"id": "elohmrow.death_tracker",
 	"name": "Death Tracker",
-	"version": "v3.0.8",
+	"version": "v3.0.9",
 	"developer": "abb2k",
 	"description": "Tracks your deaths at every percentage",
 	"links": {
@@ -61,6 +61,12 @@
 		"disable-tracking-completed-levels": {
 			"name": "Disable Tracking Completed Levels",
 			"description": "Disables tracking on completed online levels.",
+			"type": "bool",
+			"default": false
+		},
+		"disable-practice-tracking": {
+			"name": "Disable Practice Mode Tracking",
+			"description": "Disables tracking deaths while playing in practice mode",
 			"type": "bool",
 			"default": false
 		},

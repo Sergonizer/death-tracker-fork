@@ -398,6 +398,7 @@ GetLevelsFuture LinkOptions::getLevelsFuture(){
 }
 
 void LinkOptions::updateScrollsContent(){
+    if (DTLayer::get()->m_MyLevelStats.isErr()) return;
     struct LevelMetaNameCompare {
         bool operator()(const LinkData* a, const LinkData* b) const {
             if (a->metadata.levelName != b->metadata.levelName)

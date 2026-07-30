@@ -304,7 +304,7 @@ Result<> StatsManager::setSession(Session& stats, const std::string& levelKey, l
 
     auto levelSaveFilePath = getSavesFolderPath() / levelKey / StatsManager::SESSIONS_DIR_NAME / (std::to_string(sessionTime) + ".dt");
 
-    createFile(levelSaveFilePath);
+    createFile(levelSaveFilePath, Session{});
 
     auto indentation = Dev::MINIFY_SAVE_FILE
         ? matjson::NO_INDENTATION
@@ -496,15 +496,17 @@ void StatsManager::createFilesIfNeeded(const std::string& levelKey){
     if (lvlSavesDirRes.isErr())
         log::error("failed to create level folder: {}", lvlSavesDirRes.unwrapErr());
 
-    createFile((levelSaveFilePath / METADATA_FILE_NAME));
-    createFile((levelSaveFilePath / FROM0_FILE_NAME));
+    createFile((levelSaveFilePath / METADATA_FILE_NAME), LevelMetadeta{});
+    createFile((levelSaveFilePath / FROM0_FILE_NAME), GeneralData{});
     (void)geode::utils::file::createDirectory((levelSaveFilePath / SESSIONS_DIR_NAME));
 }
 
-void StatsManager::createFile(const std::filesystem::path& path){
+void StatsManager::createFile(const std::filesystem::path& path, std::optional<matjson::Value> jsonToFill){
     if (std::filesystem::exists(path)) return;
 
     std::ofstream file(path);
+    if (jsonToFill.has_value())
+        file << jsonToFill.value().dump(matjson::NO_INDENTATION);
     file.close();
 }
 
@@ -784,6 +786,7 @@ Session* StatsManager::getCurrentSession() {
     }
 
     auto currentSession = StatsManager::currentSession.has_value() ? &StatsManager::currentSession.value() : nullptr;
+    log::info("getting curr session {}", currentSession == nullptr ? "session is null" : std::to_string(currentSession->sessionStartDate));
 
     auto levelKeyRes = StatsManager::getLevelKey(currentLevel);
 
@@ -1319,17 +1322,26 @@ bool StatsManager::transferPlaytimeFromPT(geode::Result<LevelData, ErrorWithCode
 
     if (!exists(ptPath)) return false;
 
+    auto lvlKeyRes = StatsManager::getLevelKey(level);
+    if (lvlKeyRes.isErr()) return false;
+    auto lvlKey = lvlKeyRes.unwrap();
+
     if (data.isErr()){
         LevelData newData;
-        newData.levelKey = StatsManager::getLevelKey(level).unwrap();
+        newData.levelKey = lvlKey;
         data = Ok(newData);
     }
 
     auto& stats = data.unwrap();
 
-    if (stats.metadata.hasGottenDataFromPT) return false;
+    if (stats.metadata.hasGottenDataFromPT){
+        Save::setLevelWasPTTransferred(lvlKey);
+        return false;
+    }
 
-    stats.metadata.hasGottenDataFromPT = true;
+    if (Save::getLevelWasPTTransferred(lvlKey)) return false;
+
+    Save::setLevelWasPTTransferred(lvlKey);
     (void)StatsManager::setMetadata(stats.metadata, stats.levelKey);
 
     auto ptObj = file::readFromJson<matjson::Value>(ptPath).unwrapOrDefault();

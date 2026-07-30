@@ -38,6 +38,10 @@ class $modify(DTPlayLayer, PlayLayer) {
         bool levelBeaten = false;
 
         geode::comm::ListenerHandle gameExitListener;
+
+        bool didGameStartThisFrame;
+
+        ListenerHandle saveDeleteHandle;
     };
 
     bool disableCompletedLevelTracking();
