@@ -483,9 +483,9 @@ void DTGraphLayer::OnPointSelected(GraphPoint* point){
         auto pointPosConverted = m_mainLayer->convertToNodeSpace(point->convertToWorldSpace({point->getContentWidth() / 2, 0}));
 
         float heightOffset = display->getContentHeight();
-        #if defined(GEODE_IS_MOBILE)
-            heightOffset += 15;
-        #endif
+#if defined(GEODE_IS_MOBILE)
+        heightOffset += 15;
+#endif
 
         position = pointPosConverted - ccp(display->getContentWidth() / 2, heightOffset);
 
