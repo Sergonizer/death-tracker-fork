@@ -712,18 +712,21 @@ void DTGraphLayer::addGraph(const DTGraphInfo& info){
         return cellWithName == nullptr || cellWithName == cell;
     };
 
-    graphCell->onDeleted = [&](DTGraphInfo info){
+    graphCell->beforeDeletion = [&](DTGraphInfo info, GraphCell* deletingCell){
+        graph->removeGraph(info.name);
+
         int indexZ = 0;
         for (const auto& child : CCArrayExt<GraphCell*>(graphsScroll->m_contentLayer->getChildren()))
         {
+            if (child == deletingCell) continue;
+
             child->setOrderPos(indexZ);
             indexZ++;
         }
+    };
 
+    graphCell->onDeleted = [&](DTGraphInfo info){
         updateGRapgCellLayout();
-
-        graph->removeGraph(info.name);
-        
         saveAllGraphs();
     };
 
