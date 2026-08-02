@@ -741,6 +741,13 @@ void DTGraphLayer::addGraph(const DTGraphInfo& info){
         graphNode->updateDeaths();
     };
 
+    if (graphCell->getinfo().isEnabled) {
+        for (const auto& cell : CCArrayExt<GraphCell*>(graphsScroll->m_contentLayer->getChildren())) {
+            if (cell == graphCell) continue;
+            cell->setEnabledInfo(false, true, false);
+        }
+    }
+
     graphsScroll->m_contentLayer->addChild(graphCell);
 
     graph->addGraph(info);
