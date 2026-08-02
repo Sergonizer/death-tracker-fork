@@ -693,6 +693,8 @@ void DTGraphLayer::addGraph(const DTGraphInfo& info){
             updateGRapgCellLayout();
 
         graphNode->setInfo(cell->getinfo());
+        cell->resendSession();
+
         saveAllGraphs();
     };
 
